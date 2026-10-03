@@ -1,4 +1,4 @@
-# Se.Noesa-Web
+# SIMPO-Se.Noesa
 Sistem Informasi Manajemen Pre-Order &amp; Antrean Produksi UMKM Se.Noesa.
 
 Aplikasi web manajemen operasional dan pemesanan *Pre-Order* (PO) katering untuk UMKM Se.Noesa. Proyek ini dikembangkan sebagai luaran Project-Based Learning (PBL) Semester 3 D-IV Teknik Informatika, Politeknik Negeri Malang.
