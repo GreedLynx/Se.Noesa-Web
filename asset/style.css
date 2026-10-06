@@ -1,0 +1,167 @@
+/* Halaman Login */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Sogoe UI', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #242226;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100hv;
+    color: #CB9F53;
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+}
+
+.login-title {
+    font-size: 28px;
+    margin-bottom: 30px;
+    color: #CB9F53;
+}
+
+.login-box {
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 30px 20px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-box input{
+    background-color: transparent;
+    border: 1px solid #717171;
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: #CB9F53;
+    font-size: 16px;
+    outline: none;
+}
+
+.login-box input::placeholder{
+    color: #CB9F53;
+}
+
+.login-btn{
+    background-color: #CB9F53;
+    color: #242226;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+
+
+.login.footer{
+    margin-top: 20px;
+    font-size: 14px;
+    color: #717171;
+}
+
+.login-footer a{
+    color: #8D96E2;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Halaman Register */
+
+.register-container{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+}
+
+.register-header{
+    display: flex;
+    align-items: center;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+.back-btn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    border: 1px solid #CB9F53;
+    border-radius: 50%;
+    color: #CB9F53;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    padding-right: 2px;
+}
+
+.register-title{
+    font-size: 22px;
+    color: #CB9F53;
+}
+
+.register-form{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.input-group{
+    display: flex;
+    align-items: center;
+    border: 1px solid #717171;
+    padding: 0 15px;
+    background-color: transparent;
+}
+
+/* mengatur emoji */
+.input-icon{
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.input-group input{
+    background-color: transparent;
+    border: none;
+    padding: 14px 0;
+    color: #CB9F53;
+    font-size: 15px;
+    outline: none;
+    width: 100%;
+}
+
+.input-group input::placeholder{
+    color: #CB9F53;
+}
+
+.confirm-btn{
+    background-color: #CB9F53;
+    color: #242226;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: fit-content;
+    margin-top: 10px;
+}
