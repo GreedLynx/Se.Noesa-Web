@@ -1,9 +1,8 @@
-/* Halaman Login */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Sogoe UI', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
@@ -12,9 +11,11 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100hv;
+    padding-top: 20px;
     color: #CB9F53;
 }
 
+/* halaman login */
 .login-container {
     display: flex;
     flex-direction: column;
@@ -164,4 +165,329 @@ body {
     cursor: pointer;
     width: fit-content;
     margin-top: 10px;
+}
+
+/* Halaman pesanan dan riwayat */
+
+html {
+    scroll-behavior: smooth;
+}
+
+.app-container{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    margin: 0 auto;
+}
+
+.upload-area{
+    width: 100%;
+    margin-top: 10px;
+}
+
+.upload-label{
+    display: block;
+    cursor: pointer;
+}
+
+.upload-box{
+    width: 100%;
+    height: 150px;
+    background-color: #242226;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed #717171;
+    overflow: hidden;
+    position: relative;
+}
+
+.upload-icon{
+    font-size: 32px;
+}
+
+#preview-image{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #242226;
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #717171;
+}
+
+.tab{
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    color: #CB9F53;
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+
+.tab.active{
+    background-color: #CB9F53;
+    color: #242226;
+}
+
+/* Kategori Menu */
+
+.categories{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    background-color: #242226;
+    padding: 10px 0;
+    z-index: 10;
+}
+
+.cat-btn{
+    padding: 8px 29px;
+    border-radius: 20px;
+    border: 1px solid #CB9F53;
+    background-color: transparent;
+    color: #CB9F53;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.cat-btn.active, .cat-btn:hover{
+    background-color: #CB9F53;
+    display: inline-block;
+}
+
+.menu-section{
+    margin-bottom: 30px;
+    scroll-margin-top: 80px;
+}
+
+/* daftar produk */
+.product-list{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.product-card{
+    display: flex;
+    align-items: center;
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 15px;
+    gap: 15px;
+}
+
+.product-card img{
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.product-info{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.product-info h3{
+    font-size: 16px;
+    color: #CB9F53;
+}
+
+.product-info .price{
+    font-size: 14px;
+    color: #CB9F53;
+}
+
+.product-info .stock{
+    font-size: 12px;
+    color: #717171;
+}
+
+/* judul section */
+.section-title{
+    font-size: 18px;
+    color: #CB9F53;
+    margin-bottom: 10px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.sub-title{
+    font-size: 16px;
+    color: #CB9F53;
+    margin-bottom: 15px;
+}
+
+.form-box{
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* input di dalam form box */
+.input-row input, .full-width-input{
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #717171;
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: #CB9F53;
+    font-size: 15px;
+    outline: none;
+    color-scheme: dark;
+}
+
+.input-row input::placeholder, .full-width-input::placeholder{
+    color: #CB9F53;
+    opacity: 0.8;
+}
+
+.qr-placeholder{
+    width: 100%;
+    height: 200px;
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qr-placeholder span{
+    color: #242226;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+/* upload box */
+
+.confirm-btn{
+    background-color: #CB9F53;
+    color: #242226;
+    border: none;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 40px;
+}
+
+/* halaman riwayat pesanan */
+
+.page-title{
+    font-size: 22px;
+    color: #CB9F53;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.history-card{
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.card-title{
+    font-size: 16px;
+    color: #CB9F53;
+    margin-bottom: 5px;
+}
+
+.history-input-group input{
+    width: 100%; 
+    background-color: transparent;
+    border: 1px solid #717171;
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: #CB9F53;
+    font-size: 15px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+}
+
+.card-action{
+    display: flex;
+    justify-content: flex-end;
+}
+
+.outline-btn{
+    background-color: transparent;
+    border: 1px solid #717171;
+    color: #CB9F53;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+
+/* layout tanggal dan jam */
+.date-time-group{
+    display: flex;
+    gap: 10px;
+}
+
+.date-time-group input{
+    flex: 2;
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #717171;
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: #CB9F53;
+    font-size: 15px;
+    outline: none;
+}
+
+.date-time-group select{
+    flex: 1;
+    background-color: transparent;
+    border: 1px solid #717171;
+    border-radius: 8px;
+    padding: 12px 10px;
+    color: #CB9F53;
+    font-size: 15px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.date-time-group select option{
+    background-color: #242226;
+    color: #CB9F53;
+    padding: 10px;
 }

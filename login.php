@@ -12,8 +12,8 @@
 <body>
     <div class="login-container">
         <h1 class="login-title" > Login </h1>
-
-        <div class="login-box">
+        
+        <div class="login-box" action="pesanan".php>
             <input type="email" placeholder="Email" required>
             <input type="passsword" placeholder="Password" required>
             <button type="button" class="login-btn">Login</button>
