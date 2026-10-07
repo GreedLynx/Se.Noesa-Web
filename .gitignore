@@ -3,6 +3,9 @@
 /vendor
 npm-debug.log*
 yarn-debug.log*
+/vendor/
+/config/config.php
+/uploads/
 
 # File Lingkungan & Kredensial Rahasia (Sangat Penting)
 .env
