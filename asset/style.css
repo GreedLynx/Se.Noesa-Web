@@ -491,3 +491,135 @@ html {
     color: #CB9F53;
     padding: 10px;
 }
+
+/* Dashboard admin */
+
+.admin-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    margin-top: 10px;
+}
+
+.admin-title{
+    font-size: 24px;
+    color: #CB9F53;
+    font-weight: bold;
+}
+
+.profile-icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid #CB9F53;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 20px;
+}
+
+.stats-row{
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+.stat-card{
+    flex: 1;
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: transparent;
+}
+
+.stat-emoji{
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.stat-label{
+    font-size: 13px;
+    color: #CB9F53;
+    margin-top: 20px;
+    font-weight: 500;
+}
+
+.stat-value{
+    font-size: 16px;
+    color: #CB9F53;
+    margin-top: 25px;
+    font-weight: bold;
+}
+
+.action-buttons{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.action-btn{
+    display: flex;
+    align-items: center;
+    background-color: #CB9F53;
+    color: #242226;
+    padding: 18px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.action-btn:hover{
+    transform: scale(1.02);
+}
+
+.btn-icon{
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    font-size: 20px;
+}
+
+.btn-text{
+    flex: 1;
+    text-align: left;
+}
+
+.btn-arrow{
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* drop logout*/
+.profile-menu{
+    position: relative;
+}
+
+.logout-btn{
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: #CB9F53;
+    color: #242226;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.logout-btn.show{
+    display: block;
+}
