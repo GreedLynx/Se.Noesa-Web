@@ -171,6 +171,7 @@ body {
 
 html {
     scroll-behavior: smooth;
+    color-scheme: dark;
 }
 
 .app-container{
@@ -268,8 +269,9 @@ html {
 }
 
 .cat-btn.active, .cat-btn:hover{
-    background-color: #CB9F53;
-    display: inline-block;
+    outline: none;
+    background-color: transparent;
+    color: #CB9F53;
 }
 
 .menu-section{
@@ -470,11 +472,12 @@ html {
     color: #CB9F53;
     font-size: 15px;
     outline: none;
+    color-scheme: dark;
 }
 
 .date-time-group select{
     flex: 1;
-    background-color: transparent;
+    background-color: #242226;
     border: 1px solid #717171;
     border-radius: 8px;
     padding: 12px 10px;
@@ -484,6 +487,7 @@ html {
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
+    color-scheme: dark;
 }
 
 .date-time-group select option{

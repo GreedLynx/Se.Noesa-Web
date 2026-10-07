@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="register-container">
-        <div class="resgister-header">
+        <div class="register-header">
             <a href="login.php" class="back-btn">&#10094;</a>
             <h1 class="register-title">Registrasi Akun</h1>
         </div>
@@ -20,27 +20,27 @@
         <form class="register-form" onsubmit="event.preventDefault();">
             <div class="input-group">
                 <span class="input-icon">👤</span>
-                <input type="text" placeholder="Nama" required>
+                <input type="text" name="nama" placeholder="Nama" required>
             </div>
 
             <div class="input-group">
                 <span class="input-icon">📞</span>
-                <input type="text" placeholder="No. Hp" required>
+                <input type="tel" name="no_telp" placeholder="No. Hp" required>
             </div>
 
             <div class="input-group">
                 <span class="input-icon">✉️</span>
-                <input type="text" placeholder="Email" required>
+                <input type="email" nama="email" placeholder="Email" required>
             </div>
 
             <div class="input-group">
                 <span class="input-icon">🔒</span>
-                <input type="text" placeholder="Password" required>
+                <input type="password" name="password" placeholder="Password" required>
             </div>
 
             <div class="input-group">
                 <span class="input-icon">🔑</span>
-                <input type="text" placeholder="Konfirmasi Password" required>
+                <input type="passwword" name="konfirmasi_password" placeholder="Konfirmasi Password" required>
             </div>
 
             <button type="submit" class="confirm-btn">Confirm</button>

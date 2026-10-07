@@ -73,8 +73,8 @@
         <!-- detail pesanan -->
         <h2 class="section-title">Detail Pesanan</h2>
         <div class="form-box">
-            <div class="input-row date-time-group">
-                <input type="text" placeholder="DD/MM/YYYY" onfocus="(this.type='datetime-local')" onblur="(this.type='text')" required>
+            <div class="input-row date-time-group.">
+                <input type="text" placeholder="DD/MM/YYYY" onfocus="(this.type='date')" onblur="(this.type='text')" required>
                 <select required>
                     <option value="" disabled selected>Pilih Jam</option>
                     <option value="07:00">07:00</option>
