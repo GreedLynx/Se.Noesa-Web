@@ -60,3 +60,15 @@ document.addEventListener('click', function(event) {
         }
     }
 });
+
+// button konfirmasi pembayaran
+
+function konfirmasiPembayaran() {
+    const btn = document.getElementById('btnKonfirmasi');
+
+    if(btn) {
+        btn.textContent = 'Pesanan Diverifikasi';
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+    }
+}

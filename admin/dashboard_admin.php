@@ -41,13 +41,13 @@
     </div>
 
     <div class="action-buttons">
-        <a href="verifikasi_pesanan.php" class="action-btn">
+        <a href="../fitur_admin/verifikasi_pesanan.php" class="action-btn">
             <span class="btn-icon">🔍</span>
             <span class="btn-text">Verifikasi Pesanan</span>
             <span class="btn-arrow">❯</span>
         </a>
 
-        <a href="pesanan_siap_antar.php" class="action-btn">
+        <a href="../fitur_admin/pesanan_siap_antar.php" class="action-btn">
             <span class="btn-icon">🚚</span>
             <span class="btn-text">Pesanan Siap Antar</span>
             <span class="btn-arrow">❯</span>
