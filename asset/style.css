@@ -1,3 +1,5 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@400;500&display=swap'); */
+
 * {
     margin: 0;
     padding: 0;
@@ -5,176 +7,301 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body {
+/* =========================================
+   TEMA LOGIN & REGISTER (EFEK KACA TRANSPARAN)
+   ========================================= */
+
+body.auth-bg {
+    background: linear-gradient(180deg, #6a8a6f 0%, #86a58a 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 0;
+    position: relative;
+    overflow: hidden;
+    color-scheme: light;
+}
+
+/* Watermark e.noesa di bagian atas (login & register) */
+body.auth-bg::before {
+    display: block;
+    content: "se.noesa";
+    position: absolute;
+    top: 3%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 110px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgba(70, 95, 75, 0.35);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.auth-card {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(160deg, rgba(0, 0, 0, 0.10) 0%, rgba(255, 255, 255, 0.06) 100%);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 42px;
+    padding: 40px 30px 36px;
+    width: 90%;
+    max-width: 350px;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Gambar daun lama disembunyikan, diganti daun SVG di ::before */
+.bg-decoration {
+    display: none;
+}
+
+/* Daun gelap bentuk S di tengah kartu */
+.auth-card::before {
+    content: '';
+    position: absolute;
+    top: 17%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95px;
+    height: 62%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'><path fill='%232e3b34' d='M50 0 C95 50 100 120 70 175 C45 220 20 260 5 300 C8 250 20 215 35 175 C60 120 55 60 50 0 Z'/></svg>") center / 100% 100% no-repeat;
+}
+
+/* Berlian emas */
+.auth-card::after {
+    content: '';
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    background: #b09a68;
+    transform: rotate(45deg);
+    bottom: 21%;
+    left: 56%;
+    border-radius: 4px;
+    z-index: 0;
+    opacity: 0.9;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.auth-title {
+    position: relative;
+    z-index: 1;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 46px;
+    font-weight: 500;
+    color: #CCDECE;
+    margin-bottom: 45px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.auth-form {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.auth-form .input-group,
+.auth-input-group {
+    display: flex;
+    align-items: center;
+    background-color: #CCDECE;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Ikon: emoji disembunyikan, diganti ikon SVG berwarna emas-cokelat */
+.auth-form .input-group .icon,
+.auth-input-group .icon {
+    font-size: 0;
+    width: 28px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-right: 22px;
+    background-color: #9c8456;
+    filter: none;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+/* Ikon amplop (input pertama) */
+.auth-form .input-group:nth-of-type(1) .icon,
+.auth-input-group:nth-of-type(1) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><path d='M2 0h20a2 2 0 0 1 2 2v1L12 10 0 3V2a2 2 0 0 1 2-2zM0 5.5l12 7 12-7V16a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><path d='M2 0h20a2 2 0 0 1 2 2v1L12 10 0 3V2a2 2 0 0 1 2-2zM0 5.5l12 7 12-7V16a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2z'/></svg>");
+}
+
+/* Ikon kunci (input kedua) */
+.auth-form .input-group:nth-of-type(2) .icon,
+.auth-input-group:nth-of-type(2) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
+}
+
+.auth-form .input-group input,
+.auth-input-group input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    width: 100%;
+    font-size: 20px;
+    color: #3b3b3b !important;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-weight: 600;
+}
+
+.auth-form .input-group input::placeholder,
+.auth-input-group input::placeholder {
+    color: #666 !important;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.auth-link {
+    position: relative;
+    z-index: 1;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: #ffffff;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.auth-link a {
+    color: #8a5a1a;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.auth-btn {
+    position: relative;
+    z-index: 1;
+    margin-top: auto; /* tombol turun ke bagian bawah kartu */
+    background-color: #CCDECE;
+    color: #5a3405 !important;
+    border: none !important;
+    border-radius: 12px;
+    padding: 14px;
+    width: 100%;
+    font-size: 30px;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================
+   HALAMAN REGISTRASI
+   Pakai: <body class="auth-bg auth-register">
+   Ukuran kartu, judul, input, dan tombol sama dengan login
+   ========================================= */
+
+/* Watermark e.noesa besar di bagian atas halaman */
+body.auth-bg.auth-register::before {
+    display: block;
+    content: "se.noesa";
+    position: absolute;
+    top: 3%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 110px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgba(70, 95, 75, 0.35);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Lima field harus muat di kartu seukuran login */
+.auth-register .auth-title {
+    margin-bottom: 30px;
+}
+
+.auth-register .auth-form .input-group,
+.auth-register .auth-input-group {
+    margin-bottom: 16px;
+}
+
+/* Ikon: 1 = user (Nama), 2 = telepon (No. Hp), 3 = email, 4 & 5 = kunci (Password & Verify Password) */
+.auth-register .auth-form .input-group:nth-of-type(2) .icon,
+.auth-register .auth-input-group:nth-of-type(2) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z'/></svg>");
+}
+
+.auth-register .auth-form .input-group:nth-of-type(1) .icon,
+.auth-register .auth-input-group:nth-of-type(1) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='7' r='5.5'/><path d='M1 24c0-6.5 4.5-9.5 11-9.5S23 17.500 23 24z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='7' r='5.5'/><path d='M1 24c0-6.5 4.5-9.5 11-9.5S23 17.500 23 24z'/></svg>");
+}
+
+.auth-register .auth-form .input-group:nth-of-type(3) .icon,
+.auth-register .auth-input-group:nth-of-type(3) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><path d='M2 0h20a2 2 0 0 1 2 2v1L12 10 0 3V2a2 2 0 0 1 2-2zM0 5.5l12 7 12-7V16a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><path d='M2 0h20a2 2 0 0 1 2 2v1L12 10 0 3V2a2 2 0 0 1 2-2zM0 5.5l12 7 12-7V16a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2z'/></svg>");
+}
+
+.auth-register .auth-form .input-group:nth-of-type(4) .icon,
+.auth-register .auth-input-group:nth-of-type(4) .icon,
+.auth-register .auth-form .input-group:nth-of-type(5) .icon,
+.auth-register .auth-input-group:nth-of-type(5) .icon {
+    -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
+    mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
+}
+
+/* =========================================
+   TEMA HALAMAN LAIN (DASHBOARD, RIWAYAT, DLL)
+   ========================================= */
+
+body:not(.auth-bg) {
     background-color: #242226;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100hv;
+    min-height: 100vh;
     padding-top: 20px;
     color: #CB9F53;
 }
 
-/* halaman login */
-.login-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 350px;
-    padding: 20px;
-}
-
-.login-title {
-    font-size: 28px;
-    margin-bottom: 30px;
-    color: #CB9F53;
-}
-
-.login-box {
-    border: 1px solid #717171;
-    border-radius: 10px;
-    padding: 30px 20px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.login-box input{
-    background-color: transparent;
-    border: 1px solid #717171;
-    border-radius: 8px;
-    padding: 12px 15px;
-    color: #CB9F53;
-    font-size: 16px;
-    outline: none;
-}
-
-.login-box input::placeholder{
-    color: #CB9F53;
-}
-
-.login-btn{
-    background-color: #CB9F53;
-    color: #242226;
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
-}
-
-
-
-.login.footer{
-    margin-top: 20px;
-    font-size: 14px;
-    color: #717171;
-}
-
-.login-footer a{
-    color: #8D96E2;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-/* Halaman Register */
-
-.register-container{
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 350px;
-    padding: 20px;
-}
-
-.register-header{
-    display: flex;
-    align-items: center;
-    margin-top: 30px;
-    gap: 15px;
-}
-
-.back-btn{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 35px;
-    height: 35px;
-    border: 1px solid #CB9F53;
-    border-radius: 50%;
-    color: #CB9F53;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-    padding-right: 2px;
-}
-
-.register-title{
-    font-size: 22px;
-    color: #CB9F53;
-}
-
-.register-form{
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.input-group{
-    display: flex;
-    align-items: center;
-    border: 1px solid #717171;
-    padding: 0 15px;
-    background-color: transparent;
-}
-
-/* mengatur emoji */
-.input-icon{
-    display: flex;
-    align-items: center;
-    margin-right: 10px;
-    font-size: 18px;
-}
-
-.input-group input{
-    background-color: transparent;
-    border: none;
-    padding: 14px 0;
-    color: #CB9F53;
-    font-size: 15px;
-    outline: none;
-    width: 100%;
-}
-
-.input-group input::placeholder{
-    color: #CB9F53;
-}
-
-.confirm-btn{
-    background-color: #CB9F53;
-    color: #242226;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 25px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    width: fit-content;
-    margin-top: 10px;
-}
-
 /* Halaman pesanan dan riwayat */
-
 html {
     scroll-behavior: smooth;
     color-scheme: dark;
 }
 
-.app-container{
+.app-container {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -183,17 +310,17 @@ html {
     margin: 0 auto;
 }
 
-.upload-area{
+.upload-area {
     width: 100%;
     margin-top: 10px;
 }
 
-.upload-label{
+.upload-label {
     display: block;
     cursor: pointer;
 }
 
-.upload-box{
+.upload-box {
     width: 100%;
     height: 150px;
     background-color: #242226;
@@ -206,11 +333,11 @@ html {
     position: relative;
 }
 
-.upload-icon{
+.upload-icon {
     font-size: 32px;
 }
 
-#preview-image{
+#preview-image {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -225,7 +352,7 @@ html {
     border: 1px solid #717171;
 }
 
-.tab{
+.tab {
     flex: 1;
     padding: 12px;
     text-align: center;
@@ -237,14 +364,13 @@ html {
     transition: all 0.3s ease;
 }
 
-.tab.active{
+.tab.active {
     background-color: #CB9F53;
     color: #242226;
 }
 
 /* Kategori Menu */
-
-.categories{
+.categories {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
@@ -255,7 +381,7 @@ html {
     z-index: 10;
 }
 
-.cat-btn{
+.cat-btn {
     padding: 8px 29px;
     border-radius: 20px;
     border: 1px solid #CB9F53;
@@ -268,26 +394,26 @@ html {
     display: inline-block;
 }
 
-.cat-btn.active, .cat-btn:hover{
+.cat-btn.active, .cat-btn:hover {
     outline: none;
     background-color: transparent;
     color: #CB9F53;
 }
 
-.menu-section{
+.menu-section {
     margin-bottom: 30px;
     scroll-margin-top: 80px;
 }
 
 /* daftar produk */
-.product-list{
+.product-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
     margin-bottom: 20px;
 }
 
-.product-card{
+.product-card {
     display: flex;
     align-items: center;
     border: 1px solid #717171;
@@ -296,36 +422,36 @@ html {
     gap: 15px;
 }
 
-.product-card img{
+.product-card img {
     width: 70px;
     height: 70px;
     border-radius: 8px;
     object-fit: cover;
 }
 
-.product-info{
+.product-info {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
-.product-info h3{
+.product-info h3 {
     font-size: 16px;
     color: #CB9F53;
 }
 
-.product-info .price{
+.product-info .price {
     font-size: 14px;
     color: #CB9F53;
 }
 
-.product-info .stock{
+.product-info .stock {
     font-size: 12px;
     color: #717171;
 }
 
 /* judul section */
-.section-title{
+.section-title {
     font-size: 18px;
     color: #CB9F53;
     margin-bottom: 10px;
@@ -333,13 +459,13 @@ html {
     text-align: left;
 }
 
-.sub-title{
+.sub-title {
     font-size: 16px;
     color: #CB9F53;
     margin-bottom: 15px;
 }
 
-.form-box{
+.form-box {
     border: 1px solid #717171;
     border-radius: 10px;
     padding: 20px;
@@ -350,7 +476,7 @@ html {
 }
 
 /* input di dalam form box */
-.input-row input, .full-width-input{
+.input-row input, .full-width-input {
     width: 100%;
     background-color: transparent;
     border: 1px solid #717171;
@@ -362,12 +488,12 @@ html {
     color-scheme: dark;
 }
 
-.input-row input::placeholder, .full-width-input::placeholder{
+.input-row input::placeholder, .full-width-input::placeholder {
     color: #CB9F53;
     opacity: 0.8;
 }
 
-.qr-placeholder{
+.qr-placeholder {
     width: 100%;
     height: 200px;
     background-color: white;
@@ -377,7 +503,7 @@ html {
     align-items: center;
 }
 
-.qr-placeholder span{
+.qr-placeholder span {
     color: #242226;
     font-size: 20px;
     font-weight: bold;
@@ -385,8 +511,7 @@ html {
 }
 
 /* upload box */
-
-.confirm-btn{
+.confirm-btn {
     background-color: #CB9F53;
     color: #242226;
     border: none;
@@ -401,15 +526,14 @@ html {
 }
 
 /* halaman riwayat pesanan */
-
-.page-title{
+.page-title {
     font-size: 22px;
     color: #CB9F53;
     margin-bottom: 20px;
     text-align: left;
 }
 
-.history-card{
+.history-card {
     border: 1px solid #717171;
     border-radius: 10px;
     padding: 20px;
@@ -419,14 +543,14 @@ html {
     gap: 15px;
 }
 
-.card-title{
+.card-title {
     font-size: 16px;
     color: #CB9F53;
     margin-bottom: 5px;
 }
 
-.history-input-group input{
-    width: 100%; 
+.history-input-group input {
+    width: 100%;
     background-color: transparent;
     border: 1px solid #717171;
     border-radius: 8px;
@@ -439,12 +563,12 @@ html {
     color-scheme: dark;
 }
 
-.card-action{
+.card-action {
     display: flex;
     justify-content: flex-end;
 }
 
-.outline-btn{
+.outline-btn {
     background-color: transparent;
     border: 1px solid #717171;
     color: #CB9F53;
@@ -455,14 +579,13 @@ html {
     font-weight: bold;
 }
 
-
 /* layout tanggal dan jam */
-.date-time-group{
+.date-time-group {
     display: flex;
     gap: 10px;
 }
 
-.date-time-group input{
+.date-time-group input {
     flex: 2;
     width: 100%;
     background-color: transparent;
@@ -475,7 +598,7 @@ html {
     color-scheme: dark;
 }
 
-.date-time-group select{
+.date-time-group select {
     flex: 1;
     background-color: #242226;
     border: 1px solid #717171;
@@ -490,7 +613,7 @@ html {
     color-scheme: dark;
 }
 
-.date-time-group select option{
+.date-time-group select option {
     background-color: #242226;
     color: #CB9F53;
     padding: 10px;
