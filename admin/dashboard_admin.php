@@ -46,12 +46,15 @@
             <span class="btn-text">Verifikasi Pesanan</span>
             <span class="btn-arrow">❯</span>
         </a>
-
-        <a href="../fitur_admin/pesanan_siap_antar.php" class="action-btn">
+        
+        <div class="action-buttons">
+                    <a href="../fitur_admin/pesanan_siap_antar.php" class="action-btn">
             <span class="btn-icon">🚚</span>
             <span class="btn-text">Pesanan Siap Antar</span>
             <span class="btn-arrow">❯</span>
         </a>
+        </div>
+
     </div>
     </div>
 
