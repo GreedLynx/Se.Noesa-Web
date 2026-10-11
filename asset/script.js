@@ -39,3 +39,24 @@ if (tabRiwayat) {
 alert('Pesanan berhasil dikonfirmasi');
 window.location.href = 'riwayat.php'
 }
+
+// drop logout dashboard admin
+
+function toggleLogout(event) {
+    event.preventDefault();
+    const logoutBtn = document.getElementById('logoutMenu');
+    if(logoutBtn) {
+        logoutBtn.classList.toggle('show')
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const profileMenu = document.querySelector('.profile-menu');
+    const logoutBtn = document.getElementById('logoutMenu');
+
+    if (profileMenu && !profileMenu.contains(event.target)) {
+        if(logoutBtn) {
+            logoutBtn.classList.remove('show');
+        }
+    }
+});

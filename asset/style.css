@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@400;500&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -5,7 +7,10 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* halaman login */
+/* =========================================
+   TEMA LOGIN & REGISTER (EFEK KACA TRANSPARAN)
+   ========================================= */
+
 body.auth-bg {
     background: linear-gradient(180deg, #6a8a6f 0%, #86a58a 100%);
     display: flex;
@@ -18,16 +23,17 @@ body.auth-bg {
     color-scheme: light;
 }
 
+/* Watermark e.noesa di bagian atas (login & register) */
 body.auth-bg::before {
     display: block;
-    content: "se.noesa";
+    content: "e.noesa";
     position: absolute;
     top: 3%;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Cormorant Garamond', 'Times New Roman', serif;
-    font-size: 110px;
-    font-weight: 500;
+    font-size: 150px;
+    font-weight: 600;
     white-space: nowrap;
     color: rgba(70, 95, 75, 0.35);
     z-index: 0;
@@ -53,10 +59,12 @@ body.auth-bg::before {
     overflow: hidden;
 }
 
+/* Gambar daun lama disembunyikan, diganti daun SVG di ::before */
 .bg-decoration {
     display: none;
 }
 
+/* Daun gelap bentuk S di tengah kartu */
 .auth-card::before {
     content: '';
     position: absolute;
@@ -71,6 +79,7 @@ body.auth-bg::before {
     background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'><path fill='%232e3b34' d='M50 0 C95 50 100 120 70 175 C45 220 20 260 5 300 C8 250 20 215 35 175 C60 120 55 60 50 0 Z'/></svg>") center / 100% 100% no-repeat;
 }
 
+/* Berlian emas */
 .auth-card::after {
     content: '';
     position: absolute;
@@ -120,6 +129,7 @@ body.auth-bg::before {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
 }
 
+/* Ikon: emoji disembunyikan, diganti ikon SVG berwarna emas-cokelat */
 .auth-form .input-group .icon,
 .auth-input-group .icon {
     font-size: 0;
@@ -191,7 +201,7 @@ body.auth-bg::before {
 .auth-btn {
     position: relative;
     z-index: 1;
-    margin-top: auto; 
+    margin-top: auto; /* tombol turun ke bagian bawah kartu */
     background-color: #CCDECE;
     color: #5a3405 !important;
     border: none !important;
@@ -211,22 +221,30 @@ body.auth-bg::before {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* =========================================
+   HALAMAN REGISTRASI
+   Pakai: <body class="auth-bg auth-register">
+   Ukuran kartu, judul, input, dan tombol sama dengan login
+   ========================================= */
+
+/* Watermark e.noesa besar di bagian atas halaman */
 body.auth-bg.auth-register::before {
     display: block;
-    content: "se.noesa";
+    content: "e.noesa";
     position: absolute;
     top: 3%;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Cormorant Garamond', 'Times New Roman', serif;
-    font-size: 110px;
-    font-weight: 500;
+    font-size: 150px;
+    font-weight: 600;
     white-space: nowrap;
     color: rgba(70, 95, 75, 0.35);
     z-index: 0;
     pointer-events: none;
 }
 
+/* Lima field harus muat di kartu seukuran login */
 .auth-register .auth-title {
     margin-bottom: 30px;
 }
@@ -263,22 +281,16 @@ body.auth-bg.auth-register::before {
     mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
 }
 
-body:not(.auth-bg) {
-    background-color: #242226;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding-top: 20px;
-    color: #CB9F53;
-}
+/* ---- Tombol back & tampilan register sesuai desain ---- */
 
-body.auth-bg,auth-register{
+/* Halaman boleh di-scroll bila layar pendek */
+body.auth-bg.auth-register {
     overflow-x: hidden;
     overflow-y: auto;
 }
 
-.auth-wrap{
+/* Pembungkus: tombol back di atas, kartu di bawahnya */
+.auth-wrap {
     position: relative;
     z-index: 1;
     width: 90%;
@@ -288,13 +300,13 @@ body.auth-bg,auth-register{
     align-items: flex-start;
 }
 
-.auth-wrap .auth-card{
+.auth-wrap .auth-card {
     width: 100%;
-    max-height: none;
+    max-width: none;
     min-height: 560px;
 }
 
-.back-btn{
+.back-btn {
     width: 40px;
     height: 40px;
     margin: 0 0 16px 14px;
@@ -308,14 +320,14 @@ body.auth-bg,auth-register{
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-    transition: transform 0.2s ease;    
+    transition: transform 0.2s ease;
 }
 
-.back-btn:hover{
+.back-btn:hover {
     transform: scale(1.08);
 }
 
-.back-btn svg{
+.back-btn svg {
     width: 20px;
     height: 20px;
     fill: none;
@@ -323,6 +335,54 @@ body.auth-bg,auth-register{
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+/* Daun lebih ramping & miring, berlian kecil di bawah */
+.auth-register .auth-card::before {
+    top: 14%;
+    left: 52%;
+    width: 60px;
+    height: 68%;
+    transform: translateX(-50%) rotate(4deg);
+    opacity: 0.45;
+}
+
+.auth-register .auth-card::after {
+    width: 26px;
+    height: 26px;
+    bottom: 19%;
+    left: 53%;
+    opacity: 0.85;
+}
+
+/* Teks input: emas-cokelat, tebal, rata tengah */
+.auth-register .auth-form .input-group input,
+.auth-register .auth-input-group input {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    color: #8a7448 !important;
+}
+
+.auth-register .auth-form .input-group input::placeholder,
+.auth-register .auth-input-group input::placeholder {
+    color: #9c8456 !important;
+    font-weight: 700;
+    opacity: 1;
+}
+
+/* =========================================
+   TEMA HALAMAN LAIN (DASHBOARD, RIWAYAT, DLL)
+   ========================================= */
+
+body:not(.auth-bg) {
+    background-color: #242226;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding-top: 20px;
+    color: #CB9F53;
 }
 
 /* Halaman pesanan dan riwayat */
@@ -647,4 +707,226 @@ html {
     background-color: #242226;
     color: #CB9F53;
     padding: 10px;
+}
+
+
+/* =========================================
+   DASHBOARD ADMIN (class lama, dipakai halaman admin lain)
+   ========================================= */
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    margin-top: 10px;
+}
+
+.admin-title {
+    font-size: 24px;
+    color: #CB9F53;
+    font-weight: bold;
+}
+
+.profile-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid #CB9F53;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 20px;
+}
+
+.stats-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    flex: 1;
+    border: 1px solid #717171;
+    border-radius: 10px;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: transparent;
+}
+
+.stat-emoji {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #CB9F53;
+    margin-top: 20px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 16px;
+    color: #CB9F53;
+    margin-top: 25px;
+    font-weight: bold;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    background-color: #CB9F53;
+    color: #242226;
+    padding: 18px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: scale(1.02);
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    font-size: 20px;
+}
+
+.btn-text {
+    flex: 1;
+    text-align: left;
+}
+
+.btn-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* drop logout */
+.profile-menu {
+    position: relative;
+}
+
+.logout-btn {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: #CB9F53;
+    color: #242226;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.logout-btn.show {
+    display: block;
+}
+
+/* =========================================
+   ADMIN DASHBOARD - UTAMA (TEMA HIJAU)
+   Pakai: <body class="admin-bg">
+   ========================================= */
+
+body.admin-bg {
+    background: linear-gradient(180deg, #6a8a6f 0%, #7d9d81 100%);
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 100vh;
+    padding: 0;
+    color: #CCDECE;
+    color-scheme: light;
+}
+
+.admin-page {
+    width: 100%;
+    max-width: 350px;
+    min-height: 100vh;
+    padding: 30px 40px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.admin-heading {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 56px;
+    font-weight: 500;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 70px;
+}
+
+.admin-menu {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.admin-menu-btn {
+    display: block;
+    width: 100%;
+    background-color: #CCDECE;
+    color: #9c8456;
+    border-radius: 8px;
+    padding: 13px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 21px;
+    font-weight: 700;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-menu-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+}
+
+/* Logout turun ke bagian bawah halaman */
+.admin-logout {
+    display: block;
+    width: 60%;
+    margin-top: auto;
+    background-color: #CCDECE;
+    color: #9c8456;
+    border-radius: 8px;
+    padding: 9px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 20px;
+    font-weight: 700;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.admin-logout:hover {
+    transform: scale(1.03);
 }
