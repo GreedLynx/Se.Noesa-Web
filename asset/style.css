@@ -1,5 +1,3 @@
-/* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@400;500&display=swap'); */
-
 * {
     margin: 0;
     padding: 0;
@@ -7,10 +5,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* =========================================
-   TEMA LOGIN & REGISTER (EFEK KACA TRANSPARAN)
-   ========================================= */
-
+/* halaman login */
 body.auth-bg {
     background: linear-gradient(180deg, #6a8a6f 0%, #86a58a 100%);
     display: flex;
@@ -23,7 +18,6 @@ body.auth-bg {
     color-scheme: light;
 }
 
-/* Watermark e.noesa di bagian atas (login & register) */
 body.auth-bg::before {
     display: block;
     content: "se.noesa";
@@ -59,12 +53,10 @@ body.auth-bg::before {
     overflow: hidden;
 }
 
-/* Gambar daun lama disembunyikan, diganti daun SVG di ::before */
 .bg-decoration {
     display: none;
 }
 
-/* Daun gelap bentuk S di tengah kartu */
 .auth-card::before {
     content: '';
     position: absolute;
@@ -79,7 +71,6 @@ body.auth-bg::before {
     background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'><path fill='%232e3b34' d='M50 0 C95 50 100 120 70 175 C45 220 20 260 5 300 C8 250 20 215 35 175 C60 120 55 60 50 0 Z'/></svg>") center / 100% 100% no-repeat;
 }
 
-/* Berlian emas */
 .auth-card::after {
     content: '';
     position: absolute;
@@ -129,7 +120,6 @@ body.auth-bg::before {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* Ikon: emoji disembunyikan, diganti ikon SVG berwarna emas-cokelat */
 .auth-form .input-group .icon,
 .auth-input-group .icon {
     font-size: 0;
@@ -201,7 +191,7 @@ body.auth-bg::before {
 .auth-btn {
     position: relative;
     z-index: 1;
-    margin-top: auto; /* tombol turun ke bagian bawah kartu */
+    margin-top: auto; 
     background-color: #CCDECE;
     color: #5a3405 !important;
     border: none !important;
@@ -221,13 +211,6 @@ body.auth-bg::before {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* =========================================
-   HALAMAN REGISTRASI
-   Pakai: <body class="auth-bg auth-register">
-   Ukuran kartu, judul, input, dan tombol sama dengan login
-   ========================================= */
-
-/* Watermark e.noesa besar di bagian atas halaman */
 body.auth-bg.auth-register::before {
     display: block;
     content: "se.noesa";
@@ -244,7 +227,6 @@ body.auth-bg.auth-register::before {
     pointer-events: none;
 }
 
-/* Lima field harus muat di kartu seukuran login */
 .auth-register .auth-title {
     margin-bottom: 30px;
 }
@@ -281,10 +263,6 @@ body.auth-bg.auth-register::before {
     mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 16'><path fill-rule='evenodd' d='M7 2a6 6 0 1 1 0 12A6 6 0 0 1 7 2zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z'/><path d='M12 6.5h15v3h-2.5v4H22v-4h-10z'/></svg>");
 }
 
-/* =========================================
-   TEMA HALAMAN LAIN (DASHBOARD, RIWAYAT, DLL)
-   ========================================= */
-
 body:not(.auth-bg) {
     background-color: #242226;
     display: flex;
@@ -293,6 +271,58 @@ body:not(.auth-bg) {
     min-height: 100vh;
     padding-top: 20px;
     color: #CB9F53;
+}
+
+body.auth-bg,auth-register{
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.auth-wrap{
+    position: relative;
+    z-index: 1;
+    width: 90%;
+    max-width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.auth-wrap .auth-card{
+    width: 100%;
+    max-height: none;
+    min-height: 560px;
+}
+
+.back-btn{
+    width: 40px;
+    height: 40px;
+    margin: 0 0 16px 14px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.40) 0%, rgba(0, 0, 0, 0.22) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+    transition: transform 0.2s ease;    
+}
+
+.back-btn:hover{
+    transform: scale(1.08);
+}
+
+.back-btn svg{
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 /* Halaman pesanan dan riwayat */

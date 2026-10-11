@@ -11,6 +11,13 @@
     <link rel="stylesheet" href="asset/style.css">
 </head>
 <body class="auth-bg auth-register">
+    <div class="auth-wrap">
+        <a href="login.php" class="back-btn" aria-label="Kembali ke login">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 14L4 9l5-5"/>
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>
+            </svg>
+        </a>
     <div class="auth-card">
         <h1 class="auth-title">Registration</h1>
 
@@ -42,6 +49,7 @@
 
             <button type="submit" class="auth-btn">Confirm</button>
         </form>
+    </div>
     </div>
 </body>
 </html>
