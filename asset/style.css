@@ -497,8 +497,88 @@ html {
 }
 
 /* Dashboard admin */
+body.admin-bg{
+    background: linear-gradient(180deg, #6a8a6f 0%, #7d9d81 100%);
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 100vh;
+    padding: 0;
+    color: #CCDECE;
+    color-scheme: light;
+}
 
-.admin-header{
+.admin-page {
+    width: 100%;
+    max-width: 350px;
+    min-height: 100vh;
+    padding: 30px 40px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ 
+.admin-heading {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 56px;
+    font-weight: 500;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 70px;
+}
+ 
+.admin-menu {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+ 
+.admin-menu-btn {
+    display: block;
+    width: 100%;
+    background-color: #CCDECE;
+    color: #643F10;
+    border-radius: 8px;
+    padding: 13px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 21px;
+    font-weight: 700;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+ 
+.admin-menu-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+}
+ 
+/* Logout turun ke bagian bawah halaman */
+.admin-logout {
+    display: block;
+    width: 60%;
+    margin-top: auto;
+    background-color: #CCDECE;
+    color: #9c8456;
+    border-radius: 8px;
+    padding: 9px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    font-size: 20px;
+    font-weight: 700;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+ 
+.admin-logout:hover {
+    transform: scale(1.03);
+}
+
+/* .admin-header{
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -600,10 +680,10 @@ html {
     align-items: center;
     font-size: 20px;
     font-weight: bold;
-}
+} */
 
 /* drop logout*/
-.profile-menu{
+/* .profile-menu{
     position: relative;
 }
 
@@ -625,5 +705,5 @@ html {
 }
 
 .logout-btn.show{
-    display: block;
-}
+    display: block; */
+/* } */
