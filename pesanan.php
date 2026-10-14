@@ -46,7 +46,6 @@ function e($s) {
 <body class="order-bg">
     <div class="order-app">
 
-        <!-- Rail hijau kiri -->
         <aside class="order-rail">
             <a href="riwayat.php" class="order-avatar" aria-label="Riwayat pesanan">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -68,7 +67,6 @@ function e($s) {
             </svg>
         </aside>
 
-        <!-- Area putih utama -->
         <main class="order-main" id="orderMain">
             <header class="order-head">
                 <h1 class="order-title">Select</h1>
@@ -116,7 +114,6 @@ function e($s) {
             <p class="menu-empty" id="menuEmpty">Menu tidak ditemukan</p>
         </main>
 
-        <!-- Total biaya (keranjang) -->
         <div class="cart" id="cart">
             <button type="button" class="cart-head" id="cartHead" aria-expanded="false">
                 <span class="cart-count" id="cartCount">0</span>
@@ -126,12 +123,10 @@ function e($s) {
             </button>
             <div class="cart-body">
                 <div class="cart-items" id="cartItems"></div>
-                <!-- TOMBOL BAYAR: mengarah ke pembayaran.php -->
                 <a href="pembayaran.php" class="cart-pay" id="cartPay" style="text-align:center; text-decoration:none;">Bayar | 0</a>
             </div>
         </div>
 
-        <!-- Detail produk -->
         <div class="sheet-overlay" id="sheetOverlay"></div>
         <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Detail produk">
             <div class="sheet-hero">
@@ -166,7 +161,6 @@ function e($s) {
 
     </div>
 
-    <!-- HANYA MEMUAT script.js (pesanan.js dihapus) -->
     <script src="asset/script.js"></script>
 </body>
 </html>
