@@ -13,7 +13,6 @@ function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <body class="pay-bg">
     <div class="pay-page">
 
-        <!-- Baris atas: tombol back + judul -->
         <div class="pay-topbar">
             <a href="pesanan.php" class="pay-back" aria-label="Kembali">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -28,21 +27,18 @@ function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
             <h2 class="pay-title">Detail Pesanan</h2>
             <div class="pay-form-box">
 
-                <!-- Alamat Tujuan -->
                 <div class="pay-field">
                     <label class="pay-label" for="alamat">Alamat Tujuan</label>
                     <input type="text" id="alamat" placeholder="Masukkan alamat lengkap" required>
                 </div>
 
-                <!-- Tanggal -->
                 <div class="pay-field">
                     <label class="pay-label" for="tanggal">Tanggal Pengambilan</label>
                     <input type="text" id="tanggal" placeholder="DD/MM/YYYY" onfocus="(this.type='date')" onblur="(this.type='text')" required>
                 </div>
 
-                <!-- Jam -->
                 <div class="pay-field">
-                    <label class="pay-label" for="jam">Jam Pengantaran</label>
+                    <label class="pay-label" for="jam">Jam Pengambilan</label>
                     <select id="jam" required>
                         <option value="" disabled selected>Pilih Jam</option>
                         <?php for ($jam = 7; $jam <= 19; $jam++): ?>
@@ -51,7 +47,6 @@ function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                     </select>
                 </div>
 
-                <!-- Ringkasan Pesanan -->
                 <div class="pay-field">
                     <label class="pay-label" for="ringkasan">Ringkasan Pesanan</label>
                     <input type="text" id="ringkasan" placeholder="Total pax & Total harga" readonly>

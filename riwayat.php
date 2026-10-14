@@ -143,7 +143,6 @@ function status_class($status) {
         <div class="popup" id="popup" aria-hidden="true">
             <div class="popup-card">
 
-                <!-- Drag handle -->
                 <div class="popup-handle"></div>
 
                 <div class="popup-head">
@@ -210,7 +209,9 @@ function status_class($status) {
 
         document.addEventListener('DOMContentLoaded', function () {
 
-            // ---- Filter tabs ----
+            /* =========================================
+               1. FILTER TAB
+               ========================================= */
             const tabs = document.querySelectorAll('.rtab');
             const cards = document.querySelectorAll('.order-card');
             const empty = document.getElementById('riwayatEmpty');
@@ -238,7 +239,9 @@ function status_class($status) {
                 });
             });
 
-            // ---- Popup detail ----
+            /* =========================================
+               2. POPUP DETAIL
+               ========================================= */
             const popup = document.getElementById('popup');
             const overlay = document.getElementById('popupOverlay');
             const popupAgainBtn = document.getElementById('popupOrderAgain');
@@ -252,7 +255,6 @@ function status_class($status) {
                     order.status === 'diproses' ? 'Diproses' :
                     order.status === 'selesai' ? 'Selesai' : 'Menunggu Verifikasi';
 
-                // Daftar menu
                 let items = '';
                 order.menus.forEach(function (m) {
                     items +=
@@ -270,7 +272,6 @@ function status_class($status) {
                 document.getElementById('popupJam').textContent = order.jadwal_jam;
                 document.getElementById('popupTotal').textContent = Number(order.total).toLocaleString('id-ID');
 
-                // Tampilkan tombol "Pesan Lagi" hanya jika status SELESAI
                 if (order.status === 'selesai') {
                     popupAgainBtn.style.display = 'block';
                 } else {
@@ -288,18 +289,28 @@ function status_class($status) {
                 popup.setAttribute('aria-hidden', 'true');
             }
 
+            /* =========================================
+               3. BUKA POPUP SAAT CARD DIKLIK
+               ========================================= */
             document.querySelectorAll('.order-open').forEach(function (btn) {
-                btn.addEventListener('click', function () {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
                     openPopup(btn.dataset.id);
                 });
             });
 
-            // Tombol "Pesan Lagi" di dalam popup
-            popupAgainBtn.addEventListener('click', function () {
-                window.location.href = 'pesanan.php';
-            });
+            /* =========================================
+               4. TOMBOL PESAN LAGI DI POPUP
+               ========================================= */
+            if (popupAgainBtn) {
+                popupAgainBtn.addEventListener('click', function () {
+                    window.location.href = 'pesanan.php';
+                });
+            }
 
-            // Tombol "Pesan Lagi" di card
+            /* =========================================
+               5. TOMBOL PESAN LAGI DI CARD
+               ========================================= */
             document.querySelectorAll('.order-again').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.stopPropagation();
@@ -307,8 +318,17 @@ function status_class($status) {
                 });
             });
 
-            document.getElementById('popupClose').addEventListener('click', closePopup);
-            overlay.addEventListener('click', closePopup);
+            /* =========================================
+               6. TUTUP POPUP
+               ========================================= */
+            const closeBtn = document.getElementById('popupClose');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closePopup);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', closePopup);
+            }
 
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') closePopup();
