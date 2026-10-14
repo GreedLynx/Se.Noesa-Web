@@ -349,7 +349,8 @@ body.auth-bg.auth-register {
    TEMA HALAMAN LAIN
    ========================================= */
 
-body:not(.auth-bg):not(.order-bg):not(.pay-bg):not(.admin-bg):not(.riwayat-bg) {
+/* DIPERBAIKI: tambahkan admin-pesanan-bg & admin-detail-bg ke pengecualian */
+body:not(.auth-bg):not(.order-bg):not(.pay-bg):not(.admin-bg):not(.riwayat-bg):not(.admin-pesanan-bg):not(.admin-detail-bg) {
     background-color: #242226;
     display: flex;
     justify-content: center;
@@ -744,7 +745,7 @@ html {
 .logout-btn.show { display: block; }
 
 /* =========================================
-   ADMIN DASHBOARD - UTAMA (TEMA HIJAU)
+   ADMIN DASHBOARD - UTAMA
    ========================================= */
 
 body.admin-bg {
@@ -2055,4 +2056,631 @@ body.riwayat-bg {
 .popup-order-again:hover {
     transform: scale(1.02);
     background: #bcd6be;
+}
+
+/* =========================================
+   ADMIN — DAFTAR PESANAN
+   ========================================= */
+
+body.admin-pesanan-bg {
+    background: #7f9e82;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px 0;
+    color: #ffffff;
+    color-scheme: light;
+}
+
+.admin-pesanan-page,
+.admin-pesanan-page * {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    box-sizing: border-box;
+}
+
+.admin-pesanan-page {
+    width: 100%;
+    max-width: 350px;
+    padding: 30px 22px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.admin-pesanan-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 500;
+    color: #ffffff;
+    letter-spacing: .5px;
+    margin-bottom: 26px;
+}
+
+.admin-pesanan-actions {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 4px;
+}
+
+.admin-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #d7e3d5;
+    color: #4a5e4e;
+    border: 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .2s ease, background .2s ease;
+}
+
+.admin-icon-btn:hover {
+    transform: scale(1.05);
+    background: #ffffff;
+}
+
+.admin-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.admin-pesanan-panel {
+    width: 100%;
+    background: #7f9e82;
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    border-radius: 30px;   /* ← semua sudut sama */
+    padding: 26px 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 78vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.admin-pesanan-panel::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-order-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    background: #cfdccb;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform .2s ease, background .2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.admin-order-row:hover {
+    transform: translateY(-2px);
+    background: #dee9da;
+}
+
+.admin-order-user {
+    font-size: 20px;
+    font-weight: 600;
+    color: #5a3a10;
+    letter-spacing: .3px;
+}
+
+.admin-order-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.admin-order-date {
+    font-size: 12px;
+    color: #8a6a3a;
+    font-weight: 600;
+}
+
+.admin-order-hour {
+    font-size: 11px;
+    color: #a08761;
+    font-weight: 500;
+}
+
+/* =========================================
+   ADMIN — DETAIL PESANAN
+   ========================================= */
+
+body.admin-detail-bg {
+    background: #7f9e82;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px 0;
+    color: #ffffff;
+    color-scheme: light;
+}
+
+.admin-detail-page,
+.admin-detail-page * {
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+    box-sizing: border-box;
+}
+
+.admin-detail-page {
+    width: 100%;
+    max-width: 350px;
+    min-height: 640px;
+    background: #7f9e82;
+    border-radius: 26px;
+    padding: 20px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.admin-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-detail-userinfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.admin-detail-username {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2f3f32;
+    letter-spacing: .3px;
+}
+
+.admin-detail-time {
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+    color: #5a3a10;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.admin-confirm-btn {
+    padding: 8px 18px;
+    background: #cfdccb;
+    color: #5a3a10;
+    border: 0;
+    border-radius: 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+}
+
+.admin-confirm-btn:hover {
+    transform: scale(1.03);
+    background: #ffffff;
+}
+
+.admin-detail-body {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.admin-bukti-box {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 14px;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+}
+
+.admin-bukti-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333333;
+    letter-spacing: .3px;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+.admin-bukti-icon {
+    font-size: 36px;
+    opacity: .35;
+}
+
+.admin-detail-alamat {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    margin-top: 6px;
+}
+
+.admin-alamat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #4a5e4e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    color: #d7e3d5;
+}
+
+.admin-alamat-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.admin-alamat-text {
+    flex: 1;
+    color: #ffffff;
+}
+
+.admin-alamat-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2f3f32;
+    letter-spacing: .3px;
+}
+
+.admin-alamat-desc {
+    font-size: 12px;
+    color: #4a5e4e;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* =========================================
+   POPUP KONFIRMASI ADMIN
+   ========================================= */
+
+.admin-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+}
+
+.admin-popup-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.admin-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    width: 92%;
+    max-width: 340px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .3s ease;
+}
+
+.admin-popup.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.admin-popup-card {
+    background: #7f9e82;
+    border-radius: 22px;
+    padding: 22px 20px 18px;
+    position: relative;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+.admin-popup-back {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 0;
+    background: #cfdccb;
+    color: #4a5e4e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: transform .2s ease, background .2s ease;
+}
+
+.admin-popup-back:hover {
+    transform: scale(1.05);
+    background: #ffffff;
+}
+
+.admin-popup-back svg {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-popup-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.admin-popup-question {
+    font-size: 13px;
+    color: #ffffff;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.admin-popup-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: #ffffff;
+    line-height: 1.4;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition: background .2s ease;
+}
+
+.admin-popup-check:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.admin-popup-check input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    accent-color: #4a5e4e;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.admin-popup-confirm {
+    display: block;
+    margin-left: auto;
+    padding: 8px 26px;
+    background: #cfdccb;
+    color: #5a3a10;
+    border: 0;
+    border-radius: 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+}
+
+.admin-popup-confirm:hover {
+    transform: scale(1.03);
+    background: #ffffff;
+}
+
+/* =========================================
+   ADMIN — CONFIRM PESANAN (detail)
+   ========================================= */
+
+/* Baris tanggal & jam di bawah kotak foto */
+.admin-datetime-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.admin-datetime-box {
+    flex: 1;
+    padding: 10px 14px;
+    background: #f6f8f6;
+    border-radius: 8px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #7a8a7d;
+    text-align: center;
+    letter-spacing: .3px;
+}
+
+/* Daftar menu dengan checkmark */
+.admin-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.admin-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: #4a5e4e;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.admin-menu-item:hover {
+    transform: translateY(-1px);
+    background: #556b59;
+}
+
+.admin-menu-check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    color: #4a5e4e;
+    transition: background .2s ease;
+}
+
+.admin-menu-check.checked {
+    background: #4a5e4e;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+}
+
+.admin-menu-check svg {
+    width: 16px;
+    height: 16px;
+}
+
+.admin-menu-name {
+    flex: 1;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: .3px;
+}
+
+.admin-menu-qty {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #cfdccb;
+    letter-spacing: .3px;
+}
+
+/* Tombol back & refresh warna lebih terang saat di header */
+.admin-detail-header .admin-icon-btn {
+    background: rgba(255, 255, 255, 0.55);
+    color: #2f3f32;
+}
+
+.admin-detail-header .admin-icon-btn:hover {
+    background: #ffffff;
+}
+
+/* =========================================
+   ADMIN — EDIT MENU (Kategori & List)
+   ========================================= */
+
+/* Baris kategori/list menu lebih tipis dari kartu pesanan */
+.admin-cat-row {
+    padding: 14px 18px;
+    justify-content: flex-start;
+}
+
+.admin-cat-row .admin-order-user {
+    font-size: 19px;
+}
+
+/* Panel edit menu — sudut seragam */
+.admin-pesanan-panel {
+    border-radius: 30px;
+}
+
+/* =========================================
+   ADMIN — DETAIL MENU
+   ========================================= */
+
+.admin-detail-header .admin-detail-userinfo {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-detail-header .admin-detail-username {
+    font-size: 20px;
+}
+
+/* Field bertulis nama menu & harga */
+.admin-field-box {
+    width: 100%;
+    background: #f6f8f6;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.admin-field-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #7a8a7d;
+    letter-spacing: .3px;
+}
+
+/* Baris bawah: harga + tombol */
+.admin-menu-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px 0;
+    margin-top: 4px;
+}
+
+.admin-menu-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: .5px;
+}
+
+.admin-menu-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-mini-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 0;
+    background: #cfdccb;
+    color: #4a5e4e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+}
+
+.admin-mini-btn:hover {
+    transform: scale(1.08);
+    background: #ffffff;
+}
+
+.admin-mini-btn svg {
+    width: 16px;
+    height: 16px;
 }
