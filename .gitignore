@@ -12,6 +12,11 @@ yarn-debug.log*
 # Uploads Lokal (Agar foto dummy saat testing tidak mengotori Git)
 /public/uploads/*
 !/public/uploads/.gitkeep
+.opencode/docs/
+.opencode/rules.md
+.repomixignore
+repomix-output.xml
+repomix.confing.json
 
 # System & IDE Files
 .DS_Store
