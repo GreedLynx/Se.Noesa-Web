@@ -1,130 +1,172 @@
 <?php
-// admin/detail_pesanan.php
-$username = isset($_GET['user']) ? $_GET['user'] : 'Username';
+// fitur_admin/detail_pesanan.php
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Pesanan - Admin</title>
+    <title>Detail Pesanan - Se.Noesa</title>
     <link rel="stylesheet" href="../asset/style.css">
 </head>
-<body class="admin-detail-bg">
-    <div class="admin-detail-page">
+<body class="admin-order-list-bg">
+    <div class="ao-container">
 
-        <!-- Header -->
-        <div class="admin-detail-header">
-            <a href="daftar_pesanan.php" class="admin-icon-btn" aria-label="Kembali">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </a>
-            <div class="admin-detail-userinfo">
-                <span class="admin-detail-username"><?= htmlspecialchars($username) ?></span>
-                <span class="admin-detail-time">
-                    <span>DD/MM/YY</span>
-                    <span>00:00 WIB</span>
-                </span>
+        <!-- ============ HEADER ============ -->
+        <div class="ao-header">
+            <div class="ao-brand">
+                <span class="ao-subtitle">Se.Noesa</span>
+                <h1 class="ao-title">Detail Pesanan</h1>
             </div>
-            <button type="button" class="admin-confirm-btn" id="openConfirm">confirm</button>
-        </div>
-
-        <!-- Kartu putih (SS bukti) -->
-        <div class="admin-detail-body">
-            <div class="admin-bukti-box">
-                <p class="admin-bukti-label">SS bukti pembayaran</p>
-                <span class="admin-bukti-icon">📷</span>
+            <div class="ao-profile">
+                <button class="ao-icon-btn" id="bellBtn" onclick="toggleNotif()">
+                    🔔<span class="notif-dot" id="notifDot"></span>
+                </button>
+                <a href="../login.php" class="ao-avatar">A</a>
             </div>
         </div>
 
-        <!-- Alamat tujuan -->
-        <div class="admin-detail-alamat">
-            <span class="admin-alamat-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z"
-                          fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-                    <circle cx="12" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                </svg>
-            </span>
-            <div class="admin-alamat-text">
-                <p class="admin-alamat-title">Alamat</p>
-                <p class="admin-alamat-desc">( text max 3 baris )</p>
+        <!-- Tombol Back -->
+        <a href="proses_selesai.php" class="btn-back-inline">&#10094; Kembali</a>
+
+        <!-- ============ ORDER INFO ============ -->
+        <div class="dp-info-row">
+            <div>
+                <span class="dp-label-small">Order Pesanan</span>
+                <span class="dp-order-id">#CAT-8840</span>
+            </div>
+            <span class="dp-status-badge">Diproses</span>
+        </div>
+
+        <!-- ============ PEMESAN ============ -->
+        <div class="dp-pemesan-row">
+            <span class="dp-label-small">Pemesan</span>
+            <div class="dp-pemesan-info">
+                <span class="dp-pemesan-avatar">👤</span>
+                <span class="dp-pemesan-name">Andri Pratama</span>
             </div>
         </div>
+
+        <!-- ============ BUKTI TRANSFER PELANGGAN (KLIK UNTUK POPUP) ============ -->
+        <h3 class="val-section-title">Bukti Pesanan Pelanggan</h3>
+        <div class="dp-bukti-box" onclick="openUploadPopup()">
+            <span class="dp-bukti-icon" id="dp-bukti-icon">🖼️</span>
+            <p class="dp-bukti-text" id="dp-bukti-text">Foto bukti pesanan</p>
+            <img id="dp-bukti-preview" src="" alt="Preview" style="display: none;">
+        </div>
+
+        <!-- ============ DAFTAR MENU ============ -->
+        <h3 class="val-section-title">Daftar Menu <span class="badge-status">3 Jenis</span></h3>
+        <div class="dp-menu-list">
+            <div class="dp-menu-item">
+                <div class="dp-menu-check"></div>
+                <div class="dp-menu-info">
+                    <span class="dp-menu-name">Paket Nasi Kotak Ayam</span>
+                    <span class="dp-menu-qty">30.000 x 100 porsi</span>
+                </div>
+                <span class="dp-menu-price">Rp 3.000.000</span>
+            </div>
+            <div class="dp-menu-item">
+                <div class="dp-menu-check"></div>
+                <div class="dp-menu-info">
+                    <span class="dp-menu-name">Snack Box Coffee Break</span>
+                    <span class="dp-menu-qty">5.000 x 100 porsi</span>
+                </div>
+                <span class="dp-menu-price">Rp 500.000</span>
+            </div>
+        </div>
+
+        <!-- ============ JADWAL ============ -->
+        <h3 class="val-section-title">Jadwal</h3>
+        <div class="dp-jadwal-box">
+            <div class="dp-jadwal-row">
+                <span class="dp-jadwal-label">Tanggal & Waktu Pemesanan</span>
+                <span class="dp-jadwal-value">18 Okt 2026, 10:32 WIB</span>
+            </div>
+            <div class="dp-jadwal-row">
+                <span class="dp-jadwal-label">Tanggal & Waktu Pengiriman</span>
+                <span class="dp-jadwal-value">18 Okt 2026, 11:30 WIB</span>
+            </div>
+        </div>
+
+        <!-- ============ TOMBOL SELESAI ============ -->
+        <button class="dp-btn-selesai" onclick="alert('Pesanan selesai dan siap dikirim!')">✓ Selesai dan Kirim</button>
 
     </div>
 
-    <!-- Popup Konfirmasi -->
-    <div class="admin-popup-overlay" id="popupOverlay"></div>
-    <div class="admin-popup" id="popup" aria-hidden="true">
-        <div class="admin-popup-card">
-            <button type="button" class="admin-popup-back" id="closePopup" aria-label="Kembali">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-
-            <div class="admin-popup-body">
-                <p class="admin-popup-question">
-                    Apakah Anda yakin sudah memeriksa pembayaran dan alamat tujuan ?
-                </p>
-
-                <label class="admin-popup-check">
-                    <input type="checkbox" id="chk1">
-                    <span>Sudah memastikan dana customer sudah masuk ke rekening</span>
-                </label>
-
-                <label class="admin-popup-check">
-                    <input type="checkbox" id="chk2">
-                    <span>Sudah memastikan alamat dapat ditemukan di google map / dapat dijangkau oleh kurir</span>
-                </label>
+    <!-- ============ POPUP UPLOAD FOTO ============ -->
+    <div class="upload-popup-overlay" id="uploadOverlay" onclick="closeUploadPopup()"></div>
+    <div class="upload-popup" id="uploadPopup">
+        <div class="upload-popup-card">
+            <div class="upload-popup-header">
+                <h3>Upload Foto</h3>
+                <button class="upload-popup-close" onclick="closeUploadPopup()">✕</button>
             </div>
-
-            <button type="button" class="admin-popup-confirm" id="confirmAction">confirm</button>
+            <div class="upload-popup-body">
+                <label for="popup-file-upload" class="upload-popup-area">
+                    <span class="upload-popup-icon" id="popupIcon">🖼️</span>
+                    <p class="upload-popup-text" id="popupText">Upload Foto Pesanan</p>
+                    <img id="popup-preview" src="" alt="Preview" style="display: none;">
+                </label>
+                <input type="file" id="popup-file-upload" accept="image/*" hidden>
+            </div>
+            <button class="upload-popup-confirm" onclick="confirmUpload()">✓ Konfirmasi Foto</button>
         </div>
     </div>
 
+    <script src="../asset/script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const popup = document.getElementById('popup');
-            const overlay = document.getElementById('popupOverlay');
-            const openBtn = document.getElementById('openConfirm');
-            const closeBtn = document.getElementById('closePopup');
-            const confirmBtn = document.getElementById('confirmAction');
-
-            function openPopup() {
-                overlay.classList.add('open');
-                popup.classList.add('open');
-                popup.setAttribute('aria-hidden', 'false');
+        // ====== FUNGSI POPUP UPLOAD ======
+        function openUploadPopup() {
+            document.getElementById('uploadOverlay').classList.add('open');
+            document.getElementById('uploadPopup').classList.add('open');
+        }
+        
+        function closeUploadPopup() {
+            document.getElementById('uploadOverlay').classList.remove('open');
+            document.getElementById('uploadPopup').classList.remove('open');
+        }
+        
+        function confirmUpload() {
+            const preview = document.getElementById('popup-preview');
+            const targetPreview = document.getElementById('dp-bukti-preview');
+            const targetIcon = document.getElementById('dp-bukti-icon');
+            const targetText = document.getElementById('dp-bukti-text');
+            
+            // Jika ada gambar yang diupload di popup, pindahkan ke kotak utama
+            if (preview && preview.src && preview.style.display !== 'none') {
+                targetPreview.src = preview.src;
+                targetPreview.style.display = 'block';
+                targetIcon.style.display = 'none';
+                targetText.style.display = 'none';
             }
-
-            function closePopup() {
-                overlay.classList.remove('open');
-                popup.classList.remove('open');
-                popup.setAttribute('aria-hidden', 'true');
+            
+            alert('Foto berhasil dikonfirmasi!');
+            closeUploadPopup();
+        }
+        
+        // Preview gambar di dalam popup
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('popup-file-upload');
+            const preview = document.getElementById('popup-preview');
+            const icon = document.getElementById('popupIcon');
+            const text = document.getElementById('popupText');
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            preview.src = ev.target.result;
+                            preview.style.display = 'block';
+                            icon.style.display = 'none';
+                            text.style.display = 'none';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
             }
-
-            openBtn.addEventListener('click', openPopup);
-            closeBtn.addEventListener('click', closePopup);
-            overlay.addEventListener('click', closePopup);
-
-            confirmBtn.addEventListener('click', function () {
-                const c1 = document.getElementById('chk1').checked;
-                const c2 = document.getElementById('chk2').checked;
-
-                if (!c1 || !c2) {
-                    alert('Harap centang kedua persetujuan terlebih dahulu.');
-                    return;
-                }
-
-                alert('Pesanan berhasil dikonfirmasi!');
-                window.location.href = 'daftar_pesanan.php';
-            });
-
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') closePopup();
-            });
         });
     </script>
 </body>
