@@ -1,4 +1,4 @@
-<?php 
+<?php
 // login.php
 session_start();
 
@@ -12,25 +12,26 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-$error = '';
+$error   = '';
+$success = isset($_GET['registered']) ? 'Akun berhasil dibuat, silakan login.' : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $identifier = trim($_POST['email'] ?? '');   // email atau username
+    $password   = $_POST['password'] ?? '';
 
     // Simulasi validasi (Ganti dengan query database nanti)
-    if ($email === 'admin@senoesa.com' && $password === 'admin123') {
+    if (in_array($identifier, ['admin@senoesa.com', 'admin'], true) && $password === 'admin123') {
         $_SESSION['user_id'] = 1;
         $_SESSION['role']    = 'admin';
         header('Location: admin/dashboard_admin.php');
         exit;
-    } elseif ($email === 'user@senoesa.com' && $password === 'user123') {
+    } elseif (in_array($identifier, ['user@senoesa.com', 'user'], true) && $password === 'user123') {
         $_SESSION['user_id'] = 2;
         $_SESSION['role']    = 'pelanggan';
         header('Location: pesanan.php');
         exit;
     } else {
-        $error = 'Email atau Password salah!';
+        $error = 'Email/Username atau Password salah!';
     }
 }
 ?>
@@ -43,39 +44,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="asset/style.css">
 </head>
 <body class="auth-bg-pattern">
-    
+
     <div class="login-wrapper">
-        
-        <!-- Header dengan Teks dan Logo -->
+
+        <!-- Header: sapaan + logo -->
         <div class="auth-header-top">
             <div class="auth-greeting">
                 <h1>Hello!</h1>
                 <p>Welcome to Se.Noesa</p>
             </div>
-            <img src="foto/logo.png" alt="Logo Se.Noesa" class="app-logo">
+            <img src="foto/Icon_Logo.png" alt="Logo Se.Noesa" class="app-logo">
         </div>
 
-        <!-- Kartu Putih Form Login -->
+        <!-- Kartu putih -->
         <div class="auth-card-white">
             <h2 class="auth-title-green">Login</h2>
 
             <form action="login.php" method="POST">
-                <!-- Input Email -->
+                <!-- Email / Username -->
                 <div class="input-icon-wrapper">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="#5a7a5e" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <input type="email" name="email" placeholder="Email atau Username" required autofocus>
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <input type="text" name="email" placeholder="Email atau Username" required autofocus>
                 </div>
 
-                <!-- Input Password -->
+                <!-- Password -->
                 <div class="input-icon-wrapper">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="#5a7a5e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                     <input type="password" name="password" id="loginPass" placeholder="Password" required>
-                    <span class="toggle-password" onclick="togglePass('loginPass', this)">👁️</span>
+                    <span class="toggle-password" onclick="togglePass('loginPass', this)">
+                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9c4 5 14 5 18 0"/><path d="M6.5 13.5L5 16M12 15v3M17.5 13.5L19 16"/></svg>
+                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
                 </div>
 
-                <!-- Pesan Error -->
                 <?php if (!empty($error)): ?>
-                    <p style="color: #ff6b6b; font-size: 13px; margin-bottom: 10px; text-align: center;"><?= htmlspecialchars($error) ?></p>
+                    <p class="auth-error"><?= htmlspecialchars($error) ?></p>
+                <?php elseif (!empty($success)): ?>
+                    <p class="auth-success"><?= htmlspecialchars($success) ?></p>
                 <?php endif; ?>
 
                 <button type="submit" class="auth-btn-green">Login</button>
@@ -88,13 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         function togglePass(id, el) {
             const input = document.getElementById(id);
-            if (input.type === "password") {
-                input.type = "text";
-                el.style.opacity = "1";
-            } else {
-                input.type = "password";
-                el.style.opacity = "0.5";
-            }
+            const show = input.type === "password";
+            input.type = show ? "text" : "password";
+            el.classList.toggle("show", show);
         }
     </script>
 </body>
