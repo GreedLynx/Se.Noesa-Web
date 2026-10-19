@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Tampilkan tab riwayat jika sudah pernah pesan
+    if (localStorage.getItem('sudahPesan') === 'true') {
+        const tabRiwayat = document.getElementById('tab-riwayat');
+        if (tabRiwayat) {
+            tabRiwayat.style.display = 'block';
+        }
+    }
 });
 
 function konfirmasiPesanan() {
@@ -45,7 +53,9 @@ function konfirmasiPesanan() {
     window.location.href = 'riwayat.php';
 }
 
-// Dropdown logout dashboard admin
+// =========================================
+// DROPDOWN LOGOUT (Dashboard Admin Lama)
+// =========================================
 function toggleLogout(event) {
     event.preventDefault();
     const logoutBtn = document.getElementById('logoutMenu');
@@ -60,6 +70,62 @@ document.addEventListener('click', function (event) {
     }
 });
 
+// =========================================
+// FUNGSI KONFIRMASI PEMBAYARAN (Halaman Cek Pembayaran)
+// =========================================
+function konfirmasiPembayaran() {
+    const btn = document.getElementById('btnKonfirmasi');
+
+    if (btn) {
+        btn.textContent = 'Pesanan Diverifikasi';
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+    }
+    // Tidak ada redirect otomatis, pengguna bisa menekan tombol back
+}
+
+// =========================================
+// FUNGSI GRAFIK TREN PESANAN (Dashboard Admin Modern)
+// =========================================
+function showChart(tipe) {
+    const chartMinggu = document.getElementById('chartMinggu');
+    const chartBulan = document.getElementById('chartBulan');
+    const btnMinggu = document.getElementById('btnMinggu');
+    const btnBulan = document.getElementById('btnBulan');
+
+    if (!chartMinggu || !chartBulan) return;
+
+    if (tipe === 'minggu') {
+        chartMinggu.style.display = 'flex';
+        chartBulan.style.display = 'none';
+        btnMinggu.classList.add('active');
+        btnBulan.classList.remove('active');
+    } else if (tipe === 'bulan') {
+        chartMinggu.style.display = 'none';
+        chartBulan.style.display = 'flex';
+        btnMinggu.classList.remove('active');
+        btnBulan.classList.add('active');
+    }
+}
+
+// =========================================
+// FUNGSI TOGGLE NOTIFIKASI (Ikon Lonceng)
+// =========================================
+function toggleNotif() {
+    const dot = document.getElementById('notifDot');
+    const bellBtn = document.getElementById('bellBtn');
+    if (!dot || !bellBtn) return;
+
+    if (dot.style.display === 'none') {
+        dot.style.display = 'block';
+        bellBtn.classList.remove('muted');
+        alert('Notifikasi diaktifkan.');
+    } else {
+        dot.style.display = 'none';
+        bellBtn.classList.add('muted');
+        alert('Notifikasi dimatikan.');
+    }
+}
 
 // =========================================
 // HALAMAN PESANAN (Select Your Choices)
