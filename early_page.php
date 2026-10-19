@@ -10,15 +10,15 @@
     <link rel="stylesheet" href="asset/style.css">
 </head>
 <body class="early-bg">
-    
-    <!-- Bingkai HP -->
+
     <div class="early-wrapper">
         <a href="login.php" class="early-container">
-            <!-- Logo -->
-            <img src="foto/logo.png" alt="Logo Se.Noesa" class="app-logo">
-            
-            <!-- Teks Logo dengan Titik Berwarna Khusus -->
-            <h1 class="early-title">se<span class="logo-dot">.</span><span>noesa</span></h1>
+
+            <!-- Logo (sama dengan login & register) -->
+            <img src="foto/Icon_Logo.png" alt="Logo Se.Noesa" class="app-logo">
+
+            <!-- Teks logo: titik cokelat berbentuk diamond -->
+            <h1 class="early-title">se<span class="logo-diamond"></span><span>noesa</span></h1>
         </a>
     </div>
 
