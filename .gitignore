@@ -16,7 +16,7 @@ yarn-debug.log*
 .opencode/rules.md
 .repomixignore
 repomix-output.xml
-repomix.confing.json
+repomix.config.json
 
 # System & IDE Files
 .DS_Store
