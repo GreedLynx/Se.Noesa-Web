@@ -43,7 +43,7 @@ function require_owner(bool $api = true)
   $u = me();
   if (!$u || $u['role'] !== 'owner') {
     if ($api) json(['error' => 'Unauthorized'], 401);
-    header('Location: login.php');
+    header('Location: /login.php');
     exit;
   }
   return $u;

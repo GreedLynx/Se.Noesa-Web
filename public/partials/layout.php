@@ -13,7 +13,7 @@ function head(string $title, string $page, bool $auth = false)
     <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
   </head>
 
   <body data-page="<?= $page ?>">
@@ -23,7 +23,7 @@ function head(string $title, string $page, bool $auth = false)
   {
     $u = me(); ?>
       <header class="top rise">
-        <div class="row"><?php if ($back): ?><a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a><?php endif; ?>
+        <div class="row"><?php if ($back): ?><a class="btn-ic" href="/orders.php" aria-label="Kembali">‹</a><?php endif; ?>
           <div><small>Se.Noesa</small>
             <h1><?= $title ?></h1>
           </div>
@@ -43,13 +43,13 @@ function head(string $title, string $page, bool $auth = false)
       'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>']
     ]; ?>
       <nav class="nav"><span class="pill" id="pill"></span>
-        <?php foreach ($i as $k => [$l, $p]): ?><a href="<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>"><svg viewBox="0 0 24 24"><?= $p ?></svg><span><?= $l ?></span></a><?php endforeach; ?></nav>
+        <?php foreach ($i as $k => [$l, $p]): ?><a href="/<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>"><svg viewBox="0 0 24 24"><?= $p ?></svg><span><?= $l ?></span></a><?php endforeach; ?></nav>
     <?php }
   function foot()
   { ?>
     </main>
     <div class="toast" id="toast"></div>
-    <script src="assets/js/app.js"></script>
+    <script src="/assets/js/app.js"></script>
   </body>
 
   </html><?php }
