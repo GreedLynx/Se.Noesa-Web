@@ -49,7 +49,7 @@ function head(string $title, string $page, bool $auth = false)
   { ?>
     </main>
     <div class="toast" id="toast"></div>
-    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
   </body>
 
   </html><?php }

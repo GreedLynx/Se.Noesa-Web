@@ -154,10 +154,32 @@ const PAGES = {
         "KUANTITAS PAX",
       ],
     };
-    async function load(p) {
-      const d = await api("api/dashboard.php?period=" + p);
-      $("#hLabel").textContent = L[p][0];
-      $("#tot").textContent = L[p][1];
+    const pageParams = new URLSearchParams(location.search);
+    const initialPeriod = ["today", "week", "month"].includes(pageParams.get("period")) ? pageParams.get("period") : "today";
+    const initialSelection = pageParams.get("selected");
+    let selected = null, requestId = 0;
+    function selectedLabel(period, key) {
+      if (period === "week") {
+        const [y, m, day] = key.split("-").map(Number);
+        return new Date(y, m - 1, day, 12).toLocaleDateString("id-ID", {
+          weekday: "long", day: "numeric", month: "long",
+        });
+      }
+      const [y, m] = key.split("-").map(Number);
+      return new Date(y, m - 1, 1, 12).toLocaleDateString("id-ID", {
+        month: "long", year: "numeric",
+      });
+    }
+    async function load(p, chosen = null) {
+      const request = ++requestId;
+      const d = await api("api/dashboard.php?period=" + p + (chosen ? "&selected=" + encodeURIComponent(chosen) : ""));
+      if (request !== requestId) return;
+      selected = d.selected;
+      const pickedLabel = selected ? selectedLabel(p, selected) : null;
+      $("#hLabel").textContent = pickedLabel
+        ? "OMZET TERVERIFIKASI " + (p === "week" ? "HARI " : "BULAN ") + pickedLabel.toLocaleUpperCase("id-ID")
+        : L[p][0];
+      $("#tot").textContent = pickedLabel ? "Total " + pickedLabel : L[p][1];
       $("#l2").textContent = L[p][2];
       countUp($("#omzet"), d.omzet);
       $("#tiket").textContent = short(d.tiket);
@@ -165,12 +187,17 @@ const PAGES = {
       $("#growth").textContent =
         (d.growth >= 0 ? "↗ +" : "↘ ") + d.growth + "%";
       $("#orders").textContent = d.orders + " Pesanan";
-      const max = Math.max(...d.chart.map((c) => c.v), 1),
-        hi = p === "month" ? new Date().getMonth() : d.chart.length - 1;
+      const max = Math.max(...d.chart.map((c) => Number(c.v)), 1),
+        hi = d.selected ? d.chart.findIndex((c) => c.k === d.selected) : p === "month" ? new Date().getMonth() : d.chart.length - 1;
+      const chartPeriod = p === "month" ? "month" : "week";
       $("#bars").innerHTML = d.chart
         .map(
-          (c, i) =>
-            `<div class="bar${i === hi ? " hi" : ""}"><i style="--n:${i}"></i>${c.l}</div>`,
+          (c, i) => {
+            const label = chartPeriod === "month"
+              ? new Date(Number(c.k.slice(0, 4)), Number(c.k.slice(5, 7)) - 1, 1, 12).toLocaleDateString("id-ID", { month: "short" }).replace(/\.$/, "")
+              : selectedLabel("week", c.k).split(" ")[0].slice(0, 3);
+            return `<a class="bar${i === hi ? " hi" : ""}" href="dashboard.php?period=${chartPeriod}&amp;selected=${encodeURIComponent(c.k)}" title="${selectedLabel(chartPeriod, c.k)}: ${rp(c.v)}"><i style="--n:${i}"></i>${label}</a>`;
+          },
         )
         .join("");
       requestAnimationFrame(() =>
@@ -203,10 +230,12 @@ const PAGES = {
           $$("#period button").forEach((x) =>
             x.classList.toggle("on", x === b),
           );
+          selected = null;
           load(b.dataset.p);
         }),
     );
-    load("today");
+    $$("#period button").forEach((b) => b.classList.toggle("on", b.dataset.p === initialPeriod));
+    load(initialPeriod, initialSelection);
   },
   async orders() {
     let tab = "validasi",
