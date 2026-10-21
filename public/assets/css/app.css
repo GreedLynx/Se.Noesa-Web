@@ -1003,3 +1003,62 @@ svg {
   body[data-page="detail"] .cta { left: calc(224px + (100vw - 224px) / 2); bottom: 16px; width: min(720px, calc(100% - 280px)); padding: 14px 18px; border: 1px solid #e4ece5; border-radius: 18px; box-shadow: 0 8px 30px #10241422; }
   .gauge { width: min(230px, 100%); }
 }
+
+@media (min-width: 760px) {
+  body[data-page="login"],
+  body[data-page="register"] {
+    align-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at 14% 15%, #d6e2d4 0, transparent 34%), #eef2eb;
+  }
+  .app.auth {
+    display: grid;
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+    width: min(1040px, 100%);
+    max-width: none;
+    height: min(760px, calc(100vh - 48px));
+    min-height: min(620px, calc(100vh - 32px));
+    padding: 0;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px #263a2b24;
+  }
+  .app.auth .hero {
+    height: 100%;
+    min-height: 0;
+    align-items: flex-end;
+    padding: clamp(32px, 5vw, 68px);
+    overflow: hidden;
+  }
+  .app.auth .hero.short {
+    height: 100%;
+    min-height: 0;
+  }
+  .app.auth .hello h2 { font-size: clamp(44px, 5vw, 62px); }
+  .app.auth .hello p { font-size: 19px; }
+  .app.auth .hero.short::after {
+    content: "Bergabung dengan Se.Noesa";
+    position: relative;
+    z-index: 1;
+    max-width: 360px;
+    color: #fff;
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 600;
+    line-height: 1.12;
+  }
+  .app.auth .sheet {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    margin: 0;
+    padding: clamp(32px, 5vw, 68px);
+    border-radius: 0;
+    overflow-y: auto;
+  }
+  .app.auth .sheet form { width: 100%; max-width: 440px; margin-inline: auto; }
+  .app.auth .title { font-size: 34px; margin: 12px auto 26px; }
+  .app.auth .sheet > .back { width: 100%; max-width: 440px; margin: 0 auto; }
+  .app.auth .alt { margin: 16px auto 0; }
+  .app.auth .field { margin-bottom: 18px; }
+}

@@ -13,7 +13,7 @@ function head(string $title, string $page, bool $auth = false)
     <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="../assets/css/app.css">
+    <link rel="stylesheet" href="../assets/css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
   </head>
 
   <body data-page="<?= $page ?>">
