@@ -50,6 +50,7 @@ CREATE TABLE pesanan(
     )
   ),
   bukti_bayar VARCHAR(200),
+  nama_pembayar VARCHAR(100),
   tgl_kirim TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );

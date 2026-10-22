@@ -9,20 +9,22 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $file=$_FILES['proof']??null;if(!$file) json(['error'=>'Pilih file bukti pembayaran terlebih dahulu'],422);
     if($file['error']!==UPLOAD_ERR_OK) json(['error'=>in_array($file['error'],[UPLOAD_ERR_INI_SIZE,UPLOAD_ERR_FORM_SIZE],true)?'Ukuran gambar melewati batas PHP. Maksimal 2 MB.':'File bukti tidak berhasil diunggah.'],422);
     if($file['size']>2*1024*1024) json(['error'=>'Ukuran gambar maksimal 2 MB'],422);
+    $payerName=trim($_POST['nama_pembayar']??'');
+    if($payerName===''||strlen($payerName)>100) json(['error'=>'Nama pembayar wajib diisi (maksimal 100 karakter)'],422);
     $image=@getimagesize($file['tmp_name']);$types=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];$mime=$image['mime']??'';
     if(!isset($types[$mime])) json(['error'=>'Gunakan gambar JPG, PNG, atau WebP'],422);
     $folder=__DIR__.'/../../uploads/payments';if(!is_dir($folder)&&!mkdir($folder,0775,true)) json(['error'=>'Folder upload tidak dapat dibuat'],500);
     $filename='payment-'.$id.'-'.bin2hex(random_bytes(12)).'.'.$types[$mime];
     if(!move_uploaded_file($file['tmp_name'],$folder.'/'.$filename)) json(['error'=>'Gagal menyimpan gambar'],500);
-    try{q('UPDATE pesanan SET bukti_bayar=? WHERE id=? AND user_id=? AND status=?',['uploads/payments/'.$filename,$id,$customer['id'],'menunggu_validasi']);}
+    try{q('UPDATE pesanan SET bukti_bayar=?,nama_pembayar=? WHERE id=? AND user_id=? AND status=?',['uploads/payments/'.$filename,$payerName,$id,$customer['id'],'menunggu_validasi']);}
     catch(Throwable $e){@unlink($folder.'/'.$filename);json(['error'=>'Gagal menyimpan bukti pembayaran'],500);}
     json(['ok'=>true,'bukti_bayar'=>'uploads/payments/'.$filename]);
   }
-  $b=body();$name=trim($b['nama_pemesan']??'');$items=$b['items']??[];$day=$b['tgl_kirim']??'';$time=$b['waktu_kirim']??'';$note=trim($b['keterangan']??'');
+  $b=body();$name=trim($b['nama_pemesan']??'');$items=$b['items']??[];$day=$b['tgl_kirim']??'';$time=trim((string)($b['waktu_kirim']??''));$hasDeliveryTime=$time!=='';$time=$hasDeliveryTime?$time:'12:00';$note=trim($b['keterangan']??'');
   if($name===''||strlen($name)>100||!is_array($items)||!count($items)) json(['error'=>'Nama pemesan dan pilihan menu wajib diisi'],422);
   if(strlen($note)>120) json(['error'=>'Catatan maksimal 120 karakter'],422);
-  $zone=new DateTimeZone('Asia/Jakarta');$delivery=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$day.' '.$time,$zone);$dateErrors=DateTimeImmutable::getLastErrors();
-  if(!$delivery||($dateErrors&&($dateErrors['warning_count']||$dateErrors['error_count']))||$delivery<new DateTimeImmutable('now',$zone)) json(['error'=>'Jadwal pengiriman tidak valid'],422);
+  $zone=new DateTimeZone('Asia/Jakarta');$delivery=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$day.' '.$time,$zone);$dateErrors=DateTimeImmutable::getLastErrors();$now=new DateTimeImmutable('now',$zone);$deliveryIsPast=$delivery&&($hasDeliveryTime?$delivery<$now:$delivery->format('Y-m-d')<$now->format('Y-m-d'));
+  if(!$delivery||($dateErrors&&($dateErrors['warning_count']||$dateErrors['error_count']))||$deliveryIsPast) json(['error'=>'Jadwal pengiriman tidak valid'],422);
   if(count($items)>50)json(['error'=>'Maksimal 50 jenis menu per pesanan'],422);
   $quantities=[];foreach($items as $line){$pid=filter_var($line['id']??null,FILTER_VALIDATE_INT);$qty=filter_var($line['qty']??null,FILTER_VALIDATE_INT);if(!$pid||!$qty||$qty<1||$qty>500)json(['error'=>'Jumlah menu tidak valid'],422);$quantities[$pid]=($quantities[$pid]??0)+$qty;}ksort($quantities);
   try{
@@ -48,7 +50,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   catch(Throwable $e){if(db()->inTransaction())db()->rollBack();json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}
 }
 if(isset($_GET['id'])){
-  $order=q('SELECT id,kode,nama_pemesan,keterangan,pax,total,status,bukti_bayar,tgl_kirim,created_at FROM pesanan WHERE id=? AND user_id=?',[(int)$_GET['id'],$customer['id']])->fetch();
+  $order=q('SELECT id,kode,nama_pemesan,nama_pembayar,keterangan,pax,total,status,bukti_bayar,tgl_kirim,created_at FROM pesanan WHERE id=? AND user_id=?',[(int)$_GET['id'],$customer['id']])->fetch();
   if(!$order) json(['error'=>'Pesanan tidak ditemukan'],404);
   $order['items']=q('SELECT pr.nama,pr.gambar,d.qty,d.harga,d.qty*d.harga subtotal FROM detail_pesanan d JOIN produk pr ON pr.id=d.produk_id WHERE d.pesanan_id=? ORDER BY pr.nama',[$order['id']])->fetchAll();json($order);
 }

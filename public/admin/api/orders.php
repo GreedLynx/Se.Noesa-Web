@@ -27,9 +27,9 @@ if(isset($_GET['id'])){
   $o['menu']=q("SELECT pr.nama,pr.gambar,d.qty,d.harga,d.qty*d.harga subtotal FROM detail_pesanan d JOIN produk pr ON pr.id=d.produk_id WHERE d.pesanan_id=? ORDER BY pr.nama",[$o['id']])->fetchAll();
   json($o);
 }
-$tab=($_GET['tab']??'validasi')==='proses'?"('diproses','selesai')":"('menunggu_validasi')";
+$tab=match(($_GET['tab']??'validasi')){'proses'=>"('diproses')",'selesai'=>"('selesai')",default=>"('menunggu_validasi')"};
 $search='%'.trim($_GET['q']??'').'%';
 $items=q("SELECT p.id,p.kode,p.nama_pemesan,p.keterangan,p.pax,p.total,p.status,p.tgl_kirim,p.created_at FROM pesanan p WHERE p.status IN $tab AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) ORDER BY CASE WHEN p.status='menunggu_validasi' THEN 0 ELSE 1 END,p.created_at DESC",[$search,$search])->fetchAll();
-$count=q("SELECT COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status IN('diproses','selesai')) processed FROM pesanan")->fetch();
+$count=q("SELECT COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status='diproses') processing,COUNT(*) FILTER(WHERE status='selesai') completed FROM pesanan")->fetch();
 $cap=q("SELECT COALESCE(SUM(j.kapasitas),0) kapasitas,COALESCE(SUM(x.pakai),0) pakai FROM jadwal_po j LEFT JOIN LATERAL(SELECT COALESCE(SUM(p.pax),0) pakai FROM pesanan p WHERE p.jadwal_id=j.id AND p.status<>'ditolak') x ON true WHERE j.aktif")->fetch();
 json(['items'=>$items,'counts'=>$count,'capacity'=>$cap]);
