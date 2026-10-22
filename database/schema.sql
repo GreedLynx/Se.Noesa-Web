@@ -51,6 +51,7 @@ CREATE TABLE pesanan(
   ),
   bukti_bayar VARCHAR(200),
   nama_pembayar VARCHAR(100),
+  foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -59,7 +60,8 @@ CREATE TABLE detail_pesanan(
   pesanan_id INT REFERENCES pesanan(id) ON DELETE CASCADE,
   produk_id INT REFERENCES produk(id),
   qty INT NOT NULL,
-  harga INT NOT NULL
+  harga INT NOT NULL,
+  sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE INDEX ON pesanan(status, created_at);
 CREATE INDEX ON detail_pesanan(pesanan_id);
