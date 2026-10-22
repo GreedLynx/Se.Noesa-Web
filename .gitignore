@@ -18,3 +18,5 @@ yarn-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+!/public/uploads/products/
+!/public/uploads/products/.gitkeep
