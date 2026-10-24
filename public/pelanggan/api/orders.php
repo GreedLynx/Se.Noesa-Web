@@ -23,13 +23,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $b=body();$name=trim($b['nama_pemesan']??'');$items=$b['items']??[];$day=$b['tgl_kirim']??'';$time=trim((string)($b['waktu_kirim']??''));$hasDeliveryTime=$time!=='';$time=$hasDeliveryTime?$time:'12:00';$note=trim($b['keterangan']??'');
   if($name===''||strlen($name)>100||!is_array($items)||!count($items)) json(['error'=>'Nama pemesan dan pilihan menu wajib diisi'],422);
   if(strlen($note)>120) json(['error'=>'Catatan maksimal 120 karakter'],422);
-  $zone=new DateTimeZone('Asia/Jakarta');$delivery=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$day.' '.$time,$zone);$dateErrors=DateTimeImmutable::getLastErrors();$now=new DateTimeImmutable('now',$zone);$deliveryIsPast=$delivery&&($hasDeliveryTime?$delivery<$now:$delivery->format('Y-m-d')<$now->format('Y-m-d'));
-  if(!$delivery||($dateErrors&&($dateErrors['warning_count']||$dateErrors['error_count']))||$deliveryIsPast) json(['error'=>'Jadwal pengiriman tidak valid'],422);
+  $zone=new DateTimeZone('Asia/Jakarta');$delivery=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$day.' '.$time,$zone);$dateErrors=DateTimeImmutable::getLastErrors();$now=new DateTimeImmutable('now',$zone);$minimumDelivery=$now->modify('+7 days')->format('Y-m-d');$deliveryTooSoon=$delivery&&$delivery->format('Y-m-d')<$minimumDelivery;
+  if(!$delivery||($dateErrors&&($dateErrors['warning_count']||$dateErrors['error_count']))||$deliveryTooSoon) json(['error'=>'Tanggal pengiriman harus minimal 7 hari dari tanggal pemesanan'],422);
   if(count($items)>50)json(['error'=>'Maksimal 50 jenis menu per pesanan'],422);
   $quantities=[];foreach($items as $line){$pid=filter_var($line['id']??null,FILTER_VALIDATE_INT);$qty=filter_var($line['qty']??null,FILTER_VALIDATE_INT);if(!$pid||!$qty||$qty<1||$qty>500)json(['error'=>'Jumlah menu tidak valid'],422);$quantities[$pid]=($quantities[$pid]??0)+$qty;}ksort($quantities);
   try{
     $db=db();$db->beginTransaction();
-    $schedule=q('SELECT id,kapasitas FROM jadwal_po WHERE aktif AND ?::date BETWEEN tgl_buka AND tgl_tutup ORDER BY tgl_buka LIMIT 1 FOR UPDATE',[$delivery->format('Y-m-d')])->fetch();
+    $schedule=q('SELECT id,kapasitas FROM jadwal_po WHERE aktif AND current_date BETWEEN tgl_buka AND tgl_tutup ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
     if(!$schedule) throw new DomainException('Jadwal pemesanan belum tersedia untuk tanggal tersebut.');
     $lines=[];$total=0;$pax=0;
     foreach($quantities as $pid=>$qty){

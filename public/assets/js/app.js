@@ -11,10 +11,11 @@ const productImage = (value) => {
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
 async function api(url, opt = {}) {
+  const multipart = opt.body instanceof FormData;
   const r = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers: multipart ? {} : { "Content-Type": "application/json" },
     ...opt,
-    body: opt.body && JSON.stringify(opt.body),
+    body: opt.body ? (multipart ? opt.body : JSON.stringify(opt.body)) : undefined,
   });
   const d = await r
     .json()
