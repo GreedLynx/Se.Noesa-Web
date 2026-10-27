@@ -3,19 +3,25 @@ require __DIR__ . '/../../app/bootstrap.php';
 $a = $_GET['a'] ?? '';
 $b = body();
 if ($a === 'logout') {
+  $_SESSION = [];
+  if (ini_get('session.use_cookies')) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+  }
   session_destroy();
   json(['ok' => true]);
 }
 if ($a === 'login') {
   $identity = trim($b['identity'] ?? '');
   $u = q(
-    "SELECT * FROM users WHERE (email=:email OR username=:username) AND role='owner'",
+    "SELECT * FROM users WHERE (email=:email OR username=:username) AND role IN ('owner','admin','pelanggan')",
     [':email' => $identity, ':username' => $identity]
   )->fetch();
   if (!$u || !password_verify($b['password'] ?? '', $u['password_hash'])) json(['error' => 'Email/username atau password salah'], 401);
   session_regenerate_id(true);
   $_SESSION['user'] = ['id' => $u['id'], 'username' => $u['username'], 'role' => $u['role']];
-  json(['ok' => true, 'redirect' => 'dashboard.php']);
+  $redirect = ['owner' => 'owner/dashboard.php', 'admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/index.php'][$u['role']] ?? 'login.php';
+  json(['ok' => true, 'redirect' => $redirect]);
 }
 if ($a === 'register') {
   foreach (['username', 'email', 'password', 'phone'] as $f) if (empty($b[$f])) json(['error' => "Kolom $f wajib diisi"], 422);
@@ -24,7 +30,7 @@ if ($a === 'register') {
   if ($b['password'] !== ($b['confirm'] ?? '')) json(['error' => 'Konfirmasi password tidak cocok'], 422);
   try {
     q(
-      "INSERT INTO users(username,email,password_hash,phone,role) VALUES(?,?,?,?,'owner')",
+      "INSERT INTO users(username,email,password_hash,phone,role) VALUES(?,?,?,?,'pelanggan')",
       [$b['username'], $b['email'], password_hash($b['password'], PASSWORD_DEFAULT), $b['phone']]
     );
   } catch (PDOException $e) {

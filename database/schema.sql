@@ -20,6 +20,7 @@ CREATE TABLE produk(
   kategori VARCHAR(10) NOT NULL CHECK(kategori IN('makanan', 'minuman', 'snack')),
   harga INT NOT NULL,
   kuota INT NOT NULL DEFAULT 0,
+  min_pesan INT NOT NULL DEFAULT 1 CHECK(min_pesan >= 1),
   terpakai INT NOT NULL DEFAULT 0,
   gambar VARCHAR(120)
 );
@@ -49,6 +50,8 @@ CREATE TABLE pesanan(
     )
   ),
   bukti_bayar VARCHAR(200),
+  nama_pembayar VARCHAR(100),
+  foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -57,7 +60,8 @@ CREATE TABLE detail_pesanan(
   pesanan_id INT REFERENCES pesanan(id) ON DELETE CASCADE,
   produk_id INT REFERENCES produk(id),
   qty INT NOT NULL,
-  harga INT NOT NULL
+  harga INT NOT NULL,
+  sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE INDEX ON pesanan(status, created_at);
 CREATE INDEX ON detail_pesanan(pesanan_id);
@@ -73,7 +77,7 @@ VALUES (
   (
     'andi',
     'andi@mail.com',
-    '-',
+    '$2y$12$2tI1xZ7Et3mnGlF7CfqK5uvdpRWDcSbzBh/XOZBTauaBuxZyuqNce',
     '0811111111',
     'pelanggan'
   );
@@ -196,3 +200,15 @@ VALUES(1, 1, 100, 30000),
 (1, 7, 100, 5000),
 (2, 1, 220, 32000),
 (3, 7, 75, 5000);
+SELECT id,
+  username,
+  email,
+  role
+FROM users
+ORDER BY id;
+SELECT id,
+  username,
+  email,
+  role
+FROM users
+ORDER BY id;

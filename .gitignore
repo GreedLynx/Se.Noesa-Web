@@ -23,3 +23,5 @@ repomix.config.json
 Thumbs.db
 .vscode/
 .idea/
+!/public/uploads/products/
+!/public/uploads/products/.gitkeep

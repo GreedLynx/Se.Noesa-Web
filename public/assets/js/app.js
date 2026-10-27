@@ -2,18 +2,26 @@ const $ = (s, r = document) => r.querySelector(s),
   $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const rp = (n) => "Rp " + Number(n).toLocaleString("id-ID"),
   short = (n) => "Rp " + (n / 1000).toFixed(1).replace(".0", "") + "k";
+const productImage = (value) => {
+  const raw = String(value || "");
+  if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw)) return "../" + raw;
+  const file = raw.replace(/[^a-zA-Z0-9_.-]/g, "");
+  return "../assets/img/produk/" + (file || "NK-01.png");
+};
 const page = document.body.dataset.page;
+const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
 async function api(url, opt = {}) {
+  const multipart = opt.body instanceof FormData;
   const r = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers: multipart ? {} : { "Content-Type": "application/json" },
     ...opt,
-    body: opt.body && JSON.stringify(opt.body),
+    body: opt.body ? (multipart ? opt.body : JSON.stringify(opt.body)) : undefined,
   });
   const d = await r
     .json()
     .catch(() => ({ error: "Respon server tidak valid" }));
   if (r.status === 401 && page !== "login") {
-    location.href = "login.php";
+    location.href = appPrefix + "login.php";
     return Promise.reject();
   }
   if (!r.ok) throw Object.assign(new Error(d.error || "Terjadi kesalahan"), d);
@@ -51,7 +59,16 @@ document.addEventListener("click", (e) => {
 const on = $(".nav a.on");
 if (on) {
   const mv = () => {
-    $("#pill").style.left = on.offsetLeft + on.offsetWidth / 2 - 35 + "px";
+    const pill = $("#pill");
+    if (matchMedia("(min-width: 900px)").matches) {
+      pill.style.left = "12px";
+      pill.style.top = on.offsetTop + "px";
+      pill.style.width = "calc(100% - 24px)";
+    } else {
+      pill.style.top = "8px";
+      pill.style.left = on.offsetLeft + on.offsetWidth / 2 - 35 + "px";
+      pill.style.width = "70px";
+    }
   };
   mv();
   addEventListener("resize", mv);
@@ -70,7 +87,7 @@ $$("[data-logout]").forEach(
       b.disabled = true;
       try {
         await api("api/auth.php?a=logout");
-        location.href = "login.php";
+        location.href = appPrefix + "login.php";
       } catch (e) {
         b.disabled = false;
         toast("Gagal keluar: " + e.message);
@@ -82,10 +99,11 @@ const PAGES = {
     setTimeout(() => {
       document.body.classList.add("leave");
       const next = document.body.dataset.next;
+      const destinations = ["login.php", "owner/dashboard.php", "admin/dashboard.php", "pelanggan/index.php"];
       setTimeout(
         () =>
           (location.href =
-            next === "dashboard.php" ? "dashboard.php" : "login.php"),
+            destinations.includes(next) ? next : "login.php"),
         230,
       );
     }, 2600);
@@ -137,10 +155,32 @@ const PAGES = {
         "KUANTITAS PAX",
       ],
     };
-    async function load(p) {
-      const d = await api("api/dashboard.php?period=" + p);
-      $("#hLabel").textContent = L[p][0];
-      $("#tot").textContent = L[p][1];
+    const pageParams = new URLSearchParams(location.search);
+    const initialPeriod = ["today", "week", "month"].includes(pageParams.get("period")) ? pageParams.get("period") : "today";
+    const initialSelection = pageParams.get("selected");
+    let selected = null, requestId = 0;
+    function selectedLabel(period, key) {
+      if (period === "week") {
+        const [y, m, day] = key.split("-").map(Number);
+        return new Date(y, m - 1, day, 12).toLocaleDateString("id-ID", {
+          weekday: "long", day: "numeric", month: "long",
+        });
+      }
+      const [y, m] = key.split("-").map(Number);
+      return new Date(y, m - 1, 1, 12).toLocaleDateString("id-ID", {
+        month: "long", year: "numeric",
+      });
+    }
+    async function load(p, chosen = null) {
+      const request = ++requestId;
+      const d = await api("api/dashboard.php?period=" + p + (chosen ? "&selected=" + encodeURIComponent(chosen) : ""));
+      if (request !== requestId) return;
+      selected = d.selected;
+      const pickedLabel = selected ? selectedLabel(p, selected) : null;
+      $("#hLabel").textContent = pickedLabel
+        ? "OMZET TERVERIFIKASI " + (p === "week" ? "HARI " : "BULAN ") + pickedLabel.toLocaleUpperCase("id-ID")
+        : L[p][0];
+      $("#tot").textContent = pickedLabel ? "Total " + pickedLabel : L[p][1];
       $("#l2").textContent = L[p][2];
       countUp($("#omzet"), d.omzet);
       $("#tiket").textContent = short(d.tiket);
@@ -148,12 +188,17 @@ const PAGES = {
       $("#growth").textContent =
         (d.growth >= 0 ? "↗ +" : "↘ ") + d.growth + "%";
       $("#orders").textContent = d.orders + " Pesanan";
-      const max = Math.max(...d.chart.map((c) => c.v), 1),
-        hi = p === "month" ? new Date().getMonth() : d.chart.length - 1;
+      const max = Math.max(...d.chart.map((c) => Number(c.v)), 1),
+        hi = d.selected ? d.chart.findIndex((c) => c.k === d.selected) : p === "month" ? new Date().getMonth() : d.chart.length - 1;
+      const chartPeriod = p === "month" ? "month" : "week";
       $("#bars").innerHTML = d.chart
         .map(
-          (c, i) =>
-            `<div class="bar${i === hi ? " hi" : ""}"><i style="--n:${i}"></i>${c.l}</div>`,
+          (c, i) => {
+            const label = chartPeriod === "month"
+              ? new Date(Number(c.k.slice(0, 4)), Number(c.k.slice(5, 7)) - 1, 1, 12).toLocaleDateString("id-ID", { month: "short" }).replace(/\.$/, "")
+              : selectedLabel("week", c.k).split(" ")[0].slice(0, 3);
+            return `<a class="bar${i === hi ? " hi" : ""}" href="dashboard.php?period=${chartPeriod}&amp;selected=${encodeURIComponent(c.k)}" title="${selectedLabel(chartPeriod, c.k)}: ${rp(c.v)}"><i style="--n:${i}"></i>${label}</a>`;
+          },
         )
         .join("");
       requestAnimationFrame(() =>
@@ -176,7 +221,7 @@ const PAGES = {
       $("#top").innerHTML = d.top
         .map(
           (t, i) =>
-            `<div class="prod rise" style="--i:${i}"><span class="rk">${i + 1}</span><img src="assets/img/produk/${t.gambar || "NK-01.png"}" alt=""><div><b>${t.nama}</b>${t.n} Terjual • ${rp(t.harga)}<span class="om"><span>Kontribusi Omzet</span><strong>${rp(t.om)}</strong></span></div></div>`,
+            `<div class="prod rise" style="--i:${i}"><span class="rk">${i + 1}</span><img src="${productImage(t.gambar)}" alt=""><div><b>${t.nama}</b>${t.n} Terjual • ${rp(t.harga)}<span class="om"><span>Kontribusi Omzet</span><strong>${rp(t.om)}</strong></span></div></div>`,
         )
         .join("");
     }
@@ -186,10 +231,12 @@ const PAGES = {
           $$("#period button").forEach((x) =>
             x.classList.toggle("on", x === b),
           );
+          selected = null;
           load(b.dataset.p);
         }),
     );
-    load("today");
+    $$("#period button").forEach((b) => b.classList.toggle("on", b.dataset.p === initialPeriod));
+    load(initialPeriod, initialSelection);
   },
   async orders() {
     let tab = "validasi",
