@@ -26,12 +26,14 @@ Aplikasi web manajemen operasional dan pemesanan *Pre-Order* (PO) katering untuk
 
 ---
 
-## ⚙️ Arsitektur Basis Data (4 Entitas Utama)
+## ⚙️ Arsitektur Basis Data (5 Entitas Utama)
 
-Sistem ini bertumpu pada 4 tabel utama berbasis MySQL:
-1. `Users` — Menyimpan data akun pelanggan, admin, dan dapur beserta otorisasi peran (*role*).
-2. `Produk` — Katalog menu katering beserta harga, stok harian (kuota max 50 porsi/hari), dan minimal order (10 porsi).
-3. `Jadwal_PO` — Menyimpan jadwal pembukaan pre-order, tanggal pengiriman, status jadwal, dan kuota batas maksimal porsi harian.
+Sistem ini bertumpu pada 5 tabel utama berbasis PostgreSQL:
+1. `users` — Menyimpan data akun pelanggan, admin, dan owner beserta otorisasi peran (*role*).
+2. `produk` — Katalog menu katering beserta harga, stok harian (kuota max 50 porsi/hari), dan minimal order (4 porsi).
+3. `jadwal_PO` — Menyimpan jadwal pembukaan pre-order, tanggal pengiriman, status jadwal, dan kuota batas maksimal porsi harian.
+4. `pesanan` — Menyimpan data transaksi pemesanan yang dilakukan oleh pelanggan.
+5. `detail_pesanan` — Menyimpan rincian produk yang ada di dalam satu pesanan.
 
 ---
 

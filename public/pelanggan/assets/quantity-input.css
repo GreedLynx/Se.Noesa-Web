@@ -1,0 +1,22 @@
+.quantity-control input {
+  width: 58px;
+  height: 34px;
+  border: 1px solid #b7cbb8;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 4px;
+  outline-color: var(--green);
+}
+
+.quantity-control button {
+  flex: none;
+}
+
+.quantity-control input::-webkit-inner-spin-button,
+.quantity-control input::-webkit-outer-spin-button {
+  opacity: 1;
+}
