@@ -21,7 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $postLimit = trim((string)ini_get('post_max_size'));
   $postBytes = 0;
   if (preg_match('/^([0-9]+)\s*([KMG])?$/i', $postLimit, $limitMatch)) {
-    $postBytes = (int)$limitMatch[1] * match (strtoupper($limitMatch[2] ?? '')) { 'G' => 1024 ** 3, 'M' => 1024 ** 2, 'K' => 1024, default => 1 };
+    $postBytes = (int)$limitMatch[1] * match (strtoupper($limitMatch[2] ?? '')) {
+      'G' => 1024 ** 3,
+      'M' => 1024 ** 2,
+      'K' => 1024,
+      default => 1
+    };
   }
   if ($contentLength > 0 && $postBytes > 0 && $contentLength > $postBytes) json(['error' => 'Data upload melebihi batas PHP (' . $postLimit . '). Kecilkan gambar atau naikkan post_max_size dan upload_max_filesize.'], 413);
   $isMultipart = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data');
@@ -29,8 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $b['action'] ?? 'save';
 
   if ($action === 'delete') {
-    try { $n = q('DELETE FROM produk WHERE id=?', [(int)($b['id'] ?? 0)])->rowCount(); }
-    catch (PDOException $e) { json(['error' => 'Produk sudah dipakai pada pesanan dan tidak dapat dihapus'], 409); }
+    try {
+      $n = q('DELETE FROM produk WHERE id=?', [(int)($b['id'] ?? 0)])->rowCount();
+    } catch (PDOException $e) {
+      json(['error' => 'Produk sudah dipakai pada pesanan dan tidak dapat dihapus'], 409);
+    }
     json($n ? ['ok' => true] : ['error' => 'Produk tidak ditemukan'], $n ? 200 : 404);
   }
 
