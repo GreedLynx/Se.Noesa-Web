@@ -74,12 +74,15 @@ if (isset($_GET['id'])) {
   json($o);
 }
 $tab = match (($_GET['tab'] ?? 'validasi')) {
+  'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak')",
+  'pembayaran' => "('menunggu_pembayaran')",
   'proses' => "('diproses')",
   'selesai' => "('selesai')",
+  'ditolak' => "('ditolak')",
   default => "('menunggu_validasi')"
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
-$items = q("SELECT p.id,p.kode,p.nama_pemesan,p.keterangan,p.pax,p.total,p.status,p.tgl_kirim,p.created_at FROM pesanan p WHERE p.status IN $tab AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) ORDER BY CASE WHEN p.status='menunggu_validasi' THEN 0 ELSE 1 END,p.created_at DESC", [$search, $search])->fetchAll();
-$count = q("SELECT COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status='diproses') processing,COUNT(*) FILTER(WHERE status='selesai') completed FROM pesanan")->fetch();
+$items = q("SELECT p.id,p.kode,p.nama_pemesan,p.keterangan,p.pax,p.total,p.status,p.tgl_kirim,p.created_at FROM pesanan p WHERE p.status IN $tab AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,p.created_at DESC", [$search, $search])->fetchAll();
+$count = q("SELECT COUNT(*) total,COUNT(*) FILTER(WHERE status='menunggu_pembayaran') payment,COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status='diproses') processing,COUNT(*) FILTER(WHERE status='selesai') completed,COUNT(*) FILTER(WHERE status='ditolak') rejected FROM pesanan")->fetch();
 $cap = q("SELECT COALESCE(SUM(j.kapasitas),0) kapasitas,COALESCE(SUM(x.pakai),0) pakai FROM jadwal_po j LEFT JOIN LATERAL(SELECT COALESCE(SUM(p.pax),0) pakai FROM pesanan p WHERE p.jadwal_id=j.id AND p.status<>'ditolak') x ON true WHERE j.aktif")->fetch();
 json(['items' => $items, 'counts' => $count, 'capacity' => $cap]);

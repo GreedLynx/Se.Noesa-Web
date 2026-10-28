@@ -35,6 +35,7 @@ function toast(message) {
 }
 function badge(status) {
   const labels = {
+    menunggu_pembayaran: "Menunggu pembayaran",
     menunggu_validasi: "Menunggu validasi",
     diproses: "Sedang diproses",
     selesai: "Selesai",
@@ -172,14 +173,17 @@ async function dashboard() {
         .join("")
     : '<div class="empty-state">Belum ada aktivitas pesanan.</div>';
 }
-let orderTab = "validasi",
+let orderTab = "semua",
   orderTimer;
 async function loadOrders() {
   const query = encodeURIComponent($("#order-search")?.value || "");
   const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query);
+  $("#all-count").textContent = d.counts.total;
+  $("#payment-count").textContent = d.counts.payment;
   $("#pending-count").textContent = d.counts.pending;
   $("#processing-count").textContent = d.counts.processing;
   document.querySelector("#completed-count").textContent = d.counts.completed;
+  $("#rejected-count").textContent = d.counts.rejected;
   $("#orders-capacity").textContent =
     (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
     " / " +
