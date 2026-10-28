@@ -41,8 +41,9 @@ CREATE TABLE pesanan(
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
   total INT NOT NULL DEFAULT 0,
-  status VARCHAR(20) NOT NULL DEFAULT 'menunggu_validasi' CHECK(
+  status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran' CHECK(
     status IN(
+      'menunggu_pembayaran',
       'menunggu_validasi',
       'diproses',
       'selesai',
