@@ -518,8 +518,12 @@ async function orderDetail() {
     esc(o.kode) +
     '</h2></div><span class="tag soft">' +
     dateLabel(o.created_at, true) +
-    '</span></div><div class="detail-pair"><span>Nama pemesan</span><b>' +
+    '</span></div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
+    '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
+    esc(o.telepon_penerima || o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+    esc(o.alamat_pengiriman || "-") +
     '</b></div><div class="detail-pair"><span>Catatan pesanan</span><b>' +
     esc(o.keterangan || "-") +
     '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
@@ -533,10 +537,12 @@ async function orderDetail() {
     esc(o.kode) +
     "</h2></div>" +
     badge(o.status) +
-    '</div><div class="detail-pair"><span>Nama pemesan</span><b>' +
+    '</div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
-    '</b></div><div class="detail-pair"><span>Kontak</span><b>' +
-    esc(o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
+    esc(o.telepon_penerima || o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+    esc(o.alamat_pengiriman || "-") +
     '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
     delivery +
     '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
