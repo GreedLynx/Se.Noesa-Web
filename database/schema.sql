@@ -54,6 +54,7 @@ CREATE TABLE pesanan(
   nama_pembayar VARCHAR(100),
   foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
+  status_updated_at TIMESTAMPTZ DEFAULT now(),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE TABLE detail_pesanan(
