@@ -6,7 +6,30 @@ function toast(message){const el=$('#customer-toast');if(!el)return;el.textConte
 function wireLogout(){$$('[data-logout]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('../api/auth.php?a=logout');location.href='../login.php'}catch(e){b.disabled=false;toast(e.message)}})}
 function imagePath(name){const raw=String(name||'');if(/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw))return '../'+raw;const file=raw.replace(/[^a-zA-Z0-9_.-]/g,'');return file?'../assets/img/produk/'+file:'../assets/img/produk/NK-01.png'}
 let catalog=[],productCache={},category='',schedule=null,cart={},activeProduct=null,activeQty=1,searchTimer,savedAddresses=[];
- function catalogPage(){wireLogout();const search=$('#catalog-search'),filters=$$('#category-tabs button, .customer-category-rail [data-category]');filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));filters.forEach(b=>b.onclick=()=>{category=b.dataset.category;filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));$('#menu-grid').scrollTo({top:0,behavior:'smooth'});loadCatalog(true)});search.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadCatalog(true),200)};$('#checkout-button').onclick=openCart;$('#continue-checkout').onclick=()=>{$('#cart-dialog').close();openCheckout()};$$('[data-close-cart]').forEach(b=>b.onclick=()=>$('#cart-dialog').close());$$('[data-close-detail]').forEach(b=>b.onclick=()=>$('#detail-dialog').close());const detailDialog=$('#detail-dialog'),detailContent=$('#detail-content');detailContent.addEventListener('click',e=>{if(e.target.closest('.quantity-control'))e.stopPropagation()});detailDialog.addEventListener('click',e=>{if(e.target===detailDialog)detailDialog.close()});$$('[data-close-checkout]').forEach(b=>b.onclick=()=>$('#checkout-dialog').close());$('#address-select').onchange=()=>toggleAddressFields();$('#checkout-form').onsubmit=submitOrder;loadCatalog()}
+function catalogPage(){
+  wireLogout();
+  const search=$('#catalog-search'),filters=$$('#category-tabs button, .customer-category-rail [data-category]');
+  filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));
+  filters.forEach(b=>b.onclick=()=>{
+    if(category===b.dataset.category)return;
+    category=b.dataset.category;
+    filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));
+    $('#menu-grid').scrollTo({top:0,behavior:'smooth'});
+    loadCatalog(true);
+  });
+  search.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadCatalog(true),200)};
+  $('#checkout-button').onclick=openCart;
+  $('#continue-checkout').onclick=()=>{$('#cart-dialog').close();openCheckout()};
+  $$('[data-close-cart]').forEach(b=>b.onclick=()=>$('#cart-dialog').close());
+  $$('[data-close-detail]').forEach(b=>b.onclick=()=>$('#detail-dialog').close());
+  const detailDialog=$('#detail-dialog'),detailContent=$('#detail-content');
+  detailContent.addEventListener('click',e=>{if(e.target.closest('.quantity-control'))e.stopPropagation()});
+  detailDialog.addEventListener('click',e=>{if(e.target===detailDialog)detailDialog.close()});
+  $$('[data-close-checkout]').forEach(b=>b.onclick=()=>$('#checkout-dialog').close());
+  $('#address-select').onchange=()=>toggleAddressFields();
+  $('#checkout-form').onsubmit=submitOrder;
+  loadCatalog();
+}
 async function loadCatalog(animate=false){const grid=$('#menu-grid');grid.classList.remove('category-transition');const d=await api('api/catalog.php?kategori='+encodeURIComponent(category)+'&q='+encodeURIComponent($('#catalog-search').value));catalog=d.items;catalog.forEach(p=>productCache[p.id]=p);schedule=d.schedule;const note=$('#catalog-note');if(schedule){note.textContent='Pemesanan aktif: '+schedule.nama+' ('+schedule.tgl_buka.slice(0,10)+' – '+schedule.tgl_tutup.slice(0,10)+')';note.classList.remove('closed')}else{note.textContent='Pemesanan sedang tidak dibuka. Menu tetap dapat dilihat.';note.classList.add('closed')}
 grid.innerHTML=catalog.length?catalog.map((p,i)=>'<article class="menu-card" data-product="'+Number(p.id)+'" style="--i:'+i+'"><img class="menu-image" data-open-product="'+Number(p.id)+'" src="'+esc(imagePath(p.gambar))+'" alt="'+esc(p.nama)+'" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'+esc(p.kategori)+'</span><h3>'+esc(p.nama)+'</h3><p>Min. '+Number(p.min_pesan)+' porsi · Sisa '+Number(p.sisa)+' porsi</p><strong class="menu-price">'+money(p.harga)+'</strong></div><button class="menu-add" data-add="'+Number(p.id)+'" aria-label="Lihat '+esc(p.nama)+'">+</button></article>').join(''):'<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 $$('[data-product]').forEach(card=>card.onclick=e=>{if(e.target.closest('[data-add]'))return;showProduct(catalog.find(p=>Number(p.id)===Number(card.dataset.product)))});$$('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();showProduct(catalog.find(p=>Number(p.id)===Number(b.dataset.add)))});$$('[data-open-product]').forEach(image=>image.onclick=e=>{e.stopPropagation();showProduct(catalog.find(p=>Number(p.id)===Number(image.dataset.openProduct)))});renderCart();if(animate)requestAnimationFrame(()=>{grid.classList.add('category-transition');setTimeout(()=>grid.classList.remove('category-transition'),750)})}
