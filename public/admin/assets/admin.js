@@ -55,8 +55,8 @@ function dateLabel(value, withTime = false) {
   return date.toLocaleString(
     "id-ID",
     withTime
-      ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }
-      : { day: "2-digit", month: "short", year: "numeric" },
+      ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }
+      : { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" },
   );
 }
 function countUp(el, target) {
@@ -195,7 +195,7 @@ async function loadOrders() {
         "<tr><td><b>" +
         esc(o.kode) +
         "</b><small>" +
-        dateLabel(o.created_at, true) +
+        (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
         "</small></td><td><b>" +
         esc(o.nama_pemesan) +
         "</b><small>" +
@@ -229,7 +229,7 @@ async function loadOrders() {
           "</b><small>" +
           esc(o.keterangan || "") +
           " · " +
-          dateLabel(o.created_at, true) +
+          (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
           '</small><span class="row-between"><small>' +
           Number(o.pax || 0) +
           " pax</small><strong>" +
@@ -522,7 +522,9 @@ async function orderDetail() {
     esc(o.kode) +
     '</h2></div><span class="tag soft">' +
     dateLabel(o.created_at, true) +
-    '</span></div><div class="detail-pair"><span>Nama penerima</span><b>' +
+    '</span></div><div class="detail-pair"><span>Waktu status</span><b>' +
+    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
     '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
     esc(o.telepon_penerima || o.phone || "-") +
@@ -541,7 +543,9 @@ async function orderDetail() {
     esc(o.kode) +
     "</h2></div>" +
     badge(o.status) +
-    '</div><div class="detail-pair"><span>Nama penerima</span><b>' +
+    '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
     '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
     esc(o.telepon_penerima || o.phone || "-") +
