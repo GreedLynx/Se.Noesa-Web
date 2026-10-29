@@ -2,24 +2,24 @@
 
 INSERT INTO users(username, email, password_hash, phone, role)
 VALUES
-  (
+    (
     'hendra',
     'owner@senoesa.id',
     '$2y$12$qWPNCZo4VgwDnzEbpRO9GeWfbA6EYRqktvsjl9mAJIrKhqpuzVXdW',
     '08123456789',
     'owner'
-  ),
-  (
+    ),
+    (
     'andi',
     'andi@mail.com',
     '$2y$12$2tI1xZ7Et3mnGlF7CfqK5uvdpRWDcSbzBh/XOZBTauaBuxZyuqNce',
     '0811111111',
     'pelanggan'
-  );
+    );
 
 INSERT INTO produk(kode, nama, kategori, harga, kuota, terpakai, gambar)
 VALUES
-  (
+    (
     'NK-01',
     'Paket Nasi Kotak Ayam',
     'makanan',
@@ -27,8 +27,8 @@ VALUES
     150,
     105,
     'NK-01.png'
-  ),
-  (
+    ),
+    (
     'BF-04',
     'Nasi Bulat Pak Kris',
     'makanan',
@@ -36,8 +36,8 @@ VALUES
     200,
     182,
     'NK-02.png'
-  ),
-  (
+    ),
+    (
     'TP-02',
     'Tumpeng Coklat',
     'makanan',
@@ -45,8 +45,8 @@ VALUES
     10,
     7,
     NULL
-  ),
-  (
+    ),
+    (
     'BT-08',
     'Bento Beef Teriyaki',
     'makanan',
@@ -54,8 +54,8 @@ VALUES
     120,
     48,
     'BT-01.png'
-  ),
-  (
+    ),
+    (
     'SB-03',
     'Coffe aja sih',
     'minuman',
@@ -63,8 +63,8 @@ VALUES
     100,
     100,
     'ES-01.png'
-  ),
-  (
+    ),
+    (
     'MC-01',
     'Matcha Cold Brew',
     'minuman',
@@ -72,8 +72,8 @@ VALUES
     200,
     60,
     'MC-01.png'
-  ),
-  (
+    ),
+    (
     'SN-01',
     'Snack Box Coffee Break',
     'snack',
@@ -81,25 +81,25 @@ VALUES
     300,
     120,
     NULL
-  );
+    );
 
 INSERT INTO jadwal_po(nama, tgl_buka, tgl_tutup, kapasitas)
 VALUES ('PO Oktober 2026', '2026-10-01', '2026-10-31', 2200);
 
 INSERT INTO pesanan(
-  kode,
-  user_id,
-  jadwal_id,
-  nama_pemesan,
-  keterangan,
-  pax,
-  total,
-  status,
-  tgl_kirim,
-  created_at
+    kode,
+    user_id,
+    jadwal_id,
+    nama_pemesan,
+    keterangan,
+    pax,
+    total,
+    status,
+    tgl_kirim,
+    created_at
 )
 VALUES
-  (
+    (
     '#CAT-8840',
     2,
     1,
@@ -110,8 +110,8 @@ VALUES
     'diproses',
     '2026-10-20 11:30+07',
     now()
-  ),
-  (
+    ),
+    (
     '#CAT-8839',
     2,
     1,
@@ -122,8 +122,8 @@ VALUES
     'menunggu_validasi',
     '2026-10-21 11:00+07',
     now()
-  ),
-  (
+    ),
+    (
     '#CAT-8835',
     2,
     1,
@@ -134,13 +134,13 @@ VALUES
     'selesai',
     '2026-10-19 09:00+07',
     now() - interval '1 day'
-  );
+    );
 
 INSERT INTO detail_pesanan(pesanan_id, produk_id, qty, harga)
 VALUES
-  (1, 1, 100, 30000),
-  (1, 7, 100, 5000),
-  (2, 1, 220, 32000),
-  (3, 7, 75, 5000);
+    (1, 1, 100, 30000),
+    (1, 7, 100, 5000),
+    (2, 1, 220, 32000),
+    (3, 7, 75, 5000);
 
 </content>
