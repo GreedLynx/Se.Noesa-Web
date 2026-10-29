@@ -21,8 +21,8 @@ public/
 
 ## Setup
 
-1. Configure the `db` values in `config/config.php` and enable PHP's `pdo_pgsql` extension.
-2. Create the PostgreSQL database. On a new, empty database only, initialize the schema with `psql senoesa -f database/schema.sql`. The schema file drops and recreates its tables, so do not rerun it on a database containing data. For an existing database, apply `php scripts/apply-product-migration.php` (or `psql senoesa -f database/migrations/001_product_min_order.sql`) instead.
+1. Configure the database environment in `.env` and enable PHP's `pdo_pgsql` extension.
+2. Create the PostgreSQL database. On a new, empty database only, initialize the schema with `psql senoesa -f database/schema.sql`. The schema file drops and recreates its tables, so do not rerun it on a database containing data. For an existing database, run `php scripts/migrate.php`; this connects using `.env`, tracks applied files in `schema_migrations`, and applies pending files from `database/migrations` in order. Run it as the deploy/release command before serving traffic.
 3. Create an admin account. In PowerShell, set a password of at least eight characters and run the CLI script:
 
    ```powershell
