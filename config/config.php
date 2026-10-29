@@ -4,5 +4,5 @@ return ['db' => [
     'port' => 5432,
     'name' => 'senoesa',
     'user' => 'postgres',
-    'pass' => 'rama1167'
+    'pass' => '12345678'
 ]];
