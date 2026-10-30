@@ -25,3 +25,11 @@
 .field-hint{font-size:10px;color:var(--muted);font-weight:400;margin-top:-4px}
 
 .qris-display img{display:block;width:100%;max-height:320px;object-fit:contain}.payment-method-card+.payment-method-card{margin-top:10px}
+
+.checkout-dialog select{border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline-color:var(--green);font-size:12px;background:#fff;color:var(--ink)}.checkout-dialog #address-fields{display:grid;gap:12px}.checkout-dialog #address-fields[hidden]{display:none}.checkout-dialog .save-address-option{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:500}.checkout-dialog .save-address-option input{width:15px;height:15px;margin:0;accent-color:var(--green)}
+
+.customer-button.secondary{background:var(--soft);color:var(--brown)}.proof-upload[hidden]{display:none}.replace-proof{margin-top:10px}
+
+.proof-display-row{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}.proof-display-row .uploaded-proof{display:block;width:auto;max-width:min(42%,220px);max-height:220px;margin:0;object-fit:contain}.proof-display-row .replace-proof{flex:none;margin:0 0 2px}.proof-upload{display:grid;gap:8px}.proof-upload input[type=text]{height:38px;font-size:13px;margin:0}.proof-upload input[type=file]{width:100%;max-width:100%;font-size:11px}.proof-upload .upload-hint{display:block;font-size:10px;line-height:1.4;color:var(--muted)}.proof-upload button{justify-self:start;margin:2px 0 0}.proof-upload .form-error{font-size:10px}@media(max-width:700px){.proof-display-row{align-items:flex-end;gap:10px}.proof-display-row .uploaded-proof{max-width:42%;max-height:170px}.proof-display-row .replace-proof{padding:10px 14px;font-size:11px}.proof-upload .upload-hint{font-size:9px}}
+
+.catalog-policy{margin:0 0 14px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--green-dark);font-size:12px;font-weight:600;line-height:1.45}.catalog-policy::before{content:'Info pemesanan: ';font-weight:700}@media(max-width:700px){.catalog-policy{margin-bottom:11px;padding:9px 11px;font-size:10px}}

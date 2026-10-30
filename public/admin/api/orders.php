@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->rollBack();
         json(['error' => 'Status pesanan sudah berubah atau tidak sesuai'], 409);
       }
-      q("UPDATE pesanan SET status='ditolak' WHERE id=?", [$current['id']]);
+      q("UPDATE pesanan SET status='ditolak',status_updated_at=now() WHERE id=?", [$current['id']]);
       q("UPDATE produk p SET terpakai=GREATEST(0,p.terpakai-d.qty) FROM (SELECT produk_id,SUM(qty) qty FROM detail_pesanan WHERE pesanan_id=? GROUP BY produk_id) d WHERE p.id=d.produk_id", [$current['id']]);
       $db->commit();
       json(['ok' => true, 'status' => 'ditolak']);
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$proof) json(['error' => 'Pesanan tidak ditemukan atau sudah berubah status'], 409);
     if (empty($proof['bukti_bayar'])) json(['error' => 'Pelanggan belum mengunggah bukti pembayaran'], 409);
   }
-  $n = q('UPDATE pesanan SET status=? WHERE id=? AND status=?', [$transition[1], (int)($b['id'] ?? 0), $transition[0]])->rowCount();
+  $n = q('UPDATE pesanan SET status=?,status_updated_at=now() WHERE id=? AND status=?', [$transition[1], (int)($b['id'] ?? 0), $transition[0]])->rowCount();
   json($n ? ['ok' => true, 'status' => $transition[1]] : ['error' => 'Status pesanan sudah berubah atau tidak sesuai'], $n ? 200 : 409);
 }
 if (isset($_GET['id'])) {
@@ -74,12 +74,15 @@ if (isset($_GET['id'])) {
   json($o);
 }
 $tab = match (($_GET['tab'] ?? 'validasi')) {
+  'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak')",
+  'pembayaran' => "('menunggu_pembayaran')",
   'proses' => "('diproses')",
   'selesai' => "('selesai')",
+  'ditolak' => "('ditolak')",
   default => "('menunggu_validasi')"
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
-$items = q("SELECT p.id,p.kode,p.nama_pemesan,p.keterangan,p.pax,p.total,p.status,p.tgl_kirim,p.created_at FROM pesanan p WHERE p.status IN $tab AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) ORDER BY CASE WHEN p.status='menunggu_validasi' THEN 0 ELSE 1 END,p.created_at DESC", [$search, $search])->fetchAll();
-$count = q("SELECT COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status='diproses') processing,COUNT(*) FILTER(WHERE status='selesai') completed FROM pesanan")->fetch();
+$items = q("SELECT p.id,p.kode,p.nama_pemesan,p.keterangan,p.pax,p.total,p.status,p.status_updated_at,p.tgl_kirim,p.created_at FROM pesanan p WHERE p.status IN $tab AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,p.created_at DESC", [$search, $search])->fetchAll();
+$count = q("SELECT COUNT(*) total,COUNT(*) FILTER(WHERE status='menunggu_pembayaran') payment,COUNT(*) FILTER(WHERE status='menunggu_validasi') pending,COUNT(*) FILTER(WHERE status='diproses') processing,COUNT(*) FILTER(WHERE status='selesai') completed,COUNT(*) FILTER(WHERE status='ditolak') rejected FROM pesanan")->fetch();
 $cap = q("SELECT COALESCE(SUM(j.kapasitas),0) kapasitas,COALESCE(SUM(x.pakai),0) pakai FROM jadwal_po j LEFT JOIN LATERAL(SELECT COALESCE(SUM(p.pax),0) pakai FROM pesanan p WHERE p.jadwal_id=j.id AND p.status<>'ditolak') x ON true WHERE j.aktif")->fetch();
 json(['items' => $items, 'counts' => $count, 'capacity' => $cap]);
