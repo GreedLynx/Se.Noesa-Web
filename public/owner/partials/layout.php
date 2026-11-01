@@ -48,6 +48,20 @@ function head(string $title, string $page, bool $auth = false)
   function foot()
   { ?>
     </main>
+    
+    <!-- DIALOG KONFIRMASI CUSTOM -->
+    <dialog id="app-confirm-dialog" class="confirm-dialog">
+      <div class="confirm-content">
+        <div class="confirm-icon" id="confirm-icon">&#10003;</div>
+        <h2 id="confirm-title" style="text-align:center; font-size: 22px; margin: 15px 0 10px; color: var(--gd);">Konfirmasi</h2>
+        <p class="muted" id="confirm-message" style="text-align:center; font-size: 13px; line-height: 1.5; margin-bottom: 25px;">Apakah Anda yakin?</p>
+      </div>
+      <div class="dialog-actions" style="justify-content:center; display: flex; gap: 10px; width: 100%;">
+        <button type="button" class="btn-main" data-close-confirm style="flex: 1; background: #e2e8e1; color: var(--br);">Batal</button>
+        <button type="button" class="btn-main" id="confirm-yes-btn" style="flex: 1;">Ya, Lanjutkan</button>
+      </div>
+    </dialog>
+
     <div class="toast" id="toast"></div>
     <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
   </body>

@@ -1229,3 +1229,89 @@ td small {
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
 }
+
+/* =========================================
+   CUSTOM CONFIRMATION DIALOG (MODERN)
+   ========================================= */
+.confirm-dialog {
+  max-width: 380px;
+  border-radius: 24px;
+  padding: 30px 24px 24px;
+  text-align: center;
+  border: none;
+  box-shadow: 0 24px 90px rgba(10, 25, 15, 0.2);
+}
+.confirm-dialog::backdrop {
+  background: #15201888;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+.confirm-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.confirm-icon {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  margin-bottom: 15px;
+  background: var(--green-pale);
+  color: var(--green-dark);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+.confirm-icon.danger {
+  background: #fbeaea;
+  color: var(--red);
+}
+.confirm-icon.primary {
+  background: var(--green-pale);
+  color: var(--green-dark);
+}
+.confirm-dialog .dialog-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 5px;
+}
+.confirm-dialog .button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.confirm-dialog .button.secondary {
+  background: #f0f3ef;
+  color: var(--brown);
+}
+.confirm-dialog .button.secondary:hover {
+  background: #e2e8e1;
+}
+#confirm-yes-btn.danger {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(163, 66, 55, 0.3);
+}
+#confirm-yes-btn.danger:hover {
+  background: #8c3329;
+}
+#confirm-yes-btn.primary {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(117, 141, 118, 0.3);
+}
+#confirm-yes-btn.primary:hover {
+  background: var(--green-dark);
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}

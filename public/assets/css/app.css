@@ -1119,3 +1119,37 @@ body[data-page="payments"] .nav { max-width: 430px; }
 }
 
 .payment-admin-intro .eyebrow { color: var(--g); font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+
+/* Custom Confirm Dialog */
+.confirm-dialog {
+  width: min(400px, calc(100% - 28px));
+  border: 1px solid var(--gl);
+  border-radius: 24px;
+  padding: 30px 24px 24px;
+  background: #fff;
+  box-shadow: 0 24px 90px rgba(21, 32, 24, 0.4);
+  text-align: center;
+}
+.confirm-dialog::backdrop {
+  background: rgba(21, 32, 24, 0.5);
+  backdrop-filter: blur(4px);
+}
+.confirm-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.confirm-icon {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  margin-bottom: 10px;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
