@@ -365,7 +365,6 @@ const PAGES = {
               })
               .replace(".", ":") + " WIB"
           : "-";
-      
       el.innerHTML = `<div class="dbox" style="--i:0">
         <div class="row between">
             <div>
@@ -387,51 +386,18 @@ const PAGES = {
         <div class="jd"><span>Tanggal &amp; Waktu Pengiriman</span><b>${dt(o.tgl_kirim)}</b></div>
         <div class="jd"><span>Alamat Tujuan</span><b>${o.alamat_pengiriman || '-'}</b></div>
       </div>
-      
+
       <div class="dbox" style="--i:1">
         <b>Bukti Pesanan Pelanggan</b>
         <div class="proof">${o.bukti_bayar ? `<img src="${o.bukti_bayar}" alt="Bukti">` : "Foto bukti pesanan"}</div>
       </div>
-      
+
       <div class="dbox" style="--i:2">
         <div class="row between"><b>Daftar Menu</b><span class="tag">${o.menu.length} Jenis</span></div>
         ${o.menu.map((x) => `<div class="mi" style="padding-left:0;"><span><b>${x.nama}</b><small>${x.harga.toLocaleString("id-ID")} x ${x.qty} porsi</small></span><strong>${rp(x.sub)}</strong></div>`).join("")}
       </div>`;
-
-      const a = {
-        menunggu_validasi: ["validate", "✓ Validasi Pesanan"],
-        diproses: ["complete", "✓ Selesai dan Kirim"],
-      }[o.status];
-      btn.hidden = !a;
-      if (a) {
-        btn.dataset.a = a[0];
-        btn.textContent = a[1];
-      }
+      btn.hidden = true; // owner read-only
     }
-    btn.onclick = async () => {
-      // Konfirmasi Validasi/Selesai
-      const isValidate = btn.dataset.a === "validate";
-      const confirmed = await confirmDialog(
-        isValidate ? "Validasi Pembayaran" : "Selesaikan Pesanan",
-        isValidate ? "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses." : "Pesanan akan ditandai selesai dan siap dikirim.",
-        isValidate ? "Ya, Validasi" : "Ya, Selesaikan",
-        "primary"
-      );
-      if (!confirmed) return;
-
-      btn.disabled = true;
-      try {
-        await api("api/orders.php", {
-          method: "POST",
-          body: { id: +id, action: btn.dataset.a },
-        });
-        toast("Status pesanan diperbarui");
-        await load();
-      } catch (e) {
-        toast(e.message);
-      }
-      btn.disabled = false;
-    };
     load();
   },
   async products() {
@@ -447,7 +413,8 @@ const PAGES = {
         d.items
           .map((p, i) => {
             const pct = (p.sisa / p.kuota) * 100;
-            return `<div class="pr" style="--i:${i}"><span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${p.sisa <= 0 ? " · habis" : ""}</small><div class="meter${pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
+            const img = p.gambar ? `<img src="../${p.gambar}" alt="${p.nama}" onerror="this.src='../assets/img/produk/NK-01.png'">` : '<img src="../assets/img/produk/NK-01.png" alt="placeholder">';
+            return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${p.sisa <= 0 ? " · habis" : ""}</small><div class="meter${pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
           })
           .join("") || '<p class="empty">Produk tidak ditemukan</p>';
       requestAnimationFrame(() =>

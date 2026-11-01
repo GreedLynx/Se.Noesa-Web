@@ -25,3 +25,4 @@ Thumbs.db
 .idea/
 !/public/uploads/products/
 !/public/uploads/products/.gitkeep
+AGENTS.md

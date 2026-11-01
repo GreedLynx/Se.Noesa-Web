@@ -42,15 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     json($n ? ['ok' => true] : ['error' => 'Produk tidak ditemukan'], $n ? 200 : 404);
   }
 
-  foreach (['kode', 'nama', 'kategori', 'harga', 'kuota', 'terpakai', 'min_pesan'] as $field) {
+  foreach (['kode', 'nama', 'kategori', 'harga', 'kuota', 'min_pesan'] as $field) {
     if (!isset($b[$field]) || trim((string)$b[$field]) === '') json(['error' => 'Semua kolom wajib diisi'], 422);
   }
   if (!in_array($b['kategori'], ['makanan', 'minuman', 'snack'], true)) json(['error' => 'Kategori tidak valid'], 422);
   $harga = filter_var($b['harga'], FILTER_VALIDATE_INT);
   $kuota = filter_var($b['kuota'], FILTER_VALIDATE_INT);
-  $terpakai = filter_var($b['terpakai'], FILTER_VALIDATE_INT);
   $minimum = filter_var($b['min_pesan'], FILTER_VALIDATE_INT);
-  if ($harga === false || $harga < 1 || $kuota === false || $kuota < 0 || $terpakai === false || $terpakai < 0 || $terpakai > $kuota || $minimum === false || $minimum < 1) {
+  if ($harga === false || $harga < 1 || $kuota === false || $kuota < 0 || $minimum === false || $minimum < 1) {
     json(['error' => 'Harga dan kuota tidak valid'], 422);
   }
 
@@ -92,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   try {
     if ($id) {
-      q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,kuota=?,terpakai=?,min_pesan=?,gambar=? WHERE id=?', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $terpakai, $minimum, $image, $id]);
+      q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,kuota=?,min_pesan=?,gambar=? WHERE id=?', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $minimum, $image, $id]);
       $savedId = $id;
     } else {
-      $savedId = (int)q('INSERT INTO produk(kode,nama,kategori,harga,kuota,terpakai,min_pesan,gambar) VALUES(?,?,?,?,?,?,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $terpakai, $minimum, $image])->fetchColumn();
+      $savedId = (int)q('INSERT INTO produk(kode,nama,kategori,harga,kuota,terpakai,min_pesan,gambar) VALUES(?,?,?,?,?,0,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $minimum, $image])->fetchColumn();
     }
   } catch (PDOException $e) {
     json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);
