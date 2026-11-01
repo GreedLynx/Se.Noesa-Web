@@ -33,6 +33,57 @@ function toast(message) {
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2600);
 }
+
+// --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
+function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
+  return new Promise((resolve) => {
+    const dialog = $("#app-confirm-dialog");
+    if (!dialog) return resolve(confirm(message));
+
+    const titleEl = $("#confirm-title");
+    const msgEl = $("#confirm-message");
+    const btnYes = $("#confirm-yes-btn");
+    const iconEl = $("#confirm-icon");
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    btnYes.textContent = confirmLabel;
+
+    // Set styling (danger = merah, primary = hijau)
+    btnYes.className = "button " + type;
+    iconEl.className = "confirm-icon " + type;
+    
+    // Set Icon (Tanda Seru untuk danger, Centang untuk primary)
+    iconEl.innerHTML = type === "danger" ? "&#9888;" : "&#10003;";
+
+    dialog.showModal();
+
+    const close = (result) => {
+      dialog.close();
+      cleanup();
+      resolve(result);
+    };
+
+    const onCancel = () => close(false);
+    const onConfirm = () => close(true);
+    const closeBtns = $$("[data-close-confirm]", dialog);
+
+    const cleanup = () => {
+      closeBtns.forEach(b => b.onclick = null);
+      btnYes.onclick = null;
+      dialog.onclick = null;
+    };
+
+    closeBtns.forEach(b => b.onclick = onCancel);
+    btnYes.onclick = onConfirm;
+    
+    dialog.onclick = (e) => {
+      if (e.target === dialog) onCancel();
+    };
+  });
+}
+// ------------------------------------
+
 function badge(status) {
   const labels = {
     menunggu_pembayaran: "Menunggu pembayaran",
@@ -75,8 +126,18 @@ function shell() {
   toggle?.addEventListener("click", () =>
     $(".sidebar")?.classList.toggle("open"),
   );
+  
+  // LOGOUT CONFIRMATION
   $$("[data-logout]").forEach((button) =>
     button.addEventListener("click", async () => {
+      const confirmed = await confirmDialog(
+        "Keluar Akun",
+        "Apakah Anda yakin ingin keluar dari panel admin Se.Noesa?",
+        "Ya, Keluar",
+        "primary"
+      );
+      if (!confirmed) return;
+
       button.disabled = true;
       try {
         await api("../api/auth.php?a=logout");
@@ -87,6 +148,7 @@ function shell() {
       }
     }),
   );
+
   const label = $("#today-label");
   if (label)
     label.textContent = new Date().toLocaleDateString("id-ID", {
@@ -321,7 +383,15 @@ async function loadProducts() {
   $$("[data-delete]").forEach(
     (b) =>
       (b.onclick = async () => {
-        if (!confirm("Hapus produk ini?")) return;
+        // HAPUS PRODUK CONFIRMATION
+        const confirmed = await confirmDialog(
+          "Hapus Produk", 
+          "Apakah Anda yakin ingin menghapus produk ini? Data yang dihapus tidak dapat dikembalikan.",
+          "Ya, Hapus",
+          "danger"
+        );
+        if (!confirmed) return;
+
         try {
           await api("api/products.php", {
             method: "POST",
@@ -569,11 +639,35 @@ async function orderDetail() {
       (o.status === "diproses" && action === "complete")
     );
     btn.onclick = async () => {
-      if (
-        action === "reject" &&
-        !confirm("Tolak pembayaran untuk pesanan ini?")
-      )
-        return;
+      // KONFIRMASI UNTUK SEMUA TOMBOL KEPUTUSAN
+      if (action === "reject") {
+        const confirmed = await confirmDialog(
+          "Tolak Pembayaran",
+          "Tolak pembayaran untuk pesanan ini? Stok produk akan dikembalikan.",
+          "Ya, Tolak",
+          "danger"
+        );
+        if (!confirmed) return;
+      }
+      if (action === "validate") {
+        const confirmed = await confirmDialog(
+          "Validasi Pembayaran",
+          "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
+          "Ya, Validasi",
+          "primary"
+        );
+        if (!confirmed) return;
+      }
+      if (action === "complete") {
+        const confirmed = await confirmDialog(
+          "Selesaikan Pesanan",
+          "Pesanan akan ditandai selesai dan siap dikirim. Pastikan semua menu sudah dicek dan foto makanan sudah diunggah.",
+          "Ya, Selesaikan",
+          "primary"
+        );
+        if (!confirmed) return;
+      }
+
       btn.disabled = true;
       try {
         await api("api/orders.php", { method: "POST", body: { id, action } });

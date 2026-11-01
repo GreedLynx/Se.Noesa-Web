@@ -46,6 +46,20 @@ function admin_head(string $title, string $page): void
         <nav class="mobile-nav"><a href="dashboard.php">&#9638;<span>Dashboard</span></a><a href="orders.php">&#9776;<span>Pesanan</span></a><a href="products.php">&#9633;<span>Produk</span></a><button data-logout>&#10140;<span>Keluar</span></button></nav>
       </main>
     </div>
+    
+    <!-- DIALOG KONFIRMASI CUSTOM (MODERN) -->
+    <dialog id="app-confirm-dialog" class="product-dialog confirm-dialog">
+      <div class="confirm-content">
+        <div class="confirm-icon" id="confirm-icon">&#10003;</div>
+        <h2 id="confirm-title" style="text-align:center; font-size: 24px; margin: 15px 0 10px; color: var(--ink);">Konfirmasi</h2>
+        <p class="muted" id="confirm-message" style="text-align:center; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">Apakah Anda yakin?</p>
+      </div>
+      <div class="dialog-actions" style="justify-content:center; display: flex; gap: 12px; width: 100%;">
+        <button type="button" class="button secondary" data-close-confirm style="flex: 1;">Batal</button>
+        <button type="button" class="button" id="confirm-yes-btn" style="flex: 1;">Ya, Lanjutkan</button>
+      </div>
+    </dialog>
+
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
   </body>
