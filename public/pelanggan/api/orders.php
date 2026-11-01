@@ -40,10 +40,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!$schedule) throw new DomainException('Jadwal pemesanan belum tersedia untuk tanggal tersebut.');
     $lines=[];$total=0;$pax=0;
     foreach($quantities as $pid=>$qty){
-      $product=q('SELECT id,nama,harga,kuota,terpakai,min_pesan FROM produk WHERE id=? FOR UPDATE',[$pid])->fetch();
+      $product=q('SELECT id,nama,harga,min_pesan FROM produk WHERE id=? FOR UPDATE',[$pid])->fetch();
       if(!$product) throw new DomainException('Salah satu menu sudah tidak tersedia.');
       if($qty<$product['min_pesan']) throw new DomainException($product['nama'].' minimal dipesan '.$product['min_pesan'].' porsi.');
-      if($qty>$product['kuota']-$product['terpakai']) throw new DomainException('Stok '.$product['nama'].' tidak mencukupi.');
+      $dailyQuota=q('SELECT kuota FROM kuota_harian WHERE produk_id=? AND tanggal=? FOR UPDATE',[$pid,$delivery->format('Y-m-d')])->fetch();
+      $available=(int)($dailyQuota['kuota']??0);
+      if($qty>$available) throw new DomainException('Kuota '.$product['nama'].' untuk tanggal pengiriman tidak mencukupi.');
       $lines[]=['product'=>$product,'qty'=>$qty];$total+=(int)$product['harga']*$qty;$pax+=$qty;
       if($total>2147483647)throw new DomainException('Total pesanan melebihi batas transaksi.');
     }
@@ -51,7 +53,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($pax>(int)$schedule['kapasitas']-$used) throw new DomainException('Kapasitas dapur tidak mencukupi untuk jumlah pesanan ini.');
     $code='SN-'.(new DateTimeImmutable('now',$zone))->format('ymd').'-'.strtoupper(bin2hex(random_bytes(3)));
     $orderId=(int)q("INSERT INTO pesanan(kode,user_id,jadwal_id,nama_pemesan,keterangan,pax,total,status,tgl_kirim,alamat_pengiriman,telepon_penerima) VALUES(?,?,?,?,?,?,?,'menunggu_pembayaran',?,?,?) RETURNING id",[$code,$customer['id'],$schedule['id'],$recipient,$note?:null,$pax,$total,$delivery->format('Y-m-d H:i:sP'),$address,$phone])->fetchColumn();
-    foreach($lines as $line){$p=$line['product'];$qty=$line['qty'];q('INSERT INTO detail_pesanan(pesanan_id,produk_id,qty,harga) VALUES(?,?,?,?)',[$orderId,$p['id'],$qty,$p['harga']]);q('UPDATE produk SET terpakai=terpakai+? WHERE id=?',[$qty,$p['id']]);}
+    foreach($lines as $line){$p=$line['product'];$qty=$line['qty'];q('INSERT INTO detail_pesanan(pesanan_id,produk_id,qty,harga) VALUES(?,?,?,?)',[$orderId,$p['id'],$qty,$p['harga']]);q('INSERT INTO kuota_harian(produk_id,tanggal,kuota) VALUES(?,?,0) ON CONFLICT(produk_id,tanggal) DO NOTHING',[$p['id'],$delivery->format('Y-m-d')]);q('UPDATE kuota_harian SET kuota=kuota-? WHERE produk_id=? AND tanggal=?',[$qty,$p['id'],$delivery->format('Y-m-d')]);}
     $db->commit();json(['ok'=>true,'id'=>$orderId,'kode'=>$code,'total'=>$total],201);
   }catch(DomainException $e){if(db()->inTransaction())db()->rollBack();json(['error'=>$e->getMessage()],422);}
   catch(Throwable $e){if(db()->inTransaction())db()->rollBack();json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}

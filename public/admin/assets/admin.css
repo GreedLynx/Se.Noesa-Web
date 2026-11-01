@@ -1204,3 +1204,28 @@ td small {
 [hidden] {
   display: none !important;
 }
+
+.form-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.form-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+.kuota-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+.kuota-table th, .kuota-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.kuota-table button {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+}

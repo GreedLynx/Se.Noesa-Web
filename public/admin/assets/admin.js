@@ -347,17 +347,57 @@ function refreshProducts() {
     toast(e.message);
   });
 }
+async function loadKuotaHarian(produkId) {
+  const tbody = $("#kuota-list");
+  if (!tbody) return;
+  try {
+    const d = await api("api/kuota-harian.php?produk_id=" + produkId);
+    const items = d.items || [];
+    tbody.innerHTML = items.length
+      ? items
+          .map(
+            (row) =>
+              "<tr><td>" +
+              esc(row.tanggal) +
+              "</td><td>" +
+              esc(row.kuota) +
+              ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
+              row.id +
+              '">Hapus</button></td></tr>',
+          )
+          .join("")
+      : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
+    $$("[data-delete-kuota]").forEach((btn) => {
+      btn.onclick = async () => {
+        try {
+          await api("api/kuota-harian.php", {
+            method: "POST",
+            body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
+          });
+          loadKuotaHarian(produkId);
+        } catch (e) {
+          toast(e.message);
+        }
+      };
+    });
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3">Gagal memuat kuota</td></tr>';
+  }
+}
 function editProduct(p) {
   const form = $("#product-form"),
-    preview = $("#product-image-preview");
+    preview = $("#product-image-preview"),
+    kuotaSection = $("#kuota-harian-section"),
+    kuotaList = $("#kuota-list");
   form.reset();
+  if (kuotaSection) kuotaSection.hidden = !p?.id;
+  if (kuotaList) kuotaList.innerHTML = "";
   form.elements.id.value = p?.id || "";
   form.elements.kode.value = p?.kode || "";
   form.elements.nama.value = p?.nama || "";
   form.elements.kategori.value = p?.kategori || "makanan";
   form.elements.harga.value = p?.harga || "";
   form.elements.kuota.value = p ? p.kuota : 1;
-  form.elements.terpakai.value = p ? p.terpakai : 0;
   form.elements.min_pesan.value = p?.min_pesan || 1;
   form.elements.gambar.value = p?.gambar || "";
   form.elements.gambar_file.required = !p;
@@ -368,6 +408,7 @@ function editProduct(p) {
   preview.src = p?.gambar ? productImagePath(p.gambar) : "";
   $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
   $("#product-error").textContent = "";
+  if (p?.id) loadKuotaHarian(p.id);
   $("#product-dialog").showModal();
 }
 function productsPage() {
@@ -387,8 +428,33 @@ function productsPage() {
   };
   $("#new-product").onclick = () => editProduct(null);
   $$("[data-close-dialog]").forEach(
-    (b) => (b.onclick = () => $("#product-dialog").close()),
+    (b) => (b.onclick = () => {
+      const section = $("#kuota-harian-section");
+      if (section) section.hidden = true;
+      const list = $("#kuota-list");
+      if (list) list.innerHTML = "";
+      $("#product-dialog").close();
+    }),
   );
+  const kuotaAddBtn = $("#kuota-add");
+  if (kuotaAddBtn) {
+    kuotaAddBtn.onclick = async () => {
+      const tanggal = $("#kuota-tanggal").value;
+      const kuota = parseInt($("#kuota-nilai").value);
+      const produkId = $("#product-form").elements.id.value;
+      if (!tanggal || !kuota || kuota < 1 || !produkId) return;
+      try {
+        await api("api/kuota-harian.php", {
+          method: "POST",
+          body: { produk_id: Number(produkId), tanggal, kuota },
+        });
+        $("#kuota-nilai").value = "";
+        loadKuotaHarian(produkId);
+      } catch (e) {
+        toast(e.message);
+      }
+    };
+  }
   $("#product-form").elements.gambar_file.onchange = (e) => {
     const file = e.target.files[0],
       preview = $("#product-image-preview");
@@ -432,6 +498,12 @@ function productsPage() {
             JSON.stringify(data) +
             " tetapi produk belum muncul pada daftar.",
         );
+      const savedId = data.id || f.elements.id.value;
+      if (savedId) {
+        const section = $("#kuota-harian-section");
+        if (section) section.hidden = false;
+        loadKuotaHarian(savedId);
+      }
       $("#product-dialog").close();
       toast("Produk dan gambar tersimpan. Daftar admin diperbarui.");
     } catch (err) {
