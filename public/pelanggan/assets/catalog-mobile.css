@@ -18,7 +18,7 @@
   body[data-page="catalog"] .customer-category-rail button.active { color: #fff; transform: translateX(2px); }
   body[data-page="catalog"] .customer-category-rail button.active::before {
     position: absolute; inset: 0 -40px 0 0; z-index: 0; content: ""; border-radius: 0 30px 30px 0;
-    background: var(--green); box-shadow: 7px 4px 15px #3148341c; animation: nav-reveal .24s var(--ease) both;
+    background: var(--green); box-shadow: 7px 4px 15px #3148341c;
   }
   body[data-page="catalog"] .customer-category-rail button.active::after {
     position: absolute; right: -16px; z-index: 1; content: "\203A"; color: #d5e5d6; font: 30px/1 system-ui, sans-serif;
@@ -312,11 +312,6 @@
 @keyframes category-arrive {
   from { opacity: 0; transform: translateY(16px) scale(.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes nav-reveal {
-  from { opacity: .55; transform: scale(.92); transform-origin: left center; }
-  to { opacity: 1; transform: scale(1); transform-origin: left center; }
 }
 
 body[data-page="catalog"] .menu-grid.category-transition .menu-card {

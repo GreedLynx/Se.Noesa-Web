@@ -35,6 +35,7 @@ function toast(message) {
 }
 function badge(status) {
   const labels = {
+    menunggu_pembayaran: "Menunggu pembayaran",
     menunggu_validasi: "Menunggu validasi",
     diproses: "Sedang diproses",
     selesai: "Selesai",
@@ -54,8 +55,8 @@ function dateLabel(value, withTime = false) {
   return date.toLocaleString(
     "id-ID",
     withTime
-      ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }
-      : { day: "2-digit", month: "short", year: "numeric" },
+      ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }
+      : { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" },
   );
 }
 function countUp(el, target) {
@@ -172,14 +173,17 @@ async function dashboard() {
         .join("")
     : '<div class="empty-state">Belum ada aktivitas pesanan.</div>';
 }
-let orderTab = "validasi",
+let orderTab = "semua",
   orderTimer;
 async function loadOrders() {
   const query = encodeURIComponent($("#order-search")?.value || "");
   const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query);
+  $("#all-count").textContent = d.counts.total;
+  $("#payment-count").textContent = d.counts.payment;
   $("#pending-count").textContent = d.counts.pending;
   $("#processing-count").textContent = d.counts.processing;
   document.querySelector("#completed-count").textContent = d.counts.completed;
+  $("#rejected-count").textContent = d.counts.rejected;
   $("#orders-capacity").textContent =
     (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
     " / " +
@@ -191,7 +195,7 @@ async function loadOrders() {
         "<tr><td><b>" +
         esc(o.kode) +
         "</b><small>" +
-        dateLabel(o.created_at, true) +
+        (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
         "</small></td><td><b>" +
         esc(o.nama_pemesan) +
         "</b><small>" +
@@ -225,7 +229,7 @@ async function loadOrders() {
           "</b><small>" +
           esc(o.keterangan || "") +
           " · " +
-          dateLabel(o.created_at, true) +
+          (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
           '</small><span class="row-between"><small>' +
           Number(o.pax || 0) +
           " pax</small><strong>" +
@@ -518,8 +522,14 @@ async function orderDetail() {
     esc(o.kode) +
     '</h2></div><span class="tag soft">' +
     dateLabel(o.created_at, true) +
-    '</span></div><div class="detail-pair"><span>Nama pemesan</span><b>' +
+    '</span></div><div class="detail-pair"><span>Waktu status</span><b>' +
+    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
+    '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
+    esc(o.telepon_penerima || o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+    esc(o.alamat_pengiriman || "-") +
     '</b></div><div class="detail-pair"><span>Catatan pesanan</span><b>' +
     esc(o.keterangan || "-") +
     '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
@@ -533,10 +543,14 @@ async function orderDetail() {
     esc(o.kode) +
     "</h2></div>" +
     badge(o.status) +
-    '</div><div class="detail-pair"><span>Nama pemesan</span><b>' +
+    '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
     esc(o.nama_pemesan) +
-    '</b></div><div class="detail-pair"><span>Kontak</span><b>' +
-    esc(o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
+    esc(o.telepon_penerima || o.phone || "-") +
+    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+    esc(o.alamat_pengiriman || "-") +
     '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
     delivery +
     '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +

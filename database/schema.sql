@@ -41,8 +41,9 @@ CREATE TABLE pesanan(
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
   total INT NOT NULL DEFAULT 0,
-  status VARCHAR(20) NOT NULL DEFAULT 'menunggu_validasi' CHECK(
+  status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran' CHECK(
     status IN(
+      'menunggu_pembayaran',
       'menunggu_validasi',
       'diproses',
       'selesai',
@@ -53,6 +54,7 @@ CREATE TABLE pesanan(
   nama_pembayar VARCHAR(100),
   foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
+  status_updated_at TIMESTAMPTZ DEFAULT now(),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE TABLE detail_pesanan(
@@ -63,6 +65,18 @@ CREATE TABLE detail_pesanan(
   harga INT NOT NULL,
   sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
+CREATE TABLE alamat_pelanggan(
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label VARCHAR(50) NOT NULL DEFAULT 'Rumah',
+  nama_penerima VARCHAR(100) NOT NULL,
+  telepon VARCHAR(20) NOT NULL,
+  alamat TEXT NOT NULL,
+  is_default BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE pesanan ADD COLUMN alamat_pengiriman TEXT;
+ALTER TABLE pesanan ADD COLUMN telepon_penerima VARCHAR(20);
 CREATE INDEX ON pesanan(status, created_at);
 CREATE INDEX ON detail_pesanan(pesanan_id);
 -- SEED (login owner: owner@senoesa.id / owner123)
