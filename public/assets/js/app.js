@@ -33,6 +33,61 @@ function toast(m) {
   t.classList.add("on");
   setTimeout(() => t.classList.remove("on"), 2200);
 }
+
+// --- FUNGSI CUSTOM CONFIRM DIALOG ---
+function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
+  return new Promise((resolve) => {
+    const dialog = $("#app-confirm-dialog");
+    if (!dialog) return resolve(confirm(message));
+
+    const titleEl = $("#confirm-title");
+    const msgEl = $("#confirm-message");
+    const btnYes = $("#confirm-yes-btn");
+    const iconEl = $("#confirm-icon");
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    btnYes.textContent = confirmLabel;
+    
+    if (type === "danger") {
+      btnYes.style.background = "#a5463b";
+      btnYes.style.color = "#fff";
+      iconEl.style.background = "#f8e4e1";
+      iconEl.style.color = "#a5463b";
+      iconEl.innerHTML = "&#9888;";
+    } else {
+      btnYes.style.background = ""; // default (var(--g))
+      btnYes.style.color = "#fff";
+      iconEl.style.background = "var(--gl)";
+      iconEl.style.color = "var(--gd)";
+      iconEl.innerHTML = "&#10003;";
+    }
+
+    dialog.showModal();
+
+    const close = (result) => {
+      dialog.close();
+      cleanup();
+      resolve(result);
+    };
+
+    const onCancel = () => close(false);
+    const onConfirm = () => close(true);
+    const closeBtns = $$("[data-close-confirm]", dialog);
+
+    const cleanup = () => {
+      closeBtns.forEach(b => b.onclick = null);
+      btnYes.onclick = null;
+      dialog.onclick = null;
+    };
+
+    closeBtns.forEach(b => b.onclick = onCancel);
+    btnYes.onclick = onConfirm;
+    dialog.onclick = (e) => { if (e.target === dialog) onCancel(); };
+  });
+}
+// ------------------------------------
+
 function countUp(el, to, ms = 1100) {
   const f = +el.dataset.from || 0,
     t0 = performance.now();
@@ -81,9 +136,19 @@ $$(".eye").forEach(
       i.type = i.type === "password" ? "text" : "password";
     }),
 );
+
+// UPDATE LOGOUT MENGGUNAKAN CONFIRM DIALOG
 $$("[data-logout]").forEach(
   (b) =>
     (b.onclick = async () => {
+      const confirmed = await confirmDialog(
+        "Keluar Akun",
+        "Apakah Anda yakin ingin keluar dari panel owner Se.Noesa?",
+        "Ya, Keluar",
+        "primary"
+      );
+      if (!confirmed) return;
+
       b.disabled = true;
       try {
         await api("api/auth.php?a=logout");
@@ -300,11 +365,39 @@ const PAGES = {
               })
               .replace(".", ":") + " WIB"
           : "-";
-      el.innerHTML = `<div class="dbox" style="--i:0"><div class="row between"><div><small>Kode Pesanan</small><b style="display:block;font-size:18px">${o.kode}</b></div><span class="tag">${m[o.status]}</span></div><hr><div class="row"><span class="avatar" style="background:var(--gl);color:var(--br)">☻</span><div><small>Pemesan</small><b style="display:block">${o.nama_pemesan}</b></div></div></div>
-    <div class="dbox" style="--i:1"><b>Bukti Pesanan Pelanggan</b><div class="proof">${o.bukti_bayar ? `<img src="${o.bukti_bayar}" alt="Bukti">` : "Foto bukti pesanan"}</div></div>
-    <div class="dbox" style="--i:2"><div class="row between"><b>Daftar Menu</b><span class="tag">${o.menu.length} Jenis</span></div>${o.menu.map((x) => `<div class="mi"><i></i><span><b>${x.nama}</b><small>${x.harga.toLocaleString("id-ID")} x ${x.qty} porsi</small></span><strong>${rp(x.sub)}</strong></div>`).join("")}</div>
-    <div class="dbox" style="--i:3"><b>Jadwal</b><div class="jd"><span>Tanggal &amp; Waktu Pemesanan</span><b>${dt(o.created_at)}</b></div><div class="jd"><span>Tanggal &amp; Waktu Pengiriman</span><b>${dt(o.tgl_kirim)}</b></div></div>`;
-      $$(".mi i").forEach((i) => (i.onclick = () => i.classList.toggle("ck")));
+      
+      el.innerHTML = `<div class="dbox" style="--i:0">
+        <div class="row between">
+            <div>
+                <small>Kode Pesanan</small>
+                <b style="display:block;font-size:18px">${o.kode}</b>
+            </div>
+            <span class="tag">${m[o.status]}</span>
+        </div>
+        <hr>
+        <div class="row">
+            <span class="avatar" style="background:var(--gl);color:var(--br)">☻</span>
+            <div>
+                <small>Pemesan</small>
+                <b style="display:block">${o.nama_pemesan}</b>
+            </div>
+        </div>
+        <hr>
+        <div class="jd"><span>Tanggal &amp; Waktu Pemesanan</span><b>${dt(o.created_at)}</b></div>
+        <div class="jd"><span>Tanggal &amp; Waktu Pengiriman</span><b>${dt(o.tgl_kirim)}</b></div>
+        <div class="jd"><span>Alamat Tujuan</span><b>${o.alamat_pengiriman || '-'}</b></div>
+      </div>
+      
+      <div class="dbox" style="--i:1">
+        <b>Bukti Pesanan Pelanggan</b>
+        <div class="proof">${o.bukti_bayar ? `<img src="${o.bukti_bayar}" alt="Bukti">` : "Foto bukti pesanan"}</div>
+      </div>
+      
+      <div class="dbox" style="--i:2">
+        <div class="row between"><b>Daftar Menu</b><span class="tag">${o.menu.length} Jenis</span></div>
+        ${o.menu.map((x) => `<div class="mi" style="padding-left:0;"><span><b>${x.nama}</b><small>${x.harga.toLocaleString("id-ID")} x ${x.qty} porsi</small></span><strong>${rp(x.sub)}</strong></div>`).join("")}
+      </div>`;
+
       const a = {
         menunggu_validasi: ["validate", "✓ Validasi Pesanan"],
         diproses: ["complete", "✓ Selesai dan Kirim"],
@@ -316,6 +409,16 @@ const PAGES = {
       }
     }
     btn.onclick = async () => {
+      // Konfirmasi Validasi/Selesai
+      const isValidate = btn.dataset.a === "validate";
+      const confirmed = await confirmDialog(
+        isValidate ? "Validasi Pembayaran" : "Selesaikan Pesanan",
+        isValidate ? "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses." : "Pesanan akan ditandai selesai dan siap dikirim.",
+        isValidate ? "Ya, Validasi" : "Ya, Selesaikan",
+        "primary"
+      );
+      if (!confirmed) return;
+
       btn.disabled = true;
       try {
         await api("api/orders.php", {
