@@ -54,7 +54,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     foreach($lines as $line){$p=$line['product'];$qty=$line['qty'];q('INSERT INTO detail_pesanan(pesanan_id,produk_id,qty,harga) VALUES(?,?,?,?)',[$orderId,$p['id'],$qty,$p['harga']]);if($p['kh_id']){q('UPDATE kuota_harian SET kuota=kuota-? WHERE id=?',[$qty,$p['kh_id']]);}else{q('UPDATE produk SET terpakai=terpakai+? WHERE id=?',[$qty,$p['id']]);}}
     $db->commit();json(['ok'=>true,'id'=>$orderId,'kode'=>$code,'total'=>$total],201);
   }catch(DomainException $e){if(db()->inTransaction())db()->rollBack();json(['error'=>$e->getMessage()],422);}
-  catch(Throwable $e){if(db()->inTransaction())db()->rollBack();json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}
+  catch(Throwable $e){if(db()->inTransaction())db()->rollBack();error_log('[Se.Noesa order] '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}
 }
 if(isset($_GET['addresses'])){json(['addresses'=>q('SELECT id,label,nama_penerima,telepon,alamat,is_default FROM alamat_pelanggan WHERE user_id=? ORDER BY is_default DESC,id',[$customer['id']])->fetchAll()]);}
 if(isset($_GET['id'])){
