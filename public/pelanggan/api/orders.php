@@ -36,8 +36,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $quantities=[];foreach($items as $line){$pid=filter_var($line['id']??null,FILTER_VALIDATE_INT);$qty=filter_var($line['qty']??null,FILTER_VALIDATE_INT);if(!$pid||!$qty||$qty<1||$qty>500)json(['error'=>'Jumlah menu tidak valid'],422);$quantities[$pid]=($quantities[$pid]??0)+$qty;}ksort($quantities);
   try{
     $db=db();$db->beginTransaction();
-    $schedule=q('SELECT id,kapasitas FROM jadwal_po WHERE aktif AND current_date BETWEEN tgl_buka AND tgl_tutup ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
-    if(!$schedule) throw new DomainException('Jadwal pemesanan belum tersedia untuk tanggal tersebut.');
+    $schedule=q('SELECT id,kapasitas FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
+    if(!$schedule){$id=(int)q("INSERT INTO jadwal_po(nama,tgl_buka,tgl_tutup,kapasitas,aktif) VALUES('Default','2026-01-01','2099-12-31',50,true) RETURNING id")->fetchColumn();$schedule=['id'=>$id,'kapasitas'=>50];}
     $lines=[];$total=0;$pax=0;
     foreach($quantities as $pid=>$qty){
       $product=q('SELECT p.id,p.nama,p.harga,p.min_pesan,k.id AS kh_id,COALESCE(k.kuota,p.kuota-p.terpakai) AS sisa FROM produk p LEFT JOIN kuota_harian k ON k.produk_id=p.id AND k.tanggal=? WHERE p.id=? FOR UPDATE',[$delivery->format('Y-m-d'),$pid])->fetch();
