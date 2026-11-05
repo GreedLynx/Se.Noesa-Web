@@ -100,32 +100,62 @@ function customer_foot(): void
           aria-label="Tutup">&times;</button>
         <div id="detail-content"></div>
       </dialog>
-      <dialog id="checkout-dialog" class="customer-dialog checkout-dialog"><button class="dialog-close"
-          data-close-checkout aria-label="Tutup">&times;</button>
+      <dialog id="checkout-dialog" class="customer-dialog checkout-dialog">
+        <button class="dialog-close" data-close-checkout aria-label="Tutup">&times;</button>
         <div class="dialog-heading">
           <p class="eyebrow">KONFIRMASI</p>
           <h2>Data pemesanan</h2>
           <p class="muted">Pilih alamat tersimpan atau tambahkan alamat baru.</p>
         </div>
-        <form id="checkout-form"><label>Nama pemesan<input name="nama_pemesan" required></label><label>Alamat
-            pengiriman<select id="address-select" name="alamat_id">
+        <form id="checkout-form">
+          <label>
+            Nama pemesan
+            <input name="nama_pemesan" required>
+          </label>
+          <label>
+            Alamat pengiriman
+            <select id="address-select" name="alamat_id">
               <option value="">+ Tambah alamat baru</option>
-            </select></label>
-          <div id="address-fields"><label>Label alamat<input name="label_alamat" value="Rumah" maxlength="50"
-                required></label>
-            <div class="form-row"><label>Nama penerima<input name="nama_penerima" maxlength="100"
-                  required></label><label>Nomor HP<input name="telepon" type="tel" maxlength="20" required></label></div>
-            <label>Alamat lengkap<textarea name="alamat" rows="3" maxlength="2000" required></textarea></label><label
-              class="save-address-option"><input type="checkbox" name="simpan_alamat" value="1" checked> Simpan alamat ini
-              untuk pesanan berikutnya</label><label class="save-address-option"><input type="checkbox"
-                name="jadikan_default" value="1"> Jadikan alamat default</label>
-          </div><label>Tanggal kirim<input name="tgl_kirim" type="date" required></label><label>Keterangan pesanan
-            (opsional)<textarea name="keterangan" rows="2" maxlength="120"
-              placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea><small class="field-hint">Maksimal 120
-              karakter.</small></label>
+            </select>
+          </label>
+          <div id="address-fields">
+            <label>
+              Label alamat
+              <input name="label_alamat" value="Rumah" maxlength="50" required>
+            </label>
+            <div class="form-row">
+              <label>
+                Nama penerima
+                <input name="nama_penerima" maxlength="100" required>
+              </label>
+              <label>
+                Nomor HP
+                <input name="telepon" type="tel" maxlength="20" required>
+              </label>
+            </div>
+            <label>
+              Alamat lengkap
+              <textarea name="alamat" rows="3" maxlength="2000" required></textarea>
+            </label>
+            <label class="save-address-option">
+              <input type="checkbox" name="simpan_alamat" value="1" checked> Simpan alamat ini untuk pesanan berikutnya
+            </label>
+            <label class="save-address-option">
+              <input type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
+            </label>
+          </div>
+          <label>
+            Tanggal kirim
+            <input name="tgl_kirim" type="date" required>
+          </label>
+          <label>
+            Keterangan pesanan (opsional)
+            <textarea name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
+            <small class="field-hint">Maksimal 120 karakter.</small>
+          </label>
           <p id="schedule-note" class="schedule-note"></p>
-          <p id="checkout-error" class="form-error"></p><button id="submit-order" class="customer-button primary"
-            type="submit">Kirim pesanan</button>
+          <p id="checkout-error" class="form-error"></p>
+          <button id="submit-order" class="customer-button primary" type="submit">Kirim pesanan</button>
         </form>
       </dialog>
       <div id="customer-toast" class="toast" role="status" aria-live="polite"></div>
