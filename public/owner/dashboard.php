@@ -6,7 +6,8 @@ topbar('Dashboard'); ?>
     <p class="sub">Pantauan performa operasional &amp; kapasitas dapur Se.Noesa.</p>
 </section>
 <section class="hero-card rise">
-    <div class="row between"><small id="hLabel">OMZET TERVERIFIKASI HARI INI</small><span class="chip-d" id="growth"></span></div>
+    <div class="row between"><small id="hLabel">OMZET TERVERIFIKASI HARI INI</small>
+    <span class="chip-d" id="growth"></span></div>
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
     <p class="ok">✓ Pesanan Lunas</p>
     <div class="stats">
@@ -18,7 +19,8 @@ topbar('Dashboard'); ?>
 <section class="card rise">
     <div class="row between">
         <h3>Tren Pesanan</h3>
-        <div class="seg" id="period"><button data-p="today" class="on">Hari ini</button><button data-p="week">Minggu</button><button data-p="month">Bulan</button></div>
+        <div class="seg" id="period"><button data-p="today" class="on">Hari ini</button>
+        <button data-p="week">Minggu</button><button data-p="month">Bulan</button></div>
     </div>
     <div class="bars" id="bars"></div>
 </section>
