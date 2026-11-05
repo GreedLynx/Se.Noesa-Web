@@ -19,7 +19,8 @@ head('Login', 'login', true); ?>
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
             </svg><input name="identity" placeholder="Email atau Username" required></label>
-        <label class="field"><svg viewBox="0 0 24 24">
+
+        <label class="field" style="margin-bottom: 8px;"><svg viewBox="0 0 24 24">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg><input name="password" type="password" placeholder="Password" required><button type="button"
