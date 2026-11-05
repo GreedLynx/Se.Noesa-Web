@@ -10,6 +10,7 @@ const esc = (s) =>
       ],
   );
 async function api(url, options = {}) {
+  if(!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))url+=(url.includes('?')?'&':'?')+'tgl_kirim='+encodeURIComponent($('#quota-date').value);
   const response = await fetch(url, {
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
@@ -33,6 +34,7 @@ function toast(message) {
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2600);
 }
+if($('#quota-date'))$('#quota-date').onchange=()=>{const url=new URL(location.href);url.searchParams.set('tgl_kirim',$('#quota-date').value);location.href=url.href};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
@@ -120,6 +122,91 @@ function countUp(el, target) {
     if (p < 1) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+async function loadSchedules() {
+  const d = await api("api/schedules.php");
+  const rows = d.items.map(s =>
+    `<tr>
+      <td><b>${esc(s.nama)}</b></td>
+      <td><small>${esc(s.tgl_buka)} s/d ${esc(s.tgl_tutup)}</small></td>
+      <td>${Number(s.kapasitas).toLocaleString("id-ID")} porsi</td>
+      <td>
+        <label class="toggle-switch">
+          <input type="checkbox" data-toggle-aktif="${s.id}" ${s.aktif ? "checked" : ""}>
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <button class="button small secondary" data-edit-sched="${s.id}">Edit</button>
+        <button class="button small danger-outline" data-delete-sched="${s.id}">Hapus</button>
+      </td>
+    </tr>`
+  ).join("");
+  $("#schedule-rows").innerHTML = rows || '<tr><td colspan="5" class="empty-state">Belum ada jadwal.</td></tr>';
+  $$("[data-toggle-aktif]").forEach(btn => {
+    btn.onchange = async () => {
+      try {
+        await api("api/schedules.php", { method: "POST", body: { action: "toggle", id: Number(btn.dataset.toggleAktif), aktif: btn.checked } });
+        toast("Status jadwal diperbarui");
+      } catch(e) {
+        btn.checked = !btn.checked;
+        toast(e.message);
+      }
+    };
+  });
+  $$("[data-edit-sched]").forEach(btn => {
+    btn.onclick = () => editSchedule(d.items.find(i => Number(i.id) === Number(btn.dataset.editSched)));
+  });
+  $$("[data-delete-sched]").forEach(btn => {
+    btn.onclick = async () => {
+      const confirmed = await confirmDialog("Hapus Jadwal", "Hapus jadwal ini? Pesanan terkait tidak akan terpengaruh.", "Ya, Hapus", "danger");
+      if(!confirmed) return;
+      try {
+        await api("api/schedules.php", { method: "POST", body: { action: "delete", id: Number(btn.dataset.deleteSched) } });
+        toast("Jadwal dihapus");
+        loadSchedules();
+      } catch(e) { toast(e.message); }
+    };
+  });
+}
+function editSchedule(s) {
+  const form = $("#schedule-form");
+  form.reset();
+  form.elements.id.value = s?.id || "";
+  form.elements.nama.value = s?.nama || "";
+  form.elements.tgl_buka.value = s?.tgl_buka || "";
+  form.elements.tgl_tutup.value = s?.tgl_tutup || "";
+  form.elements.kapasitas.value = s?.kapasitas || 50;
+  form.elements.aktif.checked = s ? s.aktif : true;
+  $("#schedule-form-title").textContent = s ? "Edit jadwal" : "Tambah jadwal";
+  $("#schedule-error").textContent = "";
+  $("#schedule-dialog").showModal();
+}
+async function schedulesPage() {
+  $("#new-schedule").onclick = () => editSchedule(null);
+  $$("[data-close-dialog]").forEach(b => b.onclick = () => $("#schedule-dialog").close());
+  $("#schedule-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    const body = {
+      action: "save",
+      id: f.elements.id.value ? Number(f.elements.id.value) : undefined,
+      nama: f.elements.nama.value,
+      tgl_buka: f.elements.tgl_buka.value,
+      tgl_tutup: f.elements.tgl_tutup.value,
+      kapasitas: Number(f.elements.kapasitas.value),
+      aktif: f.elements.aktif.checked
+    };
+    try {
+      await api("api/schedules.php", { method: "POST", body });
+      $("#schedule-dialog").close();
+      toast("Jadwal tersimpan");
+      loadSchedules();
+    } catch(err) {
+      $("#schedule-error").textContent = err.message;
+    }
+  };
+  loadSchedules();
 }
 function shell() {
   const toggle = $(".menu-toggle");
@@ -417,18 +504,58 @@ function refreshProducts() {
     toast(e.message);
   });
 }
+async function loadKuotaHarian(produkId) {
+  const tbody = $("#kuota-list");
+  if (!tbody) return;
+  try {
+    const d = await api("api/kuota-harian.php?produk_id=" + produkId);
+    const items = d.items || [];
+    tbody.innerHTML = items.length
+      ? items
+          .map(
+            (row) =>
+              "<tr><td>" +
+              esc(row.tanggal) +
+              "</td><td>" +
+              esc(row.kuota) +
+              ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
+              row.id +
+              '">Hapus</button></td></tr>',
+          )
+          .join("")
+      : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
+    $$("[data-delete-kuota]").forEach((btn) => {
+      btn.onclick = async () => {
+        try {
+          await api("api/kuota-harian.php", {
+            method: "POST",
+            body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
+          });
+          loadKuotaHarian(produkId);
+        } catch (e) {
+          toast(e.message);
+        }
+      };
+    });
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3">Gagal memuat kuota</td></tr>';
+  }
+}
 function editProduct(p) {
   const form = $("#product-form"),
-    preview = $("#product-image-preview");
+    preview = $("#product-image-preview"),
+    kuotaSection = $("#kuota-harian-section"),
+    kuotaList = $("#kuota-list");
   form.reset();
+  if (kuotaSection) kuotaSection.hidden = !p?.id;
+  if (kuotaList) kuotaList.innerHTML = "";
   form.elements.id.value = p?.id || "";
   form.elements.kode.value = p?.kode || "";
   form.elements.nama.value = p?.nama || "";
   form.elements.kategori.value = p?.kategori || "makanan";
   form.elements.harga.value = p?.harga || "";
-  form.elements.kuota.value = p ? p.kuota : 1;
-  form.elements.terpakai.value = p ? p.terpakai : 0;
-  form.elements.min_pesan.value = p?.min_pesan || 1;
+  $('#kuota-tanggal').value=$('#quota-date')?.value || '';
+  form.elements.min_pesan.value = p?.min_pesan || 4;
   form.elements.gambar.value = p?.gambar || "";
   form.elements.gambar_file.required = !p;
   $("#image-help").textContent = p
@@ -438,6 +565,7 @@ function editProduct(p) {
   preview.src = p?.gambar ? productImagePath(p.gambar) : "";
   $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
   $("#product-error").textContent = "";
+  if (p?.id) loadKuotaHarian(p.id);
   $("#product-dialog").showModal();
 }
 function productsPage() {
@@ -457,8 +585,35 @@ function productsPage() {
   };
   $("#new-product").onclick = () => editProduct(null);
   $$("[data-close-dialog]").forEach(
-    (b) => (b.onclick = () => $("#product-dialog").close()),
+    (b) => (b.onclick = () => {
+      const section = $("#kuota-harian-section");
+      if (section) section.hidden = true;
+      const list = $("#kuota-list");
+      if (list) list.innerHTML = "";
+      $("#product-dialog").close();
+    }),
   );
+  const kuotaAddBtn = $("#kuota-add");
+  if (kuotaAddBtn) {
+    kuotaAddBtn.onclick = async () => {
+      const tanggal = $("#kuota-tanggal").value;
+      const rawKuota = $("#kuota-nilai").value;
+      const kuota = rawKuota===''?NaN:Number(rawKuota);
+      const produkId = $("#product-form").elements.id.value;
+      if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
+      try {
+        await api("api/kuota-harian.php", {
+          method: "POST",
+          body: { produk_id: Number(produkId), tanggal, kuota },
+        });
+        $("#kuota-nilai").value = "";
+        loadKuotaHarian(produkId);
+        refreshProducts();
+      } catch (e) {
+        toast(e.message);
+      }
+    };
+  }
   $("#product-form").elements.gambar_file.onchange = (e) => {
     const file = e.target.files[0],
       preview = $("#product-image-preview");
@@ -502,6 +657,12 @@ function productsPage() {
             JSON.stringify(data) +
             " tetapi produk belum muncul pada daftar.",
         );
+      const savedId = data.id || f.elements.id.value;
+      if (savedId) {
+        const section = $("#kuota-harian-section");
+        if (section) section.hidden = false;
+        loadKuotaHarian(savedId);
+      }
       $("#product-dialog").close();
       toast("Produk dan gambar tersimpan. Daftar admin diperbarui.");
     } catch (err) {
@@ -733,6 +894,7 @@ const run = {
   orders: ordersPage,
   "order-detail": orderDetail,
   products: productsPage,
+  schedules: schedulesPage,
 }[page];
 if (run)
   run().catch((e) => {

@@ -13,7 +13,7 @@ yarn-debug.log*
 /public/uploads/*
 !/public/uploads/.gitkeep
 .opencode/docs/
-.opencode/rules.md
+.opencode/*
 .repomixignore
 repomix-output.xml
 repomix.config.json
@@ -25,3 +25,4 @@ Thumbs.db
 .idea/
 !/public/uploads/products/
 !/public/uploads/products/.gitkeep
+AGENTS.md

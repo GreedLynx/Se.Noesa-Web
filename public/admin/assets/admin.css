@@ -1205,6 +1205,31 @@ td small {
   display: none !important;
 }
 
+.form-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.form-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+.kuota-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+.kuota-table th, .kuota-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.kuota-table button {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+}
+
 /* =========================================
    CUSTOM CONFIRMATION DIALOG (MODERN)
    ========================================= */
@@ -1289,4 +1314,69 @@ td small {
 @keyframes popIn {
   from { opacity: 0; transform: scale(0.5); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* Schedule Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: var(--green);
+}
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+.checkbox-label {
+  font-size: 12px;
+  color: var(--brown);
+  font-weight: 600;
+}
+.schedules-panel .table-wrap {
+  overflow-x: auto;
+}
+.schedules-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.schedules-panel th,
+.schedules-panel td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.schedules-panel th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }

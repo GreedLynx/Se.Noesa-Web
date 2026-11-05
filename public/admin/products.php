@@ -28,8 +28,20 @@ admin_head('Produk & Kuota', 'products'); ?>
                     <option value="minuman">Minuman</option>
                     <option value="snack">Snack</option>
                 </select></label><label>Harga (Rp)<input name="harga" type="number" min="1" required></label></div>
-        <div class="form-row"><label>Kuota total<input name="kuota" type="number" min="0" required></label><label>Sudah terpakai<input name="terpakai" type="number" min="0" required></label></div>
-        <div class="form-row"><label>Minimal pemesanan<input name="min_pesan" type="number" min="1" value="1" required></label><label class="image-upload-label">Upload gambar makanan<input name="gambar_file" type="file" accept="image/jpeg,image/png,image/webp"><small id="image-help">Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB</small></label></div><img id="product-image-preview" class="product-image-preview" alt="Pratinjau gambar produk" hidden>
+        <div class="form-row"><label>Minimal pemesanan (porsi)<input name="min_pesan" type="number" min="4" value="4" required></label></div>
+        <label class="image-upload-label" style="text-align:center;display:block;max-width:480px;margin:0 auto;">Upload gambar makanan<input name="gambar_file" type="file" accept="image/jpeg,image/png,image/webp"><small id="image-help">Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB</small></label>        <div id="kuota-harian-section" class="form-section" hidden>
+            <h3>Kuota Harian</h3>
+            <div class="form-row">
+                <label>Tanggal<input type="date" id="kuota-tanggal"></label>
+                <label>Kuota (porsi)<input type="number" id="kuota-nilai" min="0"></label>
+                <button type="button" id="kuota-add" class="button small secondary">Simpan kuota tanggal</button>
+            </div>
+            <table class="kuota-table">
+                <thead><tr><th>Tanggal</th><th>Kuota</th><th>Aksi</th></tr></thead>
+                <tbody id="kuota-list"></tbody>
+            </table>
+        </div>
+        <img id="product-image-preview" class="product-image-preview" alt="Pratinjau gambar produk" hidden>
         <p class="form-error" id="product-error" role="alert"></p>
         <div class="dialog-actions"><button type="button" class="button secondary" data-close-dialog>Batal</button><button class="button primary">Simpan produk</button></div>
     </form>
