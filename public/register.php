@@ -17,11 +17,13 @@ head('Sign Up', 'register', true); ?>
         <label class="field"><svg viewBox="0 0 24 24">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg><input name="password" type="password" placeholder="Password" required><button type="button" class="eye">👁</button></label>
+            </svg><input name="password" type="password" placeholder="Password" required><button type="button"
+                class="eye">👁</button></label>
         <label class="field"><svg viewBox="0 0 24 24">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg><input name="confirm" type="password" placeholder="Konfirmasi Password" required><button type="button" class="eye">👁</button></label>
+            </svg><input name="confirm" type="password" placeholder="Konfirmasi Password" required><button type="button"
+                class="eye">👁</button></label>
         <label class="field"><svg viewBox="0 0 24 24">
                 <rect x="7" y="3" width="10" height="18" rx="2" />
             </svg><input name="phone" type="tel" placeholder="Nomor Telpon" required></label>

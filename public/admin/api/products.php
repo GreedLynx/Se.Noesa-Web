@@ -4,7 +4,8 @@ require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
-  if (!(error_reporting() & $severity)) return false;
+  if (!(error_reporting() & $severity))
+    return false;
   throw new ErrorException($message, 0, $severity, $file, $line);
 });
 set_exception_handler(static function (Throwable $error): void {
@@ -18,25 +19,26 @@ set_exception_handler(static function (Throwable $error): void {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // PHP mengosongkan $_POST dan $_FILES jika seluruh request melewati post_max_size.
-  $contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
-  $postLimit = trim((string)ini_get('post_max_size'));
+  $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+  $postLimit = trim((string) ini_get('post_max_size'));
   $postBytes = 0;
   if (preg_match('/^([0-9]+)\s*([KMG])?$/i', $postLimit, $limitMatch)) {
-    $postBytes = (int)$limitMatch[1] * match (strtoupper($limitMatch[2] ?? '')) {
+    $postBytes = (int) $limitMatch[1] * match (strtoupper($limitMatch[2] ?? '')) {
       'G' => 1024 ** 3,
       'M' => 1024 ** 2,
       'K' => 1024,
       default => 1
     };
   }
-  if ($contentLength > 0 && $postBytes > 0 && $contentLength > $postBytes) json(['error' => 'Data upload melebihi batas PHP (' . $postLimit . '). Kecilkan gambar atau naikkan post_max_size dan upload_max_filesize.'], 413);
+  if ($contentLength > 0 && $postBytes > 0 && $contentLength > $postBytes)
+    json(['error' => 'Data upload melebihi batas PHP (' . $postLimit . '). Kecilkan gambar atau naikkan post_max_size dan upload_max_filesize.'], 413);
   $isMultipart = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data');
   $b = $isMultipart ? $_POST : body();
   $action = $b['action'] ?? 'save';
 
   if ($action === 'delete') {
     try {
-      $n = q('DELETE FROM produk WHERE id=?', [(int)($b['id'] ?? 0)])->rowCount();
+      $n = q('DELETE FROM produk WHERE id=?', [(int) ($b['id'] ?? 0)])->rowCount();
     } catch (PDOException $e) {
       json(['error' => 'Produk sudah dipakai pada pesanan dan tidak dapat dihapus'], 409);
     }
@@ -44,18 +46,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   foreach (['kode', 'nama', 'kategori', 'harga', 'min_pesan'] as $field) {
-    if (!isset($b[$field]) || trim((string)$b[$field]) === '') json(['error' => 'Semua kolom wajib diisi'], 422);
+    if (!isset($b[$field]) || trim((string) $b[$field]) === '')
+      json(['error' => 'Semua kolom wajib diisi'], 422);
   }
-  if (!in_array($b['kategori'], ['makanan', 'minuman', 'snack'], true)) json(['error' => 'Kategori tidak valid'], 422);
+  if (!in_array($b['kategori'], ['makanan', 'minuman', 'snack'], true))
+    json(['error' => 'Kategori tidak valid'], 422);
   $harga = filter_var($b['harga'], FILTER_VALIDATE_INT);
   $minimum = filter_var($b['min_pesan'], FILTER_VALIDATE_INT);
   if ($harga === false || $harga < 1 || $minimum === false || $minimum < 4) {
     json(['error' => 'Harga dan kuota tidak valid'], 422);
   }
 
-  $id = (int)($b['id'] ?? 0);
+  $id = (int) ($b['id'] ?? 0);
   $oldImage = $id ? q('SELECT gambar FROM produk WHERE id=?', [$id])->fetchColumn() : false;
-  if ($id && $oldImage === false) json(['error' => 'Produk tidak ditemukan'], 404);
+  if ($id && $oldImage === false)
+    json(['error' => 'Produk tidak ditemukan'], 404);
   $image = $oldImage ?: null;
   $file = $_FILES['gambar_file'] ?? null;
   if ($file && $file['error'] !== UPLOAD_ERR_NO_FILE) {
@@ -70,20 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       ];
       json(['error' => $uploadErrors[$file['error']] ?? 'Upload gambar gagal. Silakan coba lagi.'], 422);
     }
-    if (!is_uploaded_file($file['tmp_name'])) json(['error' => 'File upload tidak valid. Silakan pilih ulang gambarnya.'], 422);
-    if ($file['size'] > 2 * 1024 * 1024) json(['error' => 'Ukuran gambar maksimal 2 MB.'], 422);
+    if (!is_uploaded_file($file['tmp_name']))
+      json(['error' => 'File upload tidak valid. Silakan pilih ulang gambarnya.'], 422);
+    if ($file['size'] > 2 * 1024 * 1024)
+      json(['error' => 'Ukuran gambar maksimal 2 MB.'], 422);
     // Gunakan getimagesize agar upload tetap berfungsi pada PHP tanpa ekstensi fileinfo.
     $imageInfo = @getimagesize($file['tmp_name']);
     $mime = is_array($imageInfo) ? ($imageInfo['mime'] ?? '') : '';
     $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-    if (!isset($extensions[$mime])) json(['error' => 'Format gambar harus JPG, PNG, atau WebP'], 422);
+    if (!isset($extensions[$mime]))
+      json(['error' => 'Format gambar harus JPG, PNG, atau WebP'], 422);
 
     // Dari public/admin/api, direktori upload berada di public/uploads/products.
     $directory = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'products';
-    if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) json(['error' => 'Folder public/uploads/products tidak dapat dibuat. Periksa izin tulis folder public/uploads.'], 500);
-    if (!is_writable($directory)) json(['error' => 'Folder public/uploads/products tidak dapat ditulis oleh PHP. Periksa izin folder.'], 500);
+    if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory))
+      json(['error' => 'Folder public/uploads/products tidak dapat dibuat. Periksa izin tulis folder public/uploads.'], 500);
+    if (!is_writable($directory))
+      json(['error' => 'Folder public/uploads/products tidak dapat ditulis oleh PHP. Periksa izin folder.'], 500);
     $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
-    if (!move_uploaded_file($file['tmp_name'], $directory . DIRECTORY_SEPARATOR . $filename)) json(['error' => 'Gambar gagal disimpan ke public/uploads/products. Periksa izin folder dan ruang disk.'], 500);
+    if (!move_uploaded_file($file['tmp_name'], $directory . DIRECTORY_SEPARATOR . $filename))
+      json(['error' => 'Gambar gagal disimpan ke public/uploads/products. Periksa izin folder dan ruang disk.'], 500);
     $image = 'uploads/products/' . $filename;
   } elseif (!$id) {
     json(['error' => 'Silakan upload gambar untuk produk baru'], 422);
@@ -94,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,min_pesan=?,gambar=? WHERE id=?', [$b['kode'], $b['nama'], $b['kategori'], $harga, $minimum, $image, $id]);
       $savedId = $id;
     } else {
-      $savedId = (int)q('INSERT INTO produk(kode,nama,kategori,harga,min_pesan,gambar) VALUES(?,?,?,?,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $minimum, $image])->fetchColumn();
+      $savedId = (int) q('INSERT INTO produk(kode,nama,kategori,harga,min_pesan,gambar) VALUES(?,?,?,?,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $minimum, $image])->fetchColumn();
     }
   } catch (PDOException $e) {
     json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);
@@ -104,15 +115,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $category = $_GET['kategori'] ?? '';
 $day = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
-try { $snapshot = daily_quota_snapshot($day,true); }
-catch (DomainException $e) { json(['error'=>$e->getMessage()], 422); }
+try {
+  $snapshot = daily_quota_snapshot($day, true);
+} catch (DomainException $e) {
+  json(['error' => $e->getMessage()], 422);
+}
 $all = $snapshot['items'];
-$critical = static fn($p) => (int)$p['kuota']===0 || (int)$p['sisa']<=(int)$p['kuota']*0.2;
+$critical = static fn($p) => (int) $p['kuota'] === 0 || (int) $p['sisa'] <= (int) $p['kuota'] * 0.2;
 $query = trim($_GET['q'] ?? '');
-$items = array_values(array_filter($all, static function($p) use ($category, $query, $critical) {
-  return (!in_array($category,['makanan','minuman','snack'],true) || $p['kategori']===$category)
-    && ($category!=='kritis' || $critical($p))
-    && ($query==='' || stripos($p['nama'],$query)!==false || stripos($p['kode'],$query)!==false);
+$items = array_values(array_filter($all, static function ($p) use ($category, $query, $critical) {
+  return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $p['kategori'] === $category)
+    && ($category !== 'kritis' || $critical($p))
+    && ($query === '' || stripos($p['nama'], $query) !== false || stripos($p['kode'], $query) !== false);
 }));
-$count = ['semua'=>count($all), 'kritis'=>count(array_filter($all,$critical))];
-json(['items'=>$items, 'count'=>$count, 'tanggal'=>$day]);
+$count = ['semua' => count($all), 'kritis' => count(array_filter($all, $critical))];
+json(['items' => $items, 'count' => $count, 'tanggal' => $day]);

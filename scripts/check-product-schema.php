@@ -1,5 +1,8 @@
 <?php
-if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (PHP_SAPI !== 'cli') {
+  http_response_code(404);
+  exit;
+}
 require __DIR__ . '/../app/bootstrap.php';
 
 foreach (['min_pesan', 'gambar', 'kategori'] as $column) {

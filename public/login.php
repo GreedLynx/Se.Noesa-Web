@@ -22,7 +22,8 @@ head('Login', 'login', true); ?>
         <label class="field"><svg viewBox="0 0 24 24">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg><input name="password" type="password" placeholder="Password" required><button type="button" class="eye" aria-label="Tampilkan password">👁</button></label>
+            </svg><input name="password" type="password" placeholder="Password" required><button type="button"
+                class="eye" aria-label="Tampilkan password">👁</button></label>
         <p class="err" id="err"></p><button class="btn-main">Login</button>
     </form>
     <p class="alt rise">Belum punya akun? <a href="register.php">Register</a></p>

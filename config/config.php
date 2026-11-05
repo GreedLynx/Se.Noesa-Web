@@ -18,11 +18,11 @@ if ($env === false) {
 // Mengembalikan konfigurasi
 return [
     'db' => [
-        'host'    => $env['DB_HOST'],
-        'port'    => $env['DB_PORT'],
-        'name'    => $env['DB_NAME'],
-        'user'    => $env['DB_USER'],
-        'pass'    => $env['DB_PASSWORD'],
+        'host' => $env['DB_HOST'],
+        'port' => $env['DB_PORT'],
+        'name' => $env['DB_NAME'],
+        'user' => $env['DB_USER'],
+        'pass' => $env['DB_PASSWORD'],
         'sslmode' => $env['DB_SSLMODE'] ?? 'require',
     ],
 ];
