@@ -2,54 +2,78 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $request = body();
-  if (($request['action'] ?? '') === 'save_address') {
-    $label = trim($request['label'] ?? 'Rumah');
-    $recipient = trim($request['nama_penerima'] ?? '');
-    $phone = trim($request['telepon'] ?? '');
-    $address = trim($request['alamat'] ?? '');
-    if ($label === '' || strlen($label) > 50 || $recipient === '' || strlen($recipient) > 100 || !preg_match('/^[0-9+() .-]{8,20}$/', $phone) || $address === '' || strlen($address) > 2000)
-      json(['error' => 'Lengkapi label, nama penerima, nomor HP, dan alamat dengan benar'], 422);
-    try {
-      $db = db();
-      $db->beginTransaction();
-      $count = (int) q('SELECT COUNT(*) FROM alamat_pelanggan WHERE user_id=?', [$customer['id']])->fetchColumn();
-      if ($count >= 20)
-        throw new DomainException('Maksimal 20 alamat tersimpan.');
-      $isDefault = !empty($request['is_default']) || $count === 0;
-      if ($isDefault)
-        q('UPDATE alamat_pelanggan SET is_default=FALSE WHERE user_id=?', [$customer['id']]);
-      $id = (int) q('INSERT INTO alamat_pelanggan(user_id,label,nama_penerima,telepon,alamat,is_default) VALUES(?,?,?,?,?,?) RETURNING id', [$customer['id'], $label, $recipient, $phone, $address, $isDefault])->fetchColumn();
-      $db->commit();
-      json(['ok' => true, 'id' => $id, 'is_default' => $isDefault], 201);
-    } catch (DomainException $e) {
-      if (db()->inTransaction())
-        db()->rollBack();
-      json(['error' => $e->getMessage()], 422);
-    } catch (Throwable $e) {
-      if (db()->inTransaction())
-        db()->rollBack();
-      json(['error' => 'Alamat belum dapat disimpan'], 500);
+    $request = body();
+    if (($request['action'] ?? '') === 'save_address') {
+        $label = trim($request['label'] ?? 'Rumah');
+        $recipient = trim($request['nama_penerima'] ?? '');
+        $phone = trim($request['telepon'] ?? '');
+        $address = trim($request['alamat'] ?? '');
+        if ($label === '' || strlen($label) > 50 || $recipient === '' || strlen($recipient) > 100 || !preg_match('/^[0-9+() .-]{8,20}$/', $phone) || $address === '' || strlen($address) > 2000) {
+            json(['error' => 'Lengkapi label, nama penerima, nomor HP, dan alamat dengan benar'], 422);
+        }
+
+        try {
+            $db = db();
+            $db->beginTransaction();
+            $count = (int) q('SELECT COUNT(*) FROM alamat_pelanggan WHERE user_id = ?', [$customer['id']])->fetchColumn();
+            if ($count >= 20) {
+                throw new DomainException('Maksimal 20 alamat tersimpan.');
+            }
+
+            $isDefault = !empty($request['is_default']) || $count === 0;
+            if ($isDefault) {
+                q('UPDATE alamat_pelanggan SET is_default = FALSE WHERE user_id = ?', [$customer['id']]);
+            }
+
+            $statement = $db->prepare(
+                'INSERT INTO alamat_pelanggan (user_id, label, nama_penerima, telepon, alamat, is_default) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
+            );
+            $statement->bindValue(1, $customer['id'], PDO::PARAM_INT);
+            $statement->bindValue(2, $label);
+            $statement->bindValue(3, $recipient);
+            $statement->bindValue(4, $phone);
+            $statement->bindValue(5, $address);
+            $statement->bindValue(6, $isDefault, PDO::PARAM_BOOL);
+            $statement->execute();
+            $id = (int) $statement->fetchColumn();
+            $db->commit();
+            json(['ok' => true, 'id' => $id, 'is_default' => $isDefault], 201);
+        } catch (DomainException $e) {
+            if (db()->inTransaction()) {
+                db()->rollBack();
+            }
+            json(['error' => $e->getMessage()], 422);
+        } catch (Throwable $e) {
+            if (db()->inTransaction()) {
+                db()->rollBack();
+            }
+            json(['error' => 'Alamat belum dapat disimpan'], 500);
+        }
     }
-  }
-  if (($request['action'] ?? '') === 'set_default_address') {
-    $id = (int) ($request['id'] ?? 0);
-    try {
-      $db = db();
-      $db->beginTransaction();
-      $found = q('SELECT id FROM alamat_pelanggan WHERE id=? AND user_id=? FOR UPDATE', [$id, $customer['id']])->fetch();
-      if (!$found)
-        throw new DomainException('Alamat tidak ditemukan');
-      q('UPDATE alamat_pelanggan SET is_default=(id=?) WHERE user_id=?', [$id, $customer['id']]);
-      $db->commit();
-      json(['ok' => true]);
-    } catch (DomainException $e) {
-      if (db()->inTransaction())
-        db()->rollBack();
-      json(['error' => $e->getMessage()], 404);
+
+    if (($request['action'] ?? '') === 'set_default_address') {
+        $id = (int) ($request['id'] ?? 0);
+        try {
+            $db = db();
+            $db->beginTransaction();
+            $found = q('SELECT id FROM alamat_pelanggan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            if (!$found) {
+                throw new DomainException('Alamat tidak ditemukan');
+            }
+
+            q('UPDATE alamat_pelanggan SET is_default = (id = ?) WHERE user_id = ?', [$id, $customer['id']]);
+            $db->commit();
+            json(['ok' => true]);
+        } catch (DomainException $e) {
+            if (db()->inTransaction()) {
+                db()->rollBack();
+            }
+            json(['error' => $e->getMessage()], 404);
+        }
     }
-  }
+
   if (($_POST['action'] ?? '') === 'upload_proof') {
     $id = (int) ($_POST['id'] ?? 0);
     $order = q("SELECT id,status FROM pesanan WHERE id=? AND user_id=?", [$id, $customer['id']])->fetch();
