@@ -17,17 +17,23 @@ if ($a === 'login') {
     "SELECT * FROM users WHERE (email=:email OR username=:username) AND role IN ('owner','admin','pelanggan')",
     [':email' => $identity, ':username' => $identity]
   )->fetch();
-  if (!$u || !password_verify($b['password'] ?? '', $u['password_hash'])) json(['error' => 'Email/username atau password salah'], 401);
+  if (!$u || !password_verify($b['password'] ?? '', $u['password_hash']))
+    json(['error' => 'Email/username atau password salah'], 401);
   session_regenerate_id(true);
   $_SESSION['user'] = ['id' => $u['id'], 'username' => $u['username'], 'role' => $u['role']];
   $redirect = ['owner' => 'owner/dashboard.php', 'admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/index.php'][$u['role']] ?? 'login.php';
   json(['ok' => true, 'redirect' => $redirect]);
 }
 if ($a === 'register') {
-  foreach (['username', 'email', 'password', 'phone'] as $f) if (empty($b[$f])) json(['error' => "Kolom $f wajib diisi"], 422);
-  if (!filter_var($b['email'], FILTER_VALIDATE_EMAIL)) json(['error' => 'Format email tidak valid'], 422);
-  if (strlen($b['password']) < 6) json(['error' => 'Password minimal 6 karakter'], 422);
-  if ($b['password'] !== ($b['confirm'] ?? '')) json(['error' => 'Konfirmasi password tidak cocok'], 422);
+  foreach (['username', 'email', 'password', 'phone'] as $f)
+    if (empty($b[$f]))
+      json(['error' => "Kolom $f wajib diisi"], 422);
+  if (!filter_var($b['email'], FILTER_VALIDATE_EMAIL))
+    json(['error' => 'Format email tidak valid'], 422);
+  if (strlen($b['password']) < 6)
+    json(['error' => 'Password minimal 6 karakter'], 422);
+  if ($b['password'] !== ($b['confirm'] ?? ''))
+    json(['error' => 'Konfirmasi password tidak cocok'], 422);
   try {
     q(
       "INSERT INTO users(username,email,password_hash,phone,role) VALUES(?,?,?,?,'pelanggan')",

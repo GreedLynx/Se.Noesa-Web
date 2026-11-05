@@ -1,5 +1,8 @@
 <?php
-if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (PHP_SAPI !== 'cli') {
+  http_response_code(404);
+  exit;
+}
 require __DIR__ . '/../app/bootstrap.php';
 
 $migration = file_get_contents(__DIR__ . '/../database/migrations/001_product_min_order.sql');

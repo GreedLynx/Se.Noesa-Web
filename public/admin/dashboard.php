@@ -8,12 +8,20 @@ admin_head('Dashboard', 'dashboard'); ?>
   </div><a class="button primary" href="orders.php">Buka antrean <span>&rarr;</span></a>
 </section>
 <section class="stats-grid" id="admin-stats" aria-live="polite">
-  <article class="stat-card"><span class="stat-icon">&#9776;</span><span class="stat-label">Pesanan hari ini</span><strong class="stat-value" data-stat="orders">--</strong><small class="stat-hint">semua status</small></article>
-  <article class="stat-card"><span class="stat-icon">&#10003;</span><span class="stat-label">Perlu validasi</span><strong class="stat-value" data-stat="pending">--</strong><small class="stat-hint">menunggu pemeriksaan</small></article>
-  <article class="stat-card"><span class="stat-icon">&#9749;</span><span class="stat-label">Kapasitas dapur</span><strong class="stat-value" data-stat="capacity">--</strong><small class="stat-hint" data-stat="capacity-hint">memuat kapasitas</small>
+  <article class="stat-card"><span class="stat-icon">&#9776;</span><span class="stat-label">Pesanan hari
+      ini</span><strong class="stat-value" data-stat="orders">--</strong><small class="stat-hint">semua status</small>
+  </article>
+  <article class="stat-card"><span class="stat-icon">&#10003;</span><span class="stat-label">Perlu
+      validasi</span><strong class="stat-value" data-stat="pending">--</strong><small class="stat-hint">menunggu
+      pemeriksaan</small></article>
+  <article class="stat-card"><span class="stat-icon">&#9749;</span><span class="stat-label">Kapasitas
+      dapur</span><strong class="stat-value" data-stat="capacity">--</strong><small class="stat-hint"
+      data-stat="capacity-hint">memuat kapasitas</small>
     <div class="meter"><i data-meter></i></div>
   </article>
-  <article class="stat-card"><span class="stat-icon">&#9888;</span><span class="stat-label">Produk kritis</span><strong class="stat-value" data-stat="critical">--</strong><small class="stat-hint">kuota tersisa 20% atau kurang</small></article>
+  <article class="stat-card"><span class="stat-icon">&#9888;</span><span class="stat-label">Produk kritis</span><strong
+      class="stat-value" data-stat="critical">--</strong><small class="stat-hint">kuota tersisa 20% atau kurang</small>
+  </article>
 </section>
 <section class="content-grid">
   <article class="panel chart-panel">
