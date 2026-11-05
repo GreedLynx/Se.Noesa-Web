@@ -3,10 +3,10 @@ require_once __DIR__ . '/../../../app/bootstrap.php';
 
 function customer_head(string $title, string $page): array
 {
-  $customer = require_role('pelanggan', false);
-  $GLOBALS['customer_page'] = $page;
-  $css = fn($file) => filemtime(__DIR__ . '/../assets/' . $file);
-  ?>
+    $customer = require_role('pelanggan', false);
+    $GLOBALS['customer_page'] = $page;
+    $css = fn($file) => filemtime(__DIR__ . '/../assets/' . $file);
+    ?>
   <!doctype html>
   <html lang="id">
 
@@ -57,10 +57,12 @@ function customer_head(string $title, string $page): array
             <button type="button" data-category="snack" aria-label="Snack" title="Snack"><svg viewBox="0 0 24 24">
                 <path d="m4 15 11-11a3 3 0 0 1 4 4L8 19a3 3 0 0 1-4-4zM7 17l10-10M3 20l2-2" />
               </svg></button>
-          </nav><?php endif; ?>
+          </nav>
+        <?php endif; ?>
         <?php if (in_array($page, ['catalog', 'history'], true)): ?>
           <div class="customer-bottom-user" aria-label="<?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?>">
-            <?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></div><?php endif; ?>
+            <?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></div>
+        <?php endif; ?>
       </aside>
       <main class="customer-main">
         <header class="customer-top">
@@ -73,11 +75,13 @@ function customer_head(string $title, string $page): array
               class="logout-text" type="button" data-logout>Keluar</button></div>
         </header>
         <div class="customer-content">
-          <?php return $customer;
+          <?php
+    return $customer;
 }
 
 function customer_foot(): void
-{ ?>
+{
+    ?>
         </div>
       </main>
       <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan"><a
@@ -130,4 +134,5 @@ function customer_foot(): void
   </body>
 
   </html>
-<?php }
+<?php
+}
