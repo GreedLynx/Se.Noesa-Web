@@ -30,7 +30,7 @@ if ($p === 'week' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}-\d{2}
     }
 } elseif ($p === 'month' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}$/', $_GET['selected'])) {
     [$year, $month] = array_map('intval', explode('-', $_GET['selected']));
-    if ($year === (int)$t->format('Y') && $month >= 1 && $month <= 12) {
+    if ($year === (int) $t->format('Y') && $month >= 1 && $month <= 12) {
         $selected = new DateTime(sprintf('%04d-%02d-01', $year, $month));
         $f = clone $selected;
         $t = (clone $selected)->modify('last day of this month');
@@ -41,7 +41,7 @@ if ($p === 'week' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}-\d{2}
 $c = $sum($f, $t);
 $o = $sum($pf, $pt);
 $rg = [$f->format('Y-m-d'), $t->format('Y-m-d')];
-$items = (int)q("SELECT COALESCE(SUM(d.qty),0) FROM detail_pesanan d JOIN pesanan s ON s.id=d.pesanan_id WHERE s.status='selesai' AND s.created_at::date BETWEEN ? AND ?", $rg)->fetchColumn();
+$items = (int) q("SELECT COALESCE(SUM(d.qty),0) FROM detail_pesanan d JOIN pesanan s ON s.id=d.pesanan_id WHERE s.status='selesai' AND s.created_at::date BETWEEN ? AND ?", $rg)->fetchColumn();
 $chart = $p === 'month'
     ? q("SELECT to_char(m,'Mon') l, to_char(m,'YYYY-MM') k, COALESCE(SUM(s.total),0) v FROM generate_series(date_trunc('year',current_date),date_trunc('year',current_date)+interval '11 month','1 month') m LEFT JOIN pesanan s ON date_trunc('month',s.created_at)=m AND s.status='selesai' GROUP BY m ORDER BY m")->fetchAll()
     : q("SELECT to_char(d,'Dy') l, to_char(d,'YYYY-MM-DD') k, COALESCE(SUM(s.total),0) v, d=current_date AS now FROM generate_series(current_date-6,current_date,'1 day') d LEFT JOIN pesanan s ON s.created_at::date=d AND s.status='selesai' GROUP BY d ORDER BY d")->fetchAll();
@@ -51,10 +51,10 @@ json([
     'nama' => ucfirst(me()['username']),
     'period' => $p,
     'selected' => $selected ? ($p === 'month' ? $selected->format('Y-m') : $selected->format('Y-m-d')) : null,
-    'omzet' => (int)$c['om'],
+    'omzet' => (int) $c['om'],
     'growth' => $o['om'] > 0 ? round(($c['om'] - $o['om']) / $o['om'] * 100, 1) : 0,
     'tiket' => $c['n'] ? round($c['om'] / $c['n']) : 0,
-    'orders' => (int)$c['n'],
+    'orders' => (int) $c['n'],
     'items' => $items,
     'chart' => $chart,
     'kategori' => $cat,

@@ -1,6 +1,9 @@
 <?php
 // Reset only the seeded demo customer account; does not modify other users.
-if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 require __DIR__ . '/../app/bootstrap.php';
 
 $email = 'andi@mail.com';
