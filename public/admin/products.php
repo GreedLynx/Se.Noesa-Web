@@ -28,13 +28,13 @@ admin_head('Produk & Kuota', 'products'); ?>
                     <option value="minuman">Minuman</option>
                     <option value="snack">Snack</option>
                 </select></label><label>Harga (Rp)<input name="harga" type="number" min="1" required></label></div>
-        <div class="form-row"><label>Kuota total<input name="kuota" type="number" min="0" required></label><label>Minimal pemesanan<input name="min_pesan" type="number" min="1" value="1" required></label></div>
+        <div class="form-row"><label>Minimal pemesanan (porsi)<input name="min_pesan" type="number" min="4" value="4" required></label></div>
         <label class="image-upload-label" style="text-align:center;display:block;max-width:480px;margin:0 auto;">Upload gambar makanan<input name="gambar_file" type="file" accept="image/jpeg,image/png,image/webp"><small id="image-help">Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB</small></label>        <div id="kuota-harian-section" class="form-section" hidden>
             <h3>Kuota Harian</h3>
             <div class="form-row">
                 <label>Tanggal<input type="date" id="kuota-tanggal"></label>
-                <label>Kuota (porsi)<input type="number" id="kuota-nilai" min="1"></label>
-                <button type="button" id="kuota-add" class="button small secondary">Tambah</button>
+                <label>Kuota (porsi)<input type="number" id="kuota-nilai" min="0"></label>
+                <button type="button" id="kuota-add" class="button small secondary">Simpan kuota tanggal</button>
             </div>
             <table class="kuota-table">
                 <thead><tr><th>Tanggal</th><th>Kuota</th><th>Aksi</th></tr></thead>

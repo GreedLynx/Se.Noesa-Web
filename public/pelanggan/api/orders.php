@@ -1,6 +1,7 @@
 <?php
 require __DIR__.'/../../../app/bootstrap.php';
 $customer=require_role('pelanggan');
+require_once __DIR__.'/../../../app/daily-quota.php';
 if($_SERVER['REQUEST_METHOD']==='POST'){
   $request=body();
   if(($request['action']??'')==='save_address'){
@@ -33,28 +34,38 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $zone=new DateTimeZone('Asia/Jakarta');$delivery=DateTimeImmutable::createFromFormat('!Y-m-d H:i',$day.' '.$time,$zone);$dateErrors=DateTimeImmutable::getLastErrors();$now=new DateTimeImmutable('now',$zone);$minimumDelivery=$now->modify('+7 days')->format('Y-m-d');$deliveryTooSoon=$delivery&&$delivery->format('Y-m-d')<$minimumDelivery;
   if(!$delivery||($dateErrors&&($dateErrors['warning_count']||$dateErrors['error_count']))||$deliveryTooSoon) json(['error'=>'Tanggal pengiriman harus minimal 7 hari dari tanggal pemesanan'],422);
   if(count($items)>50)json(['error'=>'Maksimal 50 jenis menu per pesanan'],422);
-  $quantities=[];foreach($items as $line){$pid=filter_var($line['id']??null,FILTER_VALIDATE_INT);$qty=filter_var($line['qty']??null,FILTER_VALIDATE_INT);if(!$pid||!$qty||$qty<1||$qty>500)json(['error'=>'Jumlah menu tidak valid'],422);$quantities[$pid]=($quantities[$pid]??0)+$qty;}ksort($quantities);
+  $quantities=[];
+  foreach($items as $line){
+    if(!is_array($line))json(['error'=>'Pilihan menu tidak valid'],422);
+    $pid=filter_var($line['id']??null,FILTER_VALIDATE_INT);$qty=filter_var($line['qty']??null,FILTER_VALIDATE_INT);
+    if(!$pid||$pid<1||!$qty||$qty<1||$qty>500)json(['error'=>'Jumlah menu tidak valid'],422);
+    $quantities[$pid]=($quantities[$pid]??0)+$qty;
+    if($quantities[$pid]>500)json(['error'=>'Maksimal 500 porsi per menu'],422);
+  }
+  ksort($quantities);
   try{
     $db=db();$db->beginTransaction();
-    $schedule=q('SELECT id,kapasitas FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
-    if(!$schedule){$id=(int)q("INSERT INTO jadwal_po(nama,tgl_buka,tgl_tutup,kapasitas,aktif) VALUES('Default','2026-01-01','2099-12-31',50,true) RETURNING id")->fetchColumn();$schedule=['id'=>$id,'kapasitas'=>50];}
-    $lines=[];$total=0;$pax=0;
-    foreach($quantities as $pid=>$qty){
-      $product=q('SELECT p.id,p.nama,p.harga,p.min_pesan,k.id AS kh_id,COALESCE(k.kuota,p.kuota-p.terpakai) AS sisa FROM produk p LEFT JOIN kuota_harian k ON k.produk_id=p.id AND k.tanggal=? WHERE p.id=? FOR UPDATE',[$delivery->format('Y-m-d'),$pid])->fetch();
-      if(!$product) throw new DomainException('Salah satu menu sudah tidak tersedia.');
-      if($qty<$product['min_pesan']) throw new DomainException($product['nama'].' minimal dipesan '.$product['min_pesan'].' porsi.');
-      if($qty>$product['sisa']) throw new DomainException('Stok '.$product['nama'].' tidak mencukupi.');
-      $lines[]=['product'=>$product,'qty'=>$qty];$total+=(int)$product['harga']*$qty;$pax+=$qty;
+    // Serialisasi semua checkout, termasuk yang memilih produk berbeda.
+    // Kunci tabel juga menunggu perubahan kuota master oleh admin.
+    q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
+    q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+    q('SELECT id FROM kuota_harian WHERE tanggal=? ORDER BY produk_id FOR UPDATE',[$day])->fetchAll();
+    $schedule=q('SELECT id FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
+    if(!$schedule){$id=(int)q("INSERT INTO jadwal_po(nama,tgl_buka,tgl_tutup,kapasitas,aktif) VALUES('Default','2026-01-01','2099-12-31',50,true) RETURNING id")->fetchColumn();$schedule=['id'=>$id];}
+    $delDate=$delivery->format('Y-m-d');
+    $snapshot=daily_quota_snapshot($delDate);
+    $lines=daily_quota_validate($snapshot,$quantities);$total=0;$portions=0;
+    foreach($lines as $line){
+      $product=$line['product'];$qty=$line['qty'];
+      $total+=(int)$product['harga']*$qty;$portions+=$qty;
       if($total>2147483647)throw new DomainException('Total pesanan melebihi batas transaksi.');
     }
-    $used=(int)q("SELECT COALESCE(SUM(pax),0) FROM pesanan WHERE jadwal_id=? AND status<>'ditolak'",[$schedule['id']])->fetchColumn();
-    if($pax>(int)$schedule['kapasitas']-$used) throw new DomainException('Kapasitas dapur tidak mencukupi untuk jumlah pesanan ini.');
     $code='SN-'.(new DateTimeImmutable('now',$zone))->format('ymd').'-'.strtoupper(bin2hex(random_bytes(3)));
-    $orderId=(int)q("INSERT INTO pesanan(kode,user_id,jadwal_id,nama_pemesan,keterangan,pax,total,status,tgl_kirim,alamat_pengiriman,telepon_penerima) VALUES(?,?,?,?,?,?,?,'menunggu_pembayaran',?,?,?) RETURNING id",[$code,$customer['id'],$schedule['id'],$recipient,$note?:null,$pax,$total,$delivery->format('Y-m-d H:i:sP'),$address,$phone])->fetchColumn();
-    foreach($lines as $line){$p=$line['product'];$qty=$line['qty'];q('INSERT INTO detail_pesanan(pesanan_id,produk_id,qty,harga) VALUES(?,?,?,?)',[$orderId,$p['id'],$qty,$p['harga']]);if($p['kh_id']){q('UPDATE kuota_harian SET kuota=kuota-? WHERE id=?',[$qty,$p['kh_id']]);}else{q('UPDATE produk SET terpakai=terpakai+? WHERE id=?',[$qty,$p['id']]);}}
+    $orderId=(int)q("INSERT INTO pesanan(kode,user_id,jadwal_id,nama_pemesan,keterangan,pax,total,status,tgl_kirim,alamat_pengiriman,telepon_penerima) VALUES(?,?,?,?,?,?,?,'menunggu_pembayaran',?,?,?) RETURNING id",[$code,$customer['id'],$schedule['id'],$recipient,$note?:null,$portions,$total,$delivery->format('Y-m-d H:i:sP'),$address,$phone])->fetchColumn();
+    foreach($lines as $line){$p=$line['product'];$qty=$line['qty'];q('INSERT INTO detail_pesanan(pesanan_id,produk_id,qty,harga) VALUES(?,?,?,?)',[$orderId,$p['id'],$qty,$p['harga']]);}
     $db->commit();json(['ok'=>true,'id'=>$orderId,'kode'=>$code,'total'=>$total],201);
   }catch(DomainException $e){if(db()->inTransaction())db()->rollBack();json(['error'=>$e->getMessage()],422);}
-  catch(Throwable $e){if(db()->inTransaction())db()->rollBack();json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}
+  catch(Throwable $e){if(db()->inTransaction())db()->rollBack();error_log('[Se.Noesa order] '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());json(['error'=>'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'],500);}
 }
 if(isset($_GET['addresses'])){json(['addresses'=>q('SELECT id,label,nama_penerima,telepon,alamat,is_default FROM alamat_pelanggan WHERE user_id=? ORDER BY is_default DESC,id',[$customer['id']])->fetchAll()]);}
 if(isset($_GET['id'])){

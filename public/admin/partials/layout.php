@@ -25,6 +25,7 @@ function admin_head(string $title, string $page): void
           <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><span class="nav-icon">&#9638;</span>Dashboard</a>
           <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><span class="nav-icon">&#9776;</span>Pesanan <i id="pending-badge"></i></a>
           <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><span class="nav-icon">&#9633;</span>Produk &amp; Kuota</a>
+          <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>Jadwal</a>
         </nav>
         <div class="sidebar-bottom">
           <div class="admin-profile"><span class="avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'A', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><span><b><?= htmlspecialchars($u['username'] ?? 'Admin', ENT_QUOTES, 'UTF-8') ?></b><small>Administrator</small></span></div><button class="signout" data-logout>&#10140; Keluar</button>
@@ -38,12 +39,19 @@ function admin_head(string $title, string $page): void
           <div class="top-actions"><span class="today-label" id="today-label"></span><span class="avatar top-avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'A', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span></div>
         </header>
         <div class="page-content">
+        <?php if(in_array($page,['products','orders','dashboard'],true)):
+          $quotaDay=$_GET['tgl_kirim']??(new DateTimeImmutable('now',new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+          if(!is_string($quotaDay))$quotaDay=''; ?>
+          <label for="quota-date">Tanggal kuota dapur dan produk</label>
+          <input class="form-control" id="quota-date" type="date" value="<?=htmlspecialchars($quotaDay,ENT_QUOTES,'UTF-8')?>">
+          <p class="muted">Filter ini berlaku untuk kuota dan kapasitas; daftar pesanan tetap mengikuti tab pencarian.</p>
+        <?php endif; ?>
         <?php
       }
       function admin_foot(): void
       { ?>
         </div>
-        <nav class="mobile-nav"><a href="dashboard.php">&#9638;<span>Dashboard</span></a><a href="orders.php">&#9776;<span>Pesanan</span></a><a href="products.php">&#9633;<span>Produk</span></a><button data-logout>&#10140;<span>Keluar</span></button></nav>
+        <nav class="mobile-nav"><a href="dashboard.php">&#9638;<span>Dashboard</span></a><a href="orders.php">&#9776;<span>Pesanan</span></a><a href="products.php">&#9633;<span>Produk</span></a><a href="schedules.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span>Jadwal</span></a><button data-logout>&#10140;<span>Keluar</span></button></nav>
       </main>
     </div>
     

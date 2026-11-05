@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
+require_once __DIR__ . '/../../../app/daily-quota.php';
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
   if (!(error_reporting() & $severity)) return false;
@@ -42,14 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     json($n ? ['ok' => true] : ['error' => 'Produk tidak ditemukan'], $n ? 200 : 404);
   }
 
-  foreach (['kode', 'nama', 'kategori', 'harga', 'kuota', 'min_pesan'] as $field) {
+  foreach (['kode', 'nama', 'kategori', 'harga', 'min_pesan'] as $field) {
     if (!isset($b[$field]) || trim((string)$b[$field]) === '') json(['error' => 'Semua kolom wajib diisi'], 422);
   }
   if (!in_array($b['kategori'], ['makanan', 'minuman', 'snack'], true)) json(['error' => 'Kategori tidak valid'], 422);
   $harga = filter_var($b['harga'], FILTER_VALIDATE_INT);
-  $kuota = filter_var($b['kuota'], FILTER_VALIDATE_INT);
   $minimum = filter_var($b['min_pesan'], FILTER_VALIDATE_INT);
-  if ($harga === false || $harga < 1 || $kuota === false || $kuota < 0 || $minimum === false || $minimum < 1) {
+  if ($harga === false || $harga < 1 || $minimum === false || $minimum < 4) {
     json(['error' => 'Harga dan kuota tidak valid'], 422);
   }
 
@@ -91,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   try {
     if ($id) {
-      q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,kuota=?,min_pesan=?,gambar=? WHERE id=?', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $minimum, $image, $id]);
+      q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,min_pesan=?,gambar=? WHERE id=?', [$b['kode'], $b['nama'], $b['kategori'], $harga, $minimum, $image, $id]);
       $savedId = $id;
     } else {
-      $savedId = (int)q('INSERT INTO produk(kode,nama,kategori,harga,kuota,terpakai,min_pesan,gambar) VALUES(?,?,?,?,?,0,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $kuota, $minimum, $image])->fetchColumn();
+      $savedId = (int)q('INSERT INTO produk(kode,nama,kategori,harga,min_pesan,gambar) VALUES(?,?,?,?,?,?) RETURNING id', [$b['kode'], $b['nama'], $b['kategori'], $harga, $minimum, $image])->fetchColumn();
     }
   } catch (PDOException $e) {
     json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);
@@ -103,10 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $category = $_GET['kategori'] ?? '';
-$search = '%' . trim($_GET['q'] ?? '') . '%';
-$filter = in_array($category, ['makanan', 'minuman', 'snack'], true) ? 'AND kategori=?' : ($category === 'kritis' ? 'AND (kuota=0 OR kuota-terpakai<=kuota*0.2)' : '');
-$args = [$search, $search];
-if ($filter === 'AND kategori=?') $args[] = $category;
-$items = q("SELECT id,kode,nama,kategori,harga,kuota,terpakai,min_pesan,kuota-terpakai sisa,gambar FROM produk WHERE (nama ILIKE ? OR kode ILIKE ?) $filter ORDER BY kode", $args)->fetchAll();
-$count = q('SELECT COUNT(*) semua,COUNT(*) FILTER(WHERE kuota=0 OR kuota-terpakai<=kuota*0.2) kritis FROM produk')->fetch();
-json(['items' => $items, 'count' => $count]);
+$day = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+try { $snapshot = daily_quota_snapshot($day,true); }
+catch (DomainException $e) { json(['error'=>$e->getMessage()], 422); }
+$all = $snapshot['items'];
+$critical = static fn($p) => (int)$p['kuota']===0 || (int)$p['sisa']<=(int)$p['kuota']*0.2;
+$query = trim($_GET['q'] ?? '');
+$items = array_values(array_filter($all, static function($p) use ($category, $query, $critical) {
+  return (!in_array($category,['makanan','minuman','snack'],true) || $p['kategori']===$category)
+    && ($category!=='kritis' || $critical($p))
+    && ($query==='' || stripos($p['nama'],$query)!==false || stripos($p['kode'],$query)!==false);
+}));
+$count = ['semua'=>count($all), 'kritis'=>count(array_filter($all,$critical))];
+json(['items'=>$items, 'count'=>$count, 'tanggal'=>$day]);
