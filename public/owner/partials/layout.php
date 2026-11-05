@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../../app/bootstrap.php';
 function head(string $title, string $page, bool $auth = false)
 {
   if (!$auth) require_owner(false);
+  $GLOBALS['owner_page']=$page;
   $u = me(); ?>
   <!doctype html>
   <html lang="id">
@@ -34,6 +35,13 @@ function head(string $title, string $page, bool $auth = false)
           <div class="avatar"><?= strtoupper(substr($u['username'] ?? 'A', 0, 1)) ?></div>
         </div>
       </header>
+      <?php if(in_array($GLOBALS['owner_page']??'',['products','orders'],true)):
+        $quotaDay=$_GET['tgl_kirim']??(new DateTimeImmutable('now',new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+        if(!is_string($quotaDay))$quotaDay=''; ?>
+        <label for="quota-date">Tanggal kuota dapur dan produk</label>
+        <input class="form-control" id="quota-date" type="date" value="<?=htmlspecialchars($quotaDay,ENT_QUOTES,'UTF-8')?>">
+        <?php if(($GLOBALS['owner_page']??'')==='products'): ?><p id="quota-summary" role="status"></p><?php endif; ?>
+      <?php endif; ?>
     <?php }
   function nav(string $on)
   {

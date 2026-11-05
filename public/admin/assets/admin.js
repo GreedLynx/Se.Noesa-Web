@@ -10,6 +10,7 @@ const esc = (s) =>
       ],
   );
 async function api(url, options = {}) {
+  if(!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))url+=(url.includes('?')?'&':'?')+'tgl_kirim='+encodeURIComponent($('#quota-date').value);
   const response = await fetch(url, {
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
@@ -33,6 +34,7 @@ function toast(message) {
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2600);
 }
+if($('#quota-date'))$('#quota-date').onchange=()=>{const url=new URL(location.href);url.searchParams.set('tgl_kirim',$('#quota-date').value);location.href=url.href};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
@@ -120,6 +122,91 @@ function countUp(el, target) {
     if (p < 1) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+async function loadSchedules() {
+  const d = await api("api/schedules.php");
+  const rows = d.items.map(s =>
+    `<tr>
+      <td><b>${esc(s.nama)}</b></td>
+      <td><small>${esc(s.tgl_buka)} s/d ${esc(s.tgl_tutup)}</small></td>
+      <td>${Number(s.kapasitas).toLocaleString("id-ID")} porsi</td>
+      <td>
+        <label class="toggle-switch">
+          <input type="checkbox" data-toggle-aktif="${s.id}" ${s.aktif ? "checked" : ""}>
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <button class="button small secondary" data-edit-sched="${s.id}">Edit</button>
+        <button class="button small danger-outline" data-delete-sched="${s.id}">Hapus</button>
+      </td>
+    </tr>`
+  ).join("");
+  $("#schedule-rows").innerHTML = rows || '<tr><td colspan="5" class="empty-state">Belum ada jadwal.</td></tr>';
+  $$("[data-toggle-aktif]").forEach(btn => {
+    btn.onchange = async () => {
+      try {
+        await api("api/schedules.php", { method: "POST", body: { action: "toggle", id: Number(btn.dataset.toggleAktif), aktif: btn.checked } });
+        toast("Status jadwal diperbarui");
+      } catch(e) {
+        btn.checked = !btn.checked;
+        toast(e.message);
+      }
+    };
+  });
+  $$("[data-edit-sched]").forEach(btn => {
+    btn.onclick = () => editSchedule(d.items.find(i => Number(i.id) === Number(btn.dataset.editSched)));
+  });
+  $$("[data-delete-sched]").forEach(btn => {
+    btn.onclick = async () => {
+      const confirmed = await confirmDialog("Hapus Jadwal", "Hapus jadwal ini? Pesanan terkait tidak akan terpengaruh.", "Ya, Hapus", "danger");
+      if(!confirmed) return;
+      try {
+        await api("api/schedules.php", { method: "POST", body: { action: "delete", id: Number(btn.dataset.deleteSched) } });
+        toast("Jadwal dihapus");
+        loadSchedules();
+      } catch(e) { toast(e.message); }
+    };
+  });
+}
+function editSchedule(s) {
+  const form = $("#schedule-form");
+  form.reset();
+  form.elements.id.value = s?.id || "";
+  form.elements.nama.value = s?.nama || "";
+  form.elements.tgl_buka.value = s?.tgl_buka || "";
+  form.elements.tgl_tutup.value = s?.tgl_tutup || "";
+  form.elements.kapasitas.value = s?.kapasitas || 50;
+  form.elements.aktif.checked = s ? s.aktif : true;
+  $("#schedule-form-title").textContent = s ? "Edit jadwal" : "Tambah jadwal";
+  $("#schedule-error").textContent = "";
+  $("#schedule-dialog").showModal();
+}
+async function schedulesPage() {
+  $("#new-schedule").onclick = () => editSchedule(null);
+  $$("[data-close-dialog]").forEach(b => b.onclick = () => $("#schedule-dialog").close());
+  $("#schedule-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    const body = {
+      action: "save",
+      id: f.elements.id.value ? Number(f.elements.id.value) : undefined,
+      nama: f.elements.nama.value,
+      tgl_buka: f.elements.tgl_buka.value,
+      tgl_tutup: f.elements.tgl_tutup.value,
+      kapasitas: Number(f.elements.kapasitas.value),
+      aktif: f.elements.aktif.checked
+    };
+    try {
+      await api("api/schedules.php", { method: "POST", body });
+      $("#schedule-dialog").close();
+      toast("Jadwal tersimpan");
+      loadSchedules();
+    } catch(err) {
+      $("#schedule-error").textContent = err.message;
+    }
+  };
+  loadSchedules();
 }
 function shell() {
   const toggle = $(".menu-toggle");
@@ -467,8 +554,8 @@ function editProduct(p) {
   form.elements.nama.value = p?.nama || "";
   form.elements.kategori.value = p?.kategori || "makanan";
   form.elements.harga.value = p?.harga || "";
-  form.elements.kuota.value = p ? p.kuota : 1;
-  form.elements.min_pesan.value = p?.min_pesan || 1;
+  $('#kuota-tanggal').value=$('#quota-date')?.value || '';
+  form.elements.min_pesan.value = p?.min_pesan || 4;
   form.elements.gambar.value = p?.gambar || "";
   form.elements.gambar_file.required = !p;
   $("#image-help").textContent = p
@@ -510,9 +597,10 @@ function productsPage() {
   if (kuotaAddBtn) {
     kuotaAddBtn.onclick = async () => {
       const tanggal = $("#kuota-tanggal").value;
-      const kuota = parseInt($("#kuota-nilai").value);
+      const rawKuota = $("#kuota-nilai").value;
+      const kuota = rawKuota===''?NaN:Number(rawKuota);
       const produkId = $("#product-form").elements.id.value;
-      if (!tanggal || !kuota || kuota < 1 || !produkId) return;
+      if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
       try {
         await api("api/kuota-harian.php", {
           method: "POST",
@@ -520,6 +608,7 @@ function productsPage() {
         });
         $("#kuota-nilai").value = "";
         loadKuotaHarian(produkId);
+        refreshProducts();
       } catch (e) {
         toast(e.message);
       }
@@ -805,6 +894,7 @@ const run = {
   orders: ordersPage,
   "order-detail": orderDetail,
   products: productsPage,
+  schedules: schedulesPage,
 }[page];
 if (run)
   run().catch((e) => {
