@@ -344,3 +344,34 @@ body[data-page="catalog"] .menu-grid.category-transition .menu-card {
   body[data-page="history"] .customer-mobile-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   body[data-page="history"] .customer-mobile-nav a.active { color: var(--green); font-weight: 600; }
 }
+
+/* =========================================
+   MOBILE DATE INPUT STYLING (FIXED)
+   ========================================= */
+@media (max-width: 700px) {
+  .date-field-container {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 12px 0 18px 0 !important;
+  }
+  
+  .date-field-container label {
+    font-size: 12px !important;
+    margin: 0 !important;
+  }
+
+  .date-field-container input[type="date"] {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .date-field-container input[type="date"]::-webkit-calendar-picker-indicator {
+    background-size: 18px !important;
+    width: 24px !important;
+    height: 24px !important;
+  }
+}

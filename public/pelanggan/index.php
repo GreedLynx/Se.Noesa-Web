@@ -14,9 +14,14 @@ $profile = q('SELECT username,phone FROM users WHERE id=?', [$customer['id']])->
 </section>
 <p class="catalog-policy">Pemesanan dilakukan minimal 7 hari sebelum acara.</p>
 <?php $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->modify('+7 days')->format('Y-m-d'); ?>
-<label for="catalog-delivery-date">Tanggal pengiriman</label>
-<input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
-    required>
+
+<!-- BAGIAN TANGGAL PENGIRIMAN YANG BARU -->
+<div class="date-field-container">
+    <label for="catalog-delivery-date">Tanggal pengiriman</label>
+    <input id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>" required>
+</div>
+<!-- AKHIR BAGIAN TANGGAL PENGIRIMAN -->
+
 <div class="catalog-toolbar">
     <div class="category-tabs" id="category-tabs"><button class="active" data-category="">Semua</button><button
             data-category="makanan">Makanan</button><button data-category="minuman">Minuman</button><button
