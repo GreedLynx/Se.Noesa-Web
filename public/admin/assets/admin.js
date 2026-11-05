@@ -10,6 +10,7 @@ const esc = (s) =>
       ],
   );
 async function api(url, options = {}) {
+  if(!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))url+=(url.includes('?')?'&':'?')+'tgl_kirim='+encodeURIComponent($('#quota-date').value);
   const response = await fetch(url, {
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
@@ -33,6 +34,7 @@ function toast(message) {
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), 2600);
 }
+if($('#quota-date'))$('#quota-date').onchange=()=>{const url=new URL(location.href);url.searchParams.set('tgl_kirim',$('#quota-date').value);location.href=url.href};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
@@ -552,8 +554,8 @@ function editProduct(p) {
   form.elements.nama.value = p?.nama || "";
   form.elements.kategori.value = p?.kategori || "makanan";
   form.elements.harga.value = p?.harga || "";
-  form.elements.kuota.value = p ? p.kuota : 1;
-  form.elements.min_pesan.value = p?.min_pesan || 1;
+  $('#kuota-tanggal').value=$('#quota-date')?.value || '';
+  form.elements.min_pesan.value = p?.min_pesan || 4;
   form.elements.gambar.value = p?.gambar || "";
   form.elements.gambar_file.required = !p;
   $("#image-help").textContent = p
@@ -595,9 +597,10 @@ function productsPage() {
   if (kuotaAddBtn) {
     kuotaAddBtn.onclick = async () => {
       const tanggal = $("#kuota-tanggal").value;
-      const kuota = parseInt($("#kuota-nilai").value);
+      const rawKuota = $("#kuota-nilai").value;
+      const kuota = rawKuota===''?NaN:Number(rawKuota);
       const produkId = $("#product-form").elements.id.value;
-      if (!tanggal || !kuota || kuota < 1 || !produkId) return;
+      if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
       try {
         await api("api/kuota-harian.php", {
           method: "POST",
@@ -605,6 +608,7 @@ function productsPage() {
         });
         $("#kuota-nilai").value = "";
         loadKuotaHarian(produkId);
+        refreshProducts();
       } catch (e) {
         toast(e.message);
       }

@@ -39,6 +39,13 @@ function admin_head(string $title, string $page): void
           <div class="top-actions"><span class="today-label" id="today-label"></span><span class="avatar top-avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'A', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span></div>
         </header>
         <div class="page-content">
+        <?php if(in_array($page,['products','orders','dashboard'],true)):
+          $quotaDay=$_GET['tgl_kirim']??(new DateTimeImmutable('now',new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+          if(!is_string($quotaDay))$quotaDay=''; ?>
+          <label for="quota-date">Tanggal kuota dapur dan produk</label>
+          <input class="form-control" id="quota-date" type="date" value="<?=htmlspecialchars($quotaDay,ENT_QUOTES,'UTF-8')?>">
+          <p class="muted">Filter ini berlaku untuk kuota dan kapasitas; daftar pesanan tetap mengikuti tab pencarian.</p>
+        <?php endif; ?>
         <?php
       }
       function admin_foot(): void

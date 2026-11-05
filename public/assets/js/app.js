@@ -11,6 +11,7 @@ const productImage = (value) => {
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
 async function api(url, opt = {}) {
+  if(!opt.method && $('#quota-date') && /^api\/(products|orders)\.php/.test(url))url+=(url.includes('?')?'&':'?')+'tgl_kirim='+encodeURIComponent($('#quota-date').value);
   const multipart = opt.body instanceof FormData;
   const r = await fetch(url, {
     headers: multipart ? {} : { "Content-Type": "application/json" },
@@ -33,6 +34,7 @@ function toast(m) {
   t.classList.add("on");
   setTimeout(() => t.classList.remove("on"), 2200);
 }
+if($('#quota-date'))$('#quota-date').onchange=()=>{const url=new URL(location.href);url.searchParams.set('tgl_kirim',$('#quota-date').value);location.href=url.href};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
@@ -313,12 +315,12 @@ const PAGES = {
       $("#cv").textContent = d.count.v;
       $("#cp").textContent = d.count.p;
       const c = d.kapasitas || { kapasitas: 1, pakai: 0 },
-        pct = Math.round((c.pakai / c.kapasitas) * 100);
+        pct = c.kapasitas>0?Math.round((c.pakai / c.kapasitas) * 100):0;
       $("#gfg").style.strokeDashoffset = 100 - Math.min(pct, 100);
       countUp($("#gpct"), pct, 1400);
       setTimeout(() => ($("#gpct").textContent = pct + "%"), 1500);
       $("#gtxt").textContent =
-        `${c.pakai.toLocaleString("id-ID")} / ${c.kapasitas.toLocaleString("id-ID")} porsi · sisa ${(c.kapasitas - c.pakai).toLocaleString("id-ID")} pax aman`;
+        `${c.pakai.toLocaleString("id-ID")} / ${c.kapasitas.toLocaleString("id-ID")} porsi · sisa ${Math.max(0,c.kapasitas - c.pakai).toLocaleString("id-ID")} porsi`;
       $("#list").innerHTML =
         d.orders
           .map(
@@ -408,11 +410,12 @@ const PAGES = {
         `api/products.php?kategori=${k}&q=${encodeURIComponent($("#q").value)}`,
       );
       $("#cs").textContent = d.count.semua;
+      if($('#quota-summary'))$('#quota-summary').textContent='Kapasitas dapur '+d.maxKitchen+' porsi · Terpakai '+d.kitchenUsed+' porsi · Sisa '+d.kitchenRemaining+' porsi';
       $("#ck").textContent = d.count.kritis;
       $("#plist").innerHTML =
         d.items
           .map((p, i) => {
-            const pct = (p.sisa / p.kuota) * 100;
+            const pct = p.kuota>0?(p.sisa / p.kuota) * 100:0;
             const img = p.gambar ? `<img src="../${p.gambar}" alt="${p.nama}" onerror="this.src='../assets/img/produk/NK-01.png'">` : '<img src="../assets/img/produk/NK-01.png" alt="placeholder">';
             return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${p.sisa <= 0 ? " · habis" : ""}</small><div class="meter${pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
           })
