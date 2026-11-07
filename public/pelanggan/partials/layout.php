@@ -84,20 +84,29 @@ function customer_foot(): void
     ?>
         </div>
       </main>
-      <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan"><a
-          class="<?= $GLOBALS['customer_page'] === 'catalog' ? 'active' : '' ?>" href="index.php" aria-label="Menu"><svg
-            viewBox="0 0 24 24" aria-hidden="true">
+      <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan">
+        <a class="<?= $GLOBALS['customer_page'] === 'catalog' ? 'active' : '' ?>" href="index.php" aria-label="Menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="8" />
             <path d="M4 12h16" />
-          </svg><span>Menu</span></a><a class="<?= $GLOBALS['customer_page'] === 'history' ? 'active' : '' ?>" href="riwayat.php"
-          aria-label="Riwayat"><svg viewBox="0 0 24 24" aria-hidden="true">
+          </svg>
+          <span>Menu</span>
+        </a>
+        <a class="<?= $GLOBALS['customer_page'] === 'history' ? 'active' : '' ?>" href="riwayat.php" aria-label="Riwayat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 6h14M5 12h14M5 18h14" />
-          </svg><span>Riwayat</span></a><button type="button" data-logout aria-label="Keluar"><svg viewBox="0 0 24 24"
-            aria-hidden="true">
+          </svg>
+          <span>Riwayat</span>
+        </a>
+        <button type="button" data-logout aria-label="Keluar">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4" />
-          </svg><span>Keluar</span></button></nav>
-      <dialog id="detail-dialog" class="customer-dialog"><button class="dialog-close" data-close-detail
-          aria-label="Tutup">&times;</button>
+          </svg>
+          <span>Keluar</span>
+        </button>
+      </nav>
+      <dialog id="detail-dialog" class="customer-dialog">
+        <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
         <div id="detail-content"></div>
       </dialog>
       <dialog id="checkout-dialog" class="customer-dialog checkout-dialog">
