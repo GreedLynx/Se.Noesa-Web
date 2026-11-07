@@ -61,34 +61,56 @@ function imagePath(name) {
 }
 
 let catalog=[],productCache={},category='',schedule=null,cart={},activeProduct=null,activeQty=1,searchTimer,savedAddresses=[];
-function catalogPage(){
-  wireLogout();
-  const search=$('#catalog-search'),filters=$$('#category-tabs button, .customer-category-rail [data-category]');
-  filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));
-  filters.forEach(b=>b.onclick=()=>{
-    if(category===b.dataset.category)return;
-    category=b.dataset.category;
-    filters.forEach(x=>x.classList.toggle('active',x.dataset.category===category));
-    $('#menu-grid').scrollTo({top:0,behavior:'smooth'});
-    loadCatalog(true);
-  });
-  search.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadCatalog(true),200)};
-  $('#checkout-button').onclick=openCart;
-  $('#continue-checkout').onclick=()=>{$('#cart-dialog').close();openCheckout()};
-  $$('[data-close-cart]').forEach(b=>b.onclick=()=>$('#cart-dialog').close());
-  $$('[data-close-detail]').forEach(b=>b.onclick=()=>$('#detail-dialog').close());
-  const detailDialog=$('#detail-dialog'),detailContent=$('#detail-content');
-  detailContent.addEventListener('click',e=>{if(e.target.closest('.quantity-control'))e.stopPropagation()});
-  detailDialog.addEventListener('click',e=>{if(e.target===detailDialog)detailDialog.close()});
-  $$('[data-close-checkout]').forEach(b=>b.onclick=()=>$('#checkout-dialog').close());
-  $('#address-select').onchange=()=>toggleAddressFields();
-  $('#checkout-form').onsubmit=submitOrder;
-  $('#catalog-delivery-date').onchange=()=>loadCatalog().catch(e=>toast(e.message));
-  $('#checkout-form').elements.tgl_kirim.onchange=async e=>{
-    $('#catalog-delivery-date').value=e.target.value;
-    try{await loadCatalog();$('#schedule-note').textContent='Sisa kapasitas mengikuti tanggal '+e.target.value+'. Kuota diperiksa kembali saat pesanan dikirim.'}catch(err){$('#checkout-error').textContent=err.message}
-  };
-  loadCatalog();
+function catalogPage() {
+    wireLogout();
+    const search = $('#catalog-search'),
+        filters = $$('#category-tabs button, .customer-category-rail [data-category]');
+
+    filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+    filters.forEach(b => b.onclick = () => {
+        if (category === b.dataset.category) return;
+
+        category = b.dataset.category;
+        filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+        $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
+        loadCatalog(true);
+    });
+
+    search.oninput = () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => loadCatalog(true), 200)
+    };
+    $('#checkout-button').onclick = openCart;
+    $('#continue-checkout').onclick = () => {
+        $('#cart-dialog').close();
+        openCheckout()
+    };
+    $$('[data-close-cart]').forEach(b => b.onclick = () => $('#cart-dialog').close());
+    $$('[data-close-detail]').forEach(b => b.onclick = () => $('#detail-dialog').close());
+
+    const detailDialog = $('#detail-dialog'),
+        detailContent = $('#detail-content');
+    detailContent.addEventListener('click', e => {
+        if (e.target.closest('.quantity-control')) e.stopPropagation()
+    });
+    detailDialog.addEventListener('click', e => {
+        if (e.target === detailDialog) detailDialog.close()
+    });
+    $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
+    $('#address-select').onchange = () => toggleAddressFields();
+    $('#checkout-form').onsubmit = submitOrder;
+    $('#catalog-delivery-date').onchange = () => loadCatalog().catch(e => toast(e.message));
+    $('#checkout-form').elements.tgl_kirim.onchange = async e => {
+        $('#catalog-delivery-date').value = e.target.value;
+        try {
+            await loadCatalog();
+            $('#schedule-note').textContent = 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.'
+        } catch (err) {
+            $('#checkout-error').textContent = err.message
+        }
+    };
+
+    loadCatalog();
 }
 async function loadCatalog(animate=false){const grid=$('#menu-grid');grid.classList.remove('category-transition');const day=$('#catalog-delivery-date').value;const d=await api('api/catalog.php?tgl_kirim='+encodeURIComponent(day));if(day!==$('#catalog-delivery-date').value)return;
 const previous=productCache;productCache=Object.fromEntries(d.items.map(p=>[p.id,p]));
