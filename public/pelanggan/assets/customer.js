@@ -1,10 +1,65 @@
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-const money=n=>'Rp '+Number(n||0).toLocaleString('id-ID');
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-async function api(url,options={}){const headers={...options.headers};if(!(options.body instanceof FormData))headers['Content-Type']='application/json';const response=await fetch(url,{...options,headers,body:options.body instanceof FormData?options.body:options.body?JSON.stringify(options.body):undefined});const data=await response.json().catch(()=>({error:'Respons server tidak valid'}));if(response.status===401){location.href='../login.php';throw Error('Sesi berakhir')}if(!response.ok)throw Error(data.error||'Terjadi kesalahan');return data}
-function toast(message){const el=$('#customer-toast');if(!el)return;el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
-function wireLogout(){$$('[data-logout]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('../api/auth.php?a=logout');location.href='../login.php'}catch(e){b.disabled=false;toast(e.message)}})}
-function imagePath(name){const raw=String(name||'');if(/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw))return '../'+raw;const file=raw.replace(/[^a-zA-Z0-9_.-]/g,'');return file?'../assets/img/produk/'+file:'../assets/img/produk/NK-01.png'}
+const $ = (s, r = document) => r.querySelector(s),
+    $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const money = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+}[c]));
+
+async function api(url, options = {}) {
+    const headers = {...options.headers};
+    if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+
+    const response = await fetch(url, {
+        ...options,
+        headers,
+        body: options.body instanceof FormData
+            ? options.body
+            : options.body ? JSON.stringify(options.body) : undefined
+    });
+    const data = await response.json().catch(() => ({error: 'Respons server tidak valid'}));
+    if (response.status === 401) {
+        location.href = '../login.php';
+        throw Error('Sesi berakhir')
+    }
+    if (!response.ok) throw Error(data.error || 'Terjadi kesalahan');
+
+    return data
+}
+
+function toast(message) {
+    const el = $('#customer-toast');
+    if (!el) return;
+
+    el.textContent = message;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2600)
+}
+
+function wireLogout() {
+    $$('[data-logout]').forEach(b => b.onclick = async () => {
+        b.disabled = true;
+        try {
+            await api('../api/auth.php?a=logout');
+            location.href = '../login.php'
+        } catch (e) {
+            b.disabled = false;
+            toast(e.message)
+        }
+    })
+}
+
+function imagePath(name) {
+    const raw = String(name || '');
+    if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw)) return '../' + raw;
+
+    const file = raw.replace(/[^a-zA-Z0-9_.-]/g, '');
+    return file ? '../assets/img/produk/' + file : '../assets/img/produk/NK-01.png'
+}
+
 let catalog=[],productCache={},category='',schedule=null,cart={},activeProduct=null,activeQty=1,searchTimer,savedAddresses=[];
 function catalogPage(){
   wireLogout();
