@@ -1,10 +1,14 @@
 <?php
 require_once __DIR__ . '/../../../app/bootstrap.php';
+
 function head(string $title, string $page, bool $auth = false)
 {
-  if (!$auth) require_owner(false);
-  $GLOBALS['owner_page']=$page;
-  $u = me(); ?>
+    if (!$auth) {
+        require_owner(false);
+    }
+    $GLOBALS['owner_page'] = $page;
+    $u = me();
+    ?>
   <!doctype html>
   <html lang="id">
 
@@ -19,10 +23,13 @@ function head(string $title, string $page, bool $auth = false)
 
   <body data-page="<?= $page ?>">
     <main class="app<?= $auth ? ' auth' : '' ?>">
-    <?php }
-  function topbar(string $title, bool $back = false)
-  {
-    $u = me(); ?>
+<?php
+}
+
+function topbar(string $title, bool $back = false)
+{
+    $u = me();
+    ?>
       <header class="top rise">
         <div class="row"><?php if ($back): ?><a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a><?php endif; ?>
           <div><small>Se.Noesa</small>
@@ -35,26 +42,37 @@ function head(string $title, string $page, bool $auth = false)
           <div class="avatar"><?= strtoupper(substr($u['username'] ?? 'A', 0, 1)) ?></div>
         </div>
       </header>
-      <?php if(in_array($GLOBALS['owner_page']??'',['products','orders'],true)):
-        $quotaDay=$_GET['tgl_kirim']??(new DateTimeImmutable('now',new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
-        if(!is_string($quotaDay))$quotaDay=''; ?>
+      <?php if (in_array($GLOBALS['owner_page'] ?? '', ['products', 'orders'], true)):
+          $quotaDay = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+          if (!is_string($quotaDay)) {
+              $quotaDay = '';
+          }
+          ?>
         <label for="quota-date">Tanggal kuota dapur dan produk</label>
-        <input class="form-control" id="quota-date" type="date" value="<?=htmlspecialchars($quotaDay,ENT_QUOTES,'UTF-8')?>">
-        <?php if(($GLOBALS['owner_page']??'')==='products'): ?><p id="quota-summary" role="status"></p><?php endif; ?>
+        <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>">
+        <?php if (($GLOBALS['owner_page'] ?? '') === 'products'): ?>
+          <p id="quota-summary" role="status"></p>
+        <?php endif; ?>
       <?php endif; ?>
-    <?php }
-  function nav(string $on)
-  {
+<?php
+}
+
+function nav(string $on)
+{
     $i = [
       'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
       'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
       'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>']
-    ]; ?>
+    ];
+    ?>
       <nav class="nav"><span class="pill" id="pill"></span>
         <?php foreach ($i as $k => [$l, $p]): ?><a href="<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>"><svg viewBox="0 0 24 24"><?= $p ?></svg><span><?= $l ?></span></a><?php endforeach; ?></nav>
-    <?php }
-  function foot()
-  { ?>
+<?php
+}
+
+function foot()
+{
+    ?>
     </main>
     
     <!-- DIALOG KONFIRMASI CUSTOM -->
@@ -74,4 +92,6 @@ function head(string $title, string $page, bool $auth = false)
     <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
   </body>
 
-  </html><?php }
+  </html>
+<?php
+}
