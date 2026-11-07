@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../app/bootstrap.php';
+
 function admin_head(string $title, string $page): void
 {
-  $u = require_role('admin', false);
+    $u = require_role('admin', false);
 ?>
   <!doctype html>
   <html lang="id">
@@ -39,19 +40,36 @@ function admin_head(string $title, string $page): void
           <div class="top-actions"><span class="today-label" id="today-label"></span><span class="avatar top-avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'A', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span></div>
         </header>
         <div class="page-content">
-        <?php if(in_array($page,['products','orders','dashboard'],true)):
-          $quotaDay=$_GET['tgl_kirim']??(new DateTimeImmutable('now',new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
-          if(!is_string($quotaDay))$quotaDay=''; ?>
+        <?php if (in_array($page, ['products', 'orders', 'dashboard'], true)):
+            $quotaDay = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+            if (!is_string($quotaDay)) {
+                $quotaDay = '';
+            }
+            ?>
           <label for="quota-date">Tanggal kuota dapur dan produk</label>
-          <input class="form-control" id="quota-date" type="date" value="<?=htmlspecialchars($quotaDay,ENT_QUOTES,'UTF-8')?>">
+          <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>">
           <p class="muted">Filter ini berlaku untuk kuota dan kapasitas; daftar pesanan tetap mengikuti tab pencarian.</p>
         <?php endif; ?>
-        <?php
-      }
-      function admin_foot(): void
-      { ?>
+<?php
+}
+
+function admin_foot(): void
+{
+    ?>
         </div>
-        <nav class="mobile-nav"><a href="dashboard.php">&#9638;<span>Dashboard</span></a><a href="orders.php">&#9776;<span>Pesanan</span></a><a href="products.php">&#9633;<span>Produk</span></a><a href="schedules.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span>Jadwal</span></a><button data-logout>&#10140;<span>Keluar</span></button></nav>
+        <nav class="mobile-nav">
+          <a href="dashboard.php">&#9638;<span>Dashboard</span></a>
+          <a href="orders.php">&#9776;<span>Pesanan</span></a>
+          <a href="products.php">&#9633;<span>Produk</span></a>
+          <a href="schedules.php">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3 3"/>
+            </svg>
+            <span>Jadwal</span>
+          </a>
+          <button data-logout>&#10140;<span>Keluar</span></button>
+        </nav>
       </main>
     </div>
     
@@ -72,4 +90,6 @@ function admin_head(string $title, string $page): void
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
   </body>
 
-  </html><?php }
+  </html>
+<?php
+}
