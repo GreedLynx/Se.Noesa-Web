@@ -36,27 +36,41 @@ function customer_head(string $title, string $page): array
             <circle cx="12" cy="12" r="10" />
           </svg></a>
         <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
-          <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php"><span>◯</span><small>Menu</small></a>
-          <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php"><span>☰</span><small>Riwayat</small></a>
+          <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">
+            <span>◯</span>
+            <small>Menu</small>
+          </a>
+          <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
+            <span>☰</span>
+            <small>Riwayat</small>
+          </a>
         </nav>
         <?php if ($page === 'catalog'): ?>
           <nav class="customer-category-rail" aria-label="Kategori menu">
-            <button type="button" data-category="" aria-label="Semua menu" title="Semua menu"><svg viewBox="0 0 24 24">
+            <button type="button" data-category="" aria-label="Semua menu" title="Semua menu">
+              <svg viewBox="0 0 24 24">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
                 <rect x="14" y="3" width="7" height="7" rx="1" />
                 <rect x="3" y="14" width="7" height="7" rx="1" />
                 <rect x="14" y="14" width="7" height="7" rx="1" />
-              </svg></button>
-            <button type="button" data-category="makanan" aria-label="Makanan" title="Makanan"><svg viewBox="0 0 24 24">
+              </svg>
+            </button>
+            <button type="button" data-category="makanan" aria-label="Makanan" title="Makanan">
+              <svg viewBox="0 0 24 24">
                 <path d="M3 4v6M6 4v6M9 4v6M6 10v10M17 4v16M17 4c-3 2-3 7 0 8" />
                 <circle cx="6" cy="8" r="5" />
-              </svg></button>
-            <button type="button" data-category="minuman" aria-label="Minuman" title="Minuman"><svg viewBox="0 0 24 24">
+              </svg>
+            </button>
+            <button type="button" data-category="minuman" aria-label="Minuman" title="Minuman">
+              <svg viewBox="0 0 24 24">
                 <path d="M6 8h12l-1.5 12h-9zM9 8l2-6h8M10 12h5" />
-              </svg></button>
-            <button type="button" data-category="snack" aria-label="Snack" title="Snack"><svg viewBox="0 0 24 24">
+              </svg>
+            </button>
+            <button type="button" data-category="snack" aria-label="Snack" title="Snack">
+              <svg viewBox="0 0 24 24">
                 <path d="m4 15 11-11a3 3 0 0 1 4 4L8 19a3 3 0 0 1-4-4zM7 17l10-10M3 20l2-2" />
-              </svg></button>
+              </svg>
+            </button>
           </nav>
         <?php endif; ?>
         <?php if (in_array($page, ['catalog', 'history'], true)): ?>
@@ -66,13 +80,15 @@ function customer_head(string $title, string $page): array
       </aside>
       <main class="customer-main">
         <header class="customer-top">
-          <div><small>Se.Noesa / Pelanggan</small>
+          <div>
+            <small>Se.Noesa / Pelanggan</small>
             <h1><?= htmlspecialchars($title) ?></h1>
           </div>
-          <div class="customer-user"><span
-              class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span><span
-              class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span><button
-              class="logout-text" type="button" data-logout>Keluar</button></div>
+          <div class="customer-user">
+            <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
+            <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
+            <button class="logout-text" type="button" data-logout>Keluar</button>
+          </div>
         </header>
         <div class="customer-content">
           <?php
