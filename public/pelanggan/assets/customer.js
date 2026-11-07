@@ -112,14 +112,52 @@ function catalogPage() {
 
     loadCatalog();
 }
-async function loadCatalog(animate=false){const grid=$('#menu-grid');grid.classList.remove('category-transition');const day=$('#catalog-delivery-date').value;const d=await api('api/catalog.php?tgl_kirim='+encodeURIComponent(day));if(day!==$('#catalog-delivery-date').value)return;
-const previous=productCache;productCache=Object.fromEntries(d.items.map(p=>[p.id,p]));
-const invalid=Object.entries(cart).filter(([id,qty])=>!productCache[id]||qty>Number(productCache[id].sisa)).map(([id])=>id);
-for(const id of invalid)if(!productCache[id]&&previous[id])productCache[id]={...previous[id],sisa:0,kuota_harian:0};
-if(invalid.length)toast('Sebagian menu keranjang tidak tersedia untuk tanggal ini. Periksa keranjang sebelum melanjutkan.');
-catalog=d.items.filter(p=>(!category||p.kategori===category)&&(!$('#catalog-search').value.trim()||(p.nama+' '+p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase())));schedule=d.schedule;const note=$('#catalog-note');note.textContent='Pengiriman '+d.tanggal+' · Sisa kapasitas dapur '+Number(d.kitchenRemaining)+' porsi.';note.classList.remove('closed');
-grid.innerHTML=catalog.length?catalog.map((p,i)=>'<article class="menu-card" data-product="'+Number(p.id)+'" style="--i:'+i+'"><img class="menu-image" data-open-product="'+Number(p.id)+'" src="'+esc(imagePath(p.gambar))+'" alt="'+esc(p.nama)+'" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'+esc(p.kategori)+'</span><h3>'+esc(p.nama)+'</h3><p>Min. '+Number(p.min_pesan)+' porsi · Sisa '+Number(p.sisa)+' porsi</p><strong class="menu-price">'+money(p.harga)+'</strong></div><button class="menu-add" data-add="'+Number(p.id)+'" aria-label="Lihat '+esc(p.nama)+'">+</button></article>').join(''):'<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
-$$('[data-product]').forEach(card=>card.onclick=e=>{if(e.target.closest('[data-add]'))return;showProduct(catalog.find(p=>Number(p.id)===Number(card.dataset.product)))});$$('[data-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();showProduct(catalog.find(p=>Number(p.id)===Number(b.dataset.add)))});$$('[data-open-product]').forEach(image=>image.onclick=e=>{e.stopPropagation();showProduct(catalog.find(p=>Number(p.id)===Number(image.dataset.openProduct)))});renderCart();if(animate)requestAnimationFrame(()=>{grid.classList.add('category-transition');setTimeout(()=>grid.classList.remove('category-transition'),750)})}
+async function loadCatalog(animate = false) {
+    const grid = $('#menu-grid');
+    grid.classList.remove('category-transition');
+    const day = $('#catalog-delivery-date').value;
+    const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
+    if (day !== $('#catalog-delivery-date').value) return;
+
+    const previous = productCache;
+    productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
+    const invalid = Object.entries(cart)
+        .filter(([id, qty]) => !productCache[id] || qty > Number(productCache[id].sisa))
+        .map(([id]) => id);
+    for (const id of invalid)
+        if (!productCache[id] && previous[id])
+            productCache[id] = {...previous[id], sisa: 0, kuota_harian: 0};
+    if (invalid.length) toast('Sebagian menu keranjang tidak tersedia untuk tanggal ini. Periksa keranjang sebelum melanjutkan.');
+
+    catalog = d.items.filter(p =>
+        (!category || p.kategori === category)
+        && (!$('#catalog-search').value.trim()
+            || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
+    );
+    schedule = d.schedule;
+    const note = $('#catalog-note');
+    note.textContent = 'Pengiriman ' + d.tanggal + ' · Sisa kapasitas dapur ' + Number(d.kitchenRemaining) + ' porsi.';
+    note.classList.remove('closed');
+    grid.innerHTML=catalog.length?catalog.map((p,i)=>'<article class="menu-card" data-product="'+Number(p.id)+'" style="--i:'+i+'"><img class="menu-image" data-open-product="'+Number(p.id)+'" src="'+esc(imagePath(p.gambar))+'" alt="'+esc(p.nama)+'" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'+esc(p.kategori)+'</span><h3>'+esc(p.nama)+'</h3><p>Min. '+Number(p.min_pesan)+' porsi · Sisa '+Number(p.sisa)+' porsi</p><strong class="menu-price">'+money(p.harga)+'</strong></div><button class="menu-add" data-add="'+Number(p.id)+'" aria-label="Lihat '+esc(p.nama)+'">+</button></article>').join(''):'<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+
+    $$('[data-product]').forEach(card => card.onclick = e => {
+        if (e.target.closest('[data-add]')) return;
+        showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
+    });
+    $$('[data-add]').forEach(b => b.onclick = e => {
+        e.stopPropagation();
+        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
+    });
+    $$('[data-open-product]').forEach(image => image.onclick = e => {
+        e.stopPropagation();
+        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
+    });
+    renderCart();
+    if (animate) requestAnimationFrame(() => {
+        grid.classList.add('category-transition');
+        setTimeout(() => grid.classList.remove('category-transition'), 750)
+    })
+}
 function showProduct(product){if(!product)return;activeProduct=product;const minimum=Number(product.min_pesan),maximum=Number(product.sisa);activeQty=Math.min(maximum,Math.max(1,minimum));$('#detail-content').innerHTML='<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'+esc(imagePath(product.gambar))+'" alt="'+esc(product.nama)+'" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'+esc(product.kategori)+'</span><h2>'+esc(product.nama)+'</h2><b>Description</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'+minimum+' porsi</b></span><span>Jumlah<b id="detail-qty">'+activeQty+' porsi</b></span><span>Sisa Porsi<b>'+maximum+'/'+Number(product.kuota)+'</b></span></div></div><div class="detail-compact-price">'+money(product.harga)+' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'+minimum+'" max="'+maximum+'" step="1" inputmode="numeric" value="'+activeQty+'" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>' ;
 const input=$('#quantity-value'),add=$('#add-to-cart');function setQuantity(value,normalize=false){if(value===''&&!normalize){add.disabled=true;return}let quantity=Number(value);if(!Number.isFinite(quantity)){add.disabled=true;return}quantity=Math.floor(quantity);if(normalize)quantity=Math.max(minimum,Math.min(maximum,quantity));if(quantity<minimum||quantity>maximum){add.disabled=true;return}activeQty=quantity;input.value=quantity;$('#detail-qty').textContent=quantity+' porsi';add.textContent='Pesan Sekarang';add.disabled=false}input.addEventListener('input',()=>setQuantity(input.value));input.addEventListener('change',()=>setQuantity(input.value,true));input.addEventListener('blur',()=>setQuantity(input.value,true));$$('[data-qty]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();setQuantity(activeQty+(b.dataset.qty==='plus'?1:-1),true)});input.addEventListener('click',e=>e.stopPropagation());if(maximum<minimum){input.disabled=true;add.disabled=true;add.textContent='Stok kurang dari minimal pesanan'}add.onclick=()=>{if(add.disabled)return;cart[product.id]=(cart[product.id]||0)+activeQty;$('#detail-dialog').close();renderCart();toast(product.nama+' ditambahkan ke keranjang')};$('#detail-dialog').showModal()}
 function cartTotals(){let count=0,total=0;for(const [id,qty] of Object.entries(cart)){const p=productCache[id];if(p){count+=Number(qty);total+=Number(qty)*Number(p.harga)}}return{count,total}}
