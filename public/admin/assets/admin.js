@@ -1,116 +1,121 @@
 const $ = (s, r = document) => r.querySelector(s),
-  $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const money = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
 const esc = (s) =>
-  String(s ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
+    String(s ?? "").replace(
+        /[&<>"']/g,
+        (c) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+                c
+            ],
+    );
 async function api(url, options = {}) {
-  if(!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))url+=(url.includes('?')?'&':'?')+'tgl_kirim='+encodeURIComponent($('#quota-date').value);
-  const response = await fetch(url, {
-    cache: "no-store",
-    headers: { "Content-Type": "application/json" },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  const data = await response
-    .json()
-    .catch(() => ({ error: "Respons server tidak valid" }));
-  if (response.status === 401) {
-    location.href = "../login.php";
-    throw Error("Sesi berakhir");
-  }
-  if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
-  return data;
+    if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))
+        url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
+    const response = await fetch(url, {
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        ...options,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+    const data = await response
+        .json()
+        .catch(() => ({ error: "Respons server tidak valid" }));
+    if (response.status === 401) {
+        location.href = "../login.php";
+        throw Error("Sesi berakhir");
+    }
+    if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
+    return data;
 }
 function toast(message) {
-  const el = $("#toast");
-  if (!el) return;
-  el.textContent = message;
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 2600);
+    const el = $("#toast");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2600);
 }
-if($('#quota-date'))$('#quota-date').onchange=()=>{const url=new URL(location.href);url.searchParams.set('tgl_kirim',$('#quota-date').value);location.href=url.href};
+if ($('#quota-date')) $('#quota-date').onchange = () => {
+    const url = new URL(location.href);
+    url.searchParams.set('tgl_kirim', $('#quota-date').value);
+    location.href = url.href
+};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
-  return new Promise((resolve) => {
-    const dialog = $("#app-confirm-dialog");
-    if (!dialog) return resolve(confirm(message));
+    return new Promise((resolve) => {
+        const dialog = $("#app-confirm-dialog");
+        if (!dialog) return resolve(confirm(message));
 
-    const titleEl = $("#confirm-title");
-    const msgEl = $("#confirm-message");
-    const btnYes = $("#confirm-yes-btn");
-    const iconEl = $("#confirm-icon");
+        const titleEl = $("#confirm-title");
+        const msgEl = $("#confirm-message");
+        const btnYes = $("#confirm-yes-btn");
+        const iconEl = $("#confirm-icon");
 
-    titleEl.textContent = title;
-    msgEl.textContent = message;
-    btnYes.textContent = confirmLabel;
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        btnYes.textContent = confirmLabel;
 
-    // Set styling (danger = merah, primary = hijau)
-    btnYes.className = "button " + type;
-    iconEl.className = "confirm-icon " + type;
-    
-    // Set Icon (Tanda Seru untuk danger, Centang untuk primary)
-    iconEl.innerHTML = type === "danger" ? "&#9888;" : "&#10003;";
+        // Set styling (danger = merah, primary = hijau)
+        btnYes.className = "button " + type;
+        iconEl.className = "confirm-icon " + type;
 
-    dialog.showModal();
+        // Set Icon (Tanda Seru untuk danger, Centang untuk primary)
+        iconEl.innerHTML = type === "danger" ? "&#9888;" : "&#10003;";
 
-    const close = (result) => {
-      dialog.close();
-      cleanup();
-      resolve(result);
-    };
+        dialog.showModal();
 
-    const onCancel = () => close(false);
-    const onConfirm = () => close(true);
-    const closeBtns = $$("[data-close-confirm]", dialog);
+        const close = (result) => {
+            dialog.close();
+            cleanup();
+            resolve(result);
+        };
 
-    const cleanup = () => {
-      closeBtns.forEach(b => b.onclick = null);
-      btnYes.onclick = null;
-      dialog.onclick = null;
-    };
+        const onCancel = () => close(false);
+        const onConfirm = () => close(true);
+        const closeBtns = $$("[data-close-confirm]", dialog);
 
-    closeBtns.forEach(b => b.onclick = onCancel);
-    btnYes.onclick = onConfirm;
-    
-    dialog.onclick = (e) => {
-      if (e.target === dialog) onCancel();
-    };
-  });
+        const cleanup = () => {
+            closeBtns.forEach(b => b.onclick = null);
+            btnYes.onclick = null;
+            dialog.onclick = null;
+        };
+
+        closeBtns.forEach(b => b.onclick = onCancel);
+        btnYes.onclick = onConfirm;
+
+        dialog.onclick = (e) => {
+            if (e.target === dialog) onCancel();
+        };
+    });
 }
 // ------------------------------------
 
 function badge(status) {
-  const labels = {
-    menunggu_pembayaran: "Menunggu pembayaran",
-    menunggu_validasi: "Menunggu validasi",
-    diproses: "Sedang diproses",
-    selesai: "Selesai",
-    ditolak: "Ditolak",
-  };
-  return (
-    '<span class="status-badge ' +
-    esc(status) +
-    '">' +
-    (labels[status] || esc(status)) +
-    "</span>"
-  );
+    const labels = {
+        menunggu_pembayaran: "Menunggu pembayaran",
+        menunggu_validasi: "Menunggu validasi",
+        diproses: "Sedang diproses",
+        selesai: "Selesai",
+        ditolak: "Ditolak",
+    };
+    return (
+        '<span class="status-badge ' +
+        esc(status) +
+        '">' +
+        (labels[status] || esc(status)) +
+        "</span>"
+    );
 }
 function dateLabel(value, withTime = false) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return date.toLocaleString(
-    "id-ID",
-    withTime
-      ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }
-      : { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" },
-  );
+    if (!value) return "-";
+    const date = new Date(value);
+    return date.toLocaleString(
+        "id-ID",
+        withTime
+            ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }
+            : { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Jakarta" },
+    );
 }
 function countUp(el, target) {
   const start = performance.now(),
