@@ -1,4 +1,4 @@
-+/'<?php
+<?php
 require __DIR__ . '/partials/layout.php';
 head('Produk & Kuota', 'products');
 topbar('Produk &amp; Kuota');
