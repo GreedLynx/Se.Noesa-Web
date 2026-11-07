@@ -133,49 +133,49 @@ function customer_foot(): void
                 <p class="muted">Pilih alamat tersimpan atau tambahkan alamat baru.</p>
             </div>
             <form id="checkout-form">
-                <label>
+                <label for="checkout-name">
                     Nama pemesan
-                    <input name="nama_pemesan" required>
+                    <input id="checkout-name" name="nama_pemesan" required>
                 </label>
-                <label>
+                <label for="address-select">
                     Alamat pengiriman
                     <select id="address-select" name="alamat_id">
                         <option value="">+ Tambah alamat baru</option>
                     </select>
                 </label>
                 <div id="address-fields">
-                    <label>
+                    <label for="checkout-label">
                         Label alamat
-                        <input name="label_alamat" value="Rumah" maxlength="50" required>
+                        <input id="checkout-label" name="label_alamat" value="Rumah" maxlength="50" required>
                     </label>
                     <div class="form-row">
-                        <label>
+                        <label for="checkout-recipient">
                             Nama penerima
-                            <input name="nama_penerima" maxlength="100" required>
+                            <input id="checkout-recipient" name="nama_penerima" maxlength="100" required>
                         </label>
-                        <label>
+                        <label for="checkout-phone">
                             Nomor HP
-                            <input name="telepon" type="tel" maxlength="20" required>
+                            <input id="checkout-phone" name="telepon" type="tel" maxlength="20" required>
                         </label>
                     </div>
-                    <label>
+                    <label for="checkout-address">
                         Alamat lengkap
-                        <textarea name="alamat" rows="3" maxlength="2000" required></textarea>
+                        <textarea id="checkout-address" name="alamat" rows="3" maxlength="2000" required></textarea>
                     </label>
-                    <label class="save-address-option">
-                        <input type="checkbox" name="simpan_alamat" value="1" checked> Simpan alamat ini untuk pesanan berikutnya
+                    <label class="save-address-option" for="checkout-save-address">
+                        <input id="checkout-save-address" type="checkbox" name="simpan_alamat" value="1" checked> Simpan alamat ini untuk pesanan berikutnya
                     </label>
-                    <label class="save-address-option">
-                        <input type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
+                    <label class="save-address-option" for="checkout-default-address">
+                        <input id="checkout-default-address" type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
                     </label>
                 </div>
-                <label>
+                <label for="checkout-date">
                     Tanggal kirim
-                    <input name="tgl_kirim" type="date" required>
+                    <input id="checkout-date" name="tgl_kirim" type="date" required>
                 </label>
-                <label>
+                <label for="checkout-note">
                     Keterangan pesanan (opsional)
-                    <textarea name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
+                    <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
                     <small class="field-hint">Maksimal 120 karakter.</small>
                 </label>
                 <p id="schedule-note" class="schedule-note"></p>
