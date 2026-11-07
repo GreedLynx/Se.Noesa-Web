@@ -207,8 +207,72 @@ function toggleAddressFields() {
     $('#address-fields').querySelectorAll('input:not([type=checkbox]),textarea')
         .forEach(x => x.required = !useSaved)
 }
-async function openCheckout(){if(!Object.keys(cart).length){toast('Keranjang masih kosong');return}const form=$('#checkout-form');form.elements.nama_pemesan.value=window.customerInfo?.name||'';const d=await api('api/orders.php?addresses=1');savedAddresses=d.addresses;const select=$('#address-select');select.innerHTML='<option value="">+ Tambah alamat baru</option>'+savedAddresses.map(a=>'<option value="'+Number(a.id)+'" '+(a.is_default?'selected':'')+'>'+esc(a.label)+' — '+esc(a.nama_penerima)+' ('+esc(a.telepon)+')'+(a.is_default?' · Default':'')+'</option>').join('');const defaultAddress=savedAddresses.find(a=>a.is_default);if(defaultAddress){form.elements.nama_penerima.value=defaultAddress.nama_penerima;form.elements.telepon.value=defaultAddress.telepon;form.elements.alamat.value=defaultAddress.alamat}else select.value='';toggleAddressFields();form.elements.tgl_kirim.min=$('#catalog-delivery-date').min;form.elements.tgl_kirim.removeAttribute('max');form.elements.tgl_kirim.value=$('#catalog-delivery-date').value;$('#schedule-note').textContent='Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';$('#checkout-error').textContent='';$('#checkout-dialog').showModal()}
-async function submitOrder(e){e.preventDefault();const form=e.currentTarget,button=$('#submit-order');button.disabled=true;$('#checkout-error').textContent='';try{let addressId=form.elements.alamat_id.value;if(!addressId&&form.elements.simpan_alamat.checked){const saved=await api('api/orders.php',{method:'POST',body:{action:'save_address',label:form.elements.label_alamat?.value||'Rumah',nama_penerima:form.elements.nama_penerima.value,telepon:form.elements.telepon.value,alamat:form.elements.alamat.value,is_default:form.elements.jadikan_default.checked}});addressId=saved.id}const values=Object.fromEntries(new FormData(form));values.alamat_id=addressId;values.items=Object.entries(cart).map(([id,qty])=>({id:Number(id),qty:Number(qty)}));const d=await api('api/orders.php',{method:'POST',body:values});cart={};location.href='riwayat.php?order='+d.id}catch(err){$('#checkout-error').textContent=err.message;button.disabled=false}}
+async function openCheckout() {
+    if (!Object.keys(cart).length) {
+        toast('Keranjang masih kosong');
+        return
+    }
+
+    const form = $('#checkout-form');
+    form.elements.nama_pemesan.value = window.customerInfo?.name || '';
+    const d = await api('api/orders.php?addresses=1');
+    savedAddresses = d.addresses;
+    const select = $('#address-select');
+    select.innerHTML = '<option value="">+ Tambah alamat baru</option>' + savedAddresses.map(a =>
+        '<option value="' + Number(a.id) + '" ' + (a.is_default ? 'selected' : '') + '>'
+        + esc(a.label) + ' — ' + esc(a.nama_penerima) + ' (' + esc(a.telepon) + ')'
+        + (a.is_default ? ' · Default' : '') + '</option>'
+    ).join('');
+    const defaultAddress = savedAddresses.find(a => a.is_default);
+    if (defaultAddress) {
+        form.elements.nama_penerima.value = defaultAddress.nama_penerima;
+        form.elements.telepon.value = defaultAddress.telepon;
+        form.elements.alamat.value = defaultAddress.alamat
+    } else select.value = '';
+
+    toggleAddressFields();
+    form.elements.tgl_kirim.min = $('#catalog-delivery-date').min;
+    form.elements.tgl_kirim.removeAttribute('max');
+    form.elements.tgl_kirim.value = $('#catalog-delivery-date').value;
+    $('#schedule-note').textContent = 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
+    $('#checkout-error').textContent = '';
+    $('#checkout-dialog').showModal()
+}
+
+async function submitOrder(e) {
+    e.preventDefault();
+    const form = e.currentTarget,
+        button = $('#submit-order');
+    button.disabled = true;
+    $('#checkout-error').textContent = '';
+    try {
+        let addressId = form.elements.alamat_id.value;
+        if (!addressId && form.elements.simpan_alamat.checked) {
+            const saved = await api('api/orders.php', {
+                method: 'POST',
+                body: {
+                    action: 'save_address',
+                    label: form.elements.label_alamat?.value || 'Rumah',
+                    nama_penerima: form.elements.nama_penerima.value,
+                    telepon: form.elements.telepon.value,
+                    alamat: form.elements.alamat.value,
+                    is_default: form.elements.jadikan_default.checked
+                }
+            });
+            addressId = saved.id
+        }
+
+        const values = Object.fromEntries(new FormData(form));
+        values.alamat_id = addressId;
+        values.items = Object.entries(cart).map(([id, qty]) => ({id: Number(id), qty: Number(qty)}));
+        const d = await api('api/orders.php', {method: 'POST', body: values});
+        cart = {};
+        location.href = 'riwayat.php?order=' + d.id
+    } catch (err) {
+        $('#checkout-error').textContent = err.message;
+        button.disabled = false
+    }
+}
 const statusLabels={menunggu_pembayaran:'Menunggu pembayaran',menunggu_validasi:'Menunggu verifikasi',diproses:'Diproses',selesai:'Selesai',ditolak:'Ditolak'};
 function statusProgress(status){const steps=['Pesanan','Pembayaran','Verifikasi','Diproses','Selesai'];const complete=status==='selesai'?5:status==='diproses'?4:status==='menunggu_validasi'?3:1;return '<div class="detail-status-line">'+steps.map((s,i)=>'<span class="detail-step '+(i<complete?'done':'')+'">'+s+'</span>').join('')+'</div>'}
 let historyStatus='',historyTimer;
