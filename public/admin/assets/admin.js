@@ -118,20 +118,20 @@ function dateLabel(value, withTime = false) {
     );
 }
 function countUp(el, target) {
-  const start = performance.now(),
-    duration = 750;
-  function frame(now) {
-    const p = Math.min((now - start) / duration, 1),
-      ease = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(target * ease).toLocaleString("id-ID");
-    if (p < 1) requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
+    const start = performance.now(),
+        duration = 750;
+    function frame(now) {
+        const p = Math.min((now - start) / duration, 1),
+            ease = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * ease).toLocaleString("id-ID");
+        if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
 }
 async function loadSchedules() {
-  const d = await api("api/schedules.php");
-  const rows = d.items.map(s =>
-    `<tr>
+    const d = await api("api/schedules.php");
+    const rows = d.items.map(s =>
+        `<tr>
       <td><b>${esc(s.nama)}</b></td>
       <td><small>${esc(s.tgl_buka)} s/d ${esc(s.tgl_tutup)}</small></td>
       <td>${Number(s.kapasitas).toLocaleString("id-ID")} porsi</td>
@@ -146,770 +146,770 @@ async function loadSchedules() {
         <button class="button small danger-outline" data-delete-sched="${s.id}">Hapus</button>
       </td>
     </tr>`
-  ).join("");
-  $("#schedule-rows").innerHTML = rows || '<tr><td colspan="5" class="empty-state">Belum ada jadwal.</td></tr>';
-  $$("[data-toggle-aktif]").forEach(btn => {
-    btn.onchange = async () => {
-      try {
-        await api("api/schedules.php", { method: "POST", body: { action: "toggle", id: Number(btn.dataset.toggleAktif), aktif: btn.checked } });
-        toast("Status jadwal diperbarui");
-      } catch(e) {
-        btn.checked = !btn.checked;
-        toast(e.message);
-      }
-    };
-  });
-  $$("[data-edit-sched]").forEach(btn => {
-    btn.onclick = () => editSchedule(d.items.find(i => Number(i.id) === Number(btn.dataset.editSched)));
-  });
-  $$("[data-delete-sched]").forEach(btn => {
-    btn.onclick = async () => {
-      const confirmed = await confirmDialog("Hapus Jadwal", "Hapus jadwal ini? Pesanan terkait tidak akan terpengaruh.", "Ya, Hapus", "danger");
-      if(!confirmed) return;
-      try {
-        await api("api/schedules.php", { method: "POST", body: { action: "delete", id: Number(btn.dataset.deleteSched) } });
-        toast("Jadwal dihapus");
-        loadSchedules();
-      } catch(e) { toast(e.message); }
-    };
-  });
+    ).join("");
+    $("#schedule-rows").innerHTML = rows || '<tr><td colspan="5" class="empty-state">Belum ada jadwal.</td></tr>';
+    $$("[data-toggle-aktif]").forEach(btn => {
+        btn.onchange = async () => {
+            try {
+                await api("api/schedules.php", { method: "POST", body: { action: "toggle", id: Number(btn.dataset.toggleAktif), aktif: btn.checked } });
+                toast("Status jadwal diperbarui");
+            } catch (e) {
+                btn.checked = !btn.checked;
+                toast(e.message);
+            }
+        };
+    });
+    $$("[data-edit-sched]").forEach(btn => {
+        btn.onclick = () => editSchedule(d.items.find(i => Number(i.id) === Number(btn.dataset.editSched)));
+    });
+    $$("[data-delete-sched]").forEach(btn => {
+        btn.onclick = async () => {
+            const confirmed = await confirmDialog("Hapus Jadwal", "Hapus jadwal ini? Pesanan terkait tidak akan terpengaruh.", "Ya, Hapus", "danger");
+            if (!confirmed) return;
+            try {
+                await api("api/schedules.php", { method: "POST", body: { action: "delete", id: Number(btn.dataset.deleteSched) } });
+                toast("Jadwal dihapus");
+                loadSchedules();
+            } catch (e) { toast(e.message); }
+        };
+    });
 }
 function editSchedule(s) {
-  const form = $("#schedule-form");
-  form.reset();
-  form.elements.id.value = s?.id || "";
-  form.elements.nama.value = s?.nama || "";
-  form.elements.tgl_buka.value = s?.tgl_buka || "";
-  form.elements.tgl_tutup.value = s?.tgl_tutup || "";
-  form.elements.kapasitas.value = s?.kapasitas || 50;
-  form.elements.aktif.checked = s ? s.aktif : true;
-  $("#schedule-form-title").textContent = s ? "Edit jadwal" : "Tambah jadwal";
-  $("#schedule-error").textContent = "";
-  $("#schedule-dialog").showModal();
+    const form = $("#schedule-form");
+    form.reset();
+    form.elements.id.value = s?.id || "";
+    form.elements.nama.value = s?.nama || "";
+    form.elements.tgl_buka.value = s?.tgl_buka || "";
+    form.elements.tgl_tutup.value = s?.tgl_tutup || "";
+    form.elements.kapasitas.value = s?.kapasitas || 50;
+    form.elements.aktif.checked = s ? s.aktif : true;
+    $("#schedule-form-title").textContent = s ? "Edit jadwal" : "Tambah jadwal";
+    $("#schedule-error").textContent = "";
+    $("#schedule-dialog").showModal();
 }
 async function schedulesPage() {
-  $("#new-schedule").onclick = () => editSchedule(null);
-  $$("[data-close-dialog]").forEach(b => b.onclick = () => $("#schedule-dialog").close());
-  $("#schedule-form").onsubmit = async (e) => {
-    e.preventDefault();
-    const f = e.currentTarget;
-    const body = {
-      action: "save",
-      id: f.elements.id.value ? Number(f.elements.id.value) : undefined,
-      nama: f.elements.nama.value,
-      tgl_buka: f.elements.tgl_buka.value,
-      tgl_tutup: f.elements.tgl_tutup.value,
-      kapasitas: Number(f.elements.kapasitas.value),
-      aktif: f.elements.aktif.checked
+    $("#new-schedule").onclick = () => editSchedule(null);
+    $$("[data-close-dialog]").forEach(b => b.onclick = () => $("#schedule-dialog").close());
+    $("#schedule-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const f = e.currentTarget;
+        const body = {
+            action: "save",
+            id: f.elements.id.value ? Number(f.elements.id.value) : undefined,
+            nama: f.elements.nama.value,
+            tgl_buka: f.elements.tgl_buka.value,
+            tgl_tutup: f.elements.tgl_tutup.value,
+            kapasitas: Number(f.elements.kapasitas.value),
+            aktif: f.elements.aktif.checked
+        };
+        try {
+            await api("api/schedules.php", { method: "POST", body });
+            $("#schedule-dialog").close();
+            toast("Jadwal tersimpan");
+            loadSchedules();
+        } catch (err) {
+            $("#schedule-error").textContent = err.message;
+        }
     };
-    try {
-      await api("api/schedules.php", { method: "POST", body });
-      $("#schedule-dialog").close();
-      toast("Jadwal tersimpan");
-      loadSchedules();
-    } catch(err) {
-      $("#schedule-error").textContent = err.message;
-    }
-  };
-  loadSchedules();
+    loadSchedules();
 }
 function shell() {
-  const toggle = $(".menu-toggle");
-  toggle?.addEventListener("click", () =>
-    $(".sidebar")?.classList.toggle("open"),
-  );
-  
-  // LOGOUT CONFIRMATION
-  $$("[data-logout]").forEach((button) =>
-    button.addEventListener("click", async () => {
-      const confirmed = await confirmDialog(
-        "Keluar Akun",
-        "Apakah Anda yakin ingin keluar dari panel admin Se.Noesa?",
-        "Ya, Keluar",
-        "primary"
-      );
-      if (!confirmed) return;
+    const toggle = $(".menu-toggle");
+    toggle?.addEventListener("click", () =>
+        $(".sidebar")?.classList.toggle("open"),
+    );
 
-      button.disabled = true;
-      try {
-        await api("../api/auth.php?a=logout");
-        location.href = "../login.php";
-      } catch (e) {
-        button.disabled = false;
-        toast(e.message);
-      }
-    }),
-  );
+    // LOGOUT CONFIRMATION
+    $$("[data-logout]").forEach((button) =>
+        button.addEventListener("click", async () => {
+            const confirmed = await confirmDialog(
+                "Keluar Akun",
+                "Apakah Anda yakin ingin keluar dari panel admin Se.Noesa?",
+                "Ya, Keluar",
+                "primary"
+            );
+            if (!confirmed) return;
 
-  const label = $("#today-label");
-  if (label)
-    label.textContent = new Date().toLocaleDateString("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+            button.disabled = true;
+            try {
+                await api("../api/auth.php?a=logout");
+                location.href = "../login.php";
+            } catch (e) {
+                button.disabled = false;
+                toast(e.message);
+            }
+        }),
+    );
+
+    const label = $("#today-label");
+    if (label)
+        label.textContent = new Date().toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        });
 }
 async function dashboard() {
-  const d = await api("api/dashboard.php");
-  for (const [name, value] of Object.entries({
-    orders: d.orders,
-    pending: d.pending,
-    critical: d.critical,
-  })) {
-    const el = $('[data-stat="' + name + '"]');
-    if (el) countUp(el, value);
-  }
-  const ratio = d.capacity ? Math.round((d.used / d.capacity) * 100) : 0;
-  $('[data-stat="capacity"]').textContent = ratio + "%";
-  $('[data-stat="capacity-hint"]').textContent =
-    d.used.toLocaleString("id-ID") +
-    " / " +
-    d.capacity.toLocaleString("id-ID") +
-    " porsi";
-  $("[data-meter]").style.width = Math.min(ratio, 100) + "%";
-  const pending = $("#pending-badge");
-  if (pending) pending.textContent = d.pending || "";
-  const max = Math.max(1, ...d.chart.map((x) => Number(x.jumlah)));
-  $("#orders-chart").innerHTML = d.chart
-    .map(
-      (x, i) =>
-        '<div class="chart-column"><span class="chart-count">' +
-        esc(x.jumlah) +
-        '</span><i style="--bar:' +
-        Math.max(5, (Number(x.jumlah) / max) * 100) +
-        "%;--delay:" +
-        i * 55 +
-        'ms"></i><small>' +
-        esc(x.label) +
-        "</small></div>",
-    )
-    .join("");
-  const priority = $("#priority-list");
-  priority.innerHTML = d.priority.length
-    ? d.priority
+    const d = await api("api/dashboard.php");
+    for (const [name, value] of Object.entries({
+        orders: d.orders,
+        pending: d.pending,
+        critical: d.critical,
+    })) {
+        const el = $('[data-stat="' + name + '"]');
+        if (el) countUp(el, value);
+    }
+    const ratio = d.capacity ? Math.round((d.used / d.capacity) * 100) : 0;
+    $('[data-stat="capacity"]').textContent = ratio + "%";
+    $('[data-stat="capacity-hint"]').textContent =
+        d.used.toLocaleString("id-ID") +
+        " / " +
+        d.capacity.toLocaleString("id-ID") +
+        " porsi";
+    $("[data-meter]").style.width = Math.min(ratio, 100) + "%";
+    const pending = $("#pending-badge");
+    if (pending) pending.textContent = d.pending || "";
+    const max = Math.max(1, ...d.chart.map((x) => Number(x.jumlah)));
+    $("#orders-chart").innerHTML = d.chart
         .map(
-          (o) =>
-            '<a class="priority-item" href="order-detail.php?id=' +
-            Number(o.id) +
-            '"><div class="priority-main"><b>' +
-            esc(o.kode) +
-            " · " +
-            esc(o.nama_pemesan) +
-            '</b><span class="tag warning">Menunggu validasi</span></div><p>' +
-            esc(o.keterangan || o.pax + " pax") +
-            " · Kirim " +
-            dateLabel(o.tgl_kirim) +
-            "</p><strong>" +
-            money(o.total) +
-            "</strong></a>",
+            (x, i) =>
+                '<div class="chart-column"><span class="chart-count">' +
+                esc(x.jumlah) +
+                '</span><i style="--bar:' +
+                Math.max(5, (Number(x.jumlah) / max) * 100) +
+                "%;--delay:" +
+                i * 55 +
+                'ms"></i><small>' +
+                esc(x.label) +
+                "</small></div>",
         )
-        .join("")
-    : '<div class="empty-state">Tidak ada pesanan yang menunggu validasi.</div>';
-  $("#activity-list").innerHTML = d.recent.length
-    ? d.recent
-        .map(
-          (o) =>
-            '<a class="activity-row" href="order-detail.php?id=' +
-            Number(o.id) +
-            '"><span><b>' +
-            esc(o.kode) +
-            "</b><small>" +
-            esc(o.nama_pemesan) +
-            " · " +
-            dateLabel(o.created_at, true) +
-            "</small></span>" +
-            badge(o.status) +
-            "<strong>" +
-            money(o.total) +
-            "</strong></a>",
-        )
-        .join("")
-    : '<div class="empty-state">Belum ada aktivitas pesanan.</div>';
+        .join("");
+    const priority = $("#priority-list");
+    priority.innerHTML = d.priority.length
+        ? d.priority
+                .map(
+                    (o) =>
+                        '<a class="priority-item" href="order-detail.php?id=' +
+                        Number(o.id) +
+                        '"><div class="priority-main"><b>' +
+                        esc(o.kode) +
+                        " · " +
+                        esc(o.nama_pemesan) +
+                        '</b><span class="tag warning">Menunggu validasi</span></div><p>' +
+                        esc(o.keterangan || o.pax + " pax") +
+                        " · Kirim " +
+                        dateLabel(o.tgl_kirim) +
+                        "</p><strong>" +
+                        money(o.total) +
+                        "</strong></a>",
+                )
+                .join("")
+        : '<div class="empty-state">Tidak ada pesanan yang menunggu validasi.</div>';
+    $("#activity-list").innerHTML = d.recent.length
+        ? d.recent
+                .map(
+                    (o) =>
+                        '<a class="activity-row" href="order-detail.php?id=' +
+                        Number(o.id) +
+                        '"><span><b>' +
+                        esc(o.kode) +
+                        "</b><small>" +
+                        esc(o.nama_pemesan) +
+                        " · " +
+                        dateLabel(o.created_at, true) +
+                        "</small></span>" +
+                        badge(o.status) +
+                        "<strong>" +
+                        money(o.total) +
+                        "</strong></a>",
+                )
+                .join("")
+        : '<div class="empty-state">Belum ada aktivitas pesanan.</div>';
 }
 let orderTab = "semua",
-  orderTimer;
+    orderTimer;
 async function loadOrders() {
-  const query = encodeURIComponent($("#order-search")?.value || "");
-  const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query);
-  $("#all-count").textContent = d.counts.total;
-  $("#payment-count").textContent = d.counts.payment;
-  $("#pending-count").textContent = d.counts.pending;
-  $("#processing-count").textContent = d.counts.processing;
-  document.querySelector("#completed-count").textContent = d.counts.completed;
-  $("#rejected-count").textContent = d.counts.rejected;
-  $("#orders-capacity").textContent =
-    (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
-    " / " +
-    (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") +
-    " porsi";
-  const rows = d.items
-    .map(
-      (o) =>
-        "<tr><td><b>" +
-        esc(o.kode) +
-        "</b><small>" +
-        (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
-        "</small></td><td><b>" +
-        esc(o.nama_pemesan) +
-        "</b><small>" +
-        esc(o.keterangan || "") +
-        "</small></td><td>" +
-        Number(o.pax || 0).toLocaleString("id-ID") +
-        " pax</td><td><b>" +
-        money(o.total) +
-        "</b></td><td>" +
-        badge(o.status) +
-        '</td><td><a class="button small secondary" href="order-detail.php?id=' +
-        Number(o.id) +
-        '">Lihat detail</a></td></tr>',
-    )
-    .join("");
-  $("#order-rows").innerHTML =
-    rows ||
-    '<tr><td colspan="6" class="empty-state">Tidak ada pesanan untuk filter ini.</td></tr>';
-  $("#mobile-orders").innerHTML =
-    d.items
-      .map(
-        (o) =>
-          '<a class="mobile-order" href="order-detail.php?id=' +
-          Number(o.id) +
-          '"><span class="row-between"><b>' +
-          esc(o.kode) +
-          "</b>" +
-          badge(o.status) +
-          "</span><b>" +
-          esc(o.nama_pemesan) +
-          "</b><small>" +
-          esc(o.keterangan || "") +
-          " · " +
-          (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
-          '</small><span class="row-between"><small>' +
-          Number(o.pax || 0) +
-          " pax</small><strong>" +
-          money(o.total) +
-          "</strong></span></a>",
-      )
-      .join("") || '<div class="empty-state">Tidak ada pesanan.</div>';
+    const query = encodeURIComponent($("#order-search")?.value || "");
+    const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query);
+    $("#all-count").textContent = d.counts.total;
+    $("#payment-count").textContent = d.counts.payment;
+    $("#pending-count").textContent = d.counts.pending;
+    $("#processing-count").textContent = d.counts.processing;
+    document.querySelector("#completed-count").textContent = d.counts.completed;
+    $("#rejected-count").textContent = d.counts.rejected;
+    $("#orders-capacity").textContent =
+        (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
+        " / " +
+        (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") +
+        " porsi";
+    const rows = d.items
+        .map(
+            (o) =>
+                "<tr><td><b>" +
+                esc(o.kode) +
+                "</b><small>" +
+                (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
+                "</small></td><td><b>" +
+                esc(o.nama_pemesan) +
+                "</b><small>" +
+                esc(o.keterangan || "") +
+                "</small></td><td>" +
+                Number(o.pax || 0).toLocaleString("id-ID") +
+                " pax</td><td><b>" +
+                money(o.total) +
+                "</b></td><td>" +
+                badge(o.status) +
+                '</td><td><a class="button small secondary" href="order-detail.php?id=' +
+                Number(o.id) +
+                '">Lihat detail</a></td></tr>',
+        )
+        .join("");
+    $("#order-rows").innerHTML =
+        rows ||
+        '<tr><td colspan="6" class="empty-state">Tidak ada pesanan untuk filter ini.</td></tr>';
+    $("#mobile-orders").innerHTML =
+        d.items
+            .map(
+                (o) =>
+                    '<a class="mobile-order" href="order-detail.php?id=' +
+                    Number(o.id) +
+                    '"><span class="row-between"><b>' +
+                    esc(o.kode) +
+                    "</b>" +
+                    badge(o.status) +
+                    "</span><b>" +
+                    esc(o.nama_pemesan) +
+                    "</b><small>" +
+                    esc(o.keterangan || "") +
+                    " · " +
+                    (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
+                    '</small><span class="row-between"><small>' +
+                    Number(o.pax || 0) +
+                    " pax</small><strong>" +
+                    money(o.total) +
+                    "</strong></span></a>",
+            )
+            .join("") || '<div class="empty-state">Tidak ada pesanan.</div>';
 }
 function ordersPage() {
-  $$("#order-tabs button").forEach(
-    (b) =>
-      (b.onclick = () => {
-        $$("#order-tabs button").forEach((x) =>
-          x.classList.toggle("active", x === b),
-        );
-        orderTab = b.dataset.tab;
-        loadOrders();
-      }),
-  );
-  $("#order-search").oninput = () => {
-    clearTimeout(orderTimer);
-    orderTimer = setTimeout(loadOrders, 220);
-  };
-  loadOrders();
+    $$("#order-tabs button").forEach(
+        (b) =>
+            (b.onclick = () => {
+                $$("#order-tabs button").forEach((x) =>
+                    x.classList.toggle("active", x === b),
+                );
+                orderTab = b.dataset.tab;
+                loadOrders();
+            }),
+    );
+    $("#order-search").oninput = () => {
+        clearTimeout(orderTimer);
+        orderTimer = setTimeout(loadOrders, 220);
+    };
+    loadOrders();
 }
 let productCategory = "",
-  productTimer;
+    productTimer;
 function productImagePath(value) {
-  const raw = String(value || "");
-  if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw))
-    return "../" + raw;
-  const file = raw.replace(/[^a-zA-Z0-9_.-]/g, "");
-  return file
-    ? "../assets/img/produk/" + file
-    : "../assets/img/produk/NK-01.png";
+    const raw = String(value || "");
+    if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw))
+        return "../" + raw;
+    const file = raw.replace(/[^a-zA-Z0-9_.-]/g, "");
+    return file
+        ? "../assets/img/produk/" + file
+        : "../assets/img/produk/NK-01.png";
 }
 async function loadProducts() {
-  const q = encodeURIComponent($("#product-search")?.value || "");
-  const d = await api(
-    "api/products.php?kategori=" +
-      encodeURIComponent(productCategory) +
-      "&q=" +
-      q,
-  );
-  $("#all-count").textContent = d.count.semua;
-  $("#critical-count").textContent = d.count.kritis;
-  const grid = $("#product-grid");
-  grid.innerHTML = d.items.length
-    ? d.items
-        .map((p) => {
-          const percent = p.kuota
-            ? Math.round((p.terpakai / p.kuota) * 100)
-            : 0;
-          return (
-            '<article class="product-card"><img class="product-card-image" src="' +
-            esc(productImagePath(p.gambar)) +
-            '" alt="" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="product-info"><div class="row-between"><span class="category-label">' +
-            esc(p.kategori) +
-            "</span>" +
-            (Number(p.sisa) <= Number(p.kuota) * 0.2
-              ? '<span class="tag warning">Kritis</span>'
-              : "") +
-            "</div><h3>" +
-            esc(p.nama) +
-            "</h3><p>" +
-            money(p.harga) +
-            " · " +
-            Number(p.sisa).toLocaleString("id-ID") +
-            "/" +
-            Number(p.kuota).toLocaleString("id-ID") +
-            ' tersisa</p><div class="stock-meter"><i style="width:' +
-            Math.max(0, Math.min(percent, 100)) +
-            '%"></i></div><div class="product-actions"><button class="button small secondary" data-edit="' +
-            Number(p.id) +
-            '">Edit</button><button class="button small danger-outline" data-delete="' +
-            Number(p.id) +
-            '">Hapus</button></div></div></article>'
-          );
-        })
-        .join("")
-    : '<div class="empty-state">Produk tidak ditemukan.</div>';
-  $$("[data-edit]").forEach(
-    (b) =>
-      (b.onclick = () =>
-        editProduct(
-          d.items.find((p) => Number(p.id) === Number(b.dataset.edit)),
-        )),
-  );
-  $$("[data-delete]").forEach(
-    (b) =>
-      (b.onclick = async () => {
-        // HAPUS PRODUK CONFIRMATION
-        const confirmed = await confirmDialog(
-          "Hapus Produk", 
-          "Apakah Anda yakin ingin menghapus produk ini? Data yang dihapus tidak dapat dikembalikan.",
-          "Ya, Hapus",
-          "danger"
-        );
-        if (!confirmed) return;
+    const q = encodeURIComponent($("#product-search")?.value || "");
+    const d = await api(
+        "api/products.php?kategori=" +
+            encodeURIComponent(productCategory) +
+            "&q=" +
+            q,
+    );
+    $("#all-count").textContent = d.count.semua;
+    $("#critical-count").textContent = d.count.kritis;
+    const grid = $("#product-grid");
+    grid.innerHTML = d.items.length
+        ? d.items
+                .map((p) => {
+                    const percent = p.kuota
+                        ? Math.round((p.terpakai / p.kuota) * 100)
+                        : 0;
+                    return (
+                        '<article class="product-card"><img class="product-card-image" src="' +
+                        esc(productImagePath(p.gambar)) +
+                        '" alt="" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="product-info"><div class="row-between"><span class="category-label">' +
+                        esc(p.kategori) +
+                        "</span>" +
+                        (Number(p.sisa) <= Number(p.kuota) * 0.2
+                            ? '<span class="tag warning">Kritis</span>'
+                            : "") +
+                        "</div><h3>" +
+                        esc(p.nama) +
+                        "</h3><p>" +
+                        money(p.harga) +
+                        " · " +
+                        Number(p.sisa).toLocaleString("id-ID") +
+                        "/" +
+                        Number(p.kuota).toLocaleString("id-ID") +
+                        ' tersisa</p><div class="stock-meter"><i style="width:' +
+                        Math.max(0, Math.min(percent, 100)) +
+                        '%"></i></div><div class="product-actions"><button class="button small secondary" data-edit="' +
+                        Number(p.id) +
+                        '">Edit</button><button class="button small danger-outline" data-delete="' +
+                        Number(p.id) +
+                        '">Hapus</button></div></div></article>'
+                    );
+                })
+                .join("")
+        : '<div class="empty-state">Produk tidak ditemukan.</div>';
+    $$("[data-edit]").forEach(
+        (b) =>
+            (b.onclick = () =>
+                editProduct(
+                    d.items.find((p) => Number(p.id) === Number(b.dataset.edit)),
+                )),
+    );
+    $$("[data-delete]").forEach(
+        (b) =>
+            (b.onclick = async () => {
+                // HAPUS PRODUK CONFIRMATION
+                const confirmed = await confirmDialog(
+                    "Hapus Produk",
+                    "Apakah Anda yakin ingin menghapus produk ini? Data yang dihapus tidak dapat dikembalikan.",
+                    "Ya, Hapus",
+                    "danger"
+                );
+                if (!confirmed) return;
 
-        try {
-          await api("api/products.php", {
-            method: "POST",
-            body: { action: "delete", id: Number(b.dataset.delete) },
-          });
-          toast("Produk dihapus");
-          loadProducts();
-        } catch (e) {
-          toast(e.message);
-        }
-      }),
-  );
-  return d.items;
+                try {
+                    await api("api/products.php", {
+                        method: "POST",
+                        body: { action: "delete", id: Number(b.dataset.delete) },
+                    });
+                    toast("Produk dihapus");
+                    loadProducts();
+                } catch (e) {
+                    toast(e.message);
+                }
+            }),
+    );
+    return d.items;
 }
 function refreshProducts() {
-  loadProducts().catch((e) => {
-    const grid = $("#product-grid");
-    if (grid)
-      grid.innerHTML =
-        '<div class="empty-state">Gagal memuat produk: ' +
-        esc(e.message) +
-        "</div>";
-    toast(e.message);
-  });
+    loadProducts().catch ((e) => {
+        const grid = $("#product-grid");
+        if (grid)
+            grid.innerHTML =
+                '<div class="empty-state">Gagal memuat produk: ' +
+                esc(e.message) +
+                "</div>";
+        toast(e.message);
+    });
 }
 async function loadKuotaHarian(produkId) {
-  const tbody = $("#kuota-list");
-  if (!tbody) return;
-  try {
-    const d = await api("api/kuota-harian.php?produk_id=" + produkId);
-    const items = d.items || [];
-    tbody.innerHTML = items.length
-      ? items
-          .map(
-            (row) =>
-              "<tr><td>" +
-              esc(row.tanggal) +
-              "</td><td>" +
-              esc(row.kuota) +
-              ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
-              row.id +
-              '">Hapus</button></td></tr>',
-          )
-          .join("")
-      : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
-    $$("[data-delete-kuota]").forEach((btn) => {
-      btn.onclick = async () => {
-        try {
-          await api("api/kuota-harian.php", {
-            method: "POST",
-            body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
-          });
-          loadKuotaHarian(produkId);
-        } catch (e) {
-          toast(e.message);
-        }
-      };
-    });
-  } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="3">Gagal memuat kuota</td></tr>';
-  }
+    const tbody = $("#kuota-list");
+    if (!tbody) return;
+    try {
+        const d = await api("api/kuota-harian.php?produk_id=" + produkId);
+        const items = d.items || [];
+        tbody.innerHTML = items.length
+            ? items
+                    .map(
+                        (row) =>
+                            "<tr><td>" +
+                            esc(row.tanggal) +
+                            "</td><td>" +
+                            esc(row.kuota) +
+                            ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
+                            row.id +
+                            '">Hapus</button></td></tr>',
+                    )
+                    .join("")
+            : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
+        $$("[data-delete-kuota]").forEach((btn) => {
+            btn.onclick = async () => {
+                try {
+                    await api("api/kuota-harian.php", {
+                        method: "POST",
+                        body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
+                    });
+                    loadKuotaHarian(produkId);
+                } catch (e) {
+                    toast(e.message);
+                }
+            };
+        });
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="3">Gagal memuat kuota</td></tr>';
+    }
 }
 function editProduct(p) {
-  const form = $("#product-form"),
-    preview = $("#product-image-preview"),
-    kuotaSection = $("#kuota-harian-section"),
-    kuotaList = $("#kuota-list");
-  form.reset();
-  if (kuotaSection) kuotaSection.hidden = !p?.id;
-  if (kuotaList) kuotaList.innerHTML = "";
-  form.elements.id.value = p?.id || "";
-  form.elements.kode.value = p?.kode || "";
-  form.elements.nama.value = p?.nama || "";
-  form.elements.kategori.value = p?.kategori || "makanan";
-  form.elements.harga.value = p?.harga || "";
-  $('#kuota-tanggal').value=$('#quota-date')?.value || '';
-  form.elements.min_pesan.value = p?.min_pesan || 4;
-  form.elements.gambar.value = p?.gambar || "";
-  form.elements.gambar_file.required = !p;
-  $("#image-help").textContent = p
-    ? "Kosongkan jika gambar tidak ingin diganti. JPG, PNG, atau WebP · maksimal 2 MB"
-    : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Stok tersedia akan tampil ke pelanggan.";
-  preview.hidden = !p?.gambar;
-  preview.src = p?.gambar ? productImagePath(p.gambar) : "";
-  $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
-  $("#product-error").textContent = "";
-  if (p?.id) loadKuotaHarian(p.id);
-  $("#product-dialog").showModal();
+    const form = $("#product-form"),
+        preview = $("#product-image-preview"),
+        kuotaSection = $("#kuota-harian-section"),
+        kuotaList = $("#kuota-list");
+    form.reset();
+    if (kuotaSection) kuotaSection.hidden = !p?.id;
+    if (kuotaList) kuotaList.innerHTML = "";
+    form.elements.id.value = p?.id || "";
+    form.elements.kode.value = p?.kode || "";
+    form.elements.nama.value = p?.nama || "";
+    form.elements.kategori.value = p?.kategori || "makanan";
+    form.elements.harga.value = p?.harga || "";
+    $('#kuota-tanggal').value = $('#quota-date')?.value || '';
+    form.elements.min_pesan.value = p?.min_pesan || 4;
+    form.elements.gambar.value = p?.gambar || "";
+    form.elements.gambar_file.required = !p;
+    $("#image-help").textContent = p
+        ? "Kosongkan jika gambar tidak ingin diganti. JPG, PNG, atau WebP · maksimal 2 MB"
+        : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Stok tersedia akan tampil ke pelanggan.";
+    preview.hidden = !p?.gambar;
+    preview.src = p?.gambar ? productImagePath(p.gambar) : "";
+    $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
+    $("#product-error").textContent = "";
+    if (p?.id) loadKuotaHarian(p.id);
+    $("#product-dialog").showModal();
 }
 function productsPage() {
-  $$("#product-filters button").forEach(
-    (b) =>
-      (b.onclick = () => {
-        $$("#product-filters button").forEach((x) =>
-          x.classList.toggle("active", x === b),
-        );
-        productCategory = b.dataset.category;
-        refreshProducts();
-      }),
-  );
-  $("#product-search").oninput = () => {
-    clearTimeout(productTimer);
-    productTimer = setTimeout(refreshProducts, 220);
-  };
-  $("#new-product").onclick = () => editProduct(null);
-  $$("[data-close-dialog]").forEach(
-    (b) => (b.onclick = () => {
-      const section = $("#kuota-harian-section");
-      if (section) section.hidden = true;
-      const list = $("#kuota-list");
-      if (list) list.innerHTML = "";
-      $("#product-dialog").close();
-    }),
-  );
-  const kuotaAddBtn = $("#kuota-add");
-  if (kuotaAddBtn) {
-    kuotaAddBtn.onclick = async () => {
-      const tanggal = $("#kuota-tanggal").value;
-      const rawKuota = $("#kuota-nilai").value;
-      const kuota = rawKuota===''?NaN:Number(rawKuota);
-      const produkId = $("#product-form").elements.id.value;
-      if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
-      try {
-        await api("api/kuota-harian.php", {
-          method: "POST",
-          body: { produk_id: Number(produkId), tanggal, kuota },
-        });
-        $("#kuota-nilai").value = "";
-        loadKuotaHarian(produkId);
-        refreshProducts();
-      } catch (e) {
-        toast(e.message);
-      }
+    $$("#product-filters button").forEach(
+        (b) =>
+            (b.onclick = () => {
+                $$("#product-filters button").forEach((x) =>
+                    x.classList.toggle("active", x === b),
+                );
+                productCategory = b.dataset.category;
+                refreshProducts();
+            }),
+    );
+    $("#product-search").oninput = () => {
+        clearTimeout(productTimer);
+        productTimer = setTimeout(refreshProducts, 220);
     };
-  }
-  $("#product-form").elements.gambar_file.onchange = (e) => {
-    const file = e.target.files[0],
-      preview = $("#product-image-preview");
-    if (file) {
-      preview.src = URL.createObjectURL(file);
-      preview.hidden = false;
-    }
-  };
-  $("#product-form").onsubmit = async (e) => {
-    e.preventDefault();
-    const f = e.currentTarget,
-      body = new FormData(f);
-    body.set("action", "save");
-    try {
-      const response = await fetch("api/products.php", {
-          method: "POST",
-          body,
+    $("#new-product").onclick = () => editProduct(null);
+    $$("[data-close-dialog]").forEach(
+        (b) => (b.onclick = () => {
+            const section = $("#kuota-harian-section");
+            if (section) section.hidden = true;
+            const list = $("#kuota-list");
+            if (list) list.innerHTML = "";
+            $("#product-dialog").close();
         }),
-        data = await response
-          .json()
-          .catch(() => ({ error: "Respons server tidak valid" }));
-      if (response.status === 401) {
-        location.href = "../login.php";
-        return;
-      }
-      if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
-      const savedCode = f.elements.kode.value.trim().toUpperCase();
-      productCategory = "";
-      $("#product-search").value = "";
-      $$("#product-filters button").forEach((x) =>
-        x.classList.toggle("active", x.dataset.category === ""),
-      );
-      const loadedProducts = await loadProducts();
-      if (
-        !loadedProducts.some(
-          (p) => String(p.kode).trim().toUpperCase() === savedCode,
-        )
-      )
-        throw Error(
-          "API menjawab " +
-            JSON.stringify(data) +
-            " tetapi produk belum muncul pada daftar.",
-        );
-      const savedId = data.id || f.elements.id.value;
-      if (savedId) {
-        const section = $("#kuota-harian-section");
-        if (section) section.hidden = false;
-        loadKuotaHarian(savedId);
-      }
-      $("#product-dialog").close();
-      toast("Produk dan gambar tersimpan. Daftar admin diperbarui.");
-    } catch (err) {
-      $("#product-error").textContent = err.message;
+    );
+    const kuotaAddBtn = $("#kuota-add");
+    if (kuotaAddBtn) {
+        kuotaAddBtn.onclick = async () => {
+            const tanggal = $("#kuota-tanggal").value;
+            const rawKuota = $("#kuota-nilai").value;
+            const kuota = rawKuota === '' ? NaN : Number(rawKuota);
+            const produkId = $("#product-form").elements.id.value;
+            if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
+            try {
+                await api("api/kuota-harian.php", {
+                    method: "POST",
+                    body: { produk_id: Number(produkId), tanggal, kuota },
+                });
+                $("#kuota-nilai").value = "";
+                loadKuotaHarian(produkId);
+                refreshProducts();
+            } catch (e) {
+                toast(e.message);
+            }
+        };
     }
-  };
-  refreshProducts();
+    $("#product-form").elements.gambar_file.onchange = (e) => {
+        const file = e.target.files[0],
+            preview = $("#product-image-preview");
+        if (file) {
+            preview.src = URL.createObjectURL(file);
+            preview.hidden = false;
+        }
+    };
+    $("#product-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const f = e.currentTarget,
+            body = new FormData(f);
+        body.set("action", "save");
+        try {
+            const response = await fetch("api/products.php", {
+                    method: "POST",
+                    body,
+                }),
+                data = await response
+                    .json()
+                    .catch (() => ({ error: "Respons server tidak valid" }));
+            if (response.status === 401) {
+                location.href = "../login.php";
+                return;
+            }
+            if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
+            const savedCode = f.elements.kode.value.trim().toUpperCase();
+            productCategory = "";
+            $("#product-search").value = "";
+            $$("#product-filters button").forEach((x) =>
+                x.classList.toggle("active", x.dataset.category === ""),
+            );
+            const loadedProducts = await loadProducts();
+            if (
+                !loadedProducts.some(
+                    (p) => String(p.kode).trim().toUpperCase() === savedCode,
+                )
+            )
+                throw Error(
+                    "API menjawab " +
+                        JSON.stringify(data) +
+                        " tetapi produk belum muncul pada daftar.",
+                );
+            const savedId = data.id || f.elements.id.value;
+            if (savedId) {
+                const section = $("#kuota-harian-section");
+                if (section) section.hidden = false;
+                loadKuotaHarian(savedId);
+            }
+            $("#product-dialog").close();
+            toast("Produk dan gambar tersimpan. Daftar admin diperbarui.");
+        } catch (err) {
+            $("#product-error").textContent = err.message;
+        }
+    };
+    refreshProducts();
 }
 async function orderDetail() {
-  const id = Number(new URLSearchParams(location.search).get("id"));
-  if (!id) {
-    $("#order-detail").innerHTML =
-      '<article class="panel empty-state">Kode pesanan tidak valid.</article>';
-    return;
-  }
-  const o = await api("api/orders.php?id=" + id);
-  $("#detail-status").outerHTML = badge(o.status);
-  const raw = o.bukti_bayar || "",
-    proofUrl = raw
-      ? /^https?:\/\//.test(raw) || raw.startsWith("/")
-        ? raw
-        : "../" + raw.replace(/^\.\//, "")
-      : "";
-  const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
-  const proof = raw
-    ? '<a class="proof-image" href="' +
-      esc(proofUrl) +
-      '" target="_blank" rel="noopener"><img src="' +
-      esc(proofUrl) +
-      '" alt="Bukti transfer pelanggan"></a>'
-    : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
-  const receipt =
-    '<article class="panel"><div class="panel-heading"><h2>Data pada pembayaran</h2><span class="tag soft">QRIS</span></div><div class="detail-pair"><span>Nama pengirim</span><b>' +
-    esc(o.nama_pembayar || "-") +
-    '</b></div><div class="detail-pair"><span>Nama pemesan</span><b>' +
-    esc(o.nama_pemesan || "-") +
-    '</b></div><div class="detail-pair"><span>Nominal tagihan</span><b>' +
-    money(o.total) +
-    '</b></div><div class="detail-pair"><span>Total pesanan</span><b>' +
-    money(o.total) +
-    '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
-    delivery +
-    "</b></div></article>";
-  const menu = o.menu
-    .map(
-      (m) =>
-        '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
-        Number(m.item_id) +
-        '" ' +
-        (m.sudah_dicek ? "checked" : "") +
-        " " +
-        (o.status === "diproses" ? "" : "disabled") +
-        "><span><b>" +
-        esc(m.nama) +
-        "</b><small>" +
-        Number(m.qty).toLocaleString("id-ID") +
-        " porsi ? " +
-        money(m.harga) +
-        "</small></span><strong>" +
-        money(m.subtotal) +
-        "</strong></label>",
-    )
-    .join("");
-  const sentPhoto = o.foto_kiriman
-    ? '<img class="dispatch-photo" src="../' +
-      esc(o.foto_kiriman) +
-      '" alt="Foto makanan yang akan dikirim">'
-    : "";
-  const dispatch =
-    o.status === "diproses"
-      ? '<article class="panel"><div class="panel-heading"><h2>Bukti pesanan pelanggan</h2><span class="tag soft">Foto kiriman</span></div>' +
-        sentPhoto +
-        '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
-        (o.foto_kiriman
-          ? "Ganti foto makanan"
-          : "Unggah foto makanan yang akan dikirim") +
-        '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form></article>'
-      : "";
-  const checklist =
-    '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +
-    o.menu.length +
-    ' jenis</span></div><p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' +
-    menu +
-    "</article>";
-  const isValidation = o.status === "menunggu_validasi";
-  const validationView =
-    '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">VALIDASI QRIS</p><h2>' +
-    esc(o.kode) +
-    '</h2></div><span class="tag soft">' +
-    dateLabel(o.created_at, true) +
-    '</span></div><div class="detail-pair"><span>Waktu status</span><b>' +
-    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
-    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
-    esc(o.nama_pemesan) +
-    '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
-    esc(o.telepon_penerima || o.phone || "-") +
-    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
-    esc(o.alamat_pengiriman || "-") +
-    '</b></div><div class="detail-pair"><span>Catatan pesanan</span><b>' +
-    esc(o.keterangan || "-") +
-    '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
-    money(o.total) +
-    '</b></div></article><article class="panel proof-panel"><div class="panel-heading"><h2>Bukti transfer pelanggan</h2><span class="tag soft">QRIS</span></div>' +
-    proof +
-    "</article>" +
-    receipt;
-  const dispatchView =
-    '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">DETAIL PESANAN</p><h2>' +
-    esc(o.kode) +
-    "</h2></div>" +
-    badge(o.status) +
-    '</div><div class="detail-pair"><span>Waktu status</span><b>' +
-    (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
-    '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
-    esc(o.nama_pemesan) +
-    '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
-    esc(o.telepon_penerima || o.phone || "-") +
-    '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
-    esc(o.alamat_pengiriman || "-") +
-    '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
-    delivery +
-    '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
-    money(o.total) +
-    "</b></div></article>" +
-    checklist +
-    dispatch;
-  $("#order-detail").innerHTML = isValidation ? validationView : dispatchView;
-  const actions = $("#detail-actions");
-  actions.hidden = false;
-  $$("[data-order-action]").forEach((btn) => {
-    const action = btn.dataset.orderAction;
-    btn.hidden = !(
-      (o.status === "menunggu_validasi" &&
-        (action === "validate" || action === "reject")) ||
-      (o.status === "diproses" && action === "complete")
-    );
-    btn.onclick = async () => {
-      // KONFIRMASI UNTUK SEMUA TOMBOL KEPUTUSAN
-      if (action === "reject") {
-        const confirmed = await confirmDialog(
-          "Tolak Pembayaran",
-          "Tolak pembayaran untuk pesanan ini? Stok produk akan dikembalikan.",
-          "Ya, Tolak",
-          "danger"
-        );
-        if (!confirmed) return;
-      }
-      if (action === "validate") {
-        const confirmed = await confirmDialog(
-          "Validasi Pembayaran",
-          "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
-          "Ya, Validasi",
-          "primary"
-        );
-        if (!confirmed) return;
-      }
-      if (action === "complete") {
-        const confirmed = await confirmDialog(
-          "Selesaikan Pesanan",
-          "Pesanan akan ditandai selesai dan siap dikirim. Pastikan semua menu sudah dicek dan foto makanan sudah diunggah.",
-          "Ya, Selesaikan",
-          "primary"
-        );
-        if (!confirmed) return;
-      }
-
-      btn.disabled = true;
-      try {
-        await api("api/orders.php", { method: "POST", body: { id, action } });
-        toast("Status pesanan diperbarui");
-        setTimeout(() => location.reload(), 500);
-      } catch (e) {
-        toast(e.message);
-        btn.disabled = false;
-      }
-    };
-  });
-  $$("[data-item-check]").forEach(
-    (box) =>
-      (box.onchange = async () => {
-        box.disabled = true;
-        try {
-          await api("api/orders.php", {
-            method: "POST",
-            body: {
-              action: "check_item",
-              id,
-              item_id: Number(box.dataset.itemCheck),
-              checked: box.checked,
-            },
-          });
-        } catch (e) {
-          box.checked = !box.checked;
-          toast(e.message);
-        } finally {
-          box.disabled = false;
-        }
-      }),
-  );
-  const upload = $("#dispatch-photo-form");
-  upload?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const button = $("button", upload),
-      form = new FormData(upload);
-    form.append("action", "upload_dispatch");
-    form.append("id", String(id));
-    button.disabled = true;
-    try {
-      const response = await fetch("api/orders.php", {
-          method: "POST",
-          body: form,
-          cache: "no-store",
-        }),
-        data = await response.json();
-      if (!response.ok)
-        throw Error(data.error || "Foto kiriman gagal disimpan");
-      toast("Foto makanan tersimpan");
-      setTimeout(() => location.reload(), 400);
-    } catch (error) {
-      $("#dispatch-photo-error").textContent = error.message;
-      button.disabled = false;
+    const id = Number(new URLSearchParams(location.search).get("id"));
+    if (!id) {
+        $("#order-detail").innerHTML =
+            '<article class="panel empty-state">Kode pesanan tidak valid.</article>';
+        return;
     }
-  });
+    const o = await api("api/orders.php?id=" + id);
+    $("#detail-status").outerHTML = badge(o.status);
+    const raw = o.bukti_bayar || "",
+        proofUrl = raw
+            ? /^https?:\/\//.test(raw) || raw.startsWith("/")
+                ? raw
+                : "../" + raw.replace(/^\.\//, "")
+            : "";
+    const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
+    const proof = raw
+        ? '<a class="proof-image" href="' +
+            esc(proofUrl) +
+            '" target="_blank" rel="noopener"><img src="' +
+            esc(proofUrl) +
+            '" alt="Bukti transfer pelanggan"></a>'
+        : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
+    const receipt =
+        '<article class="panel"><div class="panel-heading"><h2>Data pada pembayaran</h2><span class="tag soft">QRIS</span></div><div class="detail-pair"><span>Nama pengirim</span><b>' +
+        esc(o.nama_pembayar || "-") +
+        '</b></div><div class="detail-pair"><span>Nama pemesan</span><b>' +
+        esc(o.nama_pemesan || "-") +
+        '</b></div><div class="detail-pair"><span>Nominal tagihan</span><b>' +
+        money(o.total) +
+        '</b></div><div class="detail-pair"><span>Total pesanan</span><b>' +
+        money(o.total) +
+        '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        delivery +
+        "</b></div></article>";
+    const menu = o.menu
+        .map(
+            (m) =>
+                '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
+                Number(m.item_id) +
+                '" ' +
+                (m.sudah_dicek ? "checked" : "") +
+                " " +
+                (o.status === "diproses" ? "" : "disabled") +
+                "><span><b>" +
+                esc(m.nama) +
+                "</b><small>" +
+                Number(m.qty).toLocaleString("id-ID") +
+                " porsi ? " +
+                money(m.harga) +
+                "</small></span><strong>" +
+                money(m.subtotal) +
+                "</strong></label>",
+        )
+        .join("");
+    const sentPhoto = o.foto_kiriman
+        ? '<img class="dispatch-photo" src="../' +
+            esc(o.foto_kiriman) +
+            '" alt="Foto makanan yang akan dikirim">'
+        : "";
+    const dispatch =
+        o.status === "diproses"
+            ? '<article class="panel"><div class="panel-heading"><h2>Bukti pesanan pelanggan</h2><span class="tag soft">Foto kiriman</span></div>' +
+                sentPhoto +
+                '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
+                (o.foto_kiriman
+                    ? "Ganti foto makanan"
+                    : "Unggah foto makanan yang akan dikirim") +
+                '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form></article>'
+            : "";
+    const checklist =
+        '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +
+        o.menu.length +
+        ' jenis</span></div><p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' +
+        menu +
+        "</article>";
+    const isValidation = o.status === "menunggu_validasi";
+    const validationView =
+        '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">VALIDASI QRIS</p><h2>' +
+        esc(o.kode) +
+        '</h2></div><span class="tag soft">' +
+        dateLabel(o.created_at, true) +
+        '</span></div><div class="detail-pair"><span>Waktu status</span><b>' +
+        (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
+        esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") +
+        '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") +
+        '</b></div><div class="detail-pair"><span>Catatan pesanan</span><b>' +
+        esc(o.keterangan || "-") +
+        '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
+        money(o.total) +
+        '</b></div></article><article class="panel proof-panel"><div class="panel-heading"><h2>Bukti transfer pelanggan</h2><span class="tag soft">QRIS</span></div>' +
+        proof +
+        "</article>" +
+        receipt;
+    const dispatchView =
+        '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">DETAIL PESANAN</p><h2>' +
+        esc(o.kode) +
+        "</h2></div>" +
+        badge(o.status) +
+        '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+        (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
+        esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") +
+        '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") +
+        '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        delivery +
+        '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
+        money(o.total) +
+        "</b></div></article>" +
+        checklist +
+        dispatch;
+    $("#order-detail").innerHTML = isValidation ? validationView : dispatchView;
+    const actions = $("#detail-actions");
+    actions.hidden = false;
+    $$("[data-order-action]").forEach((btn) => {
+        const action = btn.dataset.orderAction;
+        btn.hidden = !(
+            (o.status === "menunggu_validasi" &&
+                (action === "validate" || action === "reject")) ||
+            (o.status === "diproses" && action === "complete")
+        );
+        btn.onclick = async () => {
+            // KONFIRMASI UNTUK SEMUA TOMBOL KEPUTUSAN
+            if (action === "reject") {
+                const confirmed = await confirmDialog(
+                    "Tolak Pembayaran",
+                    "Tolak pembayaran untuk pesanan ini? Stok produk akan dikembalikan.",
+                    "Ya, Tolak",
+                    "danger"
+                );
+                if (!confirmed) return;
+            }
+            if (action === "validate") {
+                const confirmed = await confirmDialog(
+                    "Validasi Pembayaran",
+                    "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
+                    "Ya, Validasi",
+                    "primary"
+                );
+                if (!confirmed) return;
+            }
+            if (action === "complete") {
+                const confirmed = await confirmDialog(
+                    "Selesaikan Pesanan",
+                    "Pesanan akan ditandai selesai dan siap dikirim. Pastikan semua menu sudah dicek dan foto makanan sudah diunggah.",
+                    "Ya, Selesaikan",
+                    "primary"
+                );
+                if (!confirmed) return;
+            }
+
+            btn.disabled = true;
+            try {
+                await api("api/orders.php", { method: "POST", body: { id, action } });
+                toast("Status pesanan diperbarui");
+                setTimeout(() => location.reload(), 500);
+            } catch (e) {
+                toast(e.message);
+                btn.disabled = false;
+            }
+        };
+    });
+    $$("[data-item-check]").forEach(
+        (box) =>
+            (box.onchange = async () => {
+                box.disabled = true;
+                try {
+                    await api("api/orders.php", {
+                        method: "POST",
+                        body: {
+                            action: "check_item",
+                            id,
+                            item_id: Number(box.dataset.itemCheck),
+                            checked: box.checked,
+                        },
+                    });
+                } catch (e) {
+                    box.checked = !box.checked;
+                    toast(e.message);
+                } finally {
+                    box.disabled = false;
+                }
+            }),
+    );
+    const upload = $("#dispatch-photo-form");
+    upload?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const button = $("button", upload),
+            form = new FormData(upload);
+        form.append("action", "upload_dispatch");
+        form.append("id", String(id));
+        button.disabled = true;
+        try {
+            const response = await fetch("api/orders.php", {
+                    method: "POST",
+                    body: form,
+                    cache: "no-store",
+                }),
+                data = await response.json();
+            if (!response.ok)
+                throw Error(data.error || "Foto kiriman gagal disimpan");
+            toast("Foto makanan tersimpan");
+            setTimeout(() => location.reload(), 400);
+        } catch (error) {
+            $("#dispatch-photo-error").textContent = error.message;
+            button.disabled = false;
+        }
+    });
 }
 shell();
 const page = document.body.dataset.page;
 const run = {
-  dashboard,
-  orders: ordersPage,
-  "order-detail": orderDetail,
-  products: productsPage,
-  schedules: schedulesPage,
+    dashboard,
+    orders: ordersPage,
+    "order-detail": orderDetail,
+    products: productsPage,
+    schedules: schedulesPage,
 }[page];
 if (run)
-  run().catch((e) => {
-    toast(e.message);
-    if (page === "order-detail") {
-      const detail = $("#order-detail");
-      if (detail)
-        detail.innerHTML =
-          '<article class="panel empty-state">Gagal memuat detail pesanan: ' +
-          esc(e.message) +
-          '<br><a class="button small secondary" href="orders.php">Kembali ke daftar pesanan</a></article>';
-    }
-  });
+    run().catch ((e) => {
+        toast(e.message);
+        if (page === "order-detail") {
+            const detail = $("#order-detail");
+            if (detail)
+                detail.innerHTML =
+                    '<article class="panel empty-state">Gagal memuat detail pesanan: ' +
+                    esc(e.message) +
+                    '<br><a class="button small secondary" href="orders.php">Kembali ke daftar pesanan</a></article>';
+        }
+    });
