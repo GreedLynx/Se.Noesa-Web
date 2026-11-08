@@ -7,12 +7,15 @@ if (PHP_SAPI !== 'cli') {
 ini_set('zend.exception_ignore_args', '1');
 require __DIR__ . '/../app/bootstrap.php';
 require __DIR__ . '/../app/daily-quota.php';
+
 function check_quota(bool $ok, string $message): void
 {
-    if (!$ok)
+    if (!$ok) {
         throw new RuntimeException($message);
+    }
     echo 'PASS: ' . $message . PHP_EOL;
 }
+
 function rejects_quota(array $snapshot, array $quantities, string $message): void
 {
     try {
@@ -87,8 +90,9 @@ try {
     $other->rollBack();
     check_quota(true, 'Checkout selanjutnya dapat mengunci setelah transaksi pertama berakhir');
 } catch (Throwable $e) {
-    if (isset($db) && $db->inTransaction())
+    if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
+    }
     fwrite(STDERR, 'FAIL: ' . $e->getMessage() . PHP_EOL);
     exit(1);
 }
