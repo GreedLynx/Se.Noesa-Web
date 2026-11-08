@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/../../app/bootstrap.php';
+
 function head(string $title, string $page, bool $auth = false)
 {
-  if (!$auth)
-    require_owner(false);
-  $u = me(); ?>
+    if (!$auth) {
+        require_owner(false);
+    }
+    $u = me(); ?>
   <!doctype html>
   <html lang="id">
 
@@ -22,7 +24,7 @@ function head(string $title, string $page, bool $auth = false)
     <?php }
 function topbar(string $title, bool $back = false)
 {
-  $u = me(); ?>
+    $u = me(); ?>
       <header class="top rise">
         <div class="row"><?php if ($back): ?><a class="btn-ic" href="/orders.php"
               aria-label="Kembali">‹</a><?php endif; ?>
@@ -39,11 +41,11 @@ function topbar(string $title, bool $back = false)
     <?php }
 function nav(string $on)
 {
-  $i = [
-    'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
-    'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
-    'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>']
-  ]; ?>
+    $i = [
+        'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
+        'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
+        'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>']
+    ]; ?>
       <nav class="nav"><span class="pill" id="pill"></span>
         <?php foreach ($i as $k => [$l, $p]): ?><a href="/<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>"><svg
               viewBox="0 0 24 24"><?= $p ?></svg><span><?= $l ?></span></a><?php endforeach; ?></nav>
