@@ -26,7 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id === false) {
             json(['error' => 'ID tidak valid'], 422);
         }
-        $affectedRows = q('DELETE FROM jadwal_po WHERE id=?', [$id])->rowCount();
+        $affectedRows = q('DELETE
+            FROM jadwal_po
+            WHERE id = ?', [$id])->rowCount();
         json($affectedRows ? ['ok' => true] : ['error' => 'Jadwal PO tidak ditemukan'], $affectedRows ? 200 : 404);
     }
 
@@ -39,7 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($aktif === null) {
             json(['error' => 'aktif harus boolean'], 422);
         }
-        q('UPDATE jadwal_po SET aktif=? WHERE id=?', [$aktif, $id]);
+        q('UPDATE jadwal_po
+            SET aktif = ?
+            WHERE id = ?', [$aktif, $id]);
         json(['ok' => true]);
     }
 
@@ -87,12 +91,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($id) {
-        q('UPDATE jadwal_po SET nama=?,tgl_buka=?,tgl_tutup=?,kapasitas=?,aktif=? WHERE id=?', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif, $id]);
+        q('UPDATE jadwal_po
+            SET nama = ?, tgl_buka = ?, tgl_tutup = ?, kapasitas = ?, aktif = ?
+            WHERE id = ?', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif, $id]);
     } else {
-        q('INSERT INTO jadwal_po(nama,tgl_buka,tgl_tutup,kapasitas,aktif) VALUES(?,?,?,?,?)', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif]);
+        q('INSERT INTO jadwal_po (nama, tgl_buka, tgl_tutup, kapasitas, aktif)
+            VALUES (?, ?, ?, ?, ?)', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif]);
     }
     json(['ok' => true]);
 }
 
-$rows = q('SELECT id,nama,tgl_buka,tgl_tutup,kapasitas,aktif FROM jadwal_po ORDER BY tgl_buka DESC')->fetchAll();
+$rows = q('SELECT id, nama, tgl_buka, tgl_tutup, kapasitas, aktif
+    FROM jadwal_po
+    ORDER BY tgl_buka DESC')->fetchAll();
 json(['items' => $rows]);

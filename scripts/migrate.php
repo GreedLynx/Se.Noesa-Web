@@ -17,16 +17,20 @@ if (!$files) {
 
 $pdo = db();
 $lockKey = 'senoesa_schema_migrations';
-$pdo->query("SELECT pg_advisory_lock(hashtext(" . $pdo->quote($lockKey) . "))");
+$acquireLock = $pdo->prepare('SELECT pg_advisory_lock(hashtext(?))');
+$acquireLock->execute([$lockKey]);
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS schema_migrations (
-    version VARCHAR(255) PRIMARY KEY,
-    applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
-  )");
+        version VARCHAR(255) PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )");
 
-    $check = $pdo->prepare('SELECT 1 FROM schema_migrations WHERE version = ?');
-    $record = $pdo->prepare('INSERT INTO schema_migrations(version) VALUES (?)');
+    $check = $pdo->prepare('SELECT 1
+        FROM schema_migrations
+        WHERE version = ?');
+    $record = $pdo->prepare('INSERT INTO schema_migrations (version)
+        VALUES (?)');
 
     foreach ($files as $file) {
         $version = basename($file);
@@ -55,7 +59,8 @@ try {
         }
     }
 } finally {
-    $pdo->query("SELECT pg_advisory_unlock(hashtext(" . $pdo->quote($lockKey) . "))");
+    $releaseLock = $pdo->prepare('SELECT pg_advisory_unlock(hashtext(?))');
+    $releaseLock->execute([$lockKey]);
 }
 
 fwrite(STDOUT, "Migrations are up to date.\n");

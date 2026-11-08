@@ -32,7 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         db()->beginTransaction();
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
-        $affectedRows = q('DELETE FROM kuota_harian WHERE id=?', [$id])->rowCount();
+        $affectedRows = q('DELETE
+            FROM kuota_harian
+            WHERE id = ?', [$id])->rowCount();
         db()->commit();
         json($affectedRows ? ['ok' => true] : ['error' => 'Kuota harian tidak ditemukan'], $affectedRows ? 200 : 404);
     }
@@ -54,14 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($kuota === false || $kuota < 0 || $kuota > 2147483647) {
         json(['error' => 'kuota harus angka 0 sampai 2147483647'], 422);
     }
-    if (!q('SELECT id FROM produk WHERE id=?', [$produkId])->fetchColumn()) {
+    if (!q('SELECT id
+        FROM produk
+        WHERE id = ?', [$produkId])->fetchColumn()) {
         json(['error' => 'Produk tidak ditemukan'], 404);
     }
     db()->beginTransaction();
     q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
 
     q(
-        'INSERT INTO kuota_harian(produk_id,tanggal,kuota) VALUES(?,?,?) ON CONFLICT(produk_id,tanggal) DO UPDATE SET kuota=EXCLUDED.kuota',
+        'INSERT INTO kuota_harian (produk_id, tanggal, kuota)
+            VALUES (?, ?, ?)
+            ON CONFLICT (produk_id, tanggal) DO UPDATE
+            SET kuota = EXCLUDED.kuota',
         [$produkId, $tanggal, $kuota]
     );
     db()->commit();
@@ -82,12 +89,17 @@ if ($tanggal !== null) {
 }
 
 if ($produkId !== null && $tanggal !== null) {
-    $row = q('SELECT id,produk_id,tanggal,kuota FROM kuota_harian WHERE produk_id=? AND tanggal=?', [(int) $produkId, $tanggal])->fetch();
+    $row = q('SELECT id, produk_id, tanggal, kuota
+        FROM kuota_harian
+        WHERE produk_id = ? AND tanggal = ?', [(int) $produkId, $tanggal])->fetch();
     json($row ?: null);
 }
 
 if ($produkId !== null) {
-    $items = q('SELECT id,produk_id,tanggal,kuota FROM kuota_harian WHERE produk_id=? ORDER BY tanggal DESC', [(int) $produkId])->fetchAll();
+    $items = q('SELECT id, produk_id, tanggal, kuota
+        FROM kuota_harian
+        WHERE produk_id = ?
+        ORDER BY tanggal DESC', [(int) $produkId])->fetchAll();
     json(['items' => $items]);
 }
 

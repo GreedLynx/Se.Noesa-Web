@@ -20,7 +20,9 @@ if ($period === 'week') {
     $period = 'today';
 }
 
-$summarize = fn($fromDate, $toDate) => q("SELECT COALESCE(SUM(total),0) om, COUNT(*) n FROM pesanan WHERE status='selesai' AND created_at::date BETWEEN ? AND ?", [$fromDate->format('Y-m-d'), $toDate->format('Y-m-d')])->fetch();
+$summarize = fn($fromDate, $toDate) => q("SELECT COALESCE(SUM(total), 0) om, COUNT(*) n
+    FROM pesanan
+    WHERE status = 'selesai' AND created_at::date BETWEEN ? AND ?", [$fromDate->format('Y-m-d'), $toDate->format('Y-m-d')])->fetch();
 
 $selected = null;
 if ($period === 'week' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['selected'])) {
@@ -46,12 +48,42 @@ if ($period === 'week' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}-
 $currentSummary = $summarize($startDate, $endDate);
 $previousSummary = $summarize($previousStartDate, $previousEndDate);
 $dateRange = [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')];
-$items = (int) q("SELECT COALESCE(SUM(d.qty),0) FROM detail_pesanan d JOIN pesanan s ON s.id=d.pesanan_id WHERE s.status='selesai' AND s.created_at::date BETWEEN ? AND ?", $dateRange)->fetchColumn();
+$items = (int) q("SELECT COALESCE(SUM(d.qty), 0)
+    FROM detail_pesanan d
+    JOIN pesanan s
+    ON s.id = d.pesanan_id
+    WHERE s.status = 'selesai' AND s.created_at::date BETWEEN ? AND ?", $dateRange)->fetchColumn();
 $chart = $period === 'month'
-    ? q("SELECT to_char(m,'Mon') l, to_char(m,'YYYY-MM') k, COALESCE(SUM(s.total),0) v FROM generate_series(date_trunc('year',current_date),date_trunc('year',current_date)+interval '11 month','1 month') m LEFT JOIN pesanan s ON date_trunc('month',s.created_at)=m AND s.status='selesai' GROUP BY m ORDER BY m")->fetchAll()
-    : q("SELECT to_char(d,'Dy') l, to_char(d,'YYYY-MM-DD') k, COALESCE(SUM(s.total),0) v, d=current_date AS now FROM generate_series(current_date-6,current_date,'1 day') d LEFT JOIN pesanan s ON s.created_at::date=d AND s.status='selesai' GROUP BY d ORDER BY d")->fetchAll();
-$categories = q("SELECT pr.kategori k, MAX(pr.harga) h, SUM(d.qty) n FROM detail_pesanan d JOIN pesanan s ON s.id=d.pesanan_id JOIN produk pr ON pr.id=d.produk_id WHERE s.status='selesai' AND s.created_at::date BETWEEN ? AND ? GROUP BY pr.kategori", $dateRange)->fetchAll();
-$top = q("SELECT pr.nama, pr.gambar, pr.harga, SUM(d.qty) n, SUM(d.qty*d.harga) om FROM detail_pesanan d JOIN pesanan s ON s.id=d.pesanan_id JOIN produk pr ON pr.id=d.produk_id WHERE s.status='selesai' AND s.created_at::date BETWEEN ? AND ? GROUP BY pr.id ORDER BY n DESC LIMIT 5", $dateRange)->fetchAll();
+    ? q("SELECT to_char(m, 'Mon') l, to_char(m, 'YYYY-MM') k, COALESCE(SUM(s.total), 0) v
+        FROM generate_series(date_trunc('year', CURRENT_DATE), date_trunc('year', CURRENT_DATE) + INTERVAL '11 month', '1 month') m
+        LEFT JOIN pesanan s
+        ON date_trunc('month', s.created_at) = m AND s.status = 'selesai'
+        GROUP BY m
+        ORDER BY m")->fetchAll()
+    : q("SELECT to_char(d, 'Dy') l, to_char(d, 'YYYY-MM-DD') k, COALESCE(SUM(s.total), 0) v, d = CURRENT_DATE AS now
+        FROM generate_series(CURRENT_DATE - 6, CURRENT_DATE, '1 day') d
+        LEFT JOIN pesanan s
+        ON s.created_at::date = d AND s.status = 'selesai'
+        GROUP BY d
+        ORDER BY d")->fetchAll();
+$categories = q("SELECT pr.kategori k, MAX(pr.harga) h, SUM(d.qty) n
+    FROM detail_pesanan d
+    JOIN pesanan s
+    ON s.id = d.pesanan_id
+    JOIN produk pr
+    ON pr.id = d.produk_id
+    WHERE s.status = 'selesai' AND s.created_at::date BETWEEN ? AND ?
+    GROUP BY pr.kategori", $dateRange)->fetchAll();
+$top = q("SELECT pr.nama, pr.gambar, pr.harga, SUM(d.qty) n, SUM(d.qty * d.harga) om
+    FROM detail_pesanan d
+    JOIN pesanan s
+    ON s.id = d.pesanan_id
+    JOIN produk pr
+    ON pr.id = d.produk_id
+    WHERE s.status = 'selesai' AND s.created_at::date BETWEEN ? AND ?
+    GROUP BY pr.id
+    ORDER BY n DESC
+    LIMIT 5", $dateRange)->fetchAll();
 
 json([
     'nama' => ucfirst(me()['username']),

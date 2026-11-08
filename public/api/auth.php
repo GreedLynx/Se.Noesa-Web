@@ -18,7 +18,9 @@ if ($action === 'logout') {
 if ($action === 'login') {
     $identity = trim($request['identity'] ?? '');
     $user = q(
-        "SELECT * FROM users WHERE (email=:email OR username=:username) AND role IN ('owner','admin','pelanggan')",
+        "SELECT *
+            FROM users
+            WHERE (email = :email OR username = :username) AND role IN ('owner', 'admin', 'pelanggan')",
         [':email' => $identity, ':username' => $identity]
     )->fetch();
     if (!$user || !password_verify($request['password'] ?? '', $user['password_hash'])) {
@@ -31,9 +33,9 @@ if ($action === 'login') {
 }
 
 if ($action === 'register') {
-    foreach (['username', 'email', 'password', 'phone'] as $f) {
-        if (empty($request[$f])) {
-            json(['error' => "Kolom $f wajib diisi"], 422);
+    foreach (['username', 'email', 'password', 'phone'] as $field) {
+        if (empty($request[$field])) {
+            json(['error' => "Kolom $field wajib diisi"], 422);
         }
     }
     if (!filter_var($request['email'], FILTER_VALIDATE_EMAIL)) {
@@ -47,7 +49,8 @@ if ($action === 'register') {
     }
     try {
         q(
-            "INSERT INTO users(username,email,password_hash,phone,role) VALUES(?,?,?,?,'pelanggan')",
+            "INSERT INTO users (username, email, password_hash, phone, role)
+                VALUES (?, ?, ?, ?, 'pelanggan')",
             [$request['username'], $request['email'], password_hash($request['password'], PASSWORD_DEFAULT), $request['phone']]
         );
     } catch (PDOException $e) {

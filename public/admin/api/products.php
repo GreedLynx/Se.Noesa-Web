@@ -40,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         try {
-            $affectedRows = q('DELETE FROM produk WHERE id=?', [(int) ($request['id'] ?? 0)])->rowCount();
+            $affectedRows = q('DELETE
+                FROM produk
+                WHERE id = ?', [(int) ($request['id'] ?? 0)])->rowCount();
         } catch (PDOException $e) {
             json(['error' => 'Produk sudah dipakai pada pesanan dan tidak dapat dihapus'], 409);
         }
@@ -62,7 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $id = (int) ($request['id'] ?? 0);
-    $oldImage = $id ? q('SELECT gambar FROM produk WHERE id=?', [$id])->fetchColumn() : false;
+    $oldImage = $id ? q('SELECT gambar
+        FROM produk
+        WHERE id = ?', [$id])->fetchColumn() : false;
     if ($id && $oldImage === false) {
         json(['error' => 'Produk tidak ditemukan'], 404);
     }
@@ -113,10 +117,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         if ($id) {
-            q('UPDATE produk SET kode=?,nama=?,kategori=?,harga=?,min_pesan=?,gambar=? WHERE id=?', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $id]);
+            q('UPDATE produk
+                SET kode = ?, nama = ?, kategori = ?, harga = ?, min_pesan = ?, gambar = ?
+                WHERE id = ?', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $id]);
             $savedId = $id;
         } else {
-            $savedId = (int) q('INSERT INTO produk(kode,nama,kategori,harga,min_pesan,gambar) VALUES(?,?,?,?,?,?) RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image])->fetchColumn();
+            $savedId = (int) q('INSERT INTO produk (kode, nama, kategori, harga, min_pesan, gambar)
+                VALUES (?, ?, ?, ?, ?, ?)
+                RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image])->fetchColumn();
         }
     } catch (PDOException $e) {
         json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);

@@ -13,7 +13,9 @@ if (strlen($password) < 8) {
     fwrite(STDERR, "SENOESA_ADMIN_PASSWORD must be at least 8 characters.\n");
     exit(2);
 }
-$updated = q("UPDATE users SET password_hash=? WHERE email=? AND role='admin'", [password_hash($password, PASSWORD_DEFAULT), $argv[1]])->rowCount();
+$updated = q("UPDATE users
+    SET password_hash = ?
+    WHERE email = ? AND role = 'admin'", [password_hash($password, PASSWORD_DEFAULT), $argv[1]])->rowCount();
 if (!$updated) {
     fwrite(STDERR, "No admin account found for that email.\n");
     exit(1);
