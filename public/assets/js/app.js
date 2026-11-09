@@ -202,6 +202,117 @@ const PAGES = {
       }
     };
   },
+  async "forgot-password"() {
+    const emailForm = $("#forgot-password-form");
+    const resetForm = $("#reset-password-form");
+    const emailInput = emailForm.elements.email;
+    const requestButton = $("#request-otp-button");
+    const resendButton = $("#resend-otp-button");
+    const changeEmailButton = $("#change-reset-email");
+    const requestError = $("#forgot-password-error");
+    const notice = $("#forgot-password-notice");
+    const resetError = $("#reset-password-error");
+    const otpInput = resetForm.elements.otp;
+    let cooldownTimer;
+
+    const showError = (element, message) => {
+      element.textContent = message;
+      element.classList.add("on");
+    };
+    const clearError = (element) => {
+      element.textContent = "";
+      element.classList.remove("on");
+    };
+    const startCooldown = () => {
+      clearInterval(cooldownTimer);
+      let remaining = 60;
+      resendButton.disabled = true;
+      resendButton.textContent = `Kirim ulang kode (${remaining})`;
+      cooldownTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          resendButton.disabled = false;
+          resendButton.textContent = "Kirim ulang kode OTP";
+        } else {
+          resendButton.textContent = `Kirim ulang kode (${remaining})`;
+        }
+      }, 1000);
+    };
+    const requestOtp = async () => {
+      clearError(requestError);
+      requestButton.disabled = true;
+      resendButton.disabled = true;
+      try {
+        const result = await api("api/password-reset.php", {
+          method: "POST",
+          body: { action: "request", email: emailInput.value },
+        });
+        notice.textContent = result.message;
+        notice.classList.add("on");
+        resetForm.hidden = false;
+        emailInput.disabled = true;
+        requestButton.hidden = true;
+        otpInput.focus();
+        startCooldown();
+      } catch (error) {
+        showError(requestError, error.message);
+        requestButton.disabled = false;
+        resendButton.disabled = false;
+        resendButton.textContent = "Kirim ulang kode OTP";
+      }
+    };
+
+    emailForm.onsubmit = async (event) => {
+      event.preventDefault();
+      await requestOtp();
+    };
+    otpInput.addEventListener("input", () => {
+      otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
+    });
+    resendButton.onclick = requestOtp;
+    changeEmailButton.onclick = () => {
+      clearInterval(cooldownTimer);
+      resetForm.reset();
+      resetForm.hidden = true;
+      emailInput.disabled = false;
+      requestButton.hidden = false;
+      requestButton.disabled = false;
+      resendButton.disabled = true;
+      resendButton.textContent = "Kirim ulang kode (60)";
+      notice.textContent = "";
+      notice.classList.remove("on");
+      clearError(requestError);
+      clearError(resetError);
+      emailInput.focus();
+    };
+    resetForm.onsubmit = async (event) => {
+      event.preventDefault();
+      clearError(resetError);
+      const saveButton = resetForm.querySelector('button[type="submit"]');
+      saveButton.disabled = true;
+      saveButton.textContent = "Menyimpan…";
+      try {
+        const result = await api("api/password-reset.php", {
+          method: "POST",
+          body: {
+            action: "reset",
+            email: emailInput.value,
+            ...Object.fromEntries(new FormData(resetForm)),
+          },
+        });
+        toast(result.message);
+        setTimeout(() => {
+          document.body.classList.add("leave");
+          setTimeout(() => (location.href = "login.php"), 230);
+        }, 900);
+      } catch (error) {
+        showError(resetError, error.message);
+        saveButton.disabled = false;
+        saveButton.textContent = "Simpan Password Baru";
+      }
+    };
+  },
   async dashboard() {
     const L = {
       today: [

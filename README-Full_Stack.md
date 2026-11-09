@@ -21,9 +21,10 @@ public/
 
 ## Setup
 
-1. Configure the database environment in `.env` and enable PHP's `pdo_pgsql` extension.
-2. Create the PostgreSQL database. On a new, empty database only, initialize the schema with `psql senoesa -f database/schema.sql`. The schema file drops and recreates its tables, so do not rerun it on a database containing data. For an existing database, run `php scripts/migrate.php`; this connects using `.env`, tracks applied files in `schema_migrations`, and applies pending files from `database/migrations` in order. Run it as the deploy/release command before serving traffic.
-3. Create an admin account. In PowerShell, set a password of at least eight characters and run the CLI script:
+1. Install Composer, enable PHP's `pdo_pgsql`, `openssl`, and `zip` extensions, then run `composer install`. Copy `.env.example` to `.env` and configure the database and SMTP settings. For local mail testing only, `SMTP_SECURE=none` is accepted when the SMTP host is localhost.
+2. For Gmail development, enable 2-Step Verification and create a Gmail App Password. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=tls`, and use the Gmail address as both `SMTP_USERNAME` and `SMTP_FROM_EMAIL`; put the App Password in `SMTP_PASSWORD` (remove spaces if Google displays it grouped). Never commit `.env` or paste credentials into chat. For Brevo, change the host to `smtp-relay.brevo.com` and use the SMTP login/password from Brevo; the reset logic does not change.
+3. Create the PostgreSQL database. On a new, empty database only, initialize the schema with `psql senoesa -f database/schema.sql`. The schema file drops and recreates its tables, so do not rerun it on a database containing data. For an existing database, run `php scripts/migrate.php`; this connects using `.env`, tracks applied files in `schema_migrations`, and applies pending files from `database/migrations` in order, including `011_password_reset_otps.sql`. Run it as the deploy/release command before serving traffic. Migrations preserve existing user data.
+4. Create an admin account. In PowerShell, set a password of at least eight characters and run the CLI script:
 
    ```powershell
    $env:SENOESA_ADMIN_PASSWORD = 'use-a-private-password'
@@ -31,9 +32,11 @@ public/
    Remove-Item Env:SENOESA_ADMIN_PASSWORD
    ```
 
-4. Start the development server from the project root: `php -S localhost:8000 -t public`.
-5. Open `http://localhost:8000/`. Login routes each account by its database role. Admins can also open `/admin/` directly. Customer registration creates a `pelanggan` account; the seeded demo customer is `andi@mail.com` / `pelanggan123`.
+5. Start the development server from the project root: `php -S localhost:8000 -t public`.
+6. Open `http://localhost:8000/`. Login routes each account by its database role. Admins can also open `/admin/` directly. Customer registration creates a `pelanggan` account; the seeded demo customer is `andi@mail.com` / `pelanggan123`.
 
 Admin and customer menus use the same PostgreSQL `produk` table. Products saved in Admin appear automatically in the customer catalogue when their remaining stock is greater than zero. Product pictures are uploaded by the admin as JPG, PNG, or WebP files up to 2 MB. Customer orders are saved with item-price snapshots, checked against active product stock and kitchen capacity, and appear in the admin validation queue. Customers can track status and upload JPG, PNG, or WebP payment proof up to 2 MB. The customer checkout requires an active `jadwal_po` schedule whose date range includes the selected delivery day.
 
 New public registrations receive the `pelanggan` role. Owner accounts remain in the owner area. Admin accounts are created only through the CLI script.
+
+The login page's **Lupa password?** flow sends a six-digit, one-time OTP to the registered email. OTPs expire after 10 minutes, allow at most five verification attempts, and may be requested once per account each minute. OTP values are stored as password hashes. SMTP credentials belong only in the ignored `.env` file; never commit them. The app returns a safe configuration error if Composer/PHPMailer, OpenSSL, or SMTP settings are unavailable.
