@@ -1,5 +1,9 @@
 # API
 
+Perapian SQL mempertahankan nama parameter, status HTTP, serta alias field respons
+yang dipakai klien, termasuk alias ringkas laporan Owner. Nama variabel PHP internal
+tidak menjadi bagian kontrak API.
+
 ## Plan 1 — kontrak aktif
 
 Katalog dan checkout memakai kuota dari tabel `kuota_harian` pada `tgl_kirim`;

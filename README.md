@@ -99,3 +99,4 @@ Pesanan menyimpan snapshot harga setiap produk. Bukti pembayaran yang didukung a
 Admin mengatur kuota produk untuk setiap tanggal pengiriman. Pelanggan hanya dapat memesan produk yang masih memiliki sisa kuota pada tanggal yang dipilih. Sistem juga membatasi total pesanan hingga 80% dari akumulasi kuota produk pada tanggal tersebut.
 
 Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/api.md`.
+Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.
