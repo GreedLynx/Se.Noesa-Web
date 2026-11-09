@@ -109,4 +109,8 @@ Pesanan menyimpan snapshot harga setiap produk. Bukti pembayaran yang didukung a
 Admin mengatur kuota produk untuk setiap tanggal pengiriman. Pelanggan hanya dapat memesan produk yang masih memiliki sisa kuota pada tanggal yang dipilih. Sistem juga membatasi total pesanan hingga 80% dari akumulasi kuota produk pada tanggal tersebut.
 
 Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/api.md`.
+
+## Lupa Password
+
+Halaman login menyediakan alur reset password menggunakan OTP enam digit yang dikirim ke email terdaftar. OTP berlaku 10 menit, maksimal lima kali percobaan, dan permintaan ulang dibatasi satu kali per akun setiap 60 detik. Untuk mengaktifkannya, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, dan `SMTP_FROM_EMAIL` pada `.env`. Gmail memerlukan Verifikasi 2 Langkah dan App Password; jangan gunakan atau bagikan password login Gmail. Jalankan `composer install` dan `php scripts/migrate.php` pada database yang sudah ada. Migrasi OTP menggunakan nama versi `012_password_reset_otps.sql` agar tidak bertabrakan dengan migrasi kuota yang sudah ada.
 Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.

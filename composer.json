@@ -1,0 +1,14 @@
+{
+  "name": "senoesa/web",
+  "description": "Se.Noesa catering pre-order management application",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.1",
+    "ext-openssl": "*",
+    "ext-pdo_pgsql": "*",
+    "phpmailer/phpmailer": "^7.1"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
