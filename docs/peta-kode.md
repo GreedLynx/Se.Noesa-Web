@@ -1,5 +1,26 @@
 # Peta Kode
 
+## Pemilih tanggal bersama
+
+| Kebutuhan | File |
+|---|---|
+| Kalender dialog, label tanggal Indonesia, navigasi keyboard, dan batas tanggal input | `public/assets/js/date-picker.js` |
+| Tampilan kartu pengiriman, filter ringkas, dan kalender sage | `public/assets/css/date-picker.css` |
+| Grid desktop Owner dan lebar ringkasan kuota | `public/assets/css/app.css` |
+| Kartu tanggal pengiriman pelanggan | `public/pelanggan/index.php` |
+| Pemuatan aset bersama dan filter tanggal Admin/Owner | `public/pelanggan/partials/layout.php`, `public/admin/partials/layout.php`, `public/owner/partials/layout.php` |
+| Sinkronisasi tanggal katalog saat checkout berubah | `public/pelanggan/assets/customer.js` |
+| Uji kalender dan uji browser opsional tanpa dependensi tambahan | `scripts/test-date-picker.cjs` |
+
+Kalender memperbarui input tanggal yang sudah ada dan memicu event `input`/`change`.
+Browser tanpa dukungan dialog atau JavaScript tetap memakai input tanggal bawaan.
+Perubahan ini terbatas pada pemilih tanggal katalog dan filter kuota, bukan editor
+jadwal/kuota maupun form checkout. Kalender bawaan checkout tetap dipertahankan.
+
+Panel tanggal memenuhi seluruh kolom grid halaman Owner. Uji browser memuat
+markup panel dari layout Owner beserta pembungkus `.app` pada halaman Produk dan
+Pesanan agar benturan grid desktop ikut diuji.
+
 ## Revisi kuota stateless
 
 | Kebutuhan | File |

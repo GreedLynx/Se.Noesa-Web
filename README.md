@@ -56,6 +56,16 @@ git push origin feature/nama-fitur
 
 ## Struktur Aplikasi
 
+Pemilih tanggal katalog pelanggan dan filter kuota Admin/Owner memakai JavaScript
+lokal `public/assets/js/date-picker.js` dan CSS `public/assets/css/date-picker.css`,
+tanpa library baru. Kalender mendukung keyboard, tanggal berbahasa Indonesia,
+dan batas input yang sudah ada. Bootstrap belum dimuat pada branch ini; pemuatan
+Bootstrap tetap menunggu keputusan tim.
+
+Uji kalender: `node scripts/test-date-picker.cjs`. Untuk uji DOM dengan CSS ketiga
+role, tambahkan path executable Chrome/Edge sebagai argumen, misalnya
+`node scripts/test-date-picker.cjs "C:/Program Files/Google/Chrome/Application/chrome.exe"`.
+
 Aplikasi menggunakan PHP native dan PostgreSQL, dengan area terpisah untuk owner, admin, dan pelanggan. Antarmuka menggunakan HTML, CSS, dan JavaScript.
 
 ```text

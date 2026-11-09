@@ -1,5 +1,10 @@
 # Database
 
+Revisi tampilan pemilih tanggal pelanggan/Admin/Owner tidak mengubah skema,
+VIEW, migrasi, atau data kuota. Tanggal pilihan tetap diteruskan melalui
+parameter `tgl_kirim` yang sudah ada.
+Perbaikan grid desktop Owner juga tidak memerlukan migrasi atau perubahan data.
+
 Pelaksana migrasi `scripts/migrate.php` mengikat kunci advisory lock melalui PDO
 prepared statement untuk `pg_advisory_lock` dan `pg_advisory_unlock`. Pelepasan
 lock tetap berada pada blok `finally`. Perapian SQL tidak mengubah skema;

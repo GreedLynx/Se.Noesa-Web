@@ -19,6 +19,7 @@ function head(string $title, string $page, bool $auth = false)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
+    <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
 </head>
 
 <body data-page="<?= $page ?>">
@@ -56,8 +57,17 @@ function topbar(string $title, bool $back = false)
                         $quotaDay = '';
                 }
                 ?>
-            <label for="quota-date">Tanggal kuota dapur dan produk</label>
-            <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>">
+            <section class="date-panel" aria-label="Filter tanggal kuota">
+                <div>
+                    <span class="date-eyebrow">RINGKASAN KUOTA</span>
+                    <p class="date-panel-hint" id="quota-date-hint">Lihat kuota dan kapasitas pada tanggal pilihan.</p>
+                </div>
+                <div class="date-field">
+                    <label for="quota-date">Tanggal kuota dapur dan produk</label>
+                    <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>"
+                        aria-describedby="quota-date-hint" data-date-picker>
+                </div>
+            </section>
             <?php if (($GLOBALS['owner_page'] ?? '') === 'products'): ?>
                 <p id="quota-summary" role="status"></p>
             <?php endif; ?>
@@ -105,6 +115,7 @@ function foot()
 
     <div class="toast" id="toast"></div>
     <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
+    <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>
 
 </html>

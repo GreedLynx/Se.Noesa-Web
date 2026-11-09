@@ -104,6 +104,7 @@ function catalogPage() {
     $('#catalog-delivery-date').onchange = () => loadCatalog().catch(e => toast(e.message));
     $('#checkout-form').elements.tgl_kirim.onchange = async e => {
         $('#catalog-delivery-date').value = e.target.value;
+        $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
         try {
             await loadCatalog();
             $('#schedule-note').textContent = 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.'

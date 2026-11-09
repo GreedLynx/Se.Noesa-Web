@@ -15,6 +15,7 @@ function admin_head(string $title, string $page): void
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/admin.css?v=<?= filemtime(__DIR__ . '/../assets/admin.css') ?>">
+    <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES, 'UTF-8') ?>">
@@ -70,9 +71,17 @@ function admin_head(string $title, string $page): void
                             $quotaDay = '';
                     }
                     ?>
-                <label for="quota-date">Tanggal kuota dapur dan produk</label>
-                <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>">
-                <p class="muted">Filter ini berlaku untuk kuota dan kapasitas; daftar pesanan tetap mengikuti tab pencarian.</p>
+                <section class="date-panel" aria-label="Filter tanggal kuota">
+                    <div>
+                        <span class="date-eyebrow">KUOTA &amp; KAPASITAS</span>
+                        <p class="date-panel-hint" id="quota-date-hint">Lihat kapasitas pada tanggal pilihan. Daftar pesanan tetap mengikuti tab dan pencarian.</p>
+                    </div>
+                    <div class="date-field">
+                        <label for="quota-date">Tanggal kuota dapur dan produk</label>
+                        <input class="form-control" id="quota-date" type="date" value="<?= htmlspecialchars($quotaDay, ENT_QUOTES, 'UTF-8') ?>"
+                            aria-describedby="quota-date-hint" data-date-picker>
+                    </div>
+                </section>
             <?php endif; ?>
 <?php
 }
@@ -112,6 +121,7 @@ function admin_foot(): void
 
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
+    <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>
 
 </html>

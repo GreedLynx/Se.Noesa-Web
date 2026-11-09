@@ -20,6 +20,7 @@ function customer_head(string $title, string $page): array
     <link rel="stylesheet" href="assets/customer.css?v=<?= $css('customer.css') ?>">
     <link rel="stylesheet" href="assets/quantity-input.css?v=<?= $css('quantity-input.css') ?>">
     <link rel="stylesheet" href="assets/catalog-mobile.css?v=<?= $css('catalog-mobile.css') ?>">
+    <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page) ?>">
@@ -186,6 +187,7 @@ function customer_foot(): void
         <div id="customer-toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
+    <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>
 
 </html>

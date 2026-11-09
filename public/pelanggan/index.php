@@ -19,10 +19,18 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <b>Riwayat pesanan</b>
     </a>
 </section>
-<p class="catalog-policy">Pemesanan dilakukan minimal 7 hari sebelum acara.</p>
-<label for="catalog-delivery-date">Tanggal pengiriman</label>
-<input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
-    required>
+<section class="date-panel date-panel--delivery" aria-labelledby="delivery-title">
+    <div>
+        <span class="date-eyebrow">RENCANAKAN PESANANMU</span>
+        <h2 class="date-panel-title" id="delivery-title">Mau dikirim kapan?</h2>
+        <p class="date-panel-hint" id="delivery-hint">Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.</p>
+    </div>
+    <div class="date-field">
+        <label for="catalog-delivery-date">Tanggal pengiriman</label>
+        <input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
+            aria-describedby="delivery-hint" data-date-picker required>
+    </div>
+</section>
 <div class="catalog-toolbar">
     <div class="category-tabs" id="category-tabs">
         <button class="active" data-category="">Semua</button>
