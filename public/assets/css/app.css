@@ -278,6 +278,13 @@ svg {
 .reset-error.on {
   animation: shake 0.4s;
 }
+<<<<<<< HEAD
+=======
+.reset-link-button {
+  display: block;
+  text-align: center;
+}
+>>>>>>> ee7409047cd73012b889f455d127c3b869aed233
 .reset-secondary-button {
   margin-top: 10px;
   background: #edf1eb;
