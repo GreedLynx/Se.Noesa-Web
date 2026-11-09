@@ -36,6 +36,7 @@ head('Login', 'login', true);
         <p class="err" id="err"></p>
         <button class="btn-main">Login</button>
     </form>
+    <p class="alt rise"><a href="forgot-password.php">Lupa password?</a></p>
     <p class="alt rise">Belum punya akun? <a href="register.php">Register</a></p>
 </section>
 <?php foot();
