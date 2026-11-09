@@ -5,10 +5,7 @@ DROP TABLE IF EXISTS
   jadwal_po,
   produk,
   password_reset_otps,
-<<<<<<< HEAD
-=======
   password_resets,
->>>>>>> ee7409047cd73012b889f455d127c3b869aed233
   users 
 CASCADE;
 
@@ -22,8 +19,6 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-<<<<<<< HEAD
-=======
 CREATE TABLE password_resets (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -34,7 +29,6 @@ CREATE TABLE password_resets (
 );
 CREATE INDEX password_resets_expiry_idx ON password_resets(expires_at);
 
->>>>>>> ee7409047cd73012b889f455d127c3b869aed233
 CREATE TABLE password_reset_otps (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
