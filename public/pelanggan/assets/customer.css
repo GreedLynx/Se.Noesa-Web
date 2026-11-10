@@ -1841,3 +1841,9 @@ a {
         scroll-behavior:auto !important
     }
 }
+
+.status-label.dibatalkan {
+    background:#f0f0f0;
+    color:#666;
+    text-decoration:line-through;
+}

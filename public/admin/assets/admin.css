@@ -1380,3 +1380,74 @@ input:checked + .slider:before {
   letter-spacing: 0.05em;
   color: var(--muted);
 }
+
+/* =========================================
+   CUSTOM DATE FILTER STYLING (VERTIKAL)
+   ========================================= */
+.date-filter-wrapper {
+  display: flex;
+  flex-direction: column; /* Memaksa elemen tersusun ke bawah */
+  align-items: flex-start; /* Meratakan semua elemen ke kiri */
+  gap: 6px; /* Jarak antar elemen */
+  margin-bottom: 24px;
+}
+
+.date-filter-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 4px 0;
+  line-height: 1.5;
+}
+
+.date-filter-label {
+  font-size: 13px;
+  color: var(--brown);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Styling Input Tanggal */
+.date-filter-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+  outline: none;
+  box-shadow: 0 2px 6px rgba(40, 62, 43, 0.03);
+  transition: all 0.2s var(--ease);
+  cursor: pointer;
+  width: 160px;
+  margin-top: 2px;
+}
+
+/* Efek Hover */
+.date-filter-input:hover {
+  border-color: var(--green);
+  box-shadow: 0 4px 12px rgba(40, 62, 43, 0.08);
+}
+
+/* Efek Fokus (saat diklik) */
+.date-filter-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-pale);
+}
+
+/* Mengubah ikon kalender bawaan menjadi warna hijau tema */
+.date-filter-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: 0.2s;
+  /* Filter CSS di bawah ini mengubah warna hitam menjadi hijau gelap */
+  filter: invert(36%) sepia(14%) saturate(1154%) hue-rotate(83deg) brightness(94%) contrast(88%);
+}
+
+.date-filter-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
