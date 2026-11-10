@@ -441,13 +441,20 @@ async function openHistoryDetail(id) {
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
         + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
         + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
+
+    const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
+
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
         + '</p>' + statusProgress(d.status) + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
-        + money(d.total) + '</b></div>' + proofSection + '</div>';
+        + money(d.total) + '</b></div>' 
+        + proofSection // <--- BUKTI PEMBAYARAN DIPINDAH KE ATAS
+        + deliveryPhotoSection // <--- FOTO SIAP KIRIM DIPINDAH KE BAWAH
+        + '</div>';
+        
     $('#history-dialog').showModal();
     const form = $('#proof-form');
     const replaceButton = $('#replace-proof');

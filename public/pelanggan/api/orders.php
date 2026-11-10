@@ -269,8 +269,9 @@ if (isset($_GET['addresses'])) {
 
 if (isset($_GET['id'])) {
     // SELECT mengambil detail pesanan yang ID dan pemilik akunnya cocok.
+    // PERUBAHAN: Menambahkan kolom foto_kiriman
     $order = q(
-        'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, bukti_bayar, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
+        'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, bukti_bayar, foto_kiriman, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
         [(int) $_GET['id'], $customer['id']]
     )->fetch();
     if (!$order) {
