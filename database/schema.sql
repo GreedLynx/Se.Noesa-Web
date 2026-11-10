@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS
   pesanan,
   jadwal_po,
   produk,
+  password_reset_otps,
+  password_resets,
   users 
 CASCADE;
 
@@ -16,6 +18,28 @@ CREATE TABLE users (
   role VARCHAR(10) NOT NULL DEFAULT 'pelanggan' CHECK(role IN('pelanggan', 'admin', 'owner')),
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE password_resets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  token_hash CHAR(64) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX password_resets_expiry_idx ON password_resets(expires_at);
+
+CREATE TABLE password_reset_otps (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  otp_hash VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  attempts SMALLINT NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 5),
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX password_reset_otps_expiry_idx ON password_reset_otps(expires_at);
 
 CREATE TABLE produk (
   id SERIAL PRIMARY KEY,

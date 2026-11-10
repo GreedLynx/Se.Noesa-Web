@@ -11,6 +11,8 @@
 | Pengaturan kuota per tanggal lama | `public/admin/api/kuota-harian.php` |
 | Koneksi PDO, prepared statement, session, role | `app/bootstrap.php` |
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
+| Autentikasi bersama dan validasi field registrasi | `public/api/auth.php` |
+| Laporan dashboard Owner dengan alias respons kompatibel | `public/owner/api/dashboard.php` |
 | Kolom kuota harian master, sudah ada dalam working tree | `database/migrations/009_produk_kuota_harian.sql` |
 | Indeks agregasi baru | `database/migrations/010_stateless_quota_indexes.sql` |
 | Snapshot kuota dan validasi produk/dapur bersama | `app/daily-quota.php` |

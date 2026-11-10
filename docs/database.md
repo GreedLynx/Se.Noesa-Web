@@ -1,5 +1,10 @@
 # Database
 
+Pelaksana migrasi `scripts/migrate.php` mengikat kunci advisory lock melalui PDO
+prepared statement untuk `pg_advisory_lock` dan `pg_advisory_unlock`. Pelepasan
+lock tetap berada pada blok `finally`. Perapian SQL tidak mengubah skema;
+kolom lama `pesanan.pax` dipertahankan sampai keputusan rename dan migrasinya disetujui.
+
 ## Plan 1 — sumber kuota aktif
 
 Konfigurasi adalah `kuota_harian(produk_id,tanggal,kuota)` dari migrasi 008,

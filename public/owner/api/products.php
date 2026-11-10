@@ -1,21 +1,37 @@
-<?php // GET ?kategori=makanan|minuman|snack|kritis&q=
+<?php
+// GET ?kategori=makanan|minuman|snack|kritis&q=
 require __DIR__ . '/../../../app/bootstrap.php';
 require_owner();
 require_once __DIR__ . '/../../../app/daily-quota.php';
-$s = trim($_GET['q'] ?? '');
-$k = $_GET['kategori'] ?? '';
-if ($_SERVER['REQUEST_METHOD'] !== 'GET')
-  json(['error' => 'Method tidak didukung'], 405);
-$day = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
-try {
-  $snapshot = daily_quota_snapshot($day, true);
-} catch (DomainException $e) {
-  json(['error' => $e->getMessage()], 422);
+
+$query = trim($_GET['q'] ?? '');
+$category = $_GET['kategori'] ?? '';
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    json(['error' => 'Method tidak didukung'], 405);
 }
-$critical = static fn($p) => (int) $p['kuota'] === 0 || (int) $p['sisa'] <= (int) $p['kuota'] * 0.2;
-$items = array_values(array_filter($snapshot['items'], static function ($p) use ($s, $k, $critical) {
-  return (!in_array($k, ['makanan', 'minuman', 'snack'], true) || $p['kategori'] === $k)
-    && ($k !== 'kritis' || $critical($p))
-    && ($s === '' || stripos($p['nama'], $s) !== false || stripos($p['kode'], $s) !== false);
+
+$date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+try {
+    $snapshot = daily_quota_snapshot($date, true);
+} catch (DomainException $e) {
+    json(['error' => $e->getMessage()], 422);
+}
+
+$critical = static fn($product) => (int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2;
+$items = array_values(array_filter($snapshot['items'], static function ($product) use ($query, $category, $critical) {
+    return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
+        && ($category !== 'kritis' || $critical($product))
+        && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
 }));
-json(['items' => $items, 'count' => ['semua' => count($snapshot['items']), 'kritis' => count(array_filter($snapshot['items'], $critical))], 'tanggal' => $day, 'maxKitchen' => $snapshot['maxKitchen'], 'kitchenUsed' => $snapshot['kitchenUsed'], 'kitchenRemaining' => $snapshot['kitchenRemaining']]);
+
+json([
+    'items' => $items,
+    'count' => [
+        'semua' => count($snapshot['items']),
+        'kritis' => count(array_filter($snapshot['items'], $critical)),
+    ],
+    'tanggal' => $date,
+    'maxKitchen' => $snapshot['maxKitchen'],
+    'kitchenUsed' => $snapshot['kitchenUsed'],
+    'kitchenRemaining' => $snapshot['kitchenRemaining'],
+]);

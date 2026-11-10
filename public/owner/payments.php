@@ -1,6 +1,8 @@
-<?php require __DIR__ . '/partials/layout.php';
+<?php
+require __DIR__ . '/partials/layout.php';
 head('Metode Pembayaran', 'payments');
-topbar('Metode Pembayaran'); ?>
+topbar('Metode Pembayaran');
+?>
 <section class="payment-admin-intro rise">
     <div>
         <p class="eyebrow">PENGATURAN PEMBAYARAN</p>
@@ -11,20 +13,34 @@ topbar('Metode Pembayaran'); ?>
 </section>
 <section class="payment-admin-grid rise">
     <form class="card payment-method-form" id="payment-method-form" enctype="multipart/form-data">
-        <h3 id="payment-form-title">Tambah metode pembayaran</h3><input type="hidden" name="id"><label>Nama metode<input
-                name="nama" maxlength="80" placeholder="Contoh: QRIS Se.Noesa" required></label><label>Gambar
-            pembayaran<input name="gambar" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG, atau
-                WebP ? maksimal 2 MB</small></label><label class="payment-active"><input name="aktif" type="checkbox"
-                checked> Tampilkan kepada pelanggan</label>
-        <div class="payment-preview" id="payment-preview"><span>Pratinjau QR / instruksi pembayaran</span></div>
+        <h3 id="payment-form-title">Tambah metode pembayaran</h3>
+        <input type="hidden" name="id">
+        <label>
+            Nama metode
+            <input name="nama" maxlength="80" placeholder="Contoh: QRIS Se.Noesa" required>
+        </label>
+        <label>
+            Gambar pembayaran
+            <input name="gambar" type="file" accept="image/jpeg,image/png,image/webp">
+            <small>JPG, PNG, atau WebP ? maksimal 2 MB</small>
+        </label>
+        <label class="payment-active">
+            <input name="aktif" type="checkbox" checked> Tampilkan kepada pelanggan
+        </label>
+        <div class="payment-preview" id="payment-preview">
+            <span>Pratinjau QR / instruksi pembayaran</span>
+        </div>
         <p class="payment-form-error" id="payment-form-error"></p>
-        <div class="payment-form-actions"><button class="btn-main" type="submit">Simpan metode</button><button
-                class="payment-cancel" id="payment-cancel" type="button" hidden>Batal ubah</button></div>
+        <div class="payment-form-actions">
+            <button class="btn-main" type="submit">Simpan metode</button>
+            <button class="payment-cancel" id="payment-cancel" type="button" hidden>Batal ubah</button>
+        </div>
     </form>
     <section class="payment-method-list" id="payment-method-list" aria-live="polite">
         <div class="card center">Memuat metode pembayaran...</div>
     </section>
 </section>
 <script defer src="../assets/js/payments.js?v=<?= filemtime(__DIR__ . '/../assets/js/payments.js') ?>"></script>
-<?php nav('payments');
+<?php
+nav('payments');
 foot();
