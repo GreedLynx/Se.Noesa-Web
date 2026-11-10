@@ -1,4 +1,7 @@
 -- createdb senoesa && psql senoesa -f database/schema.sql
+-- PERHATIAN: skrip inisialisasi ini menghapus tabel lama sebelum membuat ulang skema.
+-- Jalankan hanya untuk database baru atau database yang memang siap di-reset.
+-- DDL: hapus tabel berurutan dengan CASCADE agar relasi dependennya ikut dibersihkan.
 DROP TABLE IF EXISTS 
   detail_pesanan,
   pesanan,
@@ -9,6 +12,7 @@ DROP TABLE IF EXISTS
   users 
 CASCADE;
 
+-- DDL: tabel akun dan role pengguna aplikasi.
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
@@ -19,6 +23,7 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- DDL: tabel token dan OTP untuk proses pemulihan password.
 CREATE TABLE password_resets (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -41,27 +46,31 @@ CREATE TABLE password_reset_otps (
 );
 CREATE INDEX password_reset_otps_expiry_idx ON password_reset_otps(expires_at);
 
+-- DDL: tabel master produk, harga, kategori, dan informasi kuota.
 CREATE TABLE produk (
   id SERIAL PRIMARY KEY,
   kode VARCHAR(10) UNIQUE NOT NULL,
   nama VARCHAR(100) NOT NULL,
   kategori VARCHAR(10) NOT NULL CHECK(kategori IN('makanan', 'minuman', 'snack')),
-  harga INT NOT NULL,
+  harga INT NOT NULL CHECK(harga >= 0),
   kuota INT NOT NULL DEFAULT 0,
-  min_pesan INT NOT NULL DEFAULT 1 CHECK(min_pesan >= 1),
+  min_pesan INT NOT NULL DEFAULT 4 CHECK(min_pesan >= 4),
   terpakai INT NOT NULL DEFAULT 0,
   gambar VARCHAR(120)
 );
 
+-- DDL: tabel jadwal pre-order dan kapasitasnya.
 CREATE TABLE jadwal_po (
   id SERIAL PRIMARY KEY,
   nama VARCHAR(80),
   tgl_buka DATE,
   tgl_tutup DATE,
-  kapasitas INT NOT NULL,
+  kapasitas INT NOT NULL CHECK(kapasitas >= 0),
+  CHECK(tgl_tutup >= tgl_buka),
   aktif BOOLEAN DEFAULT true
 );
 
+-- DDL: tabel header pesanan, pemilik, status, total, dan informasi pengiriman.
 CREATE TABLE pesanan (
   id SERIAL PRIMARY KEY,
   kode VARCHAR(20) UNIQUE NOT NULL,
@@ -70,7 +79,7 @@ CREATE TABLE pesanan (
   nama_pemesan VARCHAR(100) NOT NULL,
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
-  total INT NOT NULL DEFAULT 0,
+  total INT NOT NULL DEFAULT 0 CHECK(total >= 0),
   status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran'
     CHECK (
       status IN (
@@ -89,15 +98,17 @@ CREATE TABLE pesanan (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- DDL: tabel baris item yang menghubungkan pesanan dengan produk.
 CREATE TABLE detail_pesanan (
   id SERIAL PRIMARY KEY,
   pesanan_id INT REFERENCES pesanan(id) ON DELETE CASCADE,
   produk_id INT REFERENCES produk(id),
-  qty INT NOT NULL,
-  harga INT NOT NULL,
+  qty INT NOT NULL CHECK(qty > 0),
+  harga INT NOT NULL CHECK(harga >= 0),
   sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- DDL: tabel alamat tersimpan milik pelanggan.
 CREATE TABLE alamat_pelanggan (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,6 +126,7 @@ CREATE INDEX ON pesanan(status, created_at);
 CREATE INDEX ON detail_pesanan(pesanan_id);
 
 -- SEED (login owner: owner@senoesa.id / owner123)
+-- Data contoh awal untuk akun owner dan pelanggan.
 INSERT INTO users (username, email, password_hash, phone, role)
 VALUES (
     'hendra',
@@ -130,6 +142,7 @@ VALUES (
     '0811111111',
     'pelanggan'
   );
+-- SEED: contoh data produk untuk katalog.
 INSERT INTO produk (kode, nama, kategori, harga, kuota, terpakai, gambar)
 VALUES (
     'NK-01',
@@ -195,8 +208,10 @@ VALUES (
     NULL
   );
 
+-- SEED: satu jadwal PO untuk contoh.
 INSERT INTO jadwal_po (nama, tgl_buka, tgl_tutup, kapasitas)
 VALUES ('PO Oktober 2026', '2026-10-01', '2026-10-31', 2200);
+-- SEED: contoh header pesanan dalam beberapa status.
 INSERT INTO pesanan (
     kode,
     user_id,
@@ -246,17 +261,20 @@ VALUES (
     now() - interval '1 day'
   );
 
+-- SEED: detail produk untuk pesanan contoh.
 INSERT INTO detail_pesanan (pesanan_id, produk_id, qty, harga)
 VALUES (1, 1, 100, 30000),
 (1, 7, 100, 5000),
 (2, 1, 220, 32000),
 (3, 7, 75, 5000);
+-- SELECT verifikasi: tampilkan akun yang sudah dimasukkan, urut berdasarkan ID.
 SELECT id,
   username,
   email,
   role
 FROM users
 ORDER BY id;
+-- SELECT verifikasi yang sama untuk memastikan urutan data akun.
 SELECT id,
   username,
   email,

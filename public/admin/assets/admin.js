@@ -902,7 +902,7 @@ const run = {
     schedules: schedulesPage,
 }[page];
 if (run)
-    run().catch ((e) => {
+    Promise.resolve().then(run).catch((e) => {
         toast(e.message);
         if (page === "order-detail") {
             const detail = $("#order-detail");

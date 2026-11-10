@@ -1,11 +1,12 @@
 :root {
-    --green:#758d76;
+    --green:#516b55;
+    --green-dark:#3b513e;
     --dark:#516b55;
     --pale:#d6e5d7;
     --soft:#edf3ed;
     --brown:#5a3b24;
     --ink:#252720;
-    --muted:#81877f;
+    --muted:#687067;
     --line:#d2e1d3;
     --red:#a5463b;
     --bg:#f8faf7;
@@ -282,10 +283,9 @@ a {
     background:transparent
 }
 
-.catalog-note {
-    font-size:11px;
-    color:var(--muted);
-    margin:2px 0 13px
+.customer-search:focus-within {
+    outline:3px solid #29412d;
+    outline-offset:2px
 }
 
 .menu-grid {
@@ -730,18 +730,27 @@ a {
 }
 
 .history-card {
+    width:100%;
     border:1px solid var(--line);
     border-radius:18px;
     background:#fff;
     padding:15px;
     box-shadow:var(--shadow);
     cursor:pointer;
+    color:inherit;
+    text-align:left;
     animation:rise .4s var(--ease) both;
     transition:.2s
 }
 
 .history-card:hover {
     transform:translateY(-3px);
+    border-color:var(--green)
+}
+
+.history-card:focus-visible {
+    outline:3px solid #29412d;
+    outline-offset:3px;
     border-color:var(--green)
 }
 
@@ -1192,6 +1201,10 @@ a {
     .cart-dialog {
         margin-bottom:80px
     }
+}
+
+.category-toggle,.delivery-title-mobile {
+    display:none
 }
 
 .payment-method-card {
@@ -1816,5 +1829,15 @@ a {
         margin-bottom:11px;
         padding:9px 11px;
         font-size:10px
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Honor the operating-system motion preference over component effects. */
+    *,*::before,*::after {
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+        scroll-behavior:auto !important
     }
 }

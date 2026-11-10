@@ -1,4 +1,6 @@
 -- Konfigurasi kapasitas tetap di kuota_harian; pemakaian berasal dari transaksi.
+-- VIEW dengan SUM dan GROUP BY merangkum pemakaian produk per tanggal Asia/Jakarta.
+-- FULL JOIN mempertahankan data konfigurasi maupun transaksi meski pasangan datanya tidak ada.
 CREATE OR REPLACE VIEW v_kuota_harian AS
 WITH pemakaian AS (
     SELECT d.produk_id,(p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date tanggal,

@@ -13,6 +13,7 @@ if (strlen($password) < 8) {
     fwrite(STDERR, "SENOESA_ADMIN_PASSWORD must be at least 8 characters.\n");
     exit(2);
 }
+// UPDATE mengganti hash password hanya untuk akun dengan email dan peran admin yang diminta.
 $updated = q("UPDATE users
     SET password_hash = ?
     WHERE email = ? AND role = 'admin'", [password_hash($password, PASSWORD_DEFAULT), $argv[1]])->rowCount();

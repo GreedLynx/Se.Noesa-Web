@@ -1,3 +1,4 @@
+-- DDL: buat tabel token reset password dengan satu record per pengguna.
 CREATE TABLE IF NOT EXISTS password_resets (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -7,5 +8,6 @@ CREATE TABLE IF NOT EXISTS password_resets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- INDEX: percepat pencarian dan pembersihan token berdasarkan waktu kedaluwarsa.
 CREATE INDEX IF NOT EXISTS password_resets_expiry_idx
   ON password_resets(expires_at);

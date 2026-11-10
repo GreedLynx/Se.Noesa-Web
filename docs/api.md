@@ -1,8 +1,20 @@
 # API
 
+Revisi tampilan pemilih tanggal tidak mengubah endpoint atau payload. Kalender
+bersama mengisi `catalog-delivery-date`/`quota-date` dan memicu event yang sudah
+dipakai katalog serta filter laporan. `tgl_kirim` tetap berformat `YYYY-MM-DD`;
+validasi server, H+7 pelanggan, dan hak akses Owner tetap berlaku.
+Perbaikan lebar grid pemilih tanggal Owner hanya mengubah CSS; kontrak API tetap.
+
 Perapian SQL mempertahankan nama parameter, status HTTP, serta alias field respons
 yang dipakai klien, termasuk alias ringkas laporan Owner. Nama variabel PHP internal
 tidak menjadi bagian kontrak API.
+
+Penertiban nomor migrasi reset password menjadi 012–013 tidak mengubah endpoint,
+payload, atau respons API.
+
+Constraint numerik migrasi 014 tidak mengubah kontrak API. Validasi aplikasi tetap
+memberikan HTTP 422 sebelum nilai tidak valid mencapai constraint database.
 
 ## Plan 1 — kontrak aktif
 

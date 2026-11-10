@@ -14,6 +14,7 @@ function daily_quota_snapshot($date, bool $report = false): array
 
     $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, GREATEST(4, pr.min_pesan) AS min_pesan';
     if ($report) {
+        // LEFT JOIN menjaga semua produk tetap tampil, termasuk yang belum memiliki konfigurasi kuota.
         $items = q(
             "SELECT $fields, COALESCE(v.kuota, 0) AS kuota_harian,
                 COALESCE(v.kuota, 0) AS kuota, COALESCE(v.terpakai, 0) AS terpakai,
@@ -24,6 +25,7 @@ function daily_quota_snapshot($date, bool $report = false): array
             [$date]
         )->fetchAll();
     } else {
+        // LEFT JOIN mengambil kuota dan subquery SUM menghitung pemakaian per produk dari pesanan yang belum ditolak.
         $items = q(
             "SELECT $fields, COALESCE(k.kuota, 0) AS kuota_harian,
                 COALESCE(k.kuota, 0) AS kuota, COALESCE(used.qty, 0) AS terpakai,

@@ -1,9 +1,23 @@
 # Database
 
+Revisi tampilan pemilih tanggal pelanggan/Admin/Owner tidak mengubah skema,
+VIEW, migrasi, atau data kuota. Tanggal pilihan tetap diteruskan melalui
+parameter `tgl_kirim` yang sudah ada.
+Perbaikan grid desktop Owner juga tidak memerlukan migrasi atau perubahan data.
+
 Pelaksana migrasi `scripts/migrate.php` mengikat kunci advisory lock melalui PDO
 prepared statement untuk `pg_advisory_lock` dan `pg_advisory_unlock`. Pelepasan
 lock tetap berada pada blok `finally`. Perapian SQL tidak mengubah skema;
 kolom lama `pesanan.pax` dipertahankan sampai keputusan rename dan migrasinya disetujui.
+
+Nomor migrasi unik dan berurutan: indeks kuota 010, VIEW kuota 011, tabel token
+reset password 012, dan tabel OTP reset password 013. Migrasi reset password memakai
+`IF NOT EXISTS`, sehingga database yang pernah menjalankan nama lama tetap aman.
+
+Migrasi `014_numeric_check_constraints.sql` menjaga harga, kuota, total, dan kapasitas
+tidak negatif; jumlah detail harus positif; minimal pesan produk sekurang-kurangnya
+4 porsi; serta tanggal tutup jadwal tidak mendahului tanggal buka. Sebelum constraint
+dipasang, nilai `produk.min_pesan` lama yang kurang dari 4 dinormalkan menjadi 4.
 
 ## Plan 1 — sumber kuota aktif
 

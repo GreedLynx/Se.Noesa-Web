@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         try {
+            // DELETE menghapus produk berdasarkan ID; foreign key menolak penghapusan jika sudah dipakai.
             $affectedRows = q('DELETE
                 FROM produk
                 WHERE id = ?', [(int) ($request['id'] ?? 0)])->rowCount();
@@ -64,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $id = (int) ($request['id'] ?? 0);
+    // SELECT mengambil gambar lama agar tetap dipakai ketika produk diedit tanpa upload baru.
     $oldImage = $id ? q('SELECT gambar
         FROM produk
         WHERE id = ?', [$id])->fetchColumn() : false;
@@ -117,11 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         if ($id) {
+            // UPDATE menyimpan perubahan pada produk yang sudah ada.
             q('UPDATE produk
                 SET kode = ?, nama = ?, kategori = ?, harga = ?, min_pesan = ?, gambar = ?
                 WHERE id = ?', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $id]);
             $savedId = $id;
         } else {
+            // INSERT produk baru dan RETURNING mengambil ID hasil insert.
             $savedId = (int) q('INSERT INTO produk (kode, nama, kategori, harga, min_pesan, gambar)
                 VALUES (?, ?, ?, ?, ?, ?)
                 RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image])->fetchColumn();

@@ -21,7 +21,7 @@ customer_head('Riwayat Pesanan', 'history'); ?>
 <section class="history-list" id="history-list">
     <div class="loading">Memuat riwayat pesanan...</div>
 </section>
-<dialog id="history-dialog" class="customer-dialog history-dialog">
+<dialog id="history-dialog" class="customer-dialog history-dialog" aria-label="Detail pesanan">
     <button class="dialog-close" data-close-history aria-label="Tutup">&times;</button>
     <div id="history-detail"></div>
 </dialog>
