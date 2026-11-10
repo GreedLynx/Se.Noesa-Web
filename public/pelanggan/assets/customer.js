@@ -365,11 +365,18 @@ async function submitOrder(e) {
     }
 }
 const statusLabels = {
-    menunggu_pembayaran: 'Menunggu pembayaran', menunggu_validasi: 'Menunggu verifikasi', diproses: 'Diproses',
-    selesai: 'Selesai', ditolak: 'Ditolak'
+    menunggu_pembayaran: 'Menunggu pembayaran', 
+    menunggu_validasi: 'Menunggu verifikasi', 
+    diproses: 'Diproses',
+    selesai: 'Selesai', 
+    ditolak: 'Ditolak',
+    dibatalkan: 'Dibatalkan'
 };
 function statusProgress(status) {
     const steps = ['Pesanan', 'Pembayaran', 'Verifikasi', 'Diproses', 'Selesai'];
+    if (status === 'dibatalkan' || status === 'ditolak') {
+        return '<div class="detail-status-line"><span class="detail-step" style="color:var(--red); font-weight:700;">Pesanan ' + statusLabels[status] + '</span></div>';
+    }
     const complete = status === 'selesai' ? 5: status === 'diproses' ? 4: status === 'menunggu_validasi' ? 3: 1;
     return '<div class="detail-status-line">' + steps.map((s, i) => '<span class="detail-step ' + (i < complete ? 'done': '')
         + '">' + s + '</span>').join('') + '</div>'
@@ -444,6 +451,54 @@ async function openHistoryDetail(id) {
 
     const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
 
+    // --- LOGIKA PEMBATALAN (H-2) YANG SUDAH DIPERBAIKI ---
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const delivery = new Date(d.tgl_kirim);
+    delivery.setHours(0,0,0,0);
+    
+    const daysUntilDelivery = Math.round((delivery - today) / (1000 * 60 * 60 * 24));
+    
+    // Tanggal batas akhir pembatalan adalah H-2 dari tanggal kirim
+    const cancelLimitDate = new Date(delivery);
+    cancelLimitDate.setDate(cancelLimitDate.getDate() - 2);
+    
+    // Sisa hari untuk membatalkan dihitung dari hari ini sampai tanggal batas akhir (H-2)
+    const daysLeftToCancel = Math.round((cancelLimitDate - today) / (1000 * 60 * 60 * 24));
+    
+    const cancelLimitLabel = cancelLimitDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status);
+    let cancelSection = '';
+
+    if (isStatusCancellable) {
+        if (daysUntilDelivery >= 2) {
+            // Jika masih H-2 atau lebih
+            cancelSection = `
+                <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
+                    <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
+                    <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
+                        <b>Syarat Pembatalan:</b><br>
+                        Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
+                        Batas akhir pembatalan: <b>${cancelLimitLabel}</b>.<br>
+                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.
+                    </div>
+                </div>
+            `;
+        } else {
+            // Jika sudah melewati batas H-2
+            cancelSection = `
+                <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line);">
+                    <div style="background:#fdf2f2; border:1px solid #f5c6c6; padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--red); text-align:center;">
+                        <b>Batas Waktu Pembatalan Terlewati</b><br>
+                        Pesanan tidak dapat dibatalkan karena sudah melewati batas maksimal H-2 (${cancelLimitLabel}) sebelum tanggal pengiriman.
+                    </div>
+                </div>
+            `;
+        }
+    }
+    // ----------------------------------------------------
+
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
@@ -451,11 +506,35 @@ async function openHistoryDetail(id) {
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + money(d.total) + '</b></div>' 
-        + proofSection // <--- BUKTI PEMBAYARAN DIPINDAH KE ATAS
-        + deliveryPhotoSection // <--- FOTO SIAP KIRIM DIPINDAH KE BAWAH
+        + proofSection 
+        + deliveryPhotoSection 
+        + cancelSection 
         + '</div>';
         
     $('#history-dialog').showModal();
+    
+    // --- EVENT LISTENER UNTUK TOMBOL BATAL ---
+    const cancelBtn = $('#cancel-order-btn');
+    if (cancelBtn) {
+        cancelBtn.onclick = async () => {
+            if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dikembalikan.')) return;
+            
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'Membatalkan...';
+            try {
+                await api('api/orders.php', { method: 'POST', body: { action: 'cancel_order', id: d.id } });
+                toast('Pesanan berhasil dibatalkan');
+                await openHistoryDetail(id); // Refresh detail
+                loadHistory(); // Refresh list
+            } catch (err) {
+                toast(err.message);
+                cancelBtn.disabled = false;
+                cancelBtn.textContent = 'Batalkan Pesanan';
+            }
+        };
+    }
+    // -----------------------------------------
+
     const form = $('#proof-form');
     const replaceButton = $('#replace-proof');
     if (replaceButton) replaceButton.onclick = () => {
@@ -468,9 +547,7 @@ async function openHistoryDetail(id) {
         button.disabled = true;
         try {
             const body = new FormData(form);
-            await api('api/orders.php', {
-                method: 'POST', body
-            });
+            await api('api/orders.php', { method: 'POST', body });
             toast('Bukti pembayaran berhasil dikirim');
             await openHistoryDetail(id);
             loadHistory()
