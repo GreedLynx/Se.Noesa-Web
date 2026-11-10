@@ -17,15 +17,18 @@ if (!$files) {
 
 $pdo = db();
 $lockKey = 'senoesa_schema_migrations';
+// Advisory lock memastikan hanya satu proses migrasi berjalan pada satu waktu.
 $acquireLock = $pdo->prepare('SELECT pg_advisory_lock(hashtext(?))');
 $acquireLock->execute([$lockKey]);
 
 try {
+    // Buat tabel pencatat versi migrasi jika belum tersedia.
     $pdo->exec("CREATE TABLE IF NOT EXISTS schema_migrations (
         version VARCHAR(255) PRIMARY KEY,
         applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )");
 
+    // Siapkan query untuk mengecek versi dan mencatat migrasi yang berhasil.
     $check = $pdo->prepare('SELECT 1
         FROM schema_migrations
         WHERE version = ?');
@@ -59,6 +62,7 @@ try {
         }
     }
 } finally {
+    // Lepaskan advisory lock walaupun proses migrasi gagal.
     $releaseLock = $pdo->prepare('SELECT pg_advisory_unlock(hashtext(?))');
     $releaseLock->execute([$lockKey]);
 }

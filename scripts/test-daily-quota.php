@@ -28,10 +28,12 @@ function rejects_quota(array $snapshot, array $quantities, string $message): voi
 }
 try {
     $db = db();
+    // SELECT memverifikasi indeks kuota yang dibutuhkan sudah terpasang.
     foreach (['idx_pesanan_created_status', 'idx_pesanan_delivery_status', 'idx_detail_pesanan_produk'] as $index) {
         check_quota((bool) q('SELECT 1 FROM pg_indexes WHERE schemaname=current_schema() AND indexname=?', [$index])->fetchColumn(), 'Indeks ' . $index . ' terpasang');
     }
     $db->beginTransaction();
+    // TEMP TABLE membuat skenario uji terisolasi; ROLLBACK di akhir membuang seluruh data uji.
     q('CREATE TEMP TABLE kuota_harian (id INT,produk_id INT,tanggal DATE,kuota INT,UNIQUE(produk_id,tanggal)) ON COMMIT DROP');
     q('CREATE TEMP TABLE produk (id INT PRIMARY KEY,kode TEXT,nama TEXT,kategori TEXT,harga INT,gambar TEXT,min_pesan INT,kuota_harian INT) ON COMMIT DROP');
     q('CREATE TEMP TABLE pesanan (id INT PRIMARY KEY,tgl_kirim TIMESTAMPTZ,status TEXT,created_at TIMESTAMPTZ) ON COMMIT DROP');
@@ -40,6 +42,7 @@ try {
     q("INSERT INTO pesanan VALUES (1,'2030-01-10 00:00:00+07','menunggu_pembayaran','2029-12-01'),(2,'2030-01-10 23:59:59+07','selesai','2029-12-01'),(3,'2030-01-11 00:00:00+07','diproses','2029-12-01')");
     q('INSERT INTO detail_pesanan VALUES (1,1,8),(2,2,72),(3,1,10)');
     q("INSERT INTO kuota_harian VALUES (1,1,'2030-01-10',10),(2,2,'2030-01-10',90),(3,1,'2030-01-11',10),(4,2,'2030-01-11',50)");
+    // Buat temporary VIEW dari definisi laporan untuk membandingkan hasil query kuota.
     $viewSql = file_get_contents(__DIR__ . '/../database/migrations/011_daily_quota_report.sql');
     q(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE TEMP VIEW v_kuota_harian', $viewSql));
     $snapshot = daily_quota_snapshot('2030-01-10');
@@ -50,12 +53,14 @@ try {
     rejects_quota($snapshot, [1 => 3], 'Sisa kuota: 2 porsi');
     rejects_quota($snapshot, [2 => 4], '80%');
     rejects_quota($snapshot, [3 => 4], 'tidak tersedia');
+    // UPDATE status menjadi ditolak untuk memastikan pemakaian kuotanya tidak lagi dihitung.
     q("UPDATE pesanan SET status='ditolak' WHERE id=1");
     $snapshot = daily_quota_snapshot('2030-01-10');
     check_quota($snapshot['kitchenUsed'] === 72 && (int) $snapshot['items'][0]['sisa'] === 10, 'Penolakan memulihkan kuota tanpa update counter');
     check_quota(count(daily_quota_validate($snapshot, [1 => 8])) === 1, 'Pesanan tepat pada batas dapur diterima');
     rejects_quota($snapshot, [1 => 3], 'minimal dipesan 4');
     check_quota(daily_quota_snapshot('2030-01-11')['kitchenUsed'] === 10, 'Batas hari memakai Asia/Jakarta');
+    // DELETE konfigurasi kuota untuk menguji bahwa transaksi yang sudah ada tetap masuk laporan.
     q("DELETE FROM kuota_harian WHERE produk_id=2 AND tanggal='2030-01-10'");
     check_quota(daily_quota_snapshot('2030-01-10')['kitchenUsed'] === 72, 'Pesanan tetap dihitung setelah konfigurasi kuota dihapus');
     q('UPDATE kuota_harian SET kuota=0');
@@ -72,6 +77,7 @@ try {
     $config = cfg()['db'];
     $other = new PDO('pgsql:host=' . $config['host'] . ';port=' . $config['port'] . ';dbname=' . $config['name'] . ';sslmode=' . ($config['sslmode'] ?? 'require'), $config['user'], $config['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $db->beginTransaction();
+    // LOCK TABLE menguji bahwa checkout kedua tertahan saat checkout pertama memegang kunci.
     q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
     $other->beginTransaction();
     $other->prepare("SET LOCAL lock_timeout='500ms'")->execute();

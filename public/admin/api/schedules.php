@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id === false) {
             json(['error' => 'ID tidak valid'], 422);
         }
+        // DELETE menghapus jadwal PO berdasarkan ID.
         $affectedRows = q('DELETE
             FROM jadwal_po
             WHERE id = ?', [$id])->rowCount();
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($aktif === null) {
             json(['error' => 'aktif harus boolean'], 422);
         }
+        // UPDATE mengaktifkan atau menonaktifkan jadwal PO.
         q('UPDATE jadwal_po
             SET aktif = ?
             WHERE id = ?', [$aktif, $id]);
@@ -91,16 +93,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($id) {
+        // UPDATE memperbarui jadwal PO yang sudah tersimpan.
         q('UPDATE jadwal_po
             SET nama = ?, tgl_buka = ?, tgl_tutup = ?, kapasitas = ?, aktif = ?
             WHERE id = ?', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif, $id]);
     } else {
+        // INSERT menambahkan jadwal PO baru.
         q('INSERT INTO jadwal_po (nama, tgl_buka, tgl_tutup, kapasitas, aktif)
             VALUES (?, ?, ?, ?, ?)', [$nama, $tglBuka, $tglTutup, $kapasitas, $aktif]);
     }
     json(['ok' => true]);
 }
 
+// SELECT menampilkan daftar jadwal dengan tanggal buka paling baru di urutan pertama.
 $rows = q('SELECT id, nama, tgl_buka, tgl_tutup, kapasitas, aktif
     FROM jadwal_po
     ORDER BY tgl_buka DESC')->fetchAll();

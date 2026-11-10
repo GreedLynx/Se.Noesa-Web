@@ -1,3 +1,4 @@
+-- DDL: pastikan tabel OTP reset password tersedia beserta batas percobaannya.
 CREATE TABLE IF NOT EXISTS password_reset_otps (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -9,5 +10,6 @@ CREATE TABLE IF NOT EXISTS password_reset_otps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- INDEX: dukung pencarian dan pembersihan OTP berdasarkan masa kedaluwarsa.
 CREATE INDEX IF NOT EXISTS password_reset_otps_expiry_idx
   ON password_reset_otps(expires_at);

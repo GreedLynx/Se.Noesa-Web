@@ -18,6 +18,7 @@ if (!filter_var($argv[2], FILTER_VALIDATE_EMAIL)) {
     exit(2);
 }
 try {
+    // INSERT membuat akun admin baru; password disimpan sebagai hash.
     q("INSERT INTO users (username, email, password_hash, phone, role)
         VALUES (?, ?, ?, NULL, 'admin')", [$argv[1], $argv[2], password_hash($password, PASSWORD_DEFAULT)]);
     fwrite(STDOUT, "Admin account created.\n");
