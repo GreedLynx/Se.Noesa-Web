@@ -1,5 +1,6 @@
 -- SEED (login owner: owner@senoesa.id / owner123)
 
+-- SEED: data dummy akun, produk, jadwal, pesanan, dan detail untuk pengujian/demo.
 INSERT INTO users(username, email, password_hash, phone, role)
 VALUES
     (

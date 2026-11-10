@@ -20,6 +20,7 @@ if ($period === 'week') {
     $period = 'today';
 }
 
+// Agregasi omzet dan jumlah pesanan selesai untuk membandingkan periode aktif dengan periode sebelumnya.
 $summarize = fn($fromDate, $toDate) => q("SELECT COALESCE(SUM(total), 0) om, COUNT(*) n
     FROM pesanan
     WHERE status = 'selesai' AND created_at::date BETWEEN ? AND ?", [$fromDate->format('Y-m-d'), $toDate->format('Y-m-d')])->fetch();
@@ -48,11 +49,13 @@ if ($period === 'week' && isset($_GET['selected']) && preg_match('/^\d{4}-\d{2}-
 $currentSummary = $summarize($startDate, $endDate);
 $previousSummary = $summarize($previousStartDate, $previousEndDate);
 $dateRange = [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')];
+// JOIN header dan detail pesanan untuk menjumlahkan porsi pada periode yang dipilih.
 $items = (int) q("SELECT COALESCE(SUM(d.qty), 0)
     FROM detail_pesanan d
     JOIN pesanan s
     ON s.id = d.pesanan_id
     WHERE s.status = 'selesai' AND s.created_at::date BETWEEN ? AND ?", $dateRange)->fetchColumn();
+// generate_series membuat rentang tanggal/bulan; LEFT JOIN menjaga periode tanpa pesanan tetap muncul di grafik.
 $chart = $period === 'month'
     ? q("SELECT to_char(m, 'Mon') l, to_char(m, 'YYYY-MM') k, COALESCE(SUM(s.total), 0) v
         FROM generate_series(date_trunc('year', CURRENT_DATE), date_trunc('year', CURRENT_DATE) + INTERVAL '11 month', '1 month') m
@@ -66,6 +69,7 @@ $chart = $period === 'month'
         ON s.created_at::date = d AND s.status = 'selesai'
         GROUP BY d
         ORDER BY d")->fetchAll();
+// JOIN tiga tabel untuk agregasi jumlah porsi dan harga tertinggi per kategori.
 $categories = q("SELECT pr.kategori k, MAX(pr.harga) h, SUM(d.qty) n
     FROM detail_pesanan d
     JOIN pesanan s
@@ -74,6 +78,7 @@ $categories = q("SELECT pr.kategori k, MAX(pr.harga) h, SUM(d.qty) n
     ON pr.id = d.produk_id
     WHERE s.status = 'selesai' AND s.created_at::date BETWEEN ? AND ?
     GROUP BY pr.kategori", $dateRange)->fetchAll();
+// Urutkan produk berdasarkan porsi terjual dan ambil lima produk teratas beserta omzet item.
 $top = q("SELECT pr.nama, pr.gambar, pr.harga, SUM(d.qty) n, SUM(d.qty * d.harga) om
     FROM detail_pesanan d
     JOIN pesanan s

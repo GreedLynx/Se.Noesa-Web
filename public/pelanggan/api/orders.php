@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $db = db();
             $db->beginTransaction();
+            // COUNT mengecek batas alamat pelanggan sebelum alamat baru disimpan.
             $count = (int) q('SELECT COUNT(*) FROM alamat_pelanggan WHERE user_id = ?', [$customer['id']])->fetchColumn();
             if ($count >= 20) {
                 throw new DomainException('Maksimal 20 alamat tersimpan.');
@@ -24,9 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $isDefault = !empty($request['is_default']) || $count === 0;
             if ($isDefault) {
+                // Kosongkan alamat default lama agar hanya satu alamat yang menjadi default.
                 q('UPDATE alamat_pelanggan SET is_default = FALSE WHERE user_id = ?', [$customer['id']]);
             }
 
+            // INSERT menyimpan alamat dan RETURNING mengambil ID yang baru dibuat.
             $statement = $db->prepare(
                 'INSERT INTO alamat_pelanggan (user_id, label, nama_penerima, telepon, alamat, is_default) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
             );
@@ -58,11 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $db = db();
             $db->beginTransaction();
+            // FOR UPDATE mengunci alamat milik pengguna sebelum mengganti alamat default.
             $found = q('SELECT id FROM alamat_pelanggan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
             if (!$found) {
                 throw new DomainException('Alamat tidak ditemukan');
             }
 
+            // Jadikan alamat terpilih sebagai default dan semua alamat lainnya bukan default.
             q('UPDATE alamat_pelanggan SET is_default = (id = ?) WHERE user_id = ?', [$id, $customer['id']]);
             $db->commit();
             json(['ok' => true]);
@@ -76,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (($_POST['action'] ?? '') === 'upload_proof') {
         $id = (int) ($_POST['id'] ?? 0);
+        // Pastikan pesanan milik pelanggan yang sedang login sebelum menerima bukti pembayaran.
         $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) {
             json(['error' => 'Pesanan tidak ditemukan'], 404);
@@ -118,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
+            // UPDATE menyimpan bukti dan nama pembayar; status berubah ke validasi jika sebelumnya menunggu pembayaran.
             q(
                 "UPDATE pesanan
                 SET bukti_bayar = ?, nama_pembayar = ?,
@@ -140,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $time = $time !== '' ? $time : '12:00';
     $note = trim($request['keterangan'] ?? '');
     $addressId = (int) ($request['alamat_id'] ?? 0);
+    // Ambil alamat tersimpan hanya jika alamat tersebut memang dimiliki pelanggan ini.
     $savedAddress = $addressId ? q('SELECT nama_penerima, telepon, alamat FROM alamat_pelanggan WHERE id = ? AND user_id = ?', [$addressId, $customer['id']])->fetch() : false;
     $recipient = trim($request['nama_penerima'] ?? '');
     $phone = trim($request['telepon'] ?? '');
@@ -195,9 +203,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Kunci tabel juga menunggu perubahan kuota master oleh admin.
         q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Kunci baris kuota tanggal pengiriman dan jadwal aktif sampai checkout selesai.
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
         $schedule = q('SELECT id FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
         if (!$schedule) {
+            // Buat jadwal default hanya jika belum ada jadwal PO aktif.
             $id = (int) q("INSERT INTO jadwal_po (nama, tgl_buka, tgl_tutup, kapasitas, aktif) VALUES ('Default', '2026-01-01', '2099-12-31', 50, true) RETURNING id")->fetchColumn();
             $schedule = ['id' => $id];
         }
@@ -218,6 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $code = 'SN-' . (new DateTimeImmutable('now', $zone))->format('ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+        // INSERT menyimpan header pesanan dan RETURNING mengambil ID untuk detailnya.
         $orderId = (int) q(
             "INSERT INTO pesanan (kode, user_id, jadwal_id, nama_pemesan, keterangan, pax, total, status, tgl_kirim, alamat_pengiriman, telepon_penerima)
             VALUES (?, ?, ?, ?, ?, ?, ?, 'menunggu_pembayaran', ?, ?, ?) RETURNING id",
@@ -226,6 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($lines as $line) {
             $product = $line['product'];
             $quantity = $line['qty'];
+            // INSERT menyimpan setiap produk pesanan sebagai baris detail.
             q('INSERT INTO detail_pesanan (pesanan_id, produk_id, qty, harga) VALUES (?, ?, ?, ?)', [$orderId, $product['id'], $quantity, $product['harga']]);
         }
 
@@ -247,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if (isset($_GET['addresses'])) {
     json([
+        // SELECT hanya mengambil alamat milik pelanggan; alamat default ditampilkan lebih dahulu.
         'addresses' => q(
             'SELECT id, label, nama_penerima, telepon, alamat, is_default FROM alamat_pelanggan WHERE user_id = ? ORDER BY is_default DESC, id',
             [$customer['id']]
@@ -255,6 +268,7 @@ if (isset($_GET['addresses'])) {
 }
 
 if (isset($_GET['id'])) {
+    // SELECT mengambil detail pesanan yang ID dan pemilik akunnya cocok.
     $order = q(
         'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, bukti_bayar, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
         [(int) $_GET['id'], $customer['id']]
@@ -263,6 +277,7 @@ if (isset($_GET['id'])) {
         json(['error' => 'Pesanan tidak ditemukan'], 404);
     }
 
+    // JOIN menggabungkan detail pesanan dengan nama dan gambar produk.
     $order['items'] = q(
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]
@@ -278,11 +293,13 @@ if ($filter) {
     $queryArgs[] = $status;
 }
 
+// SELECT mengambil riwayat pesanan milik pelanggan, opsional difilter status dan dibatasi 50 baris.
 $orders = q(
     "SELECT id, kode, nama_pemesan, total, status, status_updated_at, tgl_kirim, created_at FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
     $queryArgs
 )->fetchAll();
 foreach ($orders as &$order) {
+    // JOIN mengambil hingga tiga produk ringkas untuk setiap pesanan pada daftar riwayat.
     $order['items'] = q(
         'SELECT pr.nama, pr.gambar, d.qty, d.harga FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY d.id LIMIT 3',
         [$order['id']]

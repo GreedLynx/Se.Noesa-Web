@@ -6,6 +6,7 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/../app/bootstrap.php';
 
 foreach (['min_pesan', 'gambar', 'kategori'] as $column) {
+    // EXISTS memeriksa keberadaan kolom di metadata skema PostgreSQL.
     $exists = q(
         'SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? AND column_name = ?)',
         ['produk', $column]
@@ -13,9 +14,11 @@ foreach (['min_pesan', 'gambar', 'kategori'] as $column) {
     fwrite(STDOUT, $column . ': ' . ($exists ? 'OK' : 'MISSING') . PHP_EOL);
 }
 
+// COUNT menghitung jumlah seluruh baris produk.
 $count = q('SELECT COUNT(*)
     FROM produk')->fetchColumn();
 fwrite(STDOUT, 'produk rows: ' . $count . PHP_EOL);
+// GROUP BY merangkum produk per kategori; FILTER menghitung yang kuotanya masih tersedia.
 foreach (q('SELECT kategori, COUNT(*) jumlah, COUNT(*) FILTER (WHERE kuota > terpakai) tersedia
     FROM produk
     GROUP BY kategori

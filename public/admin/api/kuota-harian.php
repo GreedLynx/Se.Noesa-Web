@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             json(['error' => 'ID tidak valid'], 422);
         }
         db()->beginTransaction();
+        // Kunci tabel mencegah perubahan kuota bersamaan dengan checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // DELETE menghapus konfigurasi kuota harian berdasarkan ID.
         $affectedRows = q('DELETE
             FROM kuota_harian
             WHERE id = ?', [$id])->rowCount();
@@ -56,14 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($kuota === false || $kuota < 0 || $kuota > 2147483647) {
         json(['error' => 'kuota harus angka 0 sampai 2147483647'], 422);
     }
+    // Pastikan produk yang akan diberi kuota memang terdaftar.
     if (!q('SELECT id
         FROM produk
         WHERE id = ?', [$produkId])->fetchColumn()) {
         json(['error' => 'Produk tidak ditemukan'], 404);
     }
     db()->beginTransaction();
+    // Serialisasi penulisan kuota agar tidak berbenturan dengan proses checkout.
     q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
 
+    // UPSERT membuat konfigurasi baru atau mengubah kuota untuk produk dan tanggal yang sama.
     q(
         'INSERT INTO kuota_harian (produk_id, tanggal, kuota)
             VALUES (?, ?, ?)
@@ -89,6 +94,7 @@ if ($tanggal !== null) {
 }
 
 if ($produkId !== null && $tanggal !== null) {
+    // Ambil satu konfigurasi kuota untuk kombinasi produk dan tanggal.
     $row = q('SELECT id, produk_id, tanggal, kuota
         FROM kuota_harian
         WHERE produk_id = ? AND tanggal = ?', [(int) $produkId, $tanggal])->fetch();
@@ -96,6 +102,7 @@ if ($produkId !== null && $tanggal !== null) {
 }
 
 if ($produkId !== null) {
+    // Tampilkan seluruh konfigurasi kuota untuk produk, dimulai dari tanggal terbaru.
     $items = q('SELECT id, produk_id, tanggal, kuota
         FROM kuota_harian
         WHERE produk_id = ?
