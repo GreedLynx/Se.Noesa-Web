@@ -66,21 +66,38 @@ let catalog = [], productCache = {
 function catalogPage() {
     wireLogout();
     const search = $('#catalog-search'),
-        filters = $$('#category-tabs button, .customer-category-rail [data-category]');
+        filters = $$('.customer-category-rail [data-category]'),
+        categoryToggle = $('[data-category-toggle]'),
+        rail = $('.customer-rail');
+    const setCategoryRail = open => {
+        rail.classList.toggle('is-open', open);
+        categoryToggle.setAttribute('aria-expanded', open);
+        categoryToggle.setAttribute('aria-label', open ? 'Tutup kategori' : 'Buka kategori');
+    };
+    if (categoryToggle) categoryToggle.onclick = () => setCategoryRail(!rail.classList.contains('is-open'));
+    const syncFilters = () => filters.forEach(x => {
+        const active = x.dataset.category === category;
+        x.classList.toggle('active', active);
+        x.setAttribute('aria-pressed', active);
+    });
 
-    filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+    syncFilters();
     filters.forEach(b => b.onclick = () => {
-        if (category === b.dataset.category) return;
+        if (category === b.dataset.category) {
+            if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
+            return;
+        }
 
         category = b.dataset.category;
-        filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+        syncFilters();
+        if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
-        loadCatalog(true);
+        refreshCatalog(true);
     });
 
     search.oninput = () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => loadCatalog(true), 200)
+        searchTimer = setTimeout(() => refreshCatalog(true), 200)
     };
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
@@ -101,7 +118,7 @@ function catalogPage() {
     $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
-    $('#catalog-delivery-date').onchange = () => loadCatalog().catch(e => toast(e.message));
+    $('#catalog-delivery-date').onchange = () => refreshCatalog();
     $('#checkout-form').elements.tgl_kirim.onchange = async e => {
         $('#catalog-delivery-date').value = e.target.value;
         $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
@@ -113,7 +130,16 @@ function catalogPage() {
         }
     };
 
-    loadCatalog();
+    refreshCatalog();
+}
+async function refreshCatalog(animate = false) {
+    try {
+        await loadCatalog(animate);
+    } catch (err) {
+        const grid = $('#menu-grid');
+        grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
+        $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
+    }
 }
 async function loadCatalog(animate = false) {
     const grid = $('#menu-grid');
@@ -138,9 +164,6 @@ async function loadCatalog(animate = false) {
             || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
     );
     schedule = d.schedule;
-    const note = $('#catalog-note');
-    note.textContent = 'Pengiriman ' + d.tanggal + ' · Sisa kapasitas dapur ' + Number(d.kitchenRemaining) + ' porsi.';
-    note.classList.remove('closed');
     grid.innerHTML = catalog.length ? catalog.map((p, i) => '<article class="menu-card" data-product="' + Number(p.id)
         + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
         + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
@@ -173,7 +196,7 @@ function showProduct(product) {
     activeQty = Math.min(maximum, Math.max(1, minimum));
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
-        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Description</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
+        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
         + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span><span>Sisa Porsi<b>'
         + maximum + '/' + Number(product.kuota) + '</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
@@ -374,14 +397,14 @@ async function loadHistory() {
     const d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
-        return '<article class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
+        return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
             + esc(o.kode) + '</b><p class="history-date">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + dateLabel(o.tgl_kirim)
             + '</p><p class="history-date">' + (o.status_updated_at ? 'Status sejak ' + dateLabel(o.status_updated_at, true)
                 : 'Waktu perubahan status belum tercatat') + '</p></div><span class="status-label ' + esc(o.status) + '">'
             + esc(statusLabels[o.status] || o.status) + '</span></div><div class="history-products">' + (first.gambar ? '<img src="'
             + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
-            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></article>'
+            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
     }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
@@ -413,7 +436,7 @@ async function openHistoryDetail(id) {
         + esc(d.nama_pembayar || d.nama_pemesan || '') + '" placeholder="Nama yang membayar" required><label for="proof-file">'
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
-        + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error"></p></form>': '';
+        + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
     const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
         + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
