@@ -8,6 +8,7 @@ require __DIR__ . '/../app/bootstrap.php';
 
 $email = 'andi@mail.com';
 $password = 'pelanggan123';
+// UPDATE mereset akun demo pelanggan yang sudah ditentukan, bukan akun lainnya.
 $updated = q(
     "UPDATE users SET password_hash = ? WHERE email = ? AND role = 'pelanggan'",
     [password_hash($password, PASSWORD_DEFAULT), $email]

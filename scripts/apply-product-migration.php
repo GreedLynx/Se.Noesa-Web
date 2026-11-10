@@ -12,6 +12,7 @@ if ($migration === false) {
 }
 
 try {
+    // Jalankan file migrasi produk melalui koneksi PDO aktif.
     db()->exec($migration);
     fwrite(STDOUT, "Product migration applied successfully.\n");
 } catch (Throwable $error) {

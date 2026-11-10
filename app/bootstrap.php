@@ -37,6 +37,7 @@ function db(): PDO
 
 function q(string $sql, array $params = []): PDOStatement
 {
+    // Siapkan SQL lalu ikat parameter agar nilai input tidak digabung langsung ke query.
     $statement = db()->prepare($sql);
     $statement->execute($params);
 

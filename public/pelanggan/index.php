@@ -2,6 +2,7 @@
 require __DIR__ . '/partials/layout.php';
 
 $customer = customer_head('Pilih Menu', 'catalog');
+// SELECT mengambil nama dan nomor telepon pelanggan untuk mengisi informasi katalog.
 $profile = q('SELECT username, phone FROM users WHERE id = ?', [$customer['id']])->fetch();
 $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->modify('+7 days')->format('Y-m-d');
 ?>

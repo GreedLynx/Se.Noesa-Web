@@ -19,6 +19,7 @@ $items = array_values(array_filter($snapshot['items'], static function ($product
         && (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
         && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
 }));
+// SELECT memilih satu jadwal PO aktif yang tanggal bukanya paling awal.
 $schedule = q('SELECT id, tgl_buka, tgl_tutup, nama FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1')->fetch();
 
 json([
