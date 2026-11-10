@@ -13,6 +13,9 @@ tidak menjadi bagian kontrak API.
 Penertiban nomor migrasi reset password menjadi 012–013 tidak mengubah endpoint,
 payload, atau respons API.
 
+Constraint numerik migrasi 014 tidak mengubah kontrak API. Validasi aplikasi tetap
+memberikan HTTP 422 sebelum nilai tidak valid mencapai constraint database.
+
 ## Plan 1 — kontrak aktif
 
 Katalog dan checkout memakai kuota dari tabel `kuota_harian` pada `tgl_kirim`;

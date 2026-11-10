@@ -34,6 +34,7 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
 | Autentikasi bersama dan validasi field registrasi | `public/api/auth.php` |
 | Token dan OTP reset password | `database/migrations/012_password_resets.sql`, `database/migrations/013_password_reset_otps.sql` |
+| Constraint numerik dan urutan tanggal | `database/migrations/014_numeric_check_constraints.sql` |
 | Laporan dashboard Owner dengan alias respons kompatibel | `public/owner/api/dashboard.php` |
 | Kolom kuota harian master, sudah ada dalam working tree | `database/migrations/009_produk_kuota_harian.sql` |
 | Indeks agregasi baru | `database/migrations/010_stateless_quota_indexes.sql` |

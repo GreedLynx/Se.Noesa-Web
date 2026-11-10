@@ -52,9 +52,9 @@ CREATE TABLE produk (
   kode VARCHAR(10) UNIQUE NOT NULL,
   nama VARCHAR(100) NOT NULL,
   kategori VARCHAR(10) NOT NULL CHECK(kategori IN('makanan', 'minuman', 'snack')),
-  harga INT NOT NULL,
+  harga INT NOT NULL CHECK(harga >= 0),
   kuota INT NOT NULL DEFAULT 0,
-  min_pesan INT NOT NULL DEFAULT 1 CHECK(min_pesan >= 1),
+  min_pesan INT NOT NULL DEFAULT 4 CHECK(min_pesan >= 4),
   terpakai INT NOT NULL DEFAULT 0,
   gambar VARCHAR(120)
 );
@@ -65,7 +65,8 @@ CREATE TABLE jadwal_po (
   nama VARCHAR(80),
   tgl_buka DATE,
   tgl_tutup DATE,
-  kapasitas INT NOT NULL,
+  kapasitas INT NOT NULL CHECK(kapasitas >= 0),
+  CHECK(tgl_tutup >= tgl_buka),
   aktif BOOLEAN DEFAULT true
 );
 
@@ -78,7 +79,7 @@ CREATE TABLE pesanan (
   nama_pemesan VARCHAR(100) NOT NULL,
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
-  total INT NOT NULL DEFAULT 0,
+  total INT NOT NULL DEFAULT 0 CHECK(total >= 0),
   status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran'
     CHECK (
       status IN (
@@ -102,8 +103,8 @@ CREATE TABLE detail_pesanan (
   id SERIAL PRIMARY KEY,
   pesanan_id INT REFERENCES pesanan(id) ON DELETE CASCADE,
   produk_id INT REFERENCES produk(id),
-  qty INT NOT NULL,
-  harga INT NOT NULL,
+  qty INT NOT NULL CHECK(qty > 0),
+  harga INT NOT NULL CHECK(harga >= 0),
   sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
 
