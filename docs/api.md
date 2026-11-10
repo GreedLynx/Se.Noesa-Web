@@ -10,6 +10,9 @@ Perapian SQL mempertahankan nama parameter, status HTTP, serta alias field respo
 yang dipakai klien, termasuk alias ringkas laporan Owner. Nama variabel PHP internal
 tidak menjadi bagian kontrak API.
 
+Penertiban nomor migrasi reset password menjadi 012–013 tidak mengubah endpoint,
+payload, atau respons API.
+
 ## Plan 1 — kontrak aktif
 
 Katalog dan checkout memakai kuota dari tabel `kuota_harian` pada `tgl_kirim`;

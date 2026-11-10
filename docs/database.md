@@ -10,6 +10,10 @@ prepared statement untuk `pg_advisory_lock` dan `pg_advisory_unlock`. Pelepasan
 lock tetap berada pada blok `finally`. Perapian SQL tidak mengubah skema;
 kolom lama `pesanan.pax` dipertahankan sampai keputusan rename dan migrasinya disetujui.
 
+Nomor migrasi unik dan berurutan: indeks kuota 010, VIEW kuota 011, tabel token
+reset password 012, dan tabel OTP reset password 013. Migrasi reset password memakai
+`IF NOT EXISTS`, sehingga database yang pernah menjalankan nama lama tetap aman.
+
 ## Plan 1 — sumber kuota aktif
 
 Konfigurasi adalah `kuota_harian(produk_id,tanggal,kuota)` dari migrasi 008,
