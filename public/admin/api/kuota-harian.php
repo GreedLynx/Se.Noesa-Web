@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             json(['error' => 'ID tidak valid'], 422);
         }
         db()->beginTransaction();
-        // Kunci tabel mencegah perubahan kuota bersamaan dengan checkout.
+        // LOCK TABLE mencegah perubahan kuota bersamaan dengan proses checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
         // DELETE menghapus konfigurasi kuota harian berdasarkan ID.
         $affectedRows = q('DELETE
@@ -60,14 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save' && ($kuota === false || $kuota < 0 || $kuota > 2147483647)) {
         json(['error' => 'kuota harus angka 0 sampai 2147483647'], 422);
     }
-    // Pastikan produk yang akan diberi kuota memang terdaftar.
+    // SELECT memastikan produk yang akan diberi kuota memang terdaftar.
     if (!q('SELECT id
         FROM produk
         WHERE id = ?', [$produkId])->fetchColumn()) {
         json(['error' => 'Produk tidak ditemukan'], 404);
     }
     db()->beginTransaction();
-    // Serialisasi penulisan kuota agar tidak berbenturan dengan proses checkout.
+    // LOCK TABLE menserialisasi penulisan kuota agar tidak berbenturan dengan checkout.
     q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
 
     $affected = daily_quota_write_range($produkId, $tanggal, $tanggalSelesai, $action === 'reset' ? null : $kuota);
@@ -89,7 +89,7 @@ if ($tanggal !== null) {
 }
 
 if ($produkId !== null && $tanggal !== null) {
-    // Ambil satu konfigurasi kuota untuk kombinasi produk dan tanggal.
+    // SELECT mengambil satu konfigurasi kuota untuk kombinasi produk dan tanggal.
     $row = q('SELECT id, produk_id, tanggal, kuota
         FROM kuota_harian
         WHERE produk_id = ? AND tanggal = ?', [(int) $produkId, $tanggal])->fetch();
@@ -97,7 +97,7 @@ if ($produkId !== null && $tanggal !== null) {
 }
 
 if ($produkId !== null) {
-    // Tampilkan seluruh konfigurasi kuota untuk produk, dimulai dari tanggal terbaru.
+    // SELECT menampilkan seluruh konfigurasi kuota produk, dari tanggal terbaru.
     $items = q('SELECT id, produk_id, tanggal, kuota
         FROM kuota_harian
         WHERE produk_id = ?

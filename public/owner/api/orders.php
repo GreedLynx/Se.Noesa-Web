@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 if (isset($_GET['id'])) {
-    // Baca satu pesanan berdasarkan ID.
+    // SELECT membaca satu pesanan berdasarkan ID.
     $order = q('SELECT * FROM pesanan WHERE id = ?', [$_GET['id']])->fetch() ?: json(['error' => 'Tidak ditemukan'], 404);
     if (!empty($order['bukti_bayar']) && !preg_match('~^(https?://|/)~i', $order['bukti_bayar'])) {
         $order['bukti_bayar'] = '../' . $order['bukti_bayar'];
@@ -28,7 +28,7 @@ if (isset($_GET['id'])) {
 
 $statusFilter = ($_GET['tab'] ?? 'validasi') === 'proses' ? "('diproses','selesai')" : "('menunggu_validasi')";
 $search = '%' . ($_GET['q'] ?? '') . '%';
-// Cari pesanan sesuai tab dan kata kunci, lalu urutkan dari yang terbaru.
+// SELECT memfilter pesanan berdasarkan tab dan kata kunci, lalu mengurutkan yang terbaru.
 $orders = q(
     "SELECT id, kode, nama_pemesan, keterangan, total, status,
         to_char(COALESCE(status_updated_at, created_at), 'HH24:MI') AS jam
@@ -37,7 +37,7 @@ $orders = q(
     ORDER BY created_at DESC",
     [$search, $search]
 )->fetchAll();
-// COUNT FILTER menghitung jumlah pesanan untuk tiap kelompok status.
+// COUNT FILTER menghitung jumlah pesanan menunggu validasi dan pesanan dalam proses/selesai.
 $counts = q(
     "SELECT COUNT(*) FILTER (WHERE status = 'menunggu_validasi') AS v,
         COUNT(*) FILTER (WHERE status IN ('diproses', 'selesai')) AS p

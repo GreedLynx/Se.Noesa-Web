@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $isDefault = !empty($request['is_default']) || $count === 0;
             if ($isDefault) {
+                // UPDATE mengosongkan alamat default lama agar hanya satu alamat yang menjadi default.
                 q('UPDATE alamat_pelanggan SET is_default = FALSE WHERE user_id = ?', [$customer['id']]);
             }
             $statement = $db->prepare(
@@ -85,7 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db = db();
             $db->beginTransaction();
             $found = q('SELECT id FROM alamat_pelanggan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
-            if (!$found) throw new DomainException('Alamat tidak ditemukan');
+            if (!$found) {
+                throw new DomainException('Alamat tidak ditemukan');
+            }
+
+            // UPDATE menjadikan alamat terpilih sebagai default dan alamat lain bukan default.
             q('UPDATE alamat_pelanggan SET is_default = (id = ?) WHERE user_id = ?', [$id, $customer['id']]);
             $db->commit();
             json(['ok' => true]);
@@ -97,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (($_POST['action'] ?? '') === 'upload_proof') {
         $id = (int) ($_POST['id'] ?? 0);
+        // SELECT memastikan pesanan milik pelanggan yang sedang login sebelum menerima bukti pembayaran.
         $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
@@ -125,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!move_uploaded_file($file['tmp_name'], $folder . '/' . $filename)) json(['error' => 'Gagal menyimpan gambar'], 500);
 
         try {
+            // UPDATE menyimpan bukti/nama pembayar dan mengubah status jika pembayaran sebelumnya masih menunggu.
             q(
                 "UPDATE pesanan
                 SET bukti_bayar = ?, nama_pembayar = ?,
@@ -147,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $time = $time !== '' ? $time : '12:00';
     $note = trim($request['keterangan'] ?? '');
     $addressId = (int) ($request['alamat_id'] ?? 0);
+    // SELECT mengambil alamat tersimpan hanya jika memang dimiliki pelanggan yang sedang login.
     $savedAddress = $addressId ? q('SELECT nama_penerima, telepon, alamat FROM alamat_pelanggan WHERE id = ? AND user_id = ?', [$addressId, $customer['id']])->fetch() : false;
     $recipient = trim($request['nama_penerima'] ?? '');
     $phone = trim($request['telepon'] ?? '');
@@ -188,11 +196,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $db = db();
         $db->beginTransaction();
+        // Serialisasi semua checkout, termasuk yang memilih produk berbeda.
+        // Kunci tabel juga menunggu perubahan kuota master oleh admin.
+        // LOCK TABLE mengunci master produk selama validasi kuota dan penyimpanan pesanan.
         q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
+        // LOCK TABLE mencegah perubahan kuota harian bersamaan dengan checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // SELECT ... FOR UPDATE mengunci baris kuota tanggal pengiriman sampai transaksi selesai.
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
+        // SELECT ... FOR UPDATE memilih sekaligus mengunci jadwal PO aktif yang akan dipakai.
         $schedule = q('SELECT id FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetch();
         if (!$schedule) {
+            // INSERT membuat jadwal PO default hanya jika belum ada jadwal aktif.
             $id = (int) q("INSERT INTO jadwal_po (nama, tgl_buka, tgl_tutup, kapasitas, aktif) VALUES ('Default', '2026-01-01', '2099-12-31', 50, true) RETURNING id")->fetchColumn();
             $schedule = ['id' => $id];
         }
@@ -249,6 +264,7 @@ if (isset($_GET['id'])) {
     )->fetch();
     if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
 
+    // SELECT dengan JOIN menggabungkan detail pesanan dan data produk untuk halaman rincian.
     $order['items'] = q(
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]

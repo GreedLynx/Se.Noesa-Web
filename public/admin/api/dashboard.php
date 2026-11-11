@@ -12,6 +12,7 @@ $stats = q(
     [$today]
 )->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+// Ambil ringkasan kapasitas dan pemakaian kuota untuk tanggal pengiriman yang diminta.
 try {
     $quota = daily_quota_snapshot($date, true);
 } catch (DomainException $e) {
@@ -32,7 +33,7 @@ $chart = q(
     GROUP BY d
     ORDER BY d"
 )->fetchAll();
-// Ambil lima pesanan terlama yang perlu diverifikasi agar menjadi prioritas admin.
+// SELECT mengambil lima pesanan tertua yang menunggu validasi untuk dijadikan prioritas.
 $priority = q(
     "SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.tgl_kirim, p.created_at
     FROM pesanan p
@@ -40,7 +41,7 @@ $priority = q(
     ORDER BY p.created_at ASC
     LIMIT 5"
 )->fetchAll();
-// Ambil enam pesanan terbaru untuk ringkasan aktivitas.
+// SELECT mengambil enam pesanan terbaru tanpa membatasi status.
 $recent = q(
     'SELECT p.id, p.kode, p.nama_pemesan, p.total, p.status, p.created_at
     FROM pesanan p

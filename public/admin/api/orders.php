@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../app/daily-quota.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
-        // Pastikan pesanan berstatus diproses sebelum foto pengiriman disimpan.
+        // SELECT memastikan pesanan berstatus diproses sebelum foto pengiriman disimpan.
         $order = q("SELECT id
             FROM pesanan
             WHERE id = ? AND status = 'diproses'", [$id])->fetch();
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->rollBack();
                 json(['error' => 'Status pesanan sudah berubah atau tidak sesuai'], 409);
             }
-            // Ubah status dan timestamp penolakan dalam transaksi yang sama.
+            // UPDATE mengubah status dan timestamp penolakan dalam transaksi yang sama.
             q("UPDATE pesanan
                 SET status = 'ditolak', status_updated_at = now()
                 WHERE id = ?", [$current['id']]);
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($unchecked) {
             json(['error' => 'Centang semua menu yang sudah disiapkan terlebih dahulu'], 409);
         }
-        // Ambil foto kiriman hanya untuk pesanan yang masih diproses.
+        // SELECT mengambil foto kiriman hanya untuk pesanan yang masih diproses.
         $photo = q("SELECT foto_kiriman
             FROM pesanan
             WHERE id = ? AND status = 'diproses'", [(int) ($request['id'] ?? 0)])->fetch();
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if (($request['action'] ?? '') === 'validate') {
-        // Periksa bukti pembayaran sebelum status pesanan divalidasi.
+        // SELECT memeriksa bukti pembayaran sebelum status pesanan divalidasi.
         $proof = q("SELECT bukti_bayar
             FROM pesanan
             WHERE id = ? AND status = 'menunggu_validasi'", [(int) ($request['id'] ?? 0)])->fetch();
@@ -150,7 +150,7 @@ $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
     default => "('menunggu_validasi')"
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
-// Filter daftar pesanan menurut tab/status dan pencarian nama atau kode pesanan.
+// SELECT memfilter pesanan menurut tab/status dan kata kunci nama atau kode, lalu mengurutkan hasil.
 $items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at
     FROM pesanan p
     WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)

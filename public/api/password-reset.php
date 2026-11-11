@@ -26,7 +26,7 @@ if ($action === 'request') {
   $db = db();
   $db->beginTransaction();
   try {
-    // Cari akun berdasarkan email dan kunci baris agar permintaan OTP bersamaan tidak saling menimpa.
+    // SELECT mencari akun berdasarkan email dan mengunci baris agar permintaan OTP tidak saling menimpa.
     $matches = q('SELECT id,email FROM users WHERE LOWER(email)=? ORDER BY id LIMIT 2 FOR UPDATE', [$email])->fetchAll();
     $user = count($matches) === 1 ? $matches[0] : null;
     $otpId = null;
@@ -36,7 +36,7 @@ if ($action === 'request') {
     if ($user) {
       $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
       $otpHash = password_hash($otp, PASSWORD_DEFAULT);
-      // UPSERT membuat atau memperbarui OTP; batas waktu mencegah pengiriman ulang terlalu cepat.
+      // INSERT ... ON CONFLICT membuat atau memperbarui OTP dengan batas waktu kirim ulang.
       $challenge = q(
         "INSERT INTO password_reset_otps(user_id,otp_hash,expires_at,attempts,requested_at,used_at,created_at)
          VALUES(?,?,now()+interval '10 minutes',0,now(),NULL,now())
@@ -64,7 +64,7 @@ if ($action === 'request') {
     } catch (Throwable $error) {
       error_log('[Se.Noesa password reset] OTP email delivery failed (' . get_class($error) . ').');
       try {
-        // Tandai OTP sebagai tidak aktif jika email gagal dikirim.
+        // UPDATE membatalkan OTP yang tidak terkirim agar kode itu tidak dapat digunakan.
         q(
           'UPDATE password_reset_otps SET used_at=now() WHERE id=? AND otp_hash=? AND used_at IS NULL',
           [$otpId, $otpHash]
@@ -102,7 +102,7 @@ if ($action === 'reset') {
   $db = db();
   $db->beginTransaction();
   try {
-    // Cari dan kunci akun pemilik email selama proses reset.
+    // SELECT mencari dan mengunci akun pemilik email selama proses reset.
     $matches = q('SELECT id FROM users WHERE LOWER(email)=? ORDER BY id LIMIT 2 FOR UPDATE', [$email])->fetchAll();
     $user = count($matches) === 1 ? $matches[0] : null;
     if (!$user) {
@@ -110,7 +110,7 @@ if ($action === 'reset') {
       json(['error' => 'Kode OTP salah atau sudah kedaluwarsa'], 422);
     }
 
-    // Ambil OTP yang masih berlaku dan kunci record agar jumlah percobaan atomik.
+    // SELECT mengambil OTP aktif dan mengunci record agar pengecekan percobaan tetap konsisten.
     $challenge = q(
       'SELECT id,otp_hash,attempts FROM password_reset_otps
        WHERE user_id=? AND used_at IS NULL AND expires_at>now() FOR UPDATE',
@@ -122,7 +122,7 @@ if ($action === 'reset') {
     }
 
     if (!password_verify($otp, $challenge['otp_hash'])) {
-      // Tambah jumlah percobaan dan tandai OTP terpakai setelah lima kali gagal.
+      // UPDATE menambah jumlah percobaan dan menandai OTP terpakai setelah lima kali gagal.
       q(
         "UPDATE password_reset_otps
          SET attempts=attempts+1,
@@ -134,9 +134,9 @@ if ($action === 'reset') {
       json(['error' => 'Kode OTP salah atau sudah kedaluwarsa'], 422);
     }
 
-    // UPDATE mengganti password hanya setelah OTP dinyatakan benar.
+    // UPDATE mengganti hash password hanya setelah OTP dinyatakan benar.
     q('UPDATE users SET password_hash=? WHERE id=?', [password_hash($password, PASSWORD_DEFAULT), $user['id']]);
-    // Tandai OTP terpakai sekali saja dan RETURNING memastikan perubahan berhasil.
+    // UPDATE menandai OTP terpakai sekali saja; RETURNING memastikan perubahan berhasil.
     $used = q(
       'UPDATE password_reset_otps SET used_at=now() WHERE id=? AND used_at IS NULL RETURNING id',
       [$challenge['id']]
