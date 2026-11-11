@@ -525,10 +525,10 @@ async function loadKuotaHarian(produkId) {
                             esc(row.kuota) +
                             ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
                             row.id +
-                            '">Hapus</button></td></tr>',
+                            '">Kembali ke default</button></td></tr>',
                     )
                     .join("")
-            : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
+            : '<tr><td colspan="3">Semua tanggal memakai kuota default</td></tr>';
         $$("[data-delete-kuota]").forEach((btn) => {
             btn.onclick = async () => {
                 try {
@@ -536,7 +536,8 @@ async function loadKuotaHarian(produkId) {
                         method: "POST",
                         body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
                     });
-                    loadKuotaHarian(produkId);
+                    await loadKuotaHarian(produkId);
+                    refreshProducts();
                 } catch (e) {
                     toast(e.message);
                 }
@@ -560,12 +561,14 @@ function editProduct(p) {
     form.elements.kategori.value = p?.kategori || "makanan";
     form.elements.harga.value = p?.harga || "";
     $('#kuota-tanggal').value = $('#quota-date')?.value || '';
+    $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
+    form.elements.kuota_default.value = p?.kuota_default ?? 0;
     form.elements.min_pesan.value = p?.min_pesan || 4;
     form.elements.gambar.value = p?.gambar || "";
     form.elements.gambar_file.required = !p;
     $("#image-help").textContent = p
         ? "Kosongkan jika gambar tidak ingin diganti. JPG, PNG, atau WebP · maksimal 2 MB"
-        : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Stok tersedia akan tampil ke pelanggan.";
+        : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Kuota tersedia akan tampil ke pelanggan.";
     preview.hidden = !p?.gambar;
     preview.src = p?.gambar ? productImagePath(p.gambar) : "";
     $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
@@ -599,25 +602,37 @@ function productsPage() {
         }),
     );
     const kuotaAddBtn = $("#kuota-add");
+    $('#kuota-tanggal').onchange = () => {
+        $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
+    };
     if (kuotaAddBtn) {
-        kuotaAddBtn.onclick = async () => {
-            const tanggal = $("#kuota-tanggal").value;
+        const saveRange = async (action) => {
+            const tanggal_mulai = $("#kuota-tanggal").value;
+            const tanggal_selesai = $("#kuota-tanggal-selesai").value;
             const rawKuota = $("#kuota-nilai").value;
             const kuota = rawKuota === '' ? NaN : Number(rawKuota);
             const produkId = $("#product-form").elements.id.value;
-            if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
+            if (!tanggal_mulai || !tanggal_selesai || !produkId ||
+                (action === 'save' && (!Number.isInteger(kuota) || kuota < 0 || kuota > 2147483647))) {
+                $('#product-error').textContent = 'Isi rentang tanggal dan kuota dengan benar.';
+                return;
+            }
             try {
                 await api("api/kuota-harian.php", {
                     method: "POST",
-                    body: { produk_id: Number(produkId), tanggal, kuota },
+                    body: { action, produk_id: Number(produkId), tanggal_mulai, tanggal_selesai, kuota },
                 });
                 $("#kuota-nilai").value = "";
-                loadKuotaHarian(produkId);
+                await loadKuotaHarian(produkId);
                 refreshProducts();
+                $('#product-error').textContent = '';
+                toast(action === 'reset' ? 'Rentang kembali ke kuota default.' : 'Kuota rentang tersimpan.');
             } catch (e) {
-                toast(e.message);
+                $('#product-error').textContent = e.message;
             }
         };
+        kuotaAddBtn.onclick = () => saveRange('save');
+        $('#kuota-reset').onclick = () => saveRange('reset');
     }
     $("#product-form").elements.gambar_file.onchange = (e) => {
         const file = e.target.files[0],

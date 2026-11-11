@@ -24,6 +24,9 @@ set_exception_handler(static function (Throwable $error): void {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request = body();
     $action = $request['action'] ?? 'save';
+    if (!in_array($action, ['save', 'reset', 'delete'], true)) {
+        json(['error' => 'Aksi tidak valid'], 422);
+    }
 
     if ($action === 'delete') {
         $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
@@ -42,20 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $produkId = filter_var($request['produk_id'] ?? null, FILTER_VALIDATE_INT);
-    $tanggal = $request['tanggal'] ?? '';
+    $tanggal = $request['tanggal_mulai'] ?? $request['tanggal'] ?? '';
+    $tanggalSelesai = $request['tanggal_selesai'] ?? $tanggal;
     $kuota = filter_var($request['kuota'] ?? null, FILTER_VALIDATE_INT);
 
     if ($produkId === false || $produkId < 1) {
         json(['error' => 'produk_id tidak valid'], 422);
     }
-    if (!is_string($tanggal) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
-        json(['error' => 'tanggal harus format YYYY-MM-DD'], 422);
+    try {
+        [$tanggal, $tanggalSelesai] = daily_quota_range($tanggal, $tanggalSelesai);
+    } catch (DomainException $e) {
+        json(['error' => $e->getMessage()], 422);
     }
-    $parsedDate = date_create_from_format('Y-m-d', $tanggal);
-    if (!$parsedDate || $parsedDate->format('Y-m-d') !== $tanggal) {
-        json(['error' => 'tanggal tidak valid'], 422);
-    }
-    if ($kuota === false || $kuota < 0 || $kuota > 2147483647) {
+    if ($action === 'save' && ($kuota === false || $kuota < 0 || $kuota > 2147483647)) {
         json(['error' => 'kuota harus angka 0 sampai 2147483647'], 422);
     }
     // Pastikan produk yang akan diberi kuota memang terdaftar.
@@ -68,16 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Serialisasi penulisan kuota agar tidak berbenturan dengan proses checkout.
     q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
 
-    // UPSERT membuat konfigurasi baru atau mengubah kuota untuk produk dan tanggal yang sama.
-    q(
-        'INSERT INTO kuota_harian (produk_id, tanggal, kuota)
-            VALUES (?, ?, ?)
-            ON CONFLICT (produk_id, tanggal) DO UPDATE
-            SET kuota = EXCLUDED.kuota',
-        [$produkId, $tanggal, $kuota]
-    );
+    $affected = daily_quota_write_range($produkId, $tanggal, $tanggalSelesai, $action === 'reset' ? null : $kuota);
     db()->commit();
-    json(['ok' => true]);
+    json(['ok' => true, 'jumlah_tanggal' => $affected]);
 }
 
 $produkId = $_GET['produk_id'] ?? null;
