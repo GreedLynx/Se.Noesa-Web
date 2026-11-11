@@ -66,21 +66,38 @@ let catalog = [], productCache = {
 function catalogPage() {
     wireLogout();
     const search = $('#catalog-search'),
-        filters = $$('#category-tabs button, .customer-category-rail [data-category]');
+        filters = $$('.customer-category-rail [data-category]'),
+        categoryToggle = $('[data-category-toggle]'),
+        rail = $('.customer-rail');
+    const setCategoryRail = open => {
+        rail.classList.toggle('is-open', open);
+        categoryToggle.setAttribute('aria-expanded', open);
+        categoryToggle.setAttribute('aria-label', open ? 'Tutup kategori' : 'Buka kategori');
+    };
+    if (categoryToggle) categoryToggle.onclick = () => setCategoryRail(!rail.classList.contains('is-open'));
+    const syncFilters = () => filters.forEach(x => {
+        const active = x.dataset.category === category;
+        x.classList.toggle('active', active);
+        x.setAttribute('aria-pressed', active);
+    });
 
-    filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+    syncFilters();
     filters.forEach(b => b.onclick = () => {
-        if (category === b.dataset.category) return;
+        if (category === b.dataset.category) {
+            if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
+            return;
+        }
 
         category = b.dataset.category;
-        filters.forEach(x => x.classList.toggle('active', x.dataset.category === category));
+        syncFilters();
+        if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
-        loadCatalog(true);
+        refreshCatalog(true);
     });
 
     search.oninput = () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => loadCatalog(true), 200)
+        searchTimer = setTimeout(() => refreshCatalog(true), 200)
     };
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
@@ -101,9 +118,10 @@ function catalogPage() {
     $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
-    $('#catalog-delivery-date').onchange = () => loadCatalog().catch(e => toast(e.message));
+    $('#catalog-delivery-date').onchange = () => refreshCatalog();
     $('#checkout-form').elements.tgl_kirim.onchange = async e => {
         $('#catalog-delivery-date').value = e.target.value;
+        $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
         try {
             await loadCatalog();
             $('#schedule-note').textContent = 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.'
@@ -112,7 +130,16 @@ function catalogPage() {
         }
     };
 
-    loadCatalog();
+    refreshCatalog();
+}
+async function refreshCatalog(animate = false) {
+    try {
+        await loadCatalog(animate);
+    } catch (err) {
+        const grid = $('#menu-grid');
+        grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
+        $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
+    }
 }
 async function loadCatalog(animate = false) {
     const grid = $('#menu-grid');
@@ -137,9 +164,6 @@ async function loadCatalog(animate = false) {
             || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
     );
     schedule = d.schedule;
-    const note = $('#catalog-note');
-    note.textContent = 'Pengiriman ' + d.tanggal + ' · Sisa kapasitas dapur ' + Number(d.kitchenRemaining) + ' porsi.';
-    note.classList.remove('closed');
     grid.innerHTML = catalog.length ? catalog.map((p, i) => '<article class="menu-card" data-product="' + Number(p.id)
         + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
         + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
@@ -172,7 +196,7 @@ function showProduct(product) {
     activeQty = Math.min(maximum, Math.max(1, minimum));
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
-        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Description</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
+        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
         + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span><span>Sisa Porsi<b>'
         + maximum + '/' + Number(product.kuota) + '</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
@@ -341,11 +365,18 @@ async function submitOrder(e) {
     }
 }
 const statusLabels = {
-    menunggu_pembayaran: 'Menunggu pembayaran', menunggu_validasi: 'Menunggu verifikasi', diproses: 'Diproses',
-    selesai: 'Selesai', ditolak: 'Ditolak'
+    menunggu_pembayaran: 'Menunggu pembayaran', 
+    menunggu_validasi: 'Menunggu verifikasi', 
+    diproses: 'Diproses',
+    selesai: 'Selesai', 
+    ditolak: 'Ditolak',
+    dibatalkan: 'Dibatalkan'
 };
 function statusProgress(status) {
     const steps = ['Pesanan', 'Pembayaran', 'Verifikasi', 'Diproses', 'Selesai'];
+    if (status === 'dibatalkan' || status === 'ditolak') {
+        return '<div class="detail-status-line"><span class="detail-step" style="color:var(--red); font-weight:700;">Pesanan ' + statusLabels[status] + '</span></div>';
+    }
     const complete = status === 'selesai' ? 5: status === 'diproses' ? 4: status === 'menunggu_validasi' ? 3: 1;
     return '<div class="detail-status-line">' + steps.map((s, i) => '<span class="detail-step ' + (i < complete ? 'done': '')
         + '">' + s + '</span>').join('') + '</div>'
@@ -373,14 +404,14 @@ async function loadHistory() {
     const d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
-        return '<article class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
+        return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
             + esc(o.kode) + '</b><p class="history-date">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + dateLabel(o.tgl_kirim)
             + '</p><p class="history-date">' + (o.status_updated_at ? 'Status sejak ' + dateLabel(o.status_updated_at, true)
                 : 'Waktu perubahan status belum tercatat') + '</p></div><span class="status-label ' + esc(o.status) + '">'
             + esc(statusLabels[o.status] || o.status) + '</span></div><div class="history-products">' + (first.gambar ? '<img src="'
             + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
-            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></article>'
+            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
     }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
@@ -412,19 +443,98 @@ async function openHistoryDetail(id) {
         + esc(d.nama_pembayar || d.nama_pemesan || '') + '" placeholder="Nama yang membayar" required><label for="proof-file">'
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
-        + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error"></p></form>': '';
+        + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
     const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
         + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
         + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
+
+    const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
+
+    // --- LOGIKA PEMBATALAN (H-2) YANG SUDAH DIPERBAIKI ---
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const delivery = new Date(d.tgl_kirim);
+    delivery.setHours(0,0,0,0);
+    
+    const daysUntilDelivery = Math.round((delivery - today) / (1000 * 60 * 60 * 24));
+    
+    // Tanggal batas akhir pembatalan adalah H-2 dari tanggal kirim
+    const cancelLimitDate = new Date(delivery);
+    cancelLimitDate.setDate(cancelLimitDate.getDate() - 2);
+    
+    // Sisa hari untuk membatalkan dihitung dari hari ini sampai tanggal batas akhir (H-2)
+    const daysLeftToCancel = Math.round((cancelLimitDate - today) / (1000 * 60 * 60 * 24));
+    
+    const cancelLimitLabel = cancelLimitDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status);
+    let cancelSection = '';
+
+    if (isStatusCancellable) {
+        if (daysUntilDelivery >= 2) {
+            // Jika masih H-2 atau lebih
+            cancelSection = `
+                <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
+                    <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
+                    <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
+                        <b>Syarat Pembatalan:</b><br>
+                        Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
+                        Batas akhir pembatalan: <b>${cancelLimitLabel}</b>.<br>
+                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.
+                    </div>
+                </div>
+            `;
+        } else {
+            // Jika sudah melewati batas H-2
+            cancelSection = `
+                <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line);">
+                    <div style="background:#fdf2f2; border:1px solid #f5c6c6; padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--red); text-align:center;">
+                        <b>Batas Waktu Pembatalan Terlewati</b><br>
+                        Pesanan tidak dapat dibatalkan karena sudah melewati batas maksimal H-2 (${cancelLimitLabel}) sebelum tanggal pengiriman.
+                    </div>
+                </div>
+            `;
+        }
+    }
+    // ----------------------------------------------------
+
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
         + '</p>' + statusProgress(d.status) + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
-        + money(d.total) + '</b></div>' + proofSection + '</div>';
+        + money(d.total) + '</b></div>' 
+        + proofSection 
+        + deliveryPhotoSection 
+        + cancelSection 
+        + '</div>';
+        
     $('#history-dialog').showModal();
+    
+    // --- EVENT LISTENER UNTUK TOMBOL BATAL ---
+    const cancelBtn = $('#cancel-order-btn');
+    if (cancelBtn) {
+        cancelBtn.onclick = async () => {
+            if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dikembalikan.')) return;
+            
+            cancelBtn.disabled = true;
+            cancelBtn.textContent = 'Membatalkan...';
+            try {
+                await api('api/orders.php', { method: 'POST', body: { action: 'cancel_order', id: d.id } });
+                toast('Pesanan berhasil dibatalkan');
+                await openHistoryDetail(id); // Refresh detail
+                loadHistory(); // Refresh list
+            } catch (err) {
+                toast(err.message);
+                cancelBtn.disabled = false;
+                cancelBtn.textContent = 'Batalkan Pesanan';
+            }
+        };
+    }
+    // -----------------------------------------
+
     const form = $('#proof-form');
     const replaceButton = $('#replace-proof');
     if (replaceButton) replaceButton.onclick = () => {
@@ -437,9 +547,7 @@ async function openHistoryDetail(id) {
         button.disabled = true;
         try {
             const body = new FormData(form);
-            await api('api/orders.php', {
-                method: 'POST', body
-            });
+            await api('api/orders.php', { method: 'POST', body });
             toast('Bukti pembayaran berhasil dikirim');
             await openHistoryDetail(id);
             loadHistory()

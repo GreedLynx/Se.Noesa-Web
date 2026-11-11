@@ -1073,6 +1073,7 @@ svg {
   body[data-page="products"] .top,
   body[data-page="products"] .search,
   body[data-page="products"] .chips,
+  body[data-page="products"] #quota-summary,
   body[data-page="products"] #plist { grid-column: 1 / -1; margin: 0; }
   body[data-page="products"] #plist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
   body[data-page="detail"] .app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: start; gap: 18px; }
