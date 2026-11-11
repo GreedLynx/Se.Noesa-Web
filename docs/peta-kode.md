@@ -29,7 +29,8 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Katalog pelanggan | `public/pelanggan/api/catalog.php` |
 | Penyimpanan dan daftar produk admin | `public/admin/api/products.php` |
 | Penolakan dan validasi pembayaran | `public/admin/api/orders.php` |
-| Pengaturan kuota per tanggal lama | `public/admin/api/kuota-harian.php` |
+| Save/reset override tanggal dan rentang inklusif | `public/admin/api/kuota-harian.php` |
+| Form default produk dan override rentang | `public/admin/products.php`, `public/admin/assets/admin.js` |
 | Koneksi PDO, prepared statement, session, role | `app/bootstrap.php` |
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
 | Autentikasi bersama dan validasi field registrasi | `public/api/auth.php` |
@@ -43,10 +44,14 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Kapasitas dan produk kritis admin | `public/admin/api/dashboard.php` |
 | Produk owner, baca kuota tanpa aksi tulis | `public/owner/api/products.php` |
 | Pengujian PostgreSQL dengan tabel sementara | `scripts/test-daily-quota.php` |
+| Uji endpoint default/rentang Admin dan penolakan role dengan tabel TEMP | `scripts/test-quota-api.php` |
 | VIEW ringkasan per tanggal | `database/migrations/011_daily_quota_report.sql` |
+| Default dari override terbaru, CHECK default, dan VIEW efektif | `database/migrations/015_default_product_quota.sql` |
 | Uji filter tanggal dan keranjang JavaScript | `scripts/test-quota-ui.cjs` |
 | Filter tanggal Admin dan Owner | `public/admin/partials/layout.php`, `public/owner/partials/layout.php` |
 
-Kuota mengikuti tanggal kirim Asia/Jakarta. Produk aktif memiliki konfigurasi `kuota_harian.kuota > 0` pada tanggal itu.
+Kuota mengikuti tanggal kirim Asia/Jakarta. Kuota efektif memakai override
+`kuota_harian.kuota` bila ada, selain itu default `produk.kuota_harian`. Override 0
+menonaktifkan produk. Save rentang menimpa overlap; reset kembali ke default.
 Helper bersama menjaga kesesuaian checkout, katalog, daftar produk admin, dan
 ringkasan kapasitas admin. Penolakan memulihkan ketersediaan melalui agregasi status.

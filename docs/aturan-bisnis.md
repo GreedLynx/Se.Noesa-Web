@@ -1,31 +1,33 @@
-# Aturan Bisnis: Kuota Harian
+# Aturan Bisnis: Kuota Produk
 
-## Plan 1 — aturan aktif
+## Aturan aktif: default dan override
 
-Kuota adalah konfigurasi `kuota_harian(produk_id,tanggal,kuota)`. Tidak ada fallback
-ke master produk. Produk tanpa konfigurasi positif pada tanggal kirim tidak tersedia.
-Batas dapur `floor(total kuota konfigurasi tanggal × 80%)`; pemakaian berasal dari
-detail pesanan non-`ditolak` pada tanggal kirim Asia/Jakarta. Konfigurasi tidak dikurangi.
-Penghapusan/penurunan konfigurasi tidak membatalkan pesanan lama; pemakaian tetap
-dihitung, sisa minimal 0, checkout tambahan ditolak jika melewati kapasitas.
-Minimal pesan 4 porsi dan kirim H+7 tetap berlaku. Owner hanya membaca.
+- Admin menetapkan kuota default per hari pengiriman saat membuat/mengedit produk,
+  disimpan pada `produk.kuota_harian`.
+- Kuota efektif memakai override `kuota_harian.kuota` bila barisnya ada, selain itu
+  memakai default produk. Override 0 tetap berlaku dan tidak menjadi fallback.
+- Rentang inklusif: tanggal mulai dan selesai termasuk, maksimal 366 tanggal per
+  permintaan. Save terbaru menimpa tanggal overlap; tanggal lainnya tidak berubah.
+- Kembali ke default menghapus override pilihan, tanpa memulihkan override lama.
+- Default 0 membuat produk tidak tersedia kecuali ada override positif. Override
+  0 membuat produk tidak tersedia pada tanggal tersebut.
+- Kuota adalah kapasitas total, tidak dikurangi saat checkout.
 
-Bagian berikut adalah catatan implementasi sebelum Plan 1.
+## Pemesanan dan pemakaian
 
-Keputusan revisi: kuota mengikuti tanggal pengiriman dalam zona Asia/Jakarta,
-dan produk aktif memiliki `produk.kuota_harian > 0`.
+- Satuan pesanan porsi; minimal 4 porsi per varian atau nilai min_pesan lebih tinggi.
+- Tanggal kirim minimal H+7 dalam Asia/Jakarta.
+- Pemakaian adalah jumlah detail pesanan pada tanggal kirim, semua status selain
+  `ditolak`, termasuk belum dibayar dan selesai.
+- Sisa produk `max(0, kuota efektif - pemakaian)`.
+- Batas dapur `floor(jumlah kuota efektif seluruh produk × 80%)`; sisa dapur minimal 0.
+- Penurunan default/override atau kuota 0 tidak membatalkan pesanan lama. Pemakaian
+  tetap dihitung dan checkout baru ditolak jika sisa produk/dapur tidak mencukupi.
+- Penolakan pesanan memulihkan sisa melalui agregasi, tanpa update counter.
+- Owner read-only; hanya Admin menulis default dan override.
 
-- Minimal pesan 4 porsi per varian; nilai `min_pesan` yang lebih tinggi tetap berlaku.
-- Tanggal kirim minimal 7 hari dari tanggal pemesanan.
-- Pemakaian produk adalah total porsi detail pesanan pada tanggal kirim yang dipilih,
-  untuk seluruh status selain `ditolak`.
-- Sisa produk adalah kuota master dikurangi pemakaian, minimal 0.
-- Batas dapur adalah `floor(jumlah kuota master produk aktif × 0.8)`.
-- Pesanan produk yang kemudian dinonaktifkan tetap dihitung dalam pemakaian dapur.
-- Checkout tidak boleh melampaui sisa produk maupun batas dapur.
-- Status `ditolak` memulihkan ketersediaan tanpa perubahan counter stok.
-- Owner tetap read-only; pembayaran dan checklist dispatch memakai alur yang sudah ada.
+## Cakupan
 
-Aturan 80% menggantikan batas kapasitas per jadwal pada checkout. Jadwal tetap
-dipakai sebagai referensi pesanan; pemilihan jadwal aktif dan pembuatan jadwal
-default yang sudah ada dipertahankan. Tidak ada batas maksimal tanggal pengiriman.
+`jadwal_po` tetap sebagai referensi pesanan dan tidak diubah dalam revisi ini.
+Penutupan tanggal pengiriman global dirancang terpisah. Status pesanan, pembayaran,
+dispatch, dan batas maksimal tanggal kirim tidak berubah.

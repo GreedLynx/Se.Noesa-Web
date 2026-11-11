@@ -2,7 +2,7 @@
 // Dipakai setelah bootstrap.php. Seluruh pemakaian dihitung dari transaksi.
 function daily_quota_snapshot($date, bool $report = false): array
 {
-    if (!is_string($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) {
+    if (!is_string($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date) || substr($date, 0, 4) === '0000') {
         throw new DomainException('Tanggal kuota tidak valid. Gunakan YYYY-MM-DD.');
     }
 
@@ -12,13 +12,13 @@ function daily_quota_snapshot($date, bool $report = false): array
         throw new DomainException('Tanggal kuota tidak valid. Gunakan YYYY-MM-DD.');
     }
 
-    $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, GREATEST(4, pr.min_pesan) AS min_pesan';
+    $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, GREATEST(4, pr.min_pesan) AS min_pesan, pr.kuota_harian AS kuota_default';
     if ($report) {
         // LEFT JOIN menjaga semua produk tetap tampil, termasuk yang belum memiliki konfigurasi kuota.
         $items = q(
-            "SELECT $fields, COALESCE(v.kuota, 0) AS kuota_harian,
-                COALESCE(v.kuota, 0) AS kuota, COALESCE(v.terpakai, 0) AS terpakai,
-                COALESCE(v.sisa, 0) AS sisa
+            "SELECT $fields, COALESCE(v.kuota, pr.kuota_harian) AS kuota_harian,
+                COALESCE(v.kuota, pr.kuota_harian) AS kuota, COALESCE(v.terpakai, 0) AS terpakai,
+                GREATEST(0, COALESCE(v.kuota, pr.kuota_harian) - COALESCE(v.terpakai, 0)) AS sisa
             FROM produk pr
             LEFT JOIN v_kuota_harian v ON v.produk_id = pr.id AND v.tanggal = ?
             ORDER BY pr.id",
@@ -27,9 +27,9 @@ function daily_quota_snapshot($date, bool $report = false): array
     } else {
         // LEFT JOIN mengambil kuota dan subquery SUM menghitung pemakaian per produk dari pesanan yang belum ditolak.
         $items = q(
-            "SELECT $fields, COALESCE(k.kuota, 0) AS kuota_harian,
-                COALESCE(k.kuota, 0) AS kuota, COALESCE(used.qty, 0) AS terpakai,
-                GREATEST(0, COALESCE(k.kuota, 0) - COALESCE(used.qty, 0)) AS sisa
+            "SELECT $fields, COALESCE(k.kuota, pr.kuota_harian) AS kuota_harian,
+                COALESCE(k.kuota, pr.kuota_harian) AS kuota, COALESCE(used.qty, 0) AS terpakai,
+                GREATEST(0, COALESCE(k.kuota, pr.kuota_harian) - COALESCE(used.qty, 0)) AS sisa
             FROM produk pr
             LEFT JOIN kuota_harian k ON k.produk_id = pr.id AND k.tanggal = ?
             LEFT JOIN (
@@ -87,4 +87,35 @@ function daily_quota_validate(array $snapshot, array $quantities): array
     }
 
     return $lines;
+}
+
+function daily_quota_range($startDate, $endDate): array
+{
+    $dates = [];
+    foreach ([$startDate, $endDate] as $date) {
+        if (!is_string($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date) || substr($date, 0, 4) === '0000') {
+            throw new DomainException('Tanggal harus berformat YYYY-MM-DD.');
+        }
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date, new DateTimeZone('Asia/Jakarta'));
+        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+            throw new DomainException('Tanggal tidak valid.');
+        }
+        $dates[] = $parsed;
+    }
+    if ($dates[1] < $dates[0] || $dates[0]->diff($dates[1])->days > 365) {
+        throw new DomainException('Rentang harus berurutan dan maksimal 366 tanggal inklusif.');
+    }
+    return [$startDate, $endDate];
+}
+
+// Pemanggil memegang transaksi dan lock kuota sampai seluruh rentang tersimpan.
+function daily_quota_write_range(int $productId, string $start, string $end, ?int $quota): int
+{
+    if ($quota === null) {
+        return q('DELETE FROM kuota_harian WHERE produk_id = ? AND tanggal BETWEEN ? AND ?', [$productId, $start, $end])->rowCount();
+    }
+    return q("INSERT INTO kuota_harian (produk_id, tanggal, kuota)
+        SELECT ?, day::date, ? FROM generate_series(?::timestamp, ?::timestamp, interval '1 day') day
+        ON CONFLICT (produk_id, tanggal) DO UPDATE SET kuota = EXCLUDED.kuota",
+        [$productId, $quota, $start, $end])->rowCount();
 }

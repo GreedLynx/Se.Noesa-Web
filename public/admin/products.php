@@ -11,7 +11,7 @@ admin_head('Produk & Kuota', 'products');
             Produk &amp; Kuota
         </h2>
         <p class="muted">
-            Atur harga, kategori, stok, dan gambar. Produk dengan stok tersedia otomatis tampil di katalog
+            Atur harga, kategori, kuota, dan gambar. Produk dengan kuota tersedia otomatis tampil di katalog
             pelanggan.
         </p>
     </div>
@@ -118,6 +118,11 @@ admin_head('Produk & Kuota', 'products');
                 <input name="min_pesan" type="number" min="4" value="4"
                     required>
             </label>
+            <label>
+                Kuota default per hari (porsi)
+                <input name="kuota_default" type="number" min="0" max="2147483647" value="0" required>
+                <small>Dipakai pada tanggal tanpa kuota khusus. Nilai 0 berarti tidak tersedia.</small>
+            </label>
         </div>
         <label class="image-upload-label" style="text-align:center;display:block;max-width:480px;margin:0 auto;">
             Upload
@@ -130,21 +135,27 @@ admin_head('Produk & Kuota', 'products');
         </label>
         <div id="kuota-harian-section" class="form-section" hidden>
             <h3>
-                Kuota Harian
+                Kuota khusus tanggal pengiriman
             </h3>
             <div class="form-row">
                 <label>
-                    Tanggal
+                    Tanggal mulai
                     <input type="date" id="kuota-tanggal">
                 </label>
                 <label>
+                    Tanggal selesai
+                    <input type="date" id="kuota-tanggal-selesai">
+                </label>
+                <label>
                     Kuota (porsi)
-                    <input type="number" id="kuota-nilai" min="0">
+                    <input type="number" id="kuota-nilai" min="0" max="2147483647">
                 </label>
                 <button type="button" id="kuota-add" class="button small secondary">
-                    Simpan kuota tanggal
+                    Simpan rentang
                 </button>
+                <button type="button" id="kuota-reset" class="button small secondary">Kembali ke default</button>
             </div>
+            <p class="muted">Tanggal awal dan akhir termasuk. Maksimal 366 hari; nilai baru menimpa tanggal yang bertumpuk. Kuota 0 menutup produk pada rentang ini. Kembali ke default menghapus kuota khusus rentang pilihan.</p>
             <table class="kuota-table">
                 <thead>
                     <tr>
