@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         try {
+            // DELETE menghapus produk berdasarkan ID; foreign key menolak penghapusan jika sudah dipakai.
             $affectedRows = q('DELETE
                 FROM produk
                 WHERE id = ?', [(int) ($request['id'] ?? 0)])->rowCount();
@@ -59,11 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $harga = filter_var($request['harga'], FILTER_VALIDATE_INT);
     $minimum = filter_var($request['min_pesan'], FILTER_VALIDATE_INT);
+    $defaultQuota = filter_var($request['kuota_default'] ?? $request['kuota_harian'] ?? 50, FILTER_VALIDATE_INT);
+    if ($defaultQuota === false || $defaultQuota < 0 || $defaultQuota > 2147483647) {
+        json(['error' => 'Kuota default harus angka 0 sampai 2147483647'], 422);
+    }
     if ($harga === false || $harga < 1 || $minimum === false || $minimum < 4) {
         json(['error' => 'Harga dan kuota tidak valid'], 422);
     }
 
     $id = (int) ($request['id'] ?? 0);
+    // SELECT mengambil gambar lama agar tetap dipakai ketika produk diedit tanpa upload baru.
     $oldImage = $id ? q('SELECT gambar
         FROM produk
         WHERE id = ?', [$id])->fetchColumn() : false;
@@ -117,14 +123,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         if ($id) {
+            // UPDATE menyimpan perubahan pada produk yang sudah ada.
             q('UPDATE produk
-                SET kode = ?, nama = ?, kategori = ?, harga = ?, min_pesan = ?, gambar = ?
-                WHERE id = ?', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $id]);
+                SET kode = ?, nama = ?, kategori = ?, harga = ?, min_pesan = ?, gambar = ?, kuota_harian = ?
+                WHERE id = ?', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $defaultQuota, $id]);
             $savedId = $id;
         } else {
-            $savedId = (int) q('INSERT INTO produk (kode, nama, kategori, harga, min_pesan, gambar)
-                VALUES (?, ?, ?, ?, ?, ?)
-                RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image])->fetchColumn();
+            // INSERT produk baru dan RETURNING mengambil ID hasil insert.
+            $savedId = (int) q('INSERT INTO produk (kode, nama, kategori, harga, min_pesan, gambar, kuota_harian)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $defaultQuota])->fetchColumn();
         }
     } catch (PDOException $e) {
         json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);

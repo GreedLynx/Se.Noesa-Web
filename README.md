@@ -56,6 +56,16 @@ git push origin feature/nama-fitur
 
 ## Struktur Aplikasi
 
+Pemilih tanggal katalog pelanggan dan filter kuota Admin/Owner memakai JavaScript
+lokal `public/assets/js/date-picker.js` dan CSS `public/assets/css/date-picker.css`,
+tanpa library baru. Kalender mendukung keyboard, tanggal berbahasa Indonesia,
+dan batas input yang sudah ada. Bootstrap belum dimuat pada branch ini; pemuatan
+Bootstrap tetap menunggu keputusan tim.
+
+Uji kalender: `node scripts/test-date-picker.cjs`. Untuk uji DOM dengan CSS ketiga
+role, tambahkan path executable Chrome/Edge sebagai argumen, misalnya
+`node scripts/test-date-picker.cjs "C:/Program Files/Google/Chrome/Application/chrome.exe"`.
+
 Aplikasi menggunakan PHP native dan PostgreSQL, dengan area terpisah untuk owner, admin, dan pelanggan. Antarmuka menggunakan HTML, CSS, dan JavaScript.
 
 ```text
@@ -87,16 +97,32 @@ public/
 
 4. Jalankan server pengembangan dari direktori proyek: `php -S localhost:8000 -t public`.
 5. Buka `http://localhost:8000/`. Registrasi publik selalu membuat akun dengan peran `pelanggan`.
+6. Untuk membatalkan pesanan yang belum dibayar tepat waktu, jadwalkan
+   `php scripts/expire-unpaid-orders.php` setiap menit. Di Windows gunakan Task
+   Scheduler dengan program `php.exe`, argumen lengkap `scripts/expire-unpaid-orders.php`,
+   direktori kerja folder proyek, dan trigger berulang setiap 1 menit. Di Linux,
+   cron contohnya `* * * * * cd /path/to/Se.Noesa-Web && php scripts/expire-unpaid-orders.php`.
 
 ## Alur Fitur Utama
 
 Admin mengelola katalog produk, jadwal PO, dan validasi pembayaran. Pelanggan dapat melihat katalog, memasukkan produk ke keranjang, melakukan checkout, mengunggah bukti pembayaran, dan melihat riwayat pesanan. Owner hanya dapat melihat data dan laporan.
+Admin juga dapat mencatat pesanan offline dari halaman daftar pesanan. Pesanan
+tersebut langsung masuk status diproses dan mengurangi kuota pada tanggal kirim.
+Saat menolak pembayaran, Admin wajib mengisi alasan yang terlihat oleh pelanggan
+di riwayat dan detail pesanan.
 
 Pesanan menyimpan snapshot harga setiap produk. Bukti pembayaran yang didukung adalah JPG, PNG, atau WebP dengan ukuran maksimal 2 MB.
+Pesanan yang belum mengirim bukti pembayaran dibatalkan satu jam setelah dibuat.
+Pembatalan otomatis berjalan melalui scheduler dan juga diperiksa saat pelanggan
+membuka katalog atau riwayat; pesanan yang dibatalkan tidak lagi memakai kuota.
 
 ## Kuota Pengiriman
 
 Admin mengatur kuota produk untuk setiap tanggal pengiriman. Pelanggan hanya dapat memesan produk yang masih memiliki sisa kuota pada tanggal yang dipilih. Sistem juga membatasi total pesanan hingga 80% dari akumulasi kuota produk pada tanggal tersebut.
 
 Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/api.md`.
+
+## Lupa Password
+
+Halaman login menyediakan alur reset password menggunakan OTP enam digit yang dikirim ke email terdaftar. OTP berlaku 10 menit, maksimal lima kali percobaan, dan permintaan ulang dibatasi satu kali per akun setiap 60 detik. Untuk mengaktifkannya, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, dan `SMTP_FROM_EMAIL` pada `.env`. Gmail memerlukan Verifikasi 2 Langkah dan App Password; jangan gunakan atau bagikan password login Gmail. Jalankan `composer install` dan `php scripts/migrate.php` pada database yang sudah ada. Migrasi reset password berada di `012_password_resets.sql` dan `013_password_reset_otps.sql` setelah migrasi kuota.
 Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.

@@ -238,6 +238,71 @@ svg {
   font-weight: 700;
   margin-left: 4px;
 }
+.reset-sheet {
+  padding-right: 32px;
+  padding-left: 32px;
+}
+.reset-sheet .title {
+  font-size: clamp(30px, 8vw, 36px);
+}
+.reset-sheet [hidden] {
+  display: none !important;
+}
+.reset-note,
+.reset-notice,
+.reset-error {
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+.reset-note {
+  margin: 0 0 18px;
+  color: #777;
+}
+.reset-notice {
+  display: none;
+  margin-top: 12px;
+  color: var(--g);
+}
+.reset-notice.on {
+  display: block;
+}
+.reset-notice.error,
+.reset-error {
+  color: #b3261e;
+}
+.reset-error {
+  min-height: 18px;
+  margin: 8px 0;
+}
+.reset-error.on {
+  animation: shake 0.4s;
+}
+.reset-link-button {
+  display: block;
+  text-align: center;
+}
+.reset-secondary-button {
+  margin-top: 10px;
+  background: #edf1eb;
+  color: #43563e;
+}
+.reset-secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+.reset-change-email {
+  display: block;
+  margin: 14px auto 0;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--g);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
 /* top & nav */
 .top {
   display: flex;
@@ -1008,6 +1073,7 @@ svg {
   body[data-page="products"] .top,
   body[data-page="products"] .search,
   body[data-page="products"] .chips,
+  body[data-page="products"] #quota-summary,
   body[data-page="products"] #plist { grid-column: 1 / -1; margin: 0; }
   body[data-page="products"] #plist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
   body[data-page="detail"] .app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: start; gap: 18px; }

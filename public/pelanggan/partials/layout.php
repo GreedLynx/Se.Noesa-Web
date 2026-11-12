@@ -20,6 +20,7 @@ function customer_head(string $title, string $page): array
     <link rel="stylesheet" href="assets/customer.css?v=<?= $css('customer.css') ?>">
     <link rel="stylesheet" href="assets/quantity-input.css?v=<?= $css('quantity-input.css') ?>">
     <link rel="stylesheet" href="assets/catalog-mobile.css?v=<?= $css('catalog-mobile.css') ?>">
+    <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page) ?>">
@@ -46,8 +47,8 @@ function customer_head(string $title, string $page): array
                 </a>
             </nav>
             <?php if ($page === 'catalog'): ?>
-                <nav class="customer-category-rail" aria-label="Kategori menu">
-                    <button type="button" data-category="" aria-label="Semua menu" title="Semua menu">
+                <nav class="customer-category-rail" id="category-rail" aria-label="Kategori menu">
+                    <button type="button" data-category="" aria-label="Semua menu" aria-pressed="true" title="Semua menu">
                         <svg viewBox="0 0 24 24">
                             <rect x="3" y="3" width="7" height="7" rx="1" />
                             <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -55,18 +56,18 @@ function customer_head(string $title, string $page): array
                             <rect x="14" y="14" width="7" height="7" rx="1" />
                         </svg>
                     </button>
-                    <button type="button" data-category="makanan" aria-label="Makanan" title="Makanan">
+                    <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false" title="Makanan">
                         <svg viewBox="0 0 24 24">
                             <path d="M3 4v6M6 4v6M9 4v6M6 10v10M17 4v16M17 4c-3 2-3 7 0 8" />
                             <circle cx="6" cy="8" r="5" />
                         </svg>
                     </button>
-                    <button type="button" data-category="minuman" aria-label="Minuman" title="Minuman">
+                    <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false" title="Minuman">
                         <svg viewBox="0 0 24 24">
                             <path d="M6 8h12l-1.5 12h-9zM9 8l2-6h8M10 12h5" />
                         </svg>
                     </button>
-                    <button type="button" data-category="snack" aria-label="Snack" title="Snack">
+                    <button type="button" data-category="snack" aria-label="Snack" aria-pressed="false" title="Snack">
                         <svg viewBox="0 0 24 24">
                             <path d="m4 15 11-11a3 3 0 0 1 4 4L8 19a3 3 0 0 1-4-4zM7 17l10-10M3 20l2-2" />
                         </svg>
@@ -121,15 +122,15 @@ function customer_foot(): void
                 <span>Keluar</span>
             </button>
         </nav>
-        <dialog id="detail-dialog" class="customer-dialog">
+        <dialog id="detail-dialog" class="customer-dialog" aria-label="Detail menu">
             <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
             <div id="detail-content"></div>
         </dialog>
-        <dialog id="checkout-dialog" class="customer-dialog checkout-dialog">
+        <dialog id="checkout-dialog" class="customer-dialog checkout-dialog" aria-labelledby="checkout-title">
             <button class="dialog-close" data-close-checkout aria-label="Tutup">&times;</button>
             <div class="dialog-heading">
                 <p class="eyebrow">KONFIRMASI</p>
-                <h2>Data pemesanan</h2>
+                <h2 id="checkout-title">Data pemesanan</h2>
                 <p class="muted">Pilih alamat tersimpan atau tambahkan alamat baru.</p>
             </div>
             <form id="checkout-form">
@@ -179,13 +180,15 @@ function customer_foot(): void
                     <small class="field-hint">Maksimal 120 karakter.</small>
                 </label>
                 <p id="schedule-note" class="schedule-note"></p>
-                <p id="checkout-error" class="form-error"></p>
+                <p class="field-hint">Batas maksimal pembayaran: 1 jam sejak pesanan dibuat. Jika belum dibayar, pesanan dibatalkan otomatis dan kuota produk dikembalikan.</p>
+                <p id="checkout-error" class="form-error" role="alert"></p>
                 <button id="submit-order" class="customer-button primary" type="submit">Kirim pesanan</button>
             </form>
         </dialog>
         <div id="customer-toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
+    <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>
 
 </html>

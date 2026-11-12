@@ -1,79 +1,94 @@
 # API
 
-Perapian SQL mempertahankan nama parameter, status HTTP, serta alias field respons
-yang dipakai klien, termasuk alias ringkas laporan Owner. Nama variabel PHP internal
-tidak menjadi bagian kontrak API.
+## Kuota default dan override tanggal
 
-## Plan 1 — kontrak aktif
+Endpoint per role tetap di `public/<role>/api/`. Tanggal memakai YYYY-MM-DD dalam
+Asia/Jakarta. Kalender bersama mengisi input dan memicu input/change; parameter
+filter `tgl_kirim` tidak ditambahkan pada POST.
 
-Katalog dan checkout memakai kuota dari tabel `kuota_harian` pada `tgl_kirim`;
-tidak ada fallback master. Field item `kuota`/`kuota_harian` adalah alias kapasitas
-tanggal itu, `terpakai` dari detail pesanan, `sisa` minimal 0.
+### Produk Admin
 
-- POST produk Admin hanya menyimpan metadata/gambar/minimal pesan, tidak menyimpan kuota.
-- POST `admin/api/kuota-harian.php`: `produk_id,tanggal,kuota` untuk upsert kapasitas total;
-  `action=delete,id` untuk hapus konfigurasi. Nilai 0 menonaktifkan tanggal itu.
-- GET API produk, pesanan, dan dashboard Admin menerima `tgl_kirim` (default hari ini)
-  untuk kuota/kapasitas. Daftar transaksi tetap mengikuti tab/pencarian.
-- GET produk/pesanan Owner menerima `tgl_kirim`, tetap read-only. Produk Owner juga
-  mengembalikan `maxKitchen,kitchenUsed,kitchenRemaining`.
-- GET katalog default H+7. Produk tanpa konfigurasi positif dikecualikan.
-- Laporan Admin/Owner memakai VIEW; checkout memakai prepared query langsung dalam transaksi.
+GET `admin/api/products.php` menerima `tgl_kirim` (default hari ini), kategori, q.
+Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai produk),
+`kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
+(detail pesanan non-ditolak/non-dibatalkan), serta `sisa` minimal 0.
 
-Bagian berikut adalah kontrak sebelum Plan 1; aturan di atas menggantikan perilaku
-kuota master dan pengaturan tanggal yang sebelumnya disembunyikan.
+POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
+integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
+dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
+Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
+gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.
 
-## Revisi kuota stateless
+### Pesanan offline Admin
 
-Kontrak checkout dipertahankan dengan perubahan aturan ketersediaan.
+POST `admin/api/orders.php` menerima `action=create_offline`, identitas
+pemesan/penerima, `telepon`, `alamat`, `tgl_kirim`, `waktu_kirim`, catatan
+opsional, dan `items:[{id,qty}]`. Pesanan dibuat dengan sumber `offline` dan
+status `diproses`; kuota produk serta kapasitas dapur pada tanggal kirim
+diperiksa dan dikunci secara atomik seperti checkout online. Respons sukses
+`{ok,id,kode,total,status}` HTTP 201; kuota tidak cukup HTTP 422. Hanya Admin.
 
-- Checkout yang digunakan aplikasi adalah POST `public/pelanggan/api/orders.php`.
-- Identitas pelanggan berasal dari session melalui `require_role('pelanggan')`.
-- Item menggunakan `items: [{id, qty}]` dan harga diambil dari database.
-- Respons berhasil tetap `{ok, id, kode, total}` dengan HTTP 201.
-- Kesalahan validasi menggunakan `{error}` dengan HTTP 422.
-- Katalog berada di GET `public/pelanggan/api/catalog.php`.
+POST `admin/api/orders.php` dengan `action=reject` wajib menyertakan
+`alasan_penolakan` (1–500 karakter). Nilai disimpan bersama status ditolak dan
+dikirim ke detail/riwayat pesanan milik pelanggan agar alasan penolakan jelas.
 
-Jangan menyalin contoh `checkout.php` dari dokumen revisi secara langsung:
-nama kolomnya berbeda dan contoh tersebut menerima identitas pelanggan dari payload.
-Implementasi mempertahankan pemeriksaan session, kepemilikan
-alamat, snapshot harga, serta validasi tanggal kirim minimal 7 hari.
+### Override Admin
 
-### Katalog pelanggan
+POST `admin/api/kuota-harian.php` menerima:
 
-GET `public/pelanggan/api/catalog.php` menerima `kategori`, `q`, dan `tgl_kirim`
-(`YYYY-MM-DD`, default hari ini + 7 dalam Asia/Jakarta).
-Respons: `{items, schedule, tanggal, maxKitchen, kitchenUsed, kitchenRemaining}`.
-Item memakai `kuota_harian` sebagai master; `kuota` adalah alias untuk kompatibilitas
-frontend, `terpakai` dihitung dari detail pesanan, dan `sisa` dibatasi minimal 0.
-Produk master 0 tidak ditampilkan; produk aktif yang habis tetap terlihat dengan sisa 0.
-Tanggal tidak valid menghasilkan HTTP 422.
+- `action=save` (default), produk_id, tanggal_mulai, tanggal_selesai, kuota:
+  UPSERT seluruh tanggal inklusif secara atomik. Kuota integer 0–2147483647.
+- `action=reset`, produk_id, tanggal_mulai, tanggal_selesai: hapus override
+  rentang sehingga kembali memakai default.
+- Kompatibilitas: `tanggal` tunggal menggantikan tanggal_mulai; tanggal_selesai
+  yang tidak dikirim sama dengan tanggal_mulai.
+- `action=delete,id`: hapus satu override lama berdasarkan ID.
 
-### Checkout pelanggan
+Save/reset mengembalikan `{ok,jumlah_tanggal}`, jumlah baris tersimpan/terhapus.
+Tanggal harus nyata, urut, maksimal 366 tanggal inklusif. Input invalid/aksi tidak
+dikenal HTTP 422; produk tidak ditemukan HTTP 404. Kuota 0 menutup produk pada
+tanggal itu. Save terbaru menimpa tanggal overlap. Reset tidak memulihkan histori.
 
-POST `public/pelanggan/api/orders.php` memakai `tgl_kirim` untuk menentukan kuota.
-Baris produk berulang digabung sebelum validasi; maksimal 500 porsi per produk.
-Minimal pemesanan adalah nilai terbesar antara 4 dan `produk.min_pesan`.
-Sisa produk dan batas dapur 80% diperiksa dalam transaksi yang dikunci.
-Kuota master 0 tidak dianggap tanpa batas. Kesalahan menyebut sisa porsi atau batas 80%.
-Harga tetap berasal dari database dan disimpan sebagai snapshot pada detail.
+GET dengan produk_id mengembalikan `{items}` override per tanggal urut terbaru;
+tambahan tanggal mengembalikan satu baris atau null. Seluruh aksi wajib Admin.
 
-### Produk admin
+### Katalog dan checkout pelanggan
 
-POST `public/admin/api/products.php` menerima `kuota_harian`; field lama `kuota`
-tetap diterima sebagai alias. Nilai yang disimpan adalah master `produk.kuota_harian`.
-Minimal pesan harus >= 4. GET menerima `tgl_kirim` (default hari ini), `kategori`, dan
-`q`; jumlah terpakai/sisa dan kategori kritis dihitung untuk tanggal tersebut.
+GET `pelanggan/api/catalog.php` menerima kategori,q,tgl_kirim (default H+7).
+Respons `{items,schedule,tanggal,maxKitchen,kitchenUsed,kitchenRemaining}`.
+Field kuota item sama dengan produk Admin. Kuota efektif 0 dikecualikan; produk
+berkuota positif yang habis tetap ditampilkan dengan sisa 0. Tanggal invalid HTTP 422.
 
-### Penolakan dan ringkasan admin
+POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
+dan `items:[{id,qty}]`. Produk berulang digabung; maksimal 500 porsi per produk dan
+minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
+harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
+Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
+Penurunan kuota mempertahankan pesanan lama dan membatasi checkout baru.
+Pesanan berstatus `menunggu_pembayaran` dibatalkan otomatis satu jam sejak
+`created_at` bila bukti belum dikirim. Jalankan `php scripts/expire-unpaid-orders.php`
+melalui scheduler setiap menit; API katalog
+dan pesanan pelanggan juga menjalankan pembersihan untuk menjaga status tetap
+mutakhir saat ada aktivitas. Status `dibatalkan` tidak memakai kuota.
 
-POST `public/admin/api/orders.php` dengan `action=reject` tetap mengubah
-`menunggu_validasi` menjadi `ditolak`. Kuota langsung tersedia pada agregasi berikutnya,
-tanpa mengurangi counter produk. GET daftar menerima `tgl_kirim` untuk ringkasan
-kapasitas (default hari ini); filter daftar pesanan tetap mengikuti `tab` dan `q`.
-Dashboard admin memakai kuota dan pemakaian tanggal kirim hari ini.
+### Laporan Admin dan Owner
 
-Endpoint kuota per tanggal lama dipertahankan untuk kompatibilitas data, tetapi
-pengaturannya tidak menentukan checkout; bagian pengaturan lama disembunyikan
-dari editor produk admin. GET `public/owner/api/products.php` juga memakai snapshot
-kuota tanggal kirim (`tgl_kirim`, default hari ini) dan tetap read-only.
+GET produk/pesanan/dashboard Admin dan produk/pesanan Owner menerima tgl_kirim
+(default hari ini) untuk ringkasan, tanpa mengubah filter daftar transaksi.
+Kategori kritis memakai kuota efektif. Produk Owner mengembalikan juga
+maxKitchen,kitchenUsed,kitchenRemaining. Owner tetap GET-only/read-only.
+Laporan memakai VIEW; checkout memakai prepared query langsung dengan hasil setara.
+
+Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
+pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,
+dispatch, dan alias respons laporan Owner tetap.
+
+### Foto kiriman
+
+Admin mengunggah foto saat pesanan berstatus `diproses` melalui POST
+`admin/api/orders.php` dengan `action=upload_dispatch`, `id`, dan satu atau
+beberapa file `foto_kiriman[]`. Format JPG, PNG, atau WebP didukung, maksimal
+2 MB per foto. GET detail Admin dan pelanggan mengembalikan
+`foto_kiriman_list`; foto lama di `pesanan.foto_kiriman` tetap disertakan.
+Foto tetap tersedia di Admin dan detail riwayat pelanggan setelah status
+berubah menjadi `selesai`. Migrasi database yang sudah ada: `016_multiple_dispatch_photos.sql`.

@@ -10,7 +10,7 @@ const esc = (s) =>
             ],
     );
 async function api(url, options = {}) {
-    if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url))
+    if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url) && !/[?&]tgl_kirim=/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
     const response = await fetch(url, {
         cache: "no-store",
@@ -27,6 +27,40 @@ async function api(url, options = {}) {
     }
     if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
     return data;
+}
+async function uploadDispatchPhoto(id, photo) {
+    const form = new FormData();
+    form.append("action", "upload_dispatch");
+    form.append("id", String(id));
+    form.append("foto_kiriman[]", photo);
+    const response = await fetch("api/orders.php", {
+        method: "POST",
+        body: form,
+        cache: "no-store",
+    });
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        const jsonStart = text.lastIndexOf("{");
+        if (jsonStart >= 0) {
+            try {
+                data = JSON.parse(text.slice(jsonStart));
+            } catch {
+                data = null;
+            }
+        }
+        if (!data) {
+            const uploadLimit = /post content-length|post_max_size/i.test(text);
+            throw Error(
+                uploadLimit
+                    ? "Ukuran total upload melewati batas server. Pilih foto maksimal 2 MB per file."
+                    : "Server mengirim respons yang tidak valid saat menyimpan foto. Coba lagi.",
+            );
+        }
+    }
+    if (!response.ok) throw Error(data.error || "Foto kiriman gagal disimpan");
 }
 function toast(message) {
     const el = $("#toast");
@@ -314,7 +348,9 @@ async function dashboard() {
                         Number(o.id) +
                         '"><span><b>' +
                         esc(o.kode) +
-                        "</b><small>" +
+                        "</b>" +
+                        (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
+                        "<small>" +
                         esc(o.nama_pemesan) +
                         " · " +
                         dateLabel(o.created_at, true) +
@@ -329,6 +365,7 @@ async function dashboard() {
 }
 let orderTab = "semua",
     orderTimer;
+let offlineProducts = [];
 async function loadOrders() {
     const query = encodeURIComponent($("#order-search")?.value || "");
     const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query);
@@ -348,7 +385,9 @@ async function loadOrders() {
             (o) =>
                 "<tr><td><b>" +
                 esc(o.kode) +
-                "</b><small>" +
+                "</b>" +
+                (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
+                "<small>" +
                 (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
                 "</small></td><td><b>" +
                 esc(o.nama_pemesan) +
@@ -377,6 +416,7 @@ async function loadOrders() {
                     '"><span class="row-between"><b>' +
                     esc(o.kode) +
                     "</b>" +
+                    (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                     badge(o.status) +
                     "</span><b>" +
                     esc(o.nama_pemesan) +
@@ -406,6 +446,95 @@ function ordersPage() {
     $("#order-search").oninput = () => {
         clearTimeout(orderTimer);
         orderTimer = setTimeout(loadOrders, 220);
+    };
+    const dialog = $("#offline-order-dialog");
+    const form = $("#offline-order-form");
+    const productList = $("#offline-menu-list");
+    const deliveryDate = $("#offline-delivery-date");
+    const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date()).reduce((value, part) => {
+        if (part.type === "year") value.year = part.value;
+        if (part.type === "month") value.month = part.value;
+        if (part.type === "day") value.day = part.value;
+        return value;
+    }, {});
+    const todayValue = today.year + "-" + today.month + "-" + today.day;
+    const updateOfflineTotal = () => {
+        let total = 0;
+        $$("[data-offline-qty]", productList).forEach((input) => {
+            const quantity = Number(input.value) || 0;
+            total += quantity * Number(input.dataset.price);
+        });
+        $("#offline-order-total").textContent = money(total);
+    };
+    const loadOfflineProducts = async () => {
+        productList.textContent = "Memuat menu dan kuota...";
+        $("#offline-menu-capacity").textContent = "";
+        try {
+            const data = await api("api/products.php?tgl_kirim=" + encodeURIComponent(deliveryDate.value));
+            offlineProducts = data.items;
+            const kitchenMaximum = Math.floor(
+                offlineProducts.reduce((sum, product) => sum + Number(product.kuota), 0) * 0.8,
+            );
+            const kitchenUsed = offlineProducts.reduce((sum, product) => sum + Number(product.terpakai), 0);
+            $("#offline-menu-capacity").textContent = "Sisa dapur " +
+                Math.max(0, kitchenMaximum - kitchenUsed).toLocaleString("id-ID") + " porsi";
+            productList.innerHTML = offlineProducts.length
+                ? offlineProducts.map((product) =>
+                    '<label class="offline-menu-item"><span><b>' + esc(product.nama) + '</b><small>' +
+                    money(product.harga) + ' · sisa ' + Number(product.sisa).toLocaleString("id-ID") +
+                    ' · minimal ' + Number(product.min_pesan) + ' porsi</small></span><input type="number" min="0" max="' +
+                    Number(product.sisa) + '" value="0" data-offline-qty data-product-id="' +
+                    Number(product.id) + '" data-price="' + Number(product.harga) + '" aria-label="Jumlah ' +
+                    esc(product.nama) + '"' + (Number(product.sisa) <= 0 ? " disabled" : "") + '></label>',
+                ).join("")
+                : '<p class="muted">Belum ada menu yang tersedia.</p>';
+            updateOfflineTotal();
+        } catch (error) {
+            productList.textContent = error.message;
+        }
+    };
+    $("#new-offline-order").onclick = () => {
+        form.reset();
+        deliveryDate.min = todayValue;
+        deliveryDate.value = todayValue;
+        form.elements.waktu_kirim.value = "12:00";
+        $("#offline-order-error").textContent = "";
+        dialog.showModal();
+        loadOfflineProducts();
+    };
+    $$("[data-close-offline-order]").forEach((button) => {
+        button.onclick = () => dialog.close();
+    });
+    deliveryDate.onchange = loadOfflineProducts;
+    productList.oninput = updateOfflineTotal;
+    form.onsubmit = async (event) => {
+        event.preventDefault();
+        const button = $("#save-offline-order");
+        const items = $$("[data-offline-qty]", productList)
+            .map((input) => ({ id: Number(input.dataset.productId), qty: Number(input.value) || 0 }))
+            .filter((item) => item.qty > 0);
+        if (!items.length) {
+            $("#offline-order-error").textContent = "Pilih jumlah untuk setidaknya satu menu.";
+            return;
+        }
+        button.disabled = true;
+        $("#offline-order-error").textContent = "";
+        try {
+            const values = Object.fromEntries(new FormData(form));
+            const result = await api("api/orders.php", {
+                method: "POST",
+                body: { ...values, action: "create_offline", items },
+            });
+            location.href = "order-detail.php?id=" + Number(result.id);
+        } catch (error) {
+            $("#offline-order-error").textContent = error.message;
+            button.disabled = false;
+        }
     };
     loadOrders();
 }
@@ -525,10 +654,10 @@ async function loadKuotaHarian(produkId) {
                             esc(row.kuota) +
                             ' porsi</td><td><button type="button" class="button small" data-delete-kuota="' +
                             row.id +
-                            '">Hapus</button></td></tr>',
+                            '">Kembali ke default</button></td></tr>',
                     )
                     .join("")
-            : '<tr><td colspan="3">Belum ada kuota harian</td></tr>';
+            : '<tr><td colspan="3">Semua tanggal memakai kuota default</td></tr>';
         $$("[data-delete-kuota]").forEach((btn) => {
             btn.onclick = async () => {
                 try {
@@ -536,7 +665,8 @@ async function loadKuotaHarian(produkId) {
                         method: "POST",
                         body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
                     });
-                    loadKuotaHarian(produkId);
+                    await loadKuotaHarian(produkId);
+                    refreshProducts();
                 } catch (e) {
                     toast(e.message);
                 }
@@ -560,12 +690,14 @@ function editProduct(p) {
     form.elements.kategori.value = p?.kategori || "makanan";
     form.elements.harga.value = p?.harga || "";
     $('#kuota-tanggal').value = $('#quota-date')?.value || '';
+    $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
+    form.elements.kuota_default.value = p?.kuota_default ?? 50;
     form.elements.min_pesan.value = p?.min_pesan || 4;
     form.elements.gambar.value = p?.gambar || "";
     form.elements.gambar_file.required = !p;
     $("#image-help").textContent = p
         ? "Kosongkan jika gambar tidak ingin diganti. JPG, PNG, atau WebP · maksimal 2 MB"
-        : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Stok tersedia akan tampil ke pelanggan.";
+        : "Wajib untuk produk baru. JPG, PNG, atau WebP · maksimal 2 MB. Kuota tersedia akan tampil ke pelanggan.";
     preview.hidden = !p?.gambar;
     preview.src = p?.gambar ? productImagePath(p.gambar) : "";
     $("#product-form-title").textContent = p ? "Edit produk" : "Tambah produk";
@@ -599,25 +731,37 @@ function productsPage() {
         }),
     );
     const kuotaAddBtn = $("#kuota-add");
+    $('#kuota-tanggal').onchange = () => {
+        $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
+    };
     if (kuotaAddBtn) {
-        kuotaAddBtn.onclick = async () => {
-            const tanggal = $("#kuota-tanggal").value;
+        const saveRange = async (action) => {
+            const tanggal_mulai = $("#kuota-tanggal").value;
+            const tanggal_selesai = $("#kuota-tanggal-selesai").value;
             const rawKuota = $("#kuota-nilai").value;
             const kuota = rawKuota === '' ? NaN : Number(rawKuota);
             const produkId = $("#product-form").elements.id.value;
-            if (!tanggal || !Number.isInteger(kuota) || kuota < 0 || !produkId) return;
+            if (!tanggal_mulai || !tanggal_selesai || !produkId ||
+                (action === 'save' && (!Number.isInteger(kuota) || kuota < 0 || kuota > 2147483647))) {
+                $('#product-error').textContent = 'Isi rentang tanggal dan kuota dengan benar.';
+                return;
+            }
             try {
                 await api("api/kuota-harian.php", {
                     method: "POST",
-                    body: { produk_id: Number(produkId), tanggal, kuota },
+                    body: { action, produk_id: Number(produkId), tanggal_mulai, tanggal_selesai, kuota },
                 });
                 $("#kuota-nilai").value = "";
-                loadKuotaHarian(produkId);
+                await loadKuotaHarian(produkId);
                 refreshProducts();
+                $('#product-error').textContent = '';
+                toast(action === 'reset' ? 'Rentang kembali ke kuota default.' : 'Kuota rentang tersimpan.');
             } catch (e) {
-                toast(e.message);
+                $('#product-error').textContent = e.message;
             }
         };
+        kuotaAddBtn.onclick = () => saveRange('save');
+        $('#kuota-reset').onclick = () => saveRange('reset');
     }
     $("#product-form").elements.gambar_file.onchange = (e) => {
         const file = e.target.files[0],
@@ -711,7 +855,9 @@ async function orderDetail() {
         '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
         delivery +
         "</b></div></article>";
-    const menu = o.menu
+    const menuItems = Array.isArray(o.menu) ? o.menu : [];
+    const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
+    const menu = menuItems
         .map(
             (m) =>
                 '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
@@ -731,25 +877,43 @@ async function orderDetail() {
                 "</strong></label>",
         )
         .join("");
-    const sentPhoto = o.foto_kiriman
-        ? '<img class="dispatch-photo" src="../' +
-            esc(o.foto_kiriman) +
-            '" alt="Foto makanan yang akan dikirim">'
-        : "";
+    const sentPhotos = Array.isArray(o.foto_kiriman_list)
+        ? o.foto_kiriman_list
+        : o.foto_kiriman
+          ? [o.foto_kiriman]
+          : [];
+    const sentPhotoGallery = sentPhotos.length
+        ? '<div class="dispatch-photos">' +
+          sentPhotos
+              .map((photo) => {
+                  const photoUrl = /^https?:\/\//.test(photo) || photo.startsWith("/")
+                      ? photo
+                      : "../" + photo.replace(/^\.\//, "");
+                  return '<a class="dispatch-photo-link" href="' +
+                      esc(photoUrl) +
+                      '" target="_blank" rel="noopener"><img class="dispatch-photo" src="' +
+                      esc(photoUrl) +
+                      '" alt="Foto makanan yang akan dikirim"></a>';
+              })
+              .join("") +
+          "</div>"
+        : '<p class="muted">Belum ada foto makanan yang diunggah.</p>';
     const dispatch =
-        o.status === "diproses"
-            ? '<article class="panel"><div class="panel-heading"><h2>Bukti pesanan pelanggan</h2><span class="tag soft">Foto kiriman</span></div>' +
-                sentPhoto +
-                '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
-                (o.foto_kiriman
-                    ? "Ganti foto makanan"
-                    : "Unggah foto makanan yang akan dikirim") +
-                '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form></article>'
+        o.status === "diproses" || o.status === "selesai"
+            ? '<article class="panel"><div class="panel-heading"><h2>Foto makanan siap kirim</h2><span class="tag soft">Foto kiriman</span></div>' +
+                sentPhotoGallery +
+                (o.status === "diproses"
+                    ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
+                    : "") +
+                  "</article>"
             : "";
     const checklist =
         '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +
-        o.menu.length +
-        ' jenis</span></div><p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' +
+        menuCount +
+        '</span></div>' +
+        (Array.isArray(o.menu)
+            ? '<p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>'
+            : '<p class="form-error" role="alert">Data daftar menu tidak tersedia. Muat ulang atau hubungi administrator.</p>') +
         menu +
         "</article>";
     const isValidation = o.status === "menunggu_validasi";
@@ -781,6 +945,8 @@ async function orderDetail() {
         badge(o.status) +
         '</div><div class="detail-pair"><span>Waktu status</span><b>' +
         (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+        '</b></div><div class="detail-pair"><span>Sumber pesanan</span><b>' +
+        (o.sumber === "offline" ? "Offline (dicatat Admin)" : "Online") +
         '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
         esc(o.nama_pemesan) +
         '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
@@ -792,10 +958,21 @@ async function orderDetail() {
         '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
         money(o.total) +
         "</b></div></article>" +
+        (o.status === "ditolak" && o.alasan_penolakan
+            ? '<article class="panel rejection-reason"><b>Alasan penolakan</b><p>' +
+                esc(o.alasan_penolakan) + '</p></article>'
+            : "") +
         checklist +
         dispatch;
     $("#order-detail").innerHTML = isValidation ? validationView : dispatchView;
     const actions = $("#detail-actions");
+    const rejectionDialog = $("#reject-order-dialog");
+    const rejectionForm = $("#reject-order-form");
+    const rejectionReason = $("#rejection-reason");
+    const rejectionError = $("#rejection-reason-error");
+    $$("[data-cancel-rejection]").forEach((button) => {
+        button.onclick = () => rejectionDialog.close();
+    });
     actions.hidden = false;
     $$("[data-order-action]").forEach((btn) => {
         const action = btn.dataset.orderAction;
@@ -806,14 +983,34 @@ async function orderDetail() {
         );
         btn.onclick = async () => {
             // KONFIRMASI UNTUK SEMUA TOMBOL KEPUTUSAN
+            let rejectionNote = "";
             if (action === "reject") {
-                const confirmed = await confirmDialog(
-                    "Tolak Pembayaran",
-                    "Tolak pembayaran untuk pesanan ini? Stok produk akan dikembalikan.",
-                    "Ya, Tolak",
-                    "danger"
-                );
-                if (!confirmed) return;
+                rejectionReason.value = "";
+                rejectionError.textContent = "";
+                rejectionDialog.showModal();
+                const submitted = await new Promise((resolve) => {
+                    const onSubmit = (event) => {
+                        event.preventDefault();
+                        const value = rejectionReason.value.trim();
+                        if (!value) {
+                            rejectionError.textContent = "Alasan penolakan wajib diisi.";
+                            rejectionReason.focus();
+                            return;
+                        }
+                        rejectionForm.removeEventListener("submit", onSubmit);
+                        rejectionDialog.removeEventListener("close", onClose);
+                        rejectionDialog.close();
+                        resolve(value);
+                    };
+                    const onClose = () => {
+                        rejectionForm.removeEventListener("submit", onSubmit);
+                        resolve(null);
+                    };
+                    rejectionForm.addEventListener("submit", onSubmit);
+                    rejectionDialog.addEventListener("close", onClose, { once: true });
+                });
+                if (submitted === null) return;
+                rejectionNote = submitted;
             }
             if (action === "validate") {
                 const confirmed = await confirmDialog(
@@ -836,7 +1033,10 @@ async function orderDetail() {
 
             btn.disabled = true;
             try {
-                await api("api/orders.php", { method: "POST", body: { id, action } });
+                await api("api/orders.php", {
+                    method: "POST",
+                    body: { id, action, ...(action === "reject" ? { alasan_penolakan: rejectionNote } : {}) },
+                });
                 toast("Status pesanan diperbarui");
                 setTimeout(() => location.reload(), 500);
             } catch (e) {
@@ -871,24 +1071,32 @@ async function orderDetail() {
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const button = $("button", upload),
-            form = new FormData(upload);
-        form.append("action", "upload_dispatch");
-        form.append("id", String(id));
+            input = $('input[type="file"]', upload),
+            photos = Array.from(input.files || []);
+        if (!photos.length) {
+            $("#dispatch-photo-error").textContent = "Pilih setidaknya satu foto.";
+            return;
+        }
+        if (photos.some((photo) => photo.size > 2 * 1024 * 1024)) {
+            $("#dispatch-photo-error").textContent =
+                "Ukuran setiap foto maksimal 2 MB. Kecilkan foto lalu pilih kembali.";
+            return;
+        }
         button.disabled = true;
+        let uploadedCount = 0;
         try {
-            const response = await fetch("api/orders.php", {
-                    method: "POST",
-                    body: form,
-                    cache: "no-store",
-                }),
-                data = await response.json();
-            if (!response.ok)
-                throw Error(data.error || "Foto kiriman gagal disimpan");
+            for (const photo of photos) {
+                await uploadDispatchPhoto(id, photo);
+                uploadedCount++;
+            }
             toast("Foto makanan tersimpan");
             setTimeout(() => location.reload(), 400);
         } catch (error) {
-            $("#dispatch-photo-error").textContent = error.message;
+            $("#dispatch-photo-error").textContent = uploadedCount
+                ? `${uploadedCount} foto tersimpan, tetapi foto berikutnya gagal: ${error.message}`
+                : error.message;
             button.disabled = false;
+            if (uploadedCount) setTimeout(() => location.reload(), 1800);
         }
     });
 }
@@ -902,7 +1110,7 @@ const run = {
     schedules: schedulesPage,
 }[page];
 if (run)
-    run().catch ((e) => {
+    Promise.resolve().then(run).catch((e) => {
         toast(e.message);
         if (page === "order-detail") {
             const detail = $("#order-detail");

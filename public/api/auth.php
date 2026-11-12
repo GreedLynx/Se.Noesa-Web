@@ -17,6 +17,7 @@ if ($action === 'logout') {
 
 if ($action === 'login') {
     $identity = trim($request['identity'] ?? '');
+    // SELECT mencari akun melalui email atau username dengan parameter terikat.
     $user = q(
         "SELECT *
             FROM users
@@ -48,6 +49,7 @@ if ($action === 'register') {
         json(['error' => 'Konfirmasi password tidak cocok'], 422);
     }
     try {
+        // INSERT mendaftarkan akun baru dengan peran pelanggan.
         q(
             "INSERT INTO users (username, email, password_hash, phone, role)
                 VALUES (?, ?, ?, ?, 'pelanggan')",

@@ -1,75 +1,88 @@
 # Database
 
-Pelaksana migrasi `scripts/migrate.php` mengikat kunci advisory lock melalui PDO
-prepared statement untuk `pg_advisory_lock` dan `pg_advisory_unlock`. Pelepasan
-lock tetap berada pada blok `finally`. Perapian SQL tidak mengubah skema;
-kolom lama `pesanan.pax` dipertahankan sampai keputusan rename dan migrasinya disetujui.
+## Sumber kuota aktif
 
-## Plan 1 — sumber kuota aktif
+Skema awal `database/schema.sql` dilanjutkan seluruh migrasi melalui
+`php scripts/migrate.php`. Runner memakai advisory lock prepared dan transaksi
+per file; nama file tercatat di schema_migrations.
 
-Konfigurasi adalah `kuota_harian(produk_id,tanggal,kuota)` dari migrasi 008,
-dengan UNIQUE produk/tanggal dan indeks tanggal yang sudah ada. Kuota menyimpan
-kapasitas total dan tidak dikurangi checkout. Kolom master produk dipertahankan
-tetapi tidak menjadi fallback.
+- `produk.kuota_harian`: default per hari, integer tidak negatif, default 50
+  porsi setelah migrasi 017.
+- `kuota_harian(produk_id,tanggal,kuota)`: override kapasitas total per tanggal;
+  UNIQUE produk/tanggal dan indeks tanggal/produk berasal dari migrasi 008.
+- Efektif `COALESCE(override.kuota, produk.kuota_harian)`; override 0 valid.
+- Rentang inklusif dimaterialisasi menggunakan generate_series dan satu UPSERT
+  ON CONFLICT per request. Save terbaru menimpa overlap. Reset menghapus override
+  terpilih dan kembali ke default, bukan histori override lama.
+- Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
+  selain ditolak pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
 
-Migrasi `011_daily_quota_report.sql` membuat VIEW `v_kuota_harian`
-(`produk_id,tanggal,kuota,terpakai,sisa`). FULL JOIN menjaga pemakaian pesanan yang
-konfigurasinya telah dihapus. Hanya transaksi selain `ditolak` dihitung.
-Laporan memakai VIEW, checkout memakai rentang timestamp Asia/Jakarta dengan PDO.
+## Migrasi 015 dan VIEW
 
-Checkout mengunci produk, tabel kuota, dan baris kuota tanggal yang dipilih hingga
-commit. Penulisan konfigurasi juga mengunci tabel kuota. Kunci tabel menserialisasi
-checkout antar tanggal sekalipun untuk melindungi insert/delete, termasuk tanggal
-yang belum memiliki baris. Tidak ada counter pemakaian.
+`015_default_product_quota.sql` mengisi default produk lama dari override bertanggal
+terbesar (DISTINCT ON, tanggal DESC, id DESC). Produk tanpa override mempertahankan
+defaultnya. Override lama dipertahankan. Backfill hanya sekali melalui ledger;
+jangan menjalankan file manual lagi setelah Admin mengubah default.
 
-Tidak ada pengisian data otomatis. Admin harus memeriksa konfigurasi lama:
-implementasi lama pernah mengurangi kuota, sehingga nilainya mungkin bukan kapasitas total.
+Migrasi menambahkan CHECK produk_kuota_harian_nonnegative_check serta mengganti
+VIEW v_kuota_harian dengan urutan/tipe kolom tetap:
+produk_id,tanggal,kuota,terpakai,sisa. FULL JOIN mempertahankan pemakaian tanpa
+override dan mengambil default produk. Produk/tanggal tanpa override maupun
+transaksi tidak membentuk baris VIEW; helper laporan memakai LEFT JOIN dan
+fallback default. Tidak menghasilkan deret tanggal tanpa batas.
 
-Bagian berikut mencatat implementasi sebelum Plan 1.
+Preflight read-only memeriksa nilai negatif dan dry-run selalu rollback sebelum
+penerapan aktif. Data negatif tidak diperbaiki otomatis.
 
-## Revisi kuota stateless
+## Kuota default 50 porsi
 
-Skema yang digunakan adalah `database/schema.sql` beserta file di `database/migrations/`.
-Migrasi baru `010_stateless_quota_indexes.sql` menambahkan indeks:
+Migrasi 017 mengatur `produk.kuota_harian` ke 50 untuk produk yang sudah ada
+dan default kolom untuk produk baru. Nilai ini berlaku setiap tanggal tanpa
+override di `kuota_harian`; override tanggal yang sudah tersimpan tetap berlaku.
 
-- `idx_pesanan_created_status` pada `pesanan(created_at, status)`.
-- `idx_detail_pesanan_produk` pada `detail_pesanan(produk_id, pesanan_id)`.
-- `idx_pesanan_delivery_status` pada `pesanan(tgl_kirim, status)`.
+## Batas pembayaran
 
-Nama kolom pada contoh dokumen revisi disesuaikan dengan skema sebenarnya:
+Migrasi 018 mengizinkan status `dibatalkan`, membuat indeks pesanan yang belum
+dibayar, dan mengecualikan pesanan `ditolak`/`dibatalkan` dari VIEW kuota.
+`app/order-expiration.php` membatalkan pesanan `menunggu_pembayaran` setelah
+satu jam berdasarkan `created_at`; jadwalkan `scripts/expire-unpaid-orders.php`
+setiap menit agar pembatalan berjalan tanpa pelanggan membuka aplikasi.
 
-| Nama dalam contoh revisi | Nama pada aplikasi |
-|---|---|
-| `pesanan.status_pesanan` | `pesanan.status` |
-| `detail_pesanan.kuantitas` | `detail_pesanan.qty` |
-| `produk.min_order` | `produk.min_pesan` |
-| `produk.nama_produk` | `produk.nama` |
-| `pesanan.pelanggan_id` | `pesanan.user_id` |
+## Pesanan offline Admin
 
-Checklist dispatch menggunakan `detail_pesanan.sudah_dicek` dan `pesanan.foto_kiriman`.
-Status pembatalan/penolakan yang tersedia adalah `ditolak`.
-Kolom `produk.status_aktif` belum ada.
+Migrasi 019 menambah `pesanan.sumber`, bernilai `online` (default untuk transaksi
+lama dan checkout pelanggan) atau `offline`. Pesanan yang dicatat Admin langsung
+berstatus `diproses`, menyimpan snapshot harga/detail, dan memakai perhitungan,
+lock, kuota produk, serta batas dapur tanggal kirim yang sama dengan checkout.
+Dengan demikian pesanan offline segera mengurangi sisa kuota pesanan online.
 
-Migrasi 009 menambahkan `produk.kuota_harian` dengan default 0. Admin mengatur
-nilai master melalui API produk. Nilai 0 berarti produk tidak tersedia.
-Data kuota lama tidak disalin otomatis. Setelah migrasi, Admin perlu menetapkan
-kuota harian agar produk tersedia untuk pelanggan.
+## Alasan penolakan pembayaran
 
-Migrasi 008 dan tabel `kuota_harian` dipertahankan sebagai riwayat, tetapi tidak
-menentukan checkout. Kolom lama `produk.kuota` dan `produk.terpakai` juga dipertahankan;
-checkout dan penolakan tidak memperbarui counter tersebut.
+Migrasi 020 menambahkan `pesanan.alasan_penolakan` (maksimal 500 karakter).
+Penolakan pembayaran oleh Admin mewajibkan alasan; detail API pelanggan dan
+riwayat menampilkan alasan tersebut untuk pesanan berstatus `ditolak`.
 
-Keputusan pengguna: kuota dihitung per tanggal pengiriman dalam Asia/Jakarta;
-produk aktif adalah produk dengan `kuota_harian > 0`. Agregasi menggunakan rentang
-`tgl_kirim >= awal_hari AND tgl_kirim < awal_hari_berikutnya` agar indeks bisa dipakai.
-Semua status kecuali `ditolak` dihitung, termasuk pesanan belum dibayar dan selesai.
-Batas dapur adalah pembulatan ke bawah 80% dari jumlah kuota master produk aktif.
+## Penguncian
 
-Checkout mengambil `LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE` sebelum membaca
-master dan agregasi, hingga header dan detail pesanan selesai disimpan. Kunci ini
-menserialisasi checkout untuk produk berbeda sekalipun serta menunggu perubahan
-master oleh admin. Pemakaian tetap dihitung dari detail transaksi, bukan counter.
+Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
+commit. Save/reset/delete override memakai transaksi dan lock tabel kuota_harian.
+Update produk memperoleh ROW EXCLUSIVE implisit, menunggu lock checkout SHARE ROW
+EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout.
 
-Migrasi 009 dan 010 sudah diterapkan melalui `scripts/migrate.php` pada lingkungan
-pengembangan sesi ini. Ketiga indeks diverifikasi lewat `pg_indexes`.
-Untuk lingkungan lain, jalankan migrasi sebelum menyajikan aplikasi.
+Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
+minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
+
+## Migrasi dan kompatibilitas lain
+
+- Migrasi 010: idx_pesanan_created_status, idx_detail_pesanan_produk,
+  idx_pesanan_delivery_status.
+- Migrasi 012/013: token/OTP reset password memakai IF NOT EXISTS.
+- Migrasi 014: CHECK harga/kuota/total/kapasitas tidak negatif, qty positif,
+  minimum produk 4 porsi, urutan tanggal jadwal.
+- Kolom lama produk.kuota dan produk.terpakai tetap ada tetapi tidak dipakai sebagai
+  sumber kuota/counter. pesanan.pax mengikuti skema sampai rename disetujui.
+- Dispatch memakai detail_pesanan.sudah_dicek dan tabel pesanan_foto_kiriman
+  untuk menyimpan banyak foto. Kolom pesanan.foto_kiriman tetap dipertahankan
+  sebagai kompatibilitas foto lama dan di-backfill oleh migrasi 016.
+- Status penolakan ditolak; produk.status_aktif belum ada.
+- jadwal_po, pembayaran, kalender dan konfigurasi rahasia tidak diubah.

@@ -517,6 +517,16 @@ button {
 .page-intro {
   margin-bottom: 20px;
 }
+.capacity-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.order-source {
+  display: inline-flex;
+  margin-left: 7px;
+  vertical-align: middle;
+}
 .capacity-chip {
   display: flex;
   align-items: center;
@@ -664,6 +674,24 @@ td small {
 }
 .detail-pair b {
   text-align: right;
+}
+.rejection-reason {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-color: #efcaca;
+  background: #fff8f8;
+}
+.rejection-reason p {
+  margin: 7px 0 0;
+  color: var(--brown);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.reject-order-dialog {
+  width: min(460px, calc(100% - 28px));
+}
+.reject-order-dialog .dialog-actions {
+  justify-content: flex-end;
 }
 .order-summary h3 {
   font-size: 14px;
@@ -833,15 +861,75 @@ td small {
   color: var(--brown);
 }
 .product-dialog input,
-.product-dialog select {
+.product-dialog select,
+.product-dialog textarea {
   width: 100%;
-  height: 40px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  padding: 0 10px;
   background: white;
   outline-color: var(--green);
   font-size: 12px;
+}
+.product-dialog input,
+.product-dialog select {
+  height: 40px;
+  padding: 0 10px;
+}
+.product-dialog textarea {
+  resize: vertical;
+  padding: 10px;
+}
+.offline-order-dialog {
+  width: min(720px, calc(100% - 28px));
+  max-height: min(90vh, 900px);
+  overflow: auto;
+}
+.offline-menu-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.offline-menu-section > .row-between {
+  gap: 10px;
+}
+.offline-menu-list {
+  display: grid;
+  gap: 7px;
+  max-height: 230px;
+  overflow: auto;
+  padding: 2px;
+}
+.offline-menu-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  align-items: center;
+  gap: 12px !important;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.offline-menu-item span,
+.offline-menu-item small {
+  display: block;
+}
+.offline-menu-item small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.offline-menu-item input {
+  height: 36px !important;
+}
+.offline-total {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.offline-total b {
+  color: var(--green-dark);
+  font-size: 16px;
 }
 .form-row {
   display: grid;
@@ -1058,6 +1146,16 @@ td small {
   .page-intro {
     gap: 10px;
   }
+  .capacity-actions {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .capacity-actions > .button {
+    white-space: nowrap;
+    font-size: 10px;
+    padding: 10px;
+  }
   .capacity-chip {
     display: none;
   }
@@ -1074,6 +1172,12 @@ td small {
     padding: 10px;
   }
   .product-grid {
+    grid-template-columns: 1fr;
+  }
+  .offline-order-dialog {
+    padding: 16px;
+  }
+  .offline-order-dialog .form-row {
     grid-template-columns: 1fr;
   }
   .mobile-nav {
@@ -1191,14 +1295,23 @@ td small {
 .dispatch-upload .button {
   justify-self: start;
 }
+.dispatch-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+.dispatch-photo-link {
+  display: block;
+  min-width: 0;
+}
 .dispatch-photo {
   display: block;
   width: 100%;
-  max-height: 300px;
+  height: 180px;
   object-fit: contain;
   border-radius: 13px;
   background: var(--green-pale);
-  margin: 4px 0 12px;
 }
 
 [hidden] {
@@ -1379,4 +1492,75 @@ input:checked + .slider:before {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
+}
+
+/* =========================================
+   CUSTOM DATE FILTER STYLING (VERTIKAL)
+   ========================================= */
+.date-filter-wrapper {
+  display: flex;
+  flex-direction: column; /* Memaksa elemen tersusun ke bawah */
+  align-items: flex-start; /* Meratakan semua elemen ke kiri */
+  gap: 6px; /* Jarak antar elemen */
+  margin-bottom: 24px;
+}
+
+.date-filter-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 4px 0;
+  line-height: 1.5;
+}
+
+.date-filter-label {
+  font-size: 13px;
+  color: var(--brown);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Styling Input Tanggal */
+.date-filter-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+  outline: none;
+  box-shadow: 0 2px 6px rgba(40, 62, 43, 0.03);
+  transition: all 0.2s var(--ease);
+  cursor: pointer;
+  width: 160px;
+  margin-top: 2px;
+}
+
+/* Efek Hover */
+.date-filter-input:hover {
+  border-color: var(--green);
+  box-shadow: 0 4px 12px rgba(40, 62, 43, 0.08);
+}
+
+/* Efek Fokus (saat diklik) */
+.date-filter-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-pale);
+}
+
+/* Mengubah ikon kalender bawaan menjadi warna hijau tema */
+.date-filter-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: 0.2s;
+  /* Filter CSS di bawah ini mengubah warna hitam menjadi hijau gelap */
+  filter: invert(36%) sepia(14%) saturate(1154%) hue-rotate(83deg) brightness(94%) contrast(88%);
+}
+
+.date-filter-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
