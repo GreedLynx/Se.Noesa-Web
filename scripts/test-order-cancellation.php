@@ -18,8 +18,20 @@ function cancellation_test_config(): array
 // Gunakan bootstrap asli dengan satu penggantian sumber konfigurasi khusus pengujian.
 $bootstrap = file_get_contents(__DIR__ . '/../app/bootstrap.php');
 $bootstrap = str_replace("require __DIR__ . '/../config/config.php'", 'cancellation_test_config()', $bootstrap);
+$bootstrap = str_replace('function q(string $sql, array $params = []): PDOStatement' . "\n{",
+    'function q(string $sql, array $params = []): PDOStatement' . "\n{\n    \$sql = cancellation_test_sql(\$sql);", str_replace("\r\n", "\n", $bootstrap));
 eval('?>' . $bootstrap);
 require __DIR__ . '/../app/daily-quota.php';
+require __DIR__ . '/../app/order-expiration.php';
+
+function cancellation_test_sql(string $sql): string
+{
+    if ($now = getenv('SENOESA_TEST_NOW')) {
+        $time = (new DateTimeImmutable($now))->format('Y-m-d H:i:s.uP');
+        return str_replace(['clock_timestamp()', 'statement_timestamp()'], "TIMESTAMPTZ '$time'", $sql);
+    }
+    return $sql;
+}
 
 class CancellationResponse extends RuntimeException
 {
@@ -63,7 +75,7 @@ function cancellation_file(): array
 {
     $path = tempnam(cancellation_upload_dir(), 'proof-');
     file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
-    return ['tmp_name' => $path, 'size' => filesize($path), 'error' => UPLOAD_ERR_OK];
+    return ['name' => 'proof.png', 'tmp_name' => $path, 'size' => filesize($path), 'error' => UPLOAD_ERR_OK];
 }
 function cancellation_api(string $role, string $method, array $payload, array $files = []): CancellationResponse
 {
@@ -131,7 +143,8 @@ if (in_array($argv[1] ?? '', ['--job', '--job-config-failure'], true)) {
     exit;
 }
 if (($argv[1] ?? '') === '--existing') {
-    if (!in_array($argv[2], ['test-daily-quota.php', 'test-quota-api.php'], true)) exit(2);
+    if (!in_array($argv[2], ['test-daily-quota.php', 'test-quota-api.php', 'test-payment-deadline.php'], true)) exit(2);
+    if ($argv[2] === 'test-payment-deadline.php') putenv('SENOESA_TEST_NOW');
     $source = cancellation_source(__DIR__ . '/' . $argv[2]);
     // PHP -d memerlukan nilai INI berpetik untuk path Windows yang mengandung spasi/tilde.
     $source = str_replace("'session.save_path=' . ini_get('session.save_path')",
@@ -171,7 +184,7 @@ try {
     foreach (glob(__DIR__ . '/../database/migrations/*.sql') as $file) {
         db()->exec(file_get_contents($file));
     }
-    cancellation_check(true, 'Skema baru dan seluruh migrasi 001–016 berhasil');
+    cancellation_check(true, 'Skema baru dan seluruh migrasi sampai 018 berhasil');
     q("INSERT INTO users (id,username,email,password_hash) VALUES (1,'penguji','uji@example.invalid','x'),(2,'lain','lain@example.invalid','x')");
     q("INSERT INTO produk (id,kode,nama,kategori,harga,kuota_harian) VALUES (1,'UJI','Menu Uji','makanan',10000,50)");
     q("INSERT INTO jadwal_po (id,nama,tgl_buka,tgl_tutup,kapasitas) VALUES (1,'Jadwal Uji','2030-01-01','2030-12-31',50)");
@@ -197,6 +210,7 @@ try {
         q("UPDATE pesanan SET status=?, bukti_bayar=NULL, foto_kiriman=NULL, nama_pembayar=NULL,
             tgl_kirim='2030-11-20 12:00+07', created_at='2030-11-18 23:30+07' WHERE id=1", [$status]);
         q('UPDATE detail_pesanan SET sudah_dicek=FALSE');
+        q('DELETE FROM pesanan_foto_kiriman');
     };
     $cancel = fn(string $role = 'pelanggan', $id = 1) => cancellation_api($role, 'POST', ['action' => 'cancel_order', 'id' => $id]);
     $proof = fn() => cancellation_api('pelanggan', 'POST', ['action' => 'upload_proof', 'id' => 1, 'nama_pembayar' => 'Penguji'], ['proof' => cancellation_file()]);
@@ -204,6 +218,16 @@ try {
     $GLOBALS['cancellation_fail_db'] = true;
     cancellation_check($cancel()->status === 500, 'Koneksi awal cancel gagal tetap mengembalikan JSON 500 tanpa koneksi ulang');
     unset($GLOBALS['cancellation_fail_db']);
+    $reset('diproses');
+    $files = [cancellation_file(), cancellation_file(), cancellation_file()];
+    $upload = [];
+    foreach (['name', 'tmp_name', 'size', 'error'] as $field) $upload[$field] = array_column($files, $field);
+    $response = cancellation_api('admin', 'POST', ['action' => 'upload_dispatch', 'id' => 1], ['foto_kiriman' => $upload]);
+    cancellation_check($response->status === 200 && count($response->data['foto_kiriman_list']) === 3 &&
+        $response->data['foto_kiriman'] === $response->data['foto_kiriman_list'][0], 'Upload galeri menyimpan tiga foto dan mempertahankan respons foto tunggal');
+    foreach (['admin', 'pelanggan'] as $role) {
+        cancellation_check(count(cancellation_api($role, 'GET', ['id' => 1])->data['foto_kiriman_list']) === 3, 'Detail ' . $role . ' mengembalikan tiga foto');
+    }
     foreach (['menunggu_pembayaran', 'menunggu_validasi', 'diproses'] as $status) {
         $reset($status);
         q("UPDATE pesanan SET bukti_bayar='uploads/payments/old.png', foto_kiriman='uploads/dispatch/old.png' WHERE id=1");
@@ -338,7 +362,7 @@ try {
         cancellation_check(count($items) === 1 && $items[0]['status'] === 'dibatalkan', 'Daftar semua ' . $role . ' memuat pembatalan');
     }
     cancellation_check(cancellation_api('owner', 'POST', ['action' => 'validate', 'id' => 1])->status === 405, 'Owner tetap read-only');
-    foreach (['test-daily-quota.php', 'test-quota-api.php'] as $file) {
+    foreach (['test-daily-quota.php', 'test-quota-api.php', 'test-payment-deadline.php'] as $file) {
         [$exit, $output, $errors] = cancellation_finish(cancellation_child(['--existing', $file]));
         if ($exit !== 0 || $errors !== '') throw new RuntimeException($file . ': ' . $output . $errors);
         cancellation_check(true, $file . ' lulus dengan konfigurasi database uji tanpa .env');

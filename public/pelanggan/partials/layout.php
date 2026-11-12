@@ -180,6 +180,7 @@ function customer_foot(): void
                     <small class="field-hint">Maksimal 120 karakter.</small>
                 </label>
                 <p id="schedule-note" class="schedule-note"></p>
+                <p class="field-hint">Batas maksimal pembayaran: 1 jam sejak pesanan dibuat. Jika belum dibayar, pesanan dibatalkan otomatis dan kuota produk dikembalikan.</p>
                 <p id="checkout-error" class="form-error" role="alert"></p>
                 <button id="submit-order" class="customer-button primary" type="submit">Kirim pesanan</button>
             </form>

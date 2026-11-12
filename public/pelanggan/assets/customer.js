@@ -450,7 +450,20 @@ async function openHistoryDetail(id) {
         + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
             (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
 
-    const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
+    const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
+        ? d.foto_kiriman_list
+        : d.foto_kiriman
+          ? [d.foto_kiriman]
+          : [];
+    const deliveryPhotoSection = deliveryPhotos.length
+        ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><div class="dispatch-photos">' + deliveryPhotos.map(path => {
+            const photoUrl = /^https?:\/\//.test(path) || path.startsWith('/')
+                ? path
+                : '../' + path.replace(/^\.\//, '');
+            return '<a class="dispatch-photo-link" href="' + esc(photoUrl) + '" target="_blank" rel="noopener"><img class="uploaded-proof" src="'
+                + esc(photoUrl) + '" alt="Foto pesanan siap kirim"></a>';
+        }).join('') + '</div></section>'
+        : '';
 
     const refundNotice = 'Jika sudah mentransfer, refund penuh ditangani Admin di luar aplikasi. Hubungi Admin untuk mengurus refund.';
     const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);

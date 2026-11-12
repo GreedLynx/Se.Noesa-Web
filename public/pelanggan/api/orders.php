@@ -105,6 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
+            if ($order['status'] === 'dibatalkan') {
+                json(['error' => 'Pesanan sudah dibatalkan dan tidak dapat menerima bukti pembayaran.'], 409);
+            }
             json(['error' => 'Bukti hanya dapat diunggah untuk pesanan yang menunggu pembayaran atau verifikasi'], 409);
         }
 
@@ -293,6 +296,13 @@ if (isset($_GET['id'])) {
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]
     )->fetchAll();
+    $order['foto_kiriman_list'] = q(
+        'SELECT path FROM pesanan_foto_kiriman WHERE pesanan_id = ? ORDER BY id',
+        [$order['id']]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    if (!$order['foto_kiriman_list'] && !empty($order['foto_kiriman'])) {
+        $order['foto_kiriman_list'] = [$order['foto_kiriman']];
+    }
     json($order);
 }
 

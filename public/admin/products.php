@@ -120,8 +120,8 @@ admin_head('Produk & Kuota', 'products');
             </label>
             <label>
                 Kuota default per hari (porsi)
-                <input name="kuota_default" type="number" min="0" max="2147483647" value="0" required>
-                <small>Dipakai pada tanggal tanpa kuota khusus. Nilai 0 berarti tidak tersedia.</small>
+                <input name="kuota_default" type="number" min="0" max="2147483647" value="50" required>
+                <small>Default 50 porsi pada tanggal tanpa kuota khusus. Nilai 0 berarti tidak tersedia.</small>
             </label>
         </div>
         <label class="image-upload-label" style="text-align:center;display:block;max-width:480px;margin:0 auto;">

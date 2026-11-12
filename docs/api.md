@@ -16,8 +16,8 @@ Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai 
 `kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
 (detail pesanan selain ditolak/dibatalkan), serta `sisa` minimal 0.
 
-POST produk menyimpan metadata/gambar/min_pesan dan field wajib `kuota_default`,
-integer 0–2147483647. Alias request `kuota_harian` diterima bila canonical tidak
+POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
+integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
 dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
 Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
 gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.
@@ -55,6 +55,11 @@ minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota mempertahankan pesanan lama dan membatasi checkout baru.
+Pesanan berstatus `menunggu_pembayaran` dibatalkan otomatis satu jam sejak
+`created_at` bila bukti belum dikirim. Jalankan `php scripts/expire-unpaid-orders.php`
+melalui scheduler setiap menit; API katalog
+dan pesanan pelanggan juga menjalankan pembersihan untuk menjaga status tetap
+mutakhir saat ada aktivitas. Status `dibatalkan` tidak memakai kuota.
 
 ### Laporan Admin dan Owner
 
@@ -103,3 +108,17 @@ GET pesanan Admin menambah `tab=dibatalkan`; `tab=semua` mencakup status batal d
 `count.cancelled`, tetap GET-only. Pendapatan tetap berasal dari selesai.
 Upload foto kiriman Admin kini menghasilkan 409 dan membuang foto baru bila
 pembatalan sudah menang; tidak menimpa foto pesanan batal.
+
+### Foto kiriman
+
+Admin mengunggah foto saat pesanan berstatus `diproses` melalui POST
+`admin/api/orders.php` dengan `action=upload_dispatch`, `id`, dan satu atau
+beberapa file `foto_kiriman[]`. Format JPG, PNG, atau WebP didukung, maksimal
+2 MB per foto. GET detail Admin dan pelanggan mengembalikan
+`foto_kiriman_list`; foto lama di `pesanan.foto_kiriman` tetap disertakan.
+Foto tetap tersedia di Admin dan detail riwayat pelanggan setelah status
+berubah menjadi `selesai`. Migrasi database yang sudah ada: `016_multiple_dispatch_photos.sql`.
+Upload galeri mengunci status `diproses` sebelum INSERT/UPDATE. Jika pembatalan
+menang, transaksi dibatalkan, semua file baru dibuang, dan respons 409.
+Respons upload menyertakan `foto_kiriman` (file pertama) serta `foto_kiriman_list`.
+Katalog/riwayat GET tidak memicu job kedaluwarsa; scheduler CLI memakai `--apply`.

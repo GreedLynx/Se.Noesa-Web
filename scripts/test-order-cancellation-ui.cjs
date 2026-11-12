@@ -42,5 +42,9 @@ vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail(')
         if (status === 'dibatalkan') assert.match(html, /<h3>Refund<\/h3>/);
         if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat pembayaran telah berakhir/);
     }
+    detail = { id: 1, items: [], status: 'selesai', can_cancel: false, can_upload_proof: false,
+        foto_kiriman_list: ['uploads/dispatch/one.jpg', 'uploads/dispatch/two.jpg', 'uploads/dispatch/three.jpg'] };
+    await context.openHistoryDetail(1);
+    assert.equal((elements['#history-detail'].innerHTML.match(/class="uploaded-proof"/g) || []).length, 3);
     console.log('PASS: Enam skenario detail mengikuti izin server, tenggat upload, dan konfirmasi refund penuh');
 })().catch(error => { console.error(error); process.exitCode = 1; });

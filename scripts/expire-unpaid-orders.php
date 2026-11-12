@@ -13,6 +13,7 @@ register_shutdown_function(static function () use (&$jobFinished): void {
     }
 });
 require __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../app/order-expiration.php';
 
 $mode = $argv[1] ?? '';
 if (count($argv) !== 2 || !in_array($mode, ['--inventory', '--dry-run', '--apply'], true)) {
@@ -33,9 +34,7 @@ try {
         echo $mode === '--dry-run' ? "Dry-run read-only; tidak ada pesanan diubah.\n" : "Tidak ada pesanan diubah.\n";
     } else {
         // UPDATE bersyarat mengecek ulang status setelah menunggu mutasi pembayaran/pembatalan lain.
-        $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp()
-            WHERE status = 'menunggu_pembayaran' AND NULLIF(BTRIM(bukti_bayar), '') IS NULL
-                AND created_at + interval '1 hour' <= statement_timestamp()")->rowCount();
+        $affected = expire_unpaid_orders();
         echo 'Dibatalkan: ' . $affected . PHP_EOL;
     }
     if ((int) $inventory['inconsistent'] > 0) {

@@ -7,6 +7,9 @@
 | Cancel milik sendiri sampai H-2, upload sebelum satu jam, izin/waktu detail | `public/pelanggan/api/orders.php` |
 | Tampilan pembatalan lama (tombol merah/kartu syarat/pesan H-2), izin server dan refund | `public/pelanggan/assets/customer.js` |
 | Inventaris/dry-run dan job CLI kedaluwarsa, tanpa route publik | `scripts/expire-unpaid-orders.php` |
+| UPDATE kedaluwarsa bersama untuk job; tidak dipanggil GET katalog/riwayat | `app/order-expiration.php` |
+| Galeri foto kiriman (kandidat dari perubahan masuk) dan backfill foto lama | `database/migrations/016_multiple_dispatch_photos.sql`, API/detail Admin dan pelanggan |
+| Default semua produk 50 porsi saat migrasi dan default produk baru | `database/migrations/017_default_quota_50.sql`, `public/admin/api/products.php` |
 | Constraint dibatalkan dan VIEW pelepas kuota | `database/migrations/016_order_cancellation.sql`, `database/schema.sql` |
 | Kuota checkout/katalog setara VIEW | `app/daily-quota.php` |
 | Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |

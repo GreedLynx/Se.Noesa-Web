@@ -13,41 +13,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             json(['error' => 'Pesanan tidak sedang diproses'], 409);
         }
         $file = $_FILES['foto_kiriman'] ?? null;
-        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+        if (!$file || !isset($file['name'], $file['error'], $file['tmp_name'], $file['size'])) {
             json(['error' => 'Pilih foto makanan yang akan dikirim'], 422);
         }
-        if ($file['size'] > 2 * 1024 * 1024) {
-            json(['error' => 'Ukuran foto maksimal 2 MB'], 422);
+        $uploads = [];
+        foreach ((array) $file['name'] as $index => $name) {
+            $error = is_array($file['error']) ? ($file['error'][$index] ?? UPLOAD_ERR_NO_FILE) : $file['error'];
+            $tmpName = is_array($file['tmp_name']) ? ($file['tmp_name'][$index] ?? '') : $file['tmp_name'];
+            $size = is_array($file['size']) ? ($file['size'][$index] ?? 0) : $file['size'];
+            if ($error !== UPLOAD_ERR_OK) {
+                json(['error' => $error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE
+                    ? 'Ukuran foto maksimal 2 MB per foto'
+                    : 'Pilih foto makanan yang akan dikirim'], 422);
+            }
+            if ($size > 2 * 1024 * 1024) {
+                json(['error' => 'Ukuran foto maksimal 2 MB per foto'], 422);
+            }
+            $image = @getimagesize($tmpName);
+            $types = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            $mime = $image['mime'] ?? '';
+            if (!isset($types[$mime])) {
+                json(['error' => 'Format foto harus JPG, PNG, atau WebP'], 422);
+            }
+            $uploads[] = ['tmp_name' => $tmpName, 'extension' => $types[$mime]];
         }
-        $image = @getimagesize($file['tmp_name']);
-        $types = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-        $mime = $image['mime'] ?? '';
-        if (!isset($types[$mime])) {
-            json(['error' => 'Format foto harus JPG, PNG, atau WebP'], 422);
+        if (!$uploads) {
+            json(['error' => 'Pilih foto makanan yang akan dikirim'], 422);
         }
+
         $folder = __DIR__ . '/../../uploads/dispatch';
         if (!is_dir($folder) && !mkdir($folder, 0775, true)) {
             json(['error' => 'Folder foto kiriman tidak dapat dibuat'], 500);
         }
-        $filename = 'dispatch-' . $id . '-' . bin2hex(random_bytes(10)) . '.' . $types[$mime];
-        if (!move_uploaded_file($file['tmp_name'], $folder . '/' . $filename)) {
-            json(['error' => 'Foto makanan gagal diunggah'], 500);
-        }
-        $path = 'uploads/dispatch/' . $filename;
+        $savedPaths = [];
         try {
-            // UPDATE menyimpan lokasi foto pengiriman pada pesanan.
-            $affectedRows = q('UPDATE pesanan
-                SET foto_kiriman = ?
-                WHERE id = ? AND status = ?', [$path, $id, 'diproses'])->rowCount();
+            foreach ($uploads as $upload) {
+                $filename = 'dispatch-' . $id . '-' . bin2hex(random_bytes(10)) . '.' . $upload['extension'];
+                if (!move_uploaded_file($upload['tmp_name'], $folder . '/' . $filename)) {
+                    throw new RuntimeException('Foto makanan gagal diunggah');
+                }
+                $savedPaths[] = 'uploads/dispatch/' . $filename;
+            }
+
+            $db = db();
+            $db->beginTransaction();
+            // Kunci status sebelum menambahkan galeri agar pembatalan tidak tertimpa.
+            $order = q("SELECT id FROM pesanan WHERE id = ? AND status = 'diproses' FOR UPDATE", [$id])->fetch();
+            if (!$order) {
+                throw new DomainException('Status pesanan sudah berubah');
+            }
+            foreach ($savedPaths as $path) {
+                q('INSERT INTO pesanan_foto_kiriman (pesanan_id, path) VALUES (?, ?)', [$id, $path]);
+            }
+            // Pertahankan nilai kolom lama sebagai foto pertama untuk kompatibilitas.
+            q('UPDATE pesanan SET foto_kiriman = COALESCE(foto_kiriman, ?) WHERE id = ?', [$savedPaths[0], $id]);
+            $db->commit();
         } catch (Throwable $e) {
-            @unlink($folder . '/' . $filename);
-            json(['error' => 'Foto kiriman gagal disimpan'], 500);
+            if (isset($db) && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            foreach ($savedPaths as $path) {
+                @unlink($folder . '/' . basename($path));
+            }
+            json(['error' => $e instanceof DomainException ? $e->getMessage() : 'Foto kiriman gagal disimpan'], $e instanceof DomainException ? 409 : 500);
         }
-        if (!$affectedRows) {
-            @unlink($folder . '/' . $filename);
-            json(['error' => 'Status pesanan sudah berubah'], 409);
-        }
-        json(['ok' => true, 'foto_kiriman' => $path]);
+        json(['ok' => true, 'foto_kiriman' => $savedPaths[0], 'foto_kiriman_list' => $savedPaths]);
     }
     $request = body();
     if (($request['action'] ?? '') === 'check_item') {
@@ -143,6 +173,13 @@ if (isset($_GET['id'])) {
         ON pr.id = d.produk_id
         WHERE d.pesanan_id = ?
         ORDER BY pr.nama", [$order['id']])->fetchAll();
+    $order['foto_kiriman_list'] = q(
+        'SELECT path FROM pesanan_foto_kiriman WHERE pesanan_id = ? ORDER BY id',
+        [$order['id']]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    if (!$order['foto_kiriman_list'] && !empty($order['foto_kiriman'])) {
+        $order['foto_kiriman_list'] = [$order['foto_kiriman']];
+    }
     json($order);
 }
 $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
@@ -159,7 +196,9 @@ $search = '%' . trim($_GET['q'] ?? '') . '%';
 $items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at
     FROM pesanan p
     WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
-    ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END, p.created_at DESC", [$search, $search])->fetchAll();
+    ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,
+        CASE WHEN p.status = 'selesai' THEN COALESCE(p.status_updated_at, p.created_at) END DESC,
+        p.created_at DESC", [$search, $search])->fetchAll();
 // Satu query COUNT dengan FILTER menghitung total dan jumlah untuk setiap status.
 $count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled
     FROM pesanan")->fetch();

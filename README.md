@@ -97,12 +97,18 @@ public/
 
 4. Jalankan server pengembangan dari direktori proyek: `php -S localhost:8000 -t public`.
 5. Buka `http://localhost:8000/`. Registrasi publik selalu membuat akun dengan peran `pelanggan`.
+6. Untuk membatalkan pesanan yang belum dibayar tepat waktu, jadwalkan
+   `php scripts/expire-unpaid-orders.php --apply` setiap menit setelah inventaris
+   dan dry-run. Rincian aktivasi, argumen Task Scheduler, dan cron ada di bawah.
 
 ## Alur Fitur Utama
 
 Admin mengelola katalog produk, jadwal PO, dan validasi pembayaran. Pelanggan dapat melihat katalog, memasukkan produk ke keranjang, melakukan checkout, mengunggah bukti pembayaran, dan melihat riwayat pesanan. Owner hanya dapat melihat data dan laporan.
 
 Pesanan menyimpan snapshot harga setiap produk. Bukti pembayaran yang didukung adalah JPG, PNG, atau WebP dengan ukuran maksimal 2 MB.
+Pesanan yang belum mengirim bukti pembayaran dibatalkan satu jam setelah dibuat.
+Pembatalan otomatis berjalan melalui scheduler; membuka katalog atau riwayat
+tidak mengubah pesanan. Pesanan yang dibatalkan tidak lagi memakai kuota.
 
 ## Kuota Pengiriman
 

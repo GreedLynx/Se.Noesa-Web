@@ -4,6 +4,8 @@
 
 - Admin menetapkan kuota default per hari pengiriman saat membuat/mengedit produk,
   disimpan pada `produk.kuota_harian`.
+- Default awal 50 porsi untuk produk baru. Migrasi 017 juga menetapkan semua
+  default produk lama menjadi 50 satu kali; override tanggal tidak berubah.
 - Kuota efektif memakai override `kuota_harian.kuota` bila barisnya ada, selain itu
   memakai default produk. Override 0 tetap berlaku dan tidak menjadi fallback.
 - Rentang inklusif: tanggal mulai dan selesai termasuk, maksimal 366 tanggal per
