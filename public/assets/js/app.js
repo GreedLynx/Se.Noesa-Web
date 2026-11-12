@@ -533,7 +533,8 @@ const PAGES = {
                     .map((p, i) => {
                         const pct = p.kuota>0?(p.sisa / p.kuota) * 100:0;
                         const img = p.gambar ? `<img src="../${p.gambar}" alt="${p.nama}" onerror="this.src='../assets/img/produk/NK-01.png'">` : '<img src="../assets/img/produk/NK-01.png" alt="placeholder">';
-                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${p.sisa <= 0 ? " · habis" : ""}</small><div class="meter${pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
+                        const unavailable = d.tanggal_libur ? "libur" : p.sisa <= 0 ? "habis" : "";
+                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${unavailable ? " · " + unavailable : ""}</small><div class="meter${!d.tanggal_libur && pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
                     })
                     .join("") || '<p class="empty">Produk tidak ditemukan</p>';
             requestAnimationFrame(() =>

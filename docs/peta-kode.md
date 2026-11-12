@@ -1,5 +1,21 @@
 # Peta Kode
 
+## Kalender libur operasional
+
+| Kebutuhan | File |
+|---|---|
+| UI Admin rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
+| CRUD tanggal libur role Admin | `public/admin/api/holidays.php` |
+| Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
+| Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
+| Rekap porsi per menu pada tanggal pilihan, dengan tautan detail pesanan | `database/migrations/020_daily_production_report.sql`, `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+
+Operasional selalu buka secara default. Kuota tersimpan tidak diubah saat
+rentang libur dibuat. Pesanan lama tidak berubah otomatis; penolakan manual
+dengan alasan dan tawaran jadwal ulang menjadi tahap fitur Admin berikutnya.
+`jadwal_po` dipertahankan sebagai referensi pesanan; UI Jadwal tidak lagi
+mengelola periode PO.
+
 ## Pembatalan pesanan dan kedaluwarsa pembayaran
 
 | Kebutuhan | File |

@@ -28,10 +28,26 @@
 - Penolakan/pembatalan pesanan memulihkan sisa melalui agregasi, tanpa update counter.
 - Owner read-only; hanya Admin menulis default dan override.
 
+## Tanggal libur operasional
+
+- Operasional selalu buka secara default; Admin hanya memasukkan atau menghapus
+  tanggal/rentang libur di halaman Jadwal.
+- Rentang tanggal libur inklusif. Pada tanggal tersebut kuota efektif seluruh
+  produk dan kapasitas dapur menjadi 0 tanpa mengubah kuota tersimpan.
+- Pelanggan melihat peringatan saat memilih tanggal libur dan checkout pada
+  tanggal itu ditolak oleh UI serta server.
+- Pesanan yang sudah ada tidak berubah otomatis ketika libur ditambahkan.
+  Kebijakan yang disepakati: Admin menolaknya satu per satu dengan alasan dan
+  tawaran penjadwalan ulang; alur Admin tersebut menjadi implementasi terpisah.
+- Dashboard Admin merangkum jumlah porsi per menu untuk tanggal kirim terpilih.
+  Hitungan mencakup pesanan selain `ditolak` dan `dibatalkan`; tautan membuka
+  detail pesanan yang sudah menyediakan checklist dan tindakan status.
+
 ## Cakupan
 
-`jadwal_po` tetap sebagai referensi pesanan dan tidak diubah dalam revisi ini.
-Penutupan tanggal pengiriman global dirancang terpisah.
+`jadwal_po` tetap sebagai referensi pesanan dan tidak menentukan hari operasional.
+Penutupan tanggal global memakai tabel tersendiri agar kuota produk tersimpan
+tetap pulih otomatis ketika tanggal libur dihapus.
 
 ## Pembatalan pesanan
 

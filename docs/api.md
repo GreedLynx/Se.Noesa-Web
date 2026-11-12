@@ -42,19 +42,33 @@ tanggal itu. Save terbaru menimpa tanggal overlap. Reset tidak memulihkan histor
 GET dengan produk_id mengembalikan `{items}` override per tanggal urut terbaru;
 tambahan tanggal mengembalikan satu baris atau null. Seluruh aksi wajib Admin.
 
+### Tanggal libur operasional Admin
+
+Halaman Jadwal mengelola tanggal libur; tanggal operasional lain selalu dianggap
+buka. GET `admin/api/holidays.php` mengembalikan
+`{items:[{id,tanggal_mulai,tanggal_selesai}]}`. POST menerima `action=save`
+(default) dengan `tanggal_mulai` dan `tanggal_selesai` YYYY-MM-DD, atau
+`action=delete` dengan `id`. Rentang inklusif dan harus berurutan. Role wajib
+Admin. Rentang tidak mengubah pesanan lama atau kuota produk/override tersimpan.
+
 ### Katalog dan checkout pelanggan
 
 GET `pelanggan/api/catalog.php` menerima kategori,q,tgl_kirim (default H+7).
-Respons `{items,schedule,tanggal,maxKitchen,kitchenUsed,kitchenRemaining}`.
+Respons `{items,schedule,tanggal,tanggal_libur,maxKitchen,kitchenUsed,kitchenRemaining}`.
 Field kuota item sama dengan produk Admin. Kuota efektif 0 dikecualikan; produk
 berkuota positif yang habis tetap ditampilkan dengan sisa 0. Tanggal invalid HTTP 422.
+Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
+peringatan tanggal libur.
 
 POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
 dan `items:[{id,qty}]`. Produk berulang digabung; maksimal 500 porsi per produk dan
 minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
-Penurunan kuota mempertahankan pesanan lama dan membatasi checkout baru.
+Penurunan kuota atau tanggal libur mempertahankan pesanan lama dan membatasi
+checkout baru; checkout tanggal libur ditolak dengan HTTP 422 meskipun request
+melewati UI. `jadwal_po` tetap menjadi referensi FK pesanan, tetapi tidak lagi
+dikelola dari halaman Jadwal.
 Pesanan berstatus `menunggu_pembayaran` dibatalkan otomatis satu jam sejak
 `created_at` bila bukti belum dikirim. Jalankan `php scripts/expire-unpaid-orders.php`
 melalui scheduler setiap menit; API katalog
