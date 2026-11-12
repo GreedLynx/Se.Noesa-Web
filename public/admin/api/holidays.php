@@ -36,6 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             json(['error' => 'Aksi tidak valid'], 422);
         }
 
+        $id = null;
+        if (array_key_exists('id', $request)) {
+            $id = filter_var($request['id'], FILTER_VALIDATE_INT);
+            if (!$id || $id < 1) {
+                $db->rollBack();
+                json(['error' => 'ID tanggal libur tidak valid'], 422);
+            }
+        }
+
         $start = $request['tanggal_mulai'] ?? '';
         $end = $request['tanggal_selesai'] ?? '';
         if (!valid_holiday_date($start) || !valid_holiday_date($end)) {
@@ -47,7 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             json(['error' => 'Tanggal mulai harus sama dengan atau sebelum tanggal akhir'], 422);
         }
 
-        q('INSERT INTO tanggal_libur_operasional (tanggal_mulai, tanggal_selesai) VALUES (?, ?)', [$start, $end]);
+        if ($id !== null) {
+            $updated = q('UPDATE tanggal_libur_operasional
+                SET tanggal_mulai = ?, tanggal_selesai = ?
+                WHERE id = ?', [$start, $end, $id])->rowCount();
+            if (!$updated) {
+                $db->rollBack();
+                json(['error' => 'Tanggal libur tidak ditemukan'], 404);
+            }
+        } else {
+            q('INSERT INTO tanggal_libur_operasional (tanggal_mulai, tanggal_selesai) VALUES (?, ?)', [$start, $end]);
+        }
         $db->commit();
         json(['ok' => true]);
     } catch (Throwable $error) {

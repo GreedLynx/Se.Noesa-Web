@@ -32,6 +32,11 @@ sedang disimpan. Pesanan lama tidak diubah oleh migrasi atau pencatatan libur.
 `jadwal_po` tetap dipertahankan sebagai FK `pesanan.jadwal_id`, bukan sumber
 aturan tanggal operasional di UI.
 
+Edit tanggal libur memperbarui rentang berdasarkan ID dalam transaksi dengan
+lock tabel yang sama seperti tambah/hapus dan checkout. Tidak memerlukan
+perubahan skema; tanggal yang keluar dari rentang kembali memakai kuota asal
+kecuali masih tercakup rentang libur lain.
+
 ## Rekap produksi harian
 
 Migrasi `020_daily_production_report.sql` membuat VIEW

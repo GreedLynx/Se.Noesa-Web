@@ -49,7 +49,10 @@ buka. GET `admin/api/holidays.php` mengembalikan
 `{items:[{id,tanggal_mulai,tanggal_selesai}]}`. POST menerima `action=save`
 (default) dengan `tanggal_mulai` dan `tanggal_selesai` YYYY-MM-DD, atau
 `action=delete` dengan `id`. Rentang inklusif dan harus berurutan. Role wajib
-Admin. Rentang tidak mengubah pesanan lama atau kuota produk/override tersimpan.
+Admin. `action=save` dengan `id` integer positif memperbarui rentang libur yang
+ada; tanpa `id` menambahkan rentang baru. ID invalid menghasilkan 422 dan ID
+yang sudah tidak ditemukan menghasilkan 404. Rentang tidak mengubah pesanan
+lama atau kuota produk/override tersimpan.
 
 ### Katalog dan checkout pelanggan
 

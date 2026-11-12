@@ -30,7 +30,7 @@
 
 ## Tanggal libur operasional
 
-- Operasional selalu buka secara default; Admin hanya memasukkan atau menghapus
+- Operasional selalu buka secara default; Admin memasukkan, mengedit, atau menghapus
   tanggal/rentang libur di halaman Jadwal.
 - Rentang tanggal libur inklusif. Pada tanggal tersebut kuota efektif seluruh
   produk dan kapasitas dapur menjadi 0 tanpa mengubah kuota tersimpan.

@@ -167,10 +167,14 @@ async function loadHolidays() {
     const rows = d.items.map(holiday =>
         `<tr>
       <td><b>${esc(holiday.tanggal_mulai)} s/d ${esc(holiday.tanggal_selesai)}</b></td>
-      <td><button class="button small danger-outline" data-delete-holiday="${holiday.id}">Hapus</button></td>
+      <td><button class="button small secondary" data-edit-holiday="${holiday.id}">Edit</button>
+          <button class="button small danger-outline" data-delete-holiday="${holiday.id}">Hapus</button></td>
     </tr>`
     ).join("");
     $("#holiday-rows").innerHTML = rows || '<tr><td colspan="2" class="empty-state">Belum ada tanggal libur.</td></tr>';
+    $$('[data-edit-holiday]').forEach(btn => {
+        btn.onclick = () => editHoliday(d.items.find(holiday => Number(holiday.id) === Number(btn.dataset.editHoliday)));
+    });
     $$('[data-delete-holiday]').forEach(btn => {
         btn.onclick = async () => {
             const confirmed = await confirmDialog("Hapus tanggal libur", "Tanggal yang tidak tercakup rentang libur lain akan kembali dapat dipesan.", "Ya, Hapus", "danger");
@@ -183,18 +187,25 @@ async function loadHolidays() {
         };
     });
 }
+function editHoliday(holiday = null) {
+    const form = $("#holiday-form");
+    form.reset();
+    form.elements.id.value = holiday?.id || "";
+    form.elements.tanggal_mulai.value = holiday?.tanggal_mulai || "";
+    form.elements.tanggal_selesai.value = holiday?.tanggal_selesai || "";
+    $("#holiday-form-title").textContent = holiday ? "Edit tanggal libur" : "Tambah tanggal libur";
+    $("#holiday-error").textContent = "";
+    $("#holiday-dialog").showModal();
+}
 async function schedulesPage() {
     const form = $("#holiday-form");
-    $("#new-holiday").onclick = () => {
-        form.reset();
-        $("#holiday-error").textContent = "";
-        $("#holiday-dialog").showModal();
-    };
+    $("#new-holiday").onclick = () => editHoliday();
     $$('[data-close-dialog]').forEach(b => b.onclick = () => $("#holiday-dialog").close());
     form.onsubmit = async e => {
         e.preventDefault();
         const body = {
             action: "save",
+            ...(form.elements.id.value ? { id: Number(form.elements.id.value) } : {}),
             tanggal_mulai: form.elements.tanggal_mulai.value,
             tanggal_selesai: form.elements.tanggal_selesai.value,
         };

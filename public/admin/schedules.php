@@ -37,14 +37,15 @@ admin_head('Tanggal Libur', 'schedules');
         </tbody>
     </table>
 </section>
-<dialog id="holiday-dialog" class="product-dialog">
+<dialog id="holiday-dialog" class="product-dialog" aria-labelledby="holiday-form-title">
     <form id="holiday-form">
+        <input type="hidden" name="id">
         <div class="dialog-heading">
             <div>
                 <p class="eyebrow">
                     KALENDER OPERASIONAL
                 </p>
-                <h2>
+                <h2 id="holiday-form-title">
                     Tambah tanggal libur
                 </h2>
             </div>

@@ -4,8 +4,9 @@
 
 | Kebutuhan | File |
 |---|---|
-| UI Admin rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
+| UI Admin tambah/edit/hapus rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
 | CRUD tanggal libur role Admin | `public/admin/api/holidays.php` |
+| Uji form tambah/edit dan validasi API libur tanpa database aplikasi | `scripts/test-holidays.cjs` |
 | Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
 | Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
 | Rekap porsi per menu pada tanggal pilihan, dengan tautan detail pesanan | `database/migrations/020_daily_production_report.sql`, `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
