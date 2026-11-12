@@ -449,7 +449,20 @@ async function openHistoryDetail(id) {
         + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
         + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
 
-    const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
+    const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
+        ? d.foto_kiriman_list
+        : d.foto_kiriman
+          ? [d.foto_kiriman]
+          : [];
+    const deliveryPhotoSection = deliveryPhotos.length
+        ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><div class="dispatch-photos">' + deliveryPhotos.map(path => {
+            const photoUrl = /^https?:\/\//.test(path) || path.startsWith('/')
+                ? path
+                : '../' + path.replace(/^\.\//, '');
+            return '<a class="dispatch-photo-link" href="' + esc(photoUrl) + '" target="_blank" rel="noopener"><img class="uploaded-proof" src="'
+                + esc(photoUrl) + '" alt="Foto pesanan siap kirim"></a>';
+        }).join('') + '</div></section>'
+        : '';
 
     // --- LOGIKA PEMBATALAN (H-2) YANG SUDAH DIPERBAIKI ---
     const today = new Date();

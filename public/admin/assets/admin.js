@@ -28,6 +28,40 @@ async function api(url, options = {}) {
     if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
     return data;
 }
+async function uploadDispatchPhoto(id, photo) {
+    const form = new FormData();
+    form.append("action", "upload_dispatch");
+    form.append("id", String(id));
+    form.append("foto_kiriman[]", photo);
+    const response = await fetch("api/orders.php", {
+        method: "POST",
+        body: form,
+        cache: "no-store",
+    });
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        const jsonStart = text.lastIndexOf("{");
+        if (jsonStart >= 0) {
+            try {
+                data = JSON.parse(text.slice(jsonStart));
+            } catch {
+                data = null;
+            }
+        }
+        if (!data) {
+            const uploadLimit = /post content-length|post_max_size/i.test(text);
+            throw Error(
+                uploadLimit
+                    ? "Ukuran total upload melewati batas server. Pilih foto maksimal 2 MB per file."
+                    : "Server mengirim respons yang tidak valid saat menyimpan foto. Coba lagi.",
+            );
+        }
+    }
+    if (!response.ok) throw Error(data.error || "Foto kiriman gagal disimpan");
+}
 function toast(message) {
     const el = $("#toast");
     if (!el) return;
@@ -562,7 +596,7 @@ function editProduct(p) {
     form.elements.harga.value = p?.harga || "";
     $('#kuota-tanggal').value = $('#quota-date')?.value || '';
     $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
-    form.elements.kuota_default.value = p?.kuota_default ?? 0;
+    form.elements.kuota_default.value = p?.kuota_default ?? 50;
     form.elements.min_pesan.value = p?.min_pesan || 4;
     form.elements.gambar.value = p?.gambar || "";
     form.elements.gambar_file.required = !p;
@@ -726,7 +760,9 @@ async function orderDetail() {
         '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
         delivery +
         "</b></div></article>";
-    const menu = o.menu
+    const menuItems = Array.isArray(o.menu) ? o.menu : [];
+    const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
+    const menu = menuItems
         .map(
             (m) =>
                 '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
@@ -746,25 +782,43 @@ async function orderDetail() {
                 "</strong></label>",
         )
         .join("");
-    const sentPhoto = o.foto_kiriman
-        ? '<img class="dispatch-photo" src="../' +
-            esc(o.foto_kiriman) +
-            '" alt="Foto makanan yang akan dikirim">'
-        : "";
+    const sentPhotos = Array.isArray(o.foto_kiriman_list)
+        ? o.foto_kiriman_list
+        : o.foto_kiriman
+          ? [o.foto_kiriman]
+          : [];
+    const sentPhotoGallery = sentPhotos.length
+        ? '<div class="dispatch-photos">' +
+          sentPhotos
+              .map((photo) => {
+                  const photoUrl = /^https?:\/\//.test(photo) || photo.startsWith("/")
+                      ? photo
+                      : "../" + photo.replace(/^\.\//, "");
+                  return '<a class="dispatch-photo-link" href="' +
+                      esc(photoUrl) +
+                      '" target="_blank" rel="noopener"><img class="dispatch-photo" src="' +
+                      esc(photoUrl) +
+                      '" alt="Foto makanan yang akan dikirim"></a>';
+              })
+              .join("") +
+          "</div>"
+        : '<p class="muted">Belum ada foto makanan yang diunggah.</p>';
     const dispatch =
-        o.status === "diproses"
-            ? '<article class="panel"><div class="panel-heading"><h2>Bukti pesanan pelanggan</h2><span class="tag soft">Foto kiriman</span></div>' +
-                sentPhoto +
-                '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
-                (o.foto_kiriman
-                    ? "Ganti foto makanan"
-                    : "Unggah foto makanan yang akan dikirim") +
-                '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form></article>'
+        o.status === "diproses" || o.status === "selesai"
+            ? '<article class="panel"><div class="panel-heading"><h2>Foto makanan siap kirim</h2><span class="tag soft">Foto kiriman</span></div>' +
+                sentPhotoGallery +
+                (o.status === "diproses"
+                    ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
+                    : "") +
+                  "</article>"
             : "";
     const checklist =
         '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +
-        o.menu.length +
-        ' jenis</span></div><p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' +
+        menuCount +
+        '</span></div>' +
+        (Array.isArray(o.menu)
+            ? '<p class="muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>'
+            : '<p class="form-error" role="alert">Data daftar menu tidak tersedia. Muat ulang atau hubungi administrator.</p>') +
         menu +
         "</article>";
     const isValidation = o.status === "menunggu_validasi";
@@ -886,24 +940,32 @@ async function orderDetail() {
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const button = $("button", upload),
-            form = new FormData(upload);
-        form.append("action", "upload_dispatch");
-        form.append("id", String(id));
+            input = $('input[type="file"]', upload),
+            photos = Array.from(input.files || []);
+        if (!photos.length) {
+            $("#dispatch-photo-error").textContent = "Pilih setidaknya satu foto.";
+            return;
+        }
+        if (photos.some((photo) => photo.size > 2 * 1024 * 1024)) {
+            $("#dispatch-photo-error").textContent =
+                "Ukuran setiap foto maksimal 2 MB. Kecilkan foto lalu pilih kembali.";
+            return;
+        }
         button.disabled = true;
+        let uploadedCount = 0;
         try {
-            const response = await fetch("api/orders.php", {
-                    method: "POST",
-                    body: form,
-                    cache: "no-store",
-                }),
-                data = await response.json();
-            if (!response.ok)
-                throw Error(data.error || "Foto kiriman gagal disimpan");
+            for (const photo of photos) {
+                await uploadDispatchPhoto(id, photo);
+                uploadedCount++;
+            }
             toast("Foto makanan tersimpan");
             setTimeout(() => location.reload(), 400);
         } catch (error) {
-            $("#dispatch-photo-error").textContent = error.message;
+            $("#dispatch-photo-error").textContent = uploadedCount
+                ? `${uploadedCount} foto tersimpan, tetapi foto berikutnya gagal: ${error.message}`
+                : error.message;
             button.disabled = false;
+            if (uploadedCount) setTimeout(() => location.reload(), 1800);
         }
     });
 }

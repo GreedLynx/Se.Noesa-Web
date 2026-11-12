@@ -13,8 +13,8 @@ Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai 
 `kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
 (detail pesanan non-ditolak), serta `sisa` minimal 0.
 
-POST produk menyimpan metadata/gambar/min_pesan dan field wajib `kuota_default`,
-integer 0–2147483647. Alias request `kuota_harian` diterima bila canonical tidak
+POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
+integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
 dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
 Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
 gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.
@@ -64,3 +64,13 @@ Laporan memakai VIEW; checkout memakai prepared query langsung dengan hasil seta
 Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
 pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,
 dispatch, dan alias respons laporan Owner tetap.
+
+### Foto kiriman
+
+Admin mengunggah foto saat pesanan berstatus `diproses` melalui POST
+`admin/api/orders.php` dengan `action=upload_dispatch`, `id`, dan satu atau
+beberapa file `foto_kiriman[]`. Format JPG, PNG, atau WebP didukung, maksimal
+2 MB per foto. GET detail Admin dan pelanggan mengembalikan
+`foto_kiriman_list`; foto lama di `pesanan.foto_kiriman` tetap disertakan.
+Foto tetap tersedia di Admin dan detail riwayat pelanggan setelah status
+berubah menjadi `selesai`. Migrasi database yang sudah ada: `016_multiple_dispatch_photos.sql`.
