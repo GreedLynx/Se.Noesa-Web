@@ -106,6 +106,8 @@ public/
 ## Alur Fitur Utama
 
 Admin mengelola katalog produk, jadwal PO, dan validasi pembayaran. Pelanggan dapat melihat katalog, memasukkan produk ke keranjang, melakukan checkout, mengunggah bukti pembayaran, dan melihat riwayat pesanan. Owner hanya dapat melihat data dan laporan.
+Admin juga dapat mencatat pesanan offline dari halaman daftar pesanan. Pesanan
+tersebut langsung masuk status diproses dan mengurangi kuota pada tanggal kirim.
 
 Pesanan menyimpan snapshot harga setiap produk. Bukti pembayaran yang didukung adalah JPG, PNG, atau WebP dengan ukuran maksimal 2 MB.
 Pesanan yang belum mengirim bukti pembayaran dibatalkan satu jam setelah dibuat.

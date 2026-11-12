@@ -48,6 +48,14 @@ dibayar, dan mengecualikan pesanan `ditolak`/`dibatalkan` dari VIEW kuota.
 satu jam berdasarkan `created_at`; jadwalkan `scripts/expire-unpaid-orders.php`
 setiap menit agar pembatalan berjalan tanpa pelanggan membuka aplikasi.
 
+## Pesanan offline Admin
+
+Migrasi 019 menambah `pesanan.sumber`, bernilai `online` (default untuk transaksi
+lama dan checkout pelanggan) atau `offline`. Pesanan yang dicatat Admin langsung
+berstatus `diproses`, menyimpan snapshot harga/detail, dan memakai perhitungan,
+lock, kuota produk, serta batas dapur tanggal kirim yang sama dengan checkout.
+Dengan demikian pesanan offline segera mengurangi sisa kuota pesanan online.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga

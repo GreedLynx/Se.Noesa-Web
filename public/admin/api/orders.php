@@ -2,6 +2,9 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/order-expiration.php';
+require_once __DIR__ . '/../../../app/offline-orders.php';
+expire_unpaid_orders();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
@@ -75,6 +78,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['ok' => true, 'foto_kiriman_list' => $savedPaths]);
     }
     $request = body();
+    if (($request['action'] ?? '') === 'create_offline') {
+        try {
+            json(['ok' => true] + create_offline_order($request), 201);
+        } catch (DomainException $error) {
+            json(['error' => $error->getMessage()], 422);
+        } catch (Throwable $error) {
+            error_log('[Se.Noesa offline order] ' . $error);
+            json(['error' => 'Pesanan offline gagal disimpan. Coba beberapa saat lagi.'], 500);
+        }
+    }
     if (($request['action'] ?? '') === 'check_item') {
         // UPDATE ... FROM mengubah checklist hanya jika item milik pesanan yang sedang diproses.
         $item = q("UPDATE detail_pesanan d
@@ -187,7 +200,7 @@ $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
 // SELECT memfilter pesanan menurut tab/status dan kata kunci nama atau kode, lalu mengurutkan hasil.
-$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at
+$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.sumber, p.status_updated_at, p.tgl_kirim, p.created_at
     FROM pesanan p
     WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
     ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,
