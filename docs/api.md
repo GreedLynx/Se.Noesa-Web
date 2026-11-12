@@ -19,6 +19,15 @@ dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
 Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
 gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.
 
+### Pesanan offline Admin
+
+POST `admin/api/orders.php` menerima `action=create_offline`, identitas
+pemesan/penerima, `telepon`, `alamat`, `tgl_kirim`, `waktu_kirim`, catatan
+opsional, dan `items:[{id,qty}]`. Pesanan dibuat dengan sumber `offline` dan
+status `diproses`; kuota produk serta kapasitas dapur pada tanggal kirim
+diperiksa dan dikunci secara atomik seperti checkout online. Respons sukses
+`{ok,id,kode,total,status}` HTTP 201; kuota tidak cukup HTTP 422. Hanya Admin.
+
 ### Override Admin
 
 POST `admin/api/kuota-harian.php` menerima:

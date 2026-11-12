@@ -82,6 +82,7 @@ CREATE TABLE pesanan (
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
   total INT NOT NULL DEFAULT 0 CHECK(total >= 0),
+  sumber VARCHAR(10) NOT NULL DEFAULT 'online' CHECK (sumber IN ('online', 'offline')),
   status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran'
     CHECK (
       status IN (
