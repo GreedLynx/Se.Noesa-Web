@@ -40,6 +40,14 @@ Migrasi 017 mengatur `produk.kuota_harian` ke 50 untuk produk yang sudah ada
 dan default kolom untuk produk baru. Nilai ini berlaku setiap tanggal tanpa
 override di `kuota_harian`; override tanggal yang sudah tersimpan tetap berlaku.
 
+## Batas pembayaran
+
+Migrasi 018 mengizinkan status `dibatalkan`, membuat indeks pesanan yang belum
+dibayar, dan mengecualikan pesanan `ditolak`/`dibatalkan` dari VIEW kuota.
+`app/order-expiration.php` membatalkan pesanan `menunggu_pembayaran` setelah
+satu jam berdasarkan `created_at`; jadwalkan `scripts/expire-unpaid-orders.php`
+setiap menit agar pembatalan berjalan tanpa pelanggan membuka aplikasi.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga

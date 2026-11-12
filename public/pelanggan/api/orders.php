@@ -2,6 +2,8 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/order-expiration.php';
+expire_unpaid_orders();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request = body();
@@ -29,7 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         try {
-            q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = now() WHERE id = ?", [$id]);
+            $updated = q(
+                "UPDATE pesanan SET status = 'dibatalkan', status_updated_at = now()
+                WHERE id = ? AND user_id = ? AND status IN ('menunggu_pembayaran', 'menunggu_validasi')",
+                [$id, $customer['id']]
+            )->rowCount();
+            if (!$updated) {
+                json(['error' => 'Status pesanan sudah berubah. Muat ulang riwayat pesanan.'], 409);
+            }
             json(['ok' => true]);
         } catch (Throwable $e) {
             json(['error' => 'Gagal membatalkan pesanan'], 500);
@@ -106,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
+            if ($order['status'] === 'dibatalkan') {
+                json(['error' => 'Batas pembayaran 1 jam telah berakhir dan pesanan dibatalkan.'], 409);
+            }
             json(['error' => 'Bukti hanya dapat diunggah untuk pesanan yang menunggu pembayaran atau verifikasi'], 409);
         }
 
@@ -132,14 +144,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         try {
             // UPDATE menyimpan bukti/nama pembayar dan mengubah status jika pembayaran sebelumnya masih menunggu.
-            q(
+            $updated = q(
                 "UPDATE pesanan
                 SET bukti_bayar = ?, nama_pembayar = ?,
                     status = CASE WHEN status = 'menunggu_pembayaran' THEN 'menunggu_validasi' ELSE status END,
                     status_updated_at = CASE WHEN status = 'menunggu_pembayaran' THEN now() ELSE status_updated_at END
-                WHERE id = ? AND user_id = ? AND status IN ('menunggu_pembayaran', 'menunggu_validasi')",
+                WHERE id = ? AND user_id = ? AND status IN ('menunggu_pembayaran', 'menunggu_validasi')
+                  AND (status <> 'menunggu_pembayaran' OR created_at > now() - INTERVAL '1 hour')",
                 ['uploads/payments/' . $filename, $payerName, $id, $customer['id']]
-            );
+            )->rowCount();
+            if (!$updated) {
+                @unlink($folder . '/' . $filename);
+                json(['error' => 'Batas pembayaran 1 jam telah berakhir dan pesanan dibatalkan.'], 409);
+            }
         } catch (Throwable $e) {
             @unlink($folder . '/' . $filename);
             json(['error' => 'Gagal menyimpan bukti pembayaran'], 500);

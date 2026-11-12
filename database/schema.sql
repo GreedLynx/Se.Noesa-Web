@@ -89,7 +89,8 @@ CREATE TABLE pesanan (
         'menunggu_validasi',
         'diproses',
         'selesai',
-        'ditolak'
+        'ditolak',
+        'dibatalkan'
       )
     ),
   bukti_bayar VARCHAR(200),

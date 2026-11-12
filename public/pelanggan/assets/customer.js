@@ -446,7 +446,9 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
     const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
+        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Batas maksimal pembayaran 1 jam sejak pesanan dibuat, sampai ' +
+            dateLabel(new Date(new Date(d.created_at).getTime() + 60 * 60 * 1000).toISOString(), true) +
+            '. Jika belum dibayar, pesanan dibatalkan otomatis dan kuota dikembalikan.</p>': '')
         + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)

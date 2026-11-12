@@ -11,7 +11,7 @@ filter `tgl_kirim` tidak ditambahkan pada POST.
 GET `admin/api/products.php` menerima `tgl_kirim` (default hari ini), kategori, q.
 Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai produk),
 `kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
-(detail pesanan non-ditolak), serta `sisa` minimal 0.
+(detail pesanan non-ditolak/non-dibatalkan), serta `sisa` minimal 0.
 
 POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
 integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
@@ -52,6 +52,11 @@ minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota mempertahankan pesanan lama dan membatasi checkout baru.
+Pesanan berstatus `menunggu_pembayaran` dibatalkan otomatis satu jam sejak
+`created_at` bila bukti belum dikirim. Jalankan `php scripts/expire-unpaid-orders.php`
+melalui scheduler setiap menit; API katalog
+dan pesanan pelanggan juga menjalankan pembersihan untuk menjaga status tetap
+mutakhir saat ada aktivitas. Status `dibatalkan` tidak memakai kuota.
 
 ### Laporan Admin dan Owner
 
