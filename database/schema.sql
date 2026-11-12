@@ -55,7 +55,7 @@ CREATE TABLE produk (
   kategori VARCHAR(10) NOT NULL CHECK(kategori IN('makanan', 'minuman', 'snack')),
   harga INT NOT NULL CHECK(harga >= 0),
   kuota INT NOT NULL DEFAULT 0,
-  kuota_harian INT NOT NULL DEFAULT 0 CONSTRAINT produk_kuota_harian_nonnegative_check CHECK(kuota_harian >= 0),
+  kuota_harian INT NOT NULL DEFAULT 50 CONSTRAINT produk_kuota_harian_nonnegative_check CHECK(kuota_harian >= 0),
   min_pesan INT NOT NULL DEFAULT 4 CHECK(min_pesan >= 4),
   terpakai INT NOT NULL DEFAULT 0,
   gambar VARCHAR(120)

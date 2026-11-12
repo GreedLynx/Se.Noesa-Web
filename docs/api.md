@@ -13,8 +13,8 @@ Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai 
 `kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
 (detail pesanan non-ditolak), serta `sisa` minimal 0.
 
-POST produk menyimpan metadata/gambar/min_pesan dan field wajib `kuota_default`,
-integer 0–2147483647. Alias request `kuota_harian` diterima bila canonical tidak
+POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
+integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
 dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
 Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
 gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.

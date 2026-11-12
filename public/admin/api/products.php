@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $harga = filter_var($request['harga'], FILTER_VALIDATE_INT);
     $minimum = filter_var($request['min_pesan'], FILTER_VALIDATE_INT);
-    $defaultQuota = filter_var($request['kuota_default'] ?? $request['kuota_harian'] ?? null, FILTER_VALIDATE_INT);
+    $defaultQuota = filter_var($request['kuota_default'] ?? $request['kuota_harian'] ?? 50, FILTER_VALIDATE_INT);
     if ($defaultQuota === false || $defaultQuota < 0 || $defaultQuota > 2147483647) {
         json(['error' => 'Kuota default harus angka 0 sampai 2147483647'], 422);
     }
