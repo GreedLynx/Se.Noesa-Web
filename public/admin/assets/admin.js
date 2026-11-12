@@ -453,7 +453,7 @@ async function loadProducts() {
                         '" alt="" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="product-info"><div class="row-between"><span class="category-label">' +
                         esc(p.kategori) +
                         "</span>" +
-                        (Number(p.sisa) <= Number(p.kuota) * 0.2
+                        (!d.tanggal_libur && (Number(p.kuota) === 0 || Number(p.sisa) <= Number(p.kuota) * 0.2)
                             ? '<span class="tag warning">Kritis</span>'
                             : "") +
                         "</div><h3>" +

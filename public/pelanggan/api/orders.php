@@ -216,6 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
         // LOCK TABLE mencegah perubahan kuota harian bersamaan dengan checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Checkout dan perubahan tanggal libur diserialisasi agar penutupan baru tidak terlewati.
+        q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
         // SELECT ... FOR UPDATE mengunci baris kuota tanggal pengiriman sampai transaksi selesai.
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
         // SELECT ... FOR UPDATE memilih sekaligus mengunci jadwal PO aktif yang akan dipakai.

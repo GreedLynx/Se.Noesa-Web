@@ -80,8 +80,16 @@ mutakhir saat ada aktivitas. Status `dibatalkan` tidak memakai kuota.
 GET produk/pesanan/dashboard Admin dan produk/pesanan Owner menerima tgl_kirim
 (default hari ini) untuk ringkasan, tanpa mengubah filter daftar transaksi.
 Kategori kritis memakai kuota efektif. Produk Owner mengembalikan juga
-maxKitchen,kitchenUsed,kitchenRemaining. Owner tetap GET-only/read-only.
+maxKitchen,kitchenUsed,kitchenRemaining dan `tanggal_libur`. Owner tetap GET-only/read-only.
 Laporan memakai VIEW; checkout memakai prepared query langsung dengan hasil setara.
+
+GET `admin/api/dashboard.php` menambahkan `production_date`, `tanggal_libur`, dan `production`.
+Data dikelompokkan per menu untuk tanggal kirim yang diminta; `total_porsi`
+menjumlahkan detail pesanan selain `ditolak`/`dibatalkan`, dan setiap menu
+menyertakan daftar `pesanan` berisi id, kode, status, dan jumlah porsinya.
+Data bersumber dari VIEW `v_rekap_produksi_harian`. Dashboard menautkan setiap
+pesanan ke detail Admin yang sudah memuat checklist dan tindakan status. Filter
+tanggal memakai parameter `tgl_kirim` yang sama.
 
 Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
 pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,

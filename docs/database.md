@@ -20,6 +20,26 @@ per file; nama file tercatat di schema_migrations.
 - Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
   selain ditolak/dibatalkan pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
 
+## Tanggal libur operasional
+
+Migrasi `019_operational_holidays.sql` membuat tabel `tanggal_libur_operasional`
+dengan rentang `tanggal_mulai` dan `tanggal_selesai` inklusif. `daily_quota_snapshot`
+menerapkan overlay kuota efektif 0 untuk seluruh produk dan kapasitas dapur
+tanpa mengubah `produk.kuota_harian` atau `kuota_harian.kuota`; nilai aslinya
+kembali berlaku saat rentang libur dihapus. Checkout dan perubahan rentang
+libur memakai lock tabel yang sama agar checkout tidak lolos saat penutupan
+sedang disimpan. Pesanan lama tidak diubah oleh migrasi atau pencatatan libur.
+`jadwal_po` tetap dipertahankan sebagai FK `pesanan.jadwal_id`, bukan sumber
+aturan tanggal operasional di UI.
+
+## Rekap produksi harian
+
+Migrasi `020_daily_production_report.sql` membuat VIEW
+`v_rekap_produksi_harian`, yang mengelompokkan jumlah porsi per menu, pesanan,
+dan tanggal kirim Asia/Jakarta. Pesanan `ditolak` dan `dibatalkan` dikecualikan.
+Dashboard Admin memfilter VIEW tersebut menurut tanggal pilihan, lalu memakai
+id pesanan untuk tautan ke detail dan checklist yang sudah ada.
+
 ## Migrasi 015 dan VIEW
 
 `015_default_product_quota.sql` mengisi default produk lama dari override bertanggal

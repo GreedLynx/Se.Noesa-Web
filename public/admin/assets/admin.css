@@ -374,6 +374,45 @@ button {
 .panel-heading .eyebrow {
   margin-bottom: 5px;
 }
+.production-list {
+  display: grid;
+  gap: 10px;
+}
+.production-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.production-item h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+.production-item > div > strong {
+  color: var(--green-dark);
+  font-size: 13px;
+}
+.production-item details summary {
+  color: var(--green-dark);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.production-item details ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+.production-item details li {
+  font-size: 12px;
+}
+.production-item details li a {
+  color: var(--green-dark);
+  font-weight: 600;
+}
 .pill,
 .tag {
   font-size: 10px;

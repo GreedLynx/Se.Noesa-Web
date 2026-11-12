@@ -131,6 +131,19 @@ admin_head('Dashboard', 'dashboard');
         </div>
     </article>
 </section>
+<section class="panel production-panel" aria-labelledby="production-title">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">PERSIAPAN PRODUKSI</p>
+            <h2 id="production-title">Rekap menu per tanggal kirim</h2>
+            <p class="muted">Jumlah mencakup pesanan aktif; pesanan ditolak dan dibatalkan dikecualikan.</p>
+        </div>
+        <span class="pill soft" id="production-date"></span>
+    </div>
+    <div id="production-list" aria-live="polite">
+        <div class="loading">Memuat rekap produksi...</div>
+    </div>
+</section>
 <section class="panel activity-panel">
     <div class="panel-heading">
         <div>
