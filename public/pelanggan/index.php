@@ -10,7 +10,6 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
     <div>
         <p class="eyebrow">MENU SE.NOESA</p>
         <h2>Pilih Menu</h2>
-        <p class="choice-subtitle">Menu Favoritmu</p>
         <p class="catalog-description">Pilih menu favorit untuk pesanan berikutnya.</p>
     </div>
     <button type="button" class="category-toggle" data-category-toggle aria-controls="category-rail" aria-expanded="false" aria-label="Buka kategori">

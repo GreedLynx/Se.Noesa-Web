@@ -55,9 +55,8 @@ function admin_head(string $title, string $page): void
         <main class="main-panel">
             <header class="topbar">
                 <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
-                <div class="top-copy">
-                    <small>Se.Noesa / Admin</small>
-                    <!-- Tag <h1> dihapus dari sini agar tidak double dengan judul di bawah -->
+                <div class="top-copy" style="display: flex; align-items: center; height: 100%;">
+                    <small style="font-size: 20px; font-weight: 600; color: var(--green-dark); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Admin</small>
                 </div>
                 <div class="top-actions">
                     <span class="today-label" id="today-label"></span>
