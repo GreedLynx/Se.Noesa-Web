@@ -25,7 +25,7 @@ function daily_quota_snapshot($date, bool $report = false): array
             [$date]
         )->fetchAll();
     } else {
-        // LEFT JOIN mengambil kuota dan subquery SUM menghitung pemakaian per produk dari pesanan yang belum ditolak.
+        // LEFT JOIN mengambil kuota; SUM menghitung pesanan yang belum ditolak atau dibatalkan.
         $items = q(
             "SELECT $fields, COALESCE(k.kuota, pr.kuota_harian) AS kuota_harian,
                 COALESCE(k.kuota, pr.kuota_harian) AS kuota, COALESCE(used.qty, 0) AS terpakai,
@@ -36,7 +36,7 @@ function daily_quota_snapshot($date, bool $report = false): array
                 SELECT d.produk_id, SUM(d.qty) AS qty
                 FROM detail_pesanan d
                 JOIN pesanan p ON p.id = d.pesanan_id
-                WHERE p.tgl_kirim >= ? AND p.tgl_kirim < ? AND p.status <> 'ditolak'
+                WHERE p.tgl_kirim >= ? AND p.tgl_kirim < ? AND p.status NOT IN ('ditolak', 'dibatalkan')
                 GROUP BY d.produk_id
             ) used ON used.produk_id = pr.id
             ORDER BY pr.id",
