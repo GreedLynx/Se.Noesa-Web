@@ -1,5 +1,8 @@
 # Database
 
+Foto bukti pesanan tersimpan melalui path `pesanan.foto_kiriman`. Penyelesaian
+pesanan mempertahankan path dan file foto; perbaikan tampilannya tidak mengubah skema.
+
 ## Sumber kuota aktif
 
 Skema awal `database/schema.sql` dilanjutkan seluruh migrasi melalui
@@ -14,7 +17,7 @@ per file; nama file tercatat di schema_migrations.
   ON CONFLICT per request. Save terbaru menimpa overlap. Reset menghapus override
   terpilih dan kembali ke default, bukan histori override lama.
 - Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
-  selain ditolak pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
+  selain ditolak/dibatalkan pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
 
 ## Migrasi 015 dan VIEW
 
@@ -54,4 +57,25 @@ minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
   sumber kuota/counter. pesanan.pax mengikuti skema sampai rename disetujui.
 - Dispatch memakai detail_pesanan.sudah_dicek dan pesanan.foto_kiriman.
 - Status penolakan ditolak; produk.status_aktif belum ada.
-- jadwal_po, pembayaran, kalender dan konfigurasi rahasia tidak diubah.
+- jadwal_po, kalender dan konfigurasi rahasia tidak diubah.
+
+## Migrasi 016: pembatalan
+
+Pemulihan tampilan kartu pembatalan pelanggan tidak mengubah skema atau kontrak waktu.
+
+`016_order_cancellation.sql` menambahkan `dibatalkan` ke `pesanan_status_check`
+tanpa mengubah lima status lama. VIEW `v_kuota_harian` diganti dengan kolom/tipe
+tetap, mengecualikan `ditolak` dan `dibatalkan`, sama dengan helper checkout.
+Migrasi 006/015 tidak diubah. Tidak ada kolom, tabel, indeks, atau counter baru.
+Skema awal juga menerima status batal; tetap jalankan seluruh migrasi sesudahnya.
+
+`created_at` TIMESTAMPTZ menjadi dasar tenggat satu jam. Batas H-2 memakai tanggal
+pengiriman/hari sekarang pada Asia/Jakarta, bebas dari zona sesi database.
+Cancel/upload mengunci baris pesanan sebelum UPDATE bersyarat dan memeriksa
+waktu aktual database setelah lock. Job memakai UPDATE bersyarat atomik yang
+mengecek ulang status/bukti setelah menunggu lock. Urutan lock checkout tidak diubah.
+
+Tidak ada penghapusan pesanan, detail, bukti, maupun foto. Refund manual di luar
+aplikasi; tidak ada tabel status refund baru. Inventaris/dry-run job read-only;
+lihat urutan aktivasi di README. Migrasi dan job pada database aplikasi belum
+dijalankan oleh implementasi ini; pengujian memakai database khusus terisolasi.

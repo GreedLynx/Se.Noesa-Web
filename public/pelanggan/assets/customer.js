@@ -438,7 +438,7 @@ async function openHistoryDetail(id) {
         return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="../'
             + esc(image) + '" alt="' + esc(method.nama) + '"></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
-    const canUploadProof = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status), hasProof = !!d.bukti_bayar;
+    const canUploadProof = d.can_upload_proof === true, hasProof = !!d.bukti_bayar;
     const proofForm = canUploadProof ? '<form class="proof-upload" id="proof-form" ' + (hasProof ? 'hidden': '') + '><label for="payer-name">Atas nama</label><input id="payer-name" name="nama_pembayar" type="text" maxlength="100" value="'
         + esc(d.nama_pembayar || d.nama_pemesan || '') + '" placeholder="Nama yang membayar" required><label for="proof-file">'
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
@@ -446,58 +446,49 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
     const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Pesanan menunggu pembayaran. Unggah bukti transfer untuk melanjutkan ke verifikasi.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
+        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
+        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
+            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
 
     const deliveryPhotoSection = d.foto_kiriman ? '<section class="detail-section"><h3>Foto Siap Kirim</h3><img class="uploaded-proof" src="../' + esc(d.foto_kiriman).replace(/^\/+/, '') + '" alt="Foto pesanan siap kirim"></section>' : '';
 
-    // --- LOGIKA PEMBATALAN (H-2) YANG SUDAH DIPERBAIKI ---
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const delivery = new Date(d.tgl_kirim);
-    delivery.setHours(0,0,0,0);
-    
-    const daysUntilDelivery = Math.round((delivery - today) / (1000 * 60 * 60 * 24));
-    
-    // Tanggal batas akhir pembatalan adalah H-2 dari tanggal kirim
-    const cancelLimitDate = new Date(delivery);
-    cancelLimitDate.setDate(cancelLimitDate.getDate() - 2);
-    
-    // Sisa hari untuk membatalkan dihitung dari hari ini sampai tanggal batas akhir (H-2)
-    const daysLeftToCancel = Math.round((cancelLimitDate - today) / (1000 * 60 * 60 * 24));
-    
-    const cancelLimitLabel = cancelLimitDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status);
+    const refundNotice = 'Jika sudah mentransfer, refund penuh ditangani Admin di luar aplikasi. Hubungi Admin untuk mengurus refund.';
+    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
+    const cancelLimitDate = d.cancel_before ? new Date(new Date(d.cancel_before).getTime() - 1) : null;
+    const cancelLimitLabel = cancelLimitDate ? cancelLimitDate.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+    }) : 'belum tersedia';
+    const jakartaCalendar = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' });
+    const daysLeftToCancel = cancelLimitDate ? Math.max(0, Math.round((Date.parse(jakartaCalendar.format(cancelLimitDate))
+        - Date.parse(jakartaCalendar.format(new Date()))) / 86400000)) : 0;
     let cancelSection = '';
-
     if (isStatusCancellable) {
-        if (daysUntilDelivery >= 2) {
-            // Jika masih H-2 atau lebih
+        if (d.can_cancel === true) {
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
                     <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
                     <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
                         <b>Syarat Pembatalan:</b><br>
                         Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
-                        Batas akhir pembatalan: <b>${cancelLimitLabel}</b>.<br>
-                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.
+                        Batas akhir pembatalan: <b>${cancelLimitLabel}, akhir hari WIB</b>.<br>
+                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.<br>
+                        ${refundNotice}
                     </div>
                 </div>
             `;
         } else {
-            // Jika sudah melewati batas H-2
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line);">
                     <div style="background:#fdf2f2; border:1px solid #f5c6c6; padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--red); text-align:center;">
                         <b>Batas Waktu Pembatalan Terlewati</b><br>
-                        Pesanan tidak dapat dibatalkan karena sudah melewati batas maksimal H-2 (${cancelLimitLabel}) sebelum tanggal pengiriman.
+                        Pesanan tidak dapat dibatalkan karena batas H-2 sudah terlewati atau tanggal pengiriman belum tersedia.
                     </div>
                 </div>
             `;
         }
+    } else if (d.status === 'dibatalkan' && hasProof) {
+        cancelSection = '<section class="detail-section"><h3>Refund</h3><p>' + refundNotice + '</p></section>';
     }
-    // ----------------------------------------------------
 
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
@@ -517,7 +508,7 @@ async function openHistoryDetail(id) {
     const cancelBtn = $('#cancel-order-btn');
     if (cancelBtn) {
         cancelBtn.onclick = async () => {
-            if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dikembalikan.')) return;
+            if (!confirm('Batalkan pesanan ini? Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
             
             cancelBtn.disabled = true;
             cancelBtn.textContent = 'Membatalkan...';

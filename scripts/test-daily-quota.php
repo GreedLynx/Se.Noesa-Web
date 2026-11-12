@@ -53,6 +53,8 @@ try {
     q('ROLLBACK TO SAVEPOINT migration_fixture');
     $viewSql = substr($migrationSql, strpos($migrationSql, 'CREATE OR REPLACE VIEW'));
     q(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE TEMP VIEW v_kuota_harian', $viewSql));
+    $cancellationSql = file_get_contents(__DIR__ . '/../database/migrations/016_order_cancellation.sql');
+    $db->exec(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE OR REPLACE TEMP VIEW v_kuota_harian', $cancellationSql));
     $snapshot = daily_quota_snapshot('2030-01-10');
     check_quota($snapshot['maxKitchen'] === 80 && $snapshot['kitchenUsed'] === 80, 'Batas 80%, pesanan belum dibayar/selesai dihitung, tanggal lain dikecualikan');
     check_quota($snapshot === daily_quota_snapshot('2030-01-10', true), 'VIEW laporan sama dengan prepared query checkout');
@@ -66,6 +68,8 @@ try {
     q("UPDATE pesanan SET status='ditolak' WHERE id=1");
     $snapshot = daily_quota_snapshot('2030-01-10');
     check_quota($snapshot['kitchenUsed'] === 72 && (int) $snapshot['items'][0]['sisa'] === 10, 'Penolakan memulihkan kuota tanpa update counter');
+    q("UPDATE pesanan SET status='dibatalkan' WHERE id=1");
+    check_quota($snapshot === daily_quota_snapshot('2030-01-10') && $snapshot === daily_quota_snapshot('2030-01-10', true), 'Pembatalan memulihkan kuota produk/dapur sama dengan penolakan dan VIEW');
     check_quota(count(daily_quota_validate($snapshot, [1 => 8])) === 1, 'Pesanan tepat pada batas dapur diterima');
     rejects_quota($snapshot, [1 => 3], 'minimal dipesan 4');
     check_quota(daily_quota_snapshot('2030-01-11')['kitchenUsed'] === 10, 'Batas hari memakai Asia/Jakarta');

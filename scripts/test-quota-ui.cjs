@@ -15,6 +15,20 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
   console.log('PASS: '+file+' mengirim tanggal pada laporan GET dan mempertahankan POST');
  }
  const adminSource=fs.readFileSync('public/admin/assets/admin.js','utf8');
+ const detailElements={};
+ const detailContext={URLSearchParams,location:{search:'?id=1'},
+   $:s=>s==='#dispatch-photo-form'?null:(detailElements[s]??={}),$$:()=>[],
+   esc:String,badge:String,dateLabel:String,money:String};
+ vm.createContext(detailContext);
+ vm.runInContext(adminSource.slice(adminSource.indexOf('async function orderDetail()'),adminSource.lastIndexOf('\nshell();')),detailContext);
+ for(const [status,photo] of [['diproses','uploads/dispatch/test.jpg'],['selesai','uploads/dispatch/test.jpg'],['selesai',''],['diproses',''],['menunggu_validasi','']]){
+   detailContext.api=async()=>({status,foto_kiriman:photo,menu:[]});
+   await detailContext.orderDetail();
+   const html=detailElements['#order-detail'].innerHTML;
+   assert.equal(html.includes('class="dispatch-photo"'),Boolean(photo));
+   assert.equal(html.includes('id="dispatch-photo-form"'),status==='diproses');
+ }
+ console.log('PASS: Foto pesanan tetap terlihat setelah selesai; upload hanya saat diproses');
  const adminElements={};
  const adminElement=()=>({value:'',innerHTML:'',hidden:false,textContent:'',classList:{remove(){},add(){},toggle(){}},querySelectorAll:()=>[],showModal(){},reset(){}});
  const fields={};for(const name of ['id','kode','nama','kategori','harga','min_pesan','kuota_default','gambar','gambar_file'])fields[name]=adminElement();

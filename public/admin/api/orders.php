@@ -36,12 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $path = 'uploads/dispatch/' . $filename;
         try {
             // UPDATE menyimpan lokasi foto pengiriman pada pesanan.
-            q('UPDATE pesanan
+            $affectedRows = q('UPDATE pesanan
                 SET foto_kiriman = ?
-                WHERE id = ?', [$path, $id]);
+                WHERE id = ? AND status = ?', [$path, $id, 'diproses'])->rowCount();
         } catch (Throwable $e) {
             @unlink($folder . '/' . $filename);
             json(['error' => 'Foto kiriman gagal disimpan'], 500);
+        }
+        if (!$affectedRows) {
+            @unlink($folder . '/' . $filename);
+            json(['error' => 'Status pesanan sudah berubah'], 409);
         }
         json(['ok' => true, 'foto_kiriman' => $path]);
     }
@@ -142,11 +146,12 @@ if (isset($_GET['id'])) {
     json($order);
 }
 $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
-    'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak')",
+    'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak','dibatalkan')",
     'pembayaran' => "('menunggu_pembayaran')",
     'proses' => "('diproses')",
     'selesai' => "('selesai')",
     'ditolak' => "('ditolak')",
+    'dibatalkan' => "('dibatalkan')",
     default => "('menunggu_validasi')"
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
@@ -156,7 +161,7 @@ $items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p
     WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
     ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END, p.created_at DESC", [$search, $search])->fetchAll();
 // Satu query COUNT dengan FILTER menghitung total dan jumlah untuk setiap status.
-$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected
+$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled
     FROM pesanan")->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
 try {

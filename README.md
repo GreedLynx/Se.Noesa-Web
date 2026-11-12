@@ -114,3 +114,71 @@ Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/ap
 
 Halaman login menyediakan alur reset password menggunakan OTP enam digit yang dikirim ke email terdaftar. OTP berlaku 10 menit, maksimal lima kali percobaan, dan permintaan ulang dibatasi satu kali per akun setiap 60 detik. Untuk mengaktifkannya, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, dan `SMTP_FROM_EMAIL` pada `.env`. Gmail memerlukan Verifikasi 2 Langkah dan App Password; jangan gunakan atau bagikan password login Gmail. Jalankan `composer install` dan `php scripts/migrate.php` pada database yang sudah ada. Migrasi reset password berada di `012_password_resets.sql` dan `013_password_reset_otps.sql` setelah migrasi kuota.
 Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.
+
+## Pembatalan dan aktivasi job pembayaran
+
+Pelanggan boleh membatalkan pesanan sendiri saat menunggu pembayaran, menunggu
+validasi, atau diproses sampai akhir hari H-2 WIB. Refund penuh ditangani Admin
+di luar aplikasi; bukti/riwayat tetap tersimpan. Kontak WhatsApp Admin menyusul
+setelah nomor/tautan tersedia.
+
+Unpaid tanpa bukti kedaluwarsa satu jam sejak dibuat. Upload ditolak tepat mulai
+tenggat meskipun job belum berjalan. Upload yang sudah berhasil dan antrean
+validasi tidak terkena job. Status dan kuota berubah ketika job dijalankan;
+dengan scheduler setiap menit keterlambatan sekitar satu menit, lebih lama jika
+scheduler mati. Tidak ada proses background JavaScript atau route job publik.
+
+Urutan aktivasi pada lingkungan target (belum dijalankan oleh implementasi):
+
+1. Jalankan `php scripts/expire-unpaid-orders.php --inventory` lalu
+   `php scripts/expire-unpaid-orders.php --dry-run`. Keduanya read-only,
+   menampilkan total unpaid, kandidat (`eligible`), dan inkonsistensi.
+   Pesanan lama mengikuti tenggat asli; periksa kandidat sebelum menerapkan.
+2. Terapkan migrasi dengan `php scripts/migrate.php` agar 016 menambah status
+   batal dan mengganti VIEW. Hentikan penulisan aplikasi saat migrasi/deploy
+   backend agar kode baru dan constraint tersedia bersamaan.
+3. Jalankan `php scripts/expire-unpaid-orders.php --apply`, periksa jumlah
+   `Dibatalkan`, lalu jalankan lagi: perubahan kedua harus 0 bila tidak ada
+   pesanan baru jatuh tempo. Unpaid dengan waktu NULL/bukti tersimpan dilewati
+   dan dilaporkan, exit 1; jangan memperbaiki datanya secara otomatis.
+4. Aktifkan salah satu scheduler berikut setiap menit. Gunakan path absolut
+   PHP/proyek target dan folder log di luar `public/`; simpan riwayat eksekusi.
+
+Cron hosting (ganti path sesuai instalasi):
+
+```cron
+* * * * * /usr/bin/php /srv/senoesa/scripts/expire-unpaid-orders.php --apply >> /srv/senoesa-logs/expire-unpaid.log 2>&1
+```
+
+Windows Task Scheduler: buat task yang boleh berjalan saat pengguna tidak login;
+trigger setiap hari, Repeat task every **1 minute**, duration **Indefinitely**.
+Action **Start a program**:
+
+- Program: `C:\laragon\bin\php\php-8.1.10-Win32-vs16-x64\php.exe`
+- Arguments: `"E:\Tugas Kuliah\Semester 3\Coding_PBL\Se.Noesa-Web\scripts\expire-unpaid-orders.php" --apply`
+- Start in: `E:\Tugas Kuliah\Semester 3\Coding_PBL\Se.Noesa-Web`
+
+Aktifkan task history dan pilih tidak memulai instance kedua bila task masih
+berjalan. Untuk menyimpan stdout/stderr, gunakan action PowerShell tersembunyi:
+`-NoProfile -WindowStyle Hidden -Command "& 'C:\path\php.exe' 'E:\path\Se.Noesa-Web\scripts\expire-unpaid-orders.php' --apply >> 'E:\senoesa-logs\expire-unpaid.log' 2>&1; exit $LASTEXITCODE"`.
+Buat folder log terlebih dahulu, sesuaikan path, dan pantau exit code/history.
+
+Setelah aktivasi, periksa task/cron benar-benar berjalan tanpa kunjungan web,
+log mencatat jumlah pembatalan, `--inventory` tidak menyisakan kandidat yang terus
+tertunda, serta riwayat/kuota sesuai. Exit nonzero perlu diperiksa dan job diuji
+ulang setelah pemulihan. Jangan aktifkan hanya berdasarkan sukses uji lokal.
+
+Pengujian backend terisolasi tanpa `.env`: siapkan PostgreSQL uji lokal dan
+database kosong bernama `senoesa_cancellation_test`, lalu PowerShell:
+
+```powershell
+$env:SENOESA_TEST_PGPORT = '55432' # port PostgreSQL uji
+php scripts/test-order-cancellation.php
+node scripts/test-order-cancellation-ui.cjs
+```
+
+User uji default `postgres`; bila perlu isi `SENOESA_TEST_PGUSER` dan
+`SENOESA_TEST_PGPASSWORD` melalui environment. Harness membuat schema acak,
+menjalankan migrasi/endpoint/dua koneksi/job dan tes kuota yang ada, lalu
+menghapus fixture uji. Perpindahan file HTTP disimulasikan hanya pada harness CLI;
+upload browser dan scheduler lingkungan target perlu diverifikasi saat aktivasi.

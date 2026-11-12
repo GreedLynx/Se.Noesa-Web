@@ -752,14 +752,14 @@ async function orderDetail() {
             '" alt="Foto makanan yang akan dikirim">'
         : "";
     const dispatch =
-        o.status === "diproses"
+        o.status === "diproses" || (o.status === "selesai" && o.foto_kiriman)
             ? '<article class="panel"><div class="panel-heading"><h2>Bukti pesanan pelanggan</h2><span class="tag soft">Foto kiriman</span></div>' +
                 sentPhoto +
-                '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
+                (o.status === "diproses" ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">' +
                 (o.foto_kiriman
                     ? "Ganti foto makanan"
                     : "Unggah foto makanan yang akan dikirim") +
-                '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form></article>'
+                '</label><input id="dispatch-photo" name="foto_kiriman" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG, atau WebP ? Maksimal 2 MB</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>' : '') + '</article>'
             : "";
     const checklist =
         '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +

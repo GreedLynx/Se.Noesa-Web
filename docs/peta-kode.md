@@ -1,5 +1,32 @@
 # Peta Kode
 
+## Pembatalan pesanan dan kedaluwarsa pembayaran
+
+| Kebutuhan | File |
+|---|---|
+| Cancel milik sendiri sampai H-2, upload sebelum satu jam, izin/waktu detail | `public/pelanggan/api/orders.php` |
+| Tampilan pembatalan lama (tombol merah/kartu syarat/pesan H-2), izin server dan refund | `public/pelanggan/assets/customer.js` |
+| Inventaris/dry-run dan job CLI kedaluwarsa, tanpa route publik | `scripts/expire-unpaid-orders.php` |
+| Constraint dibatalkan dan VIEW pelepas kuota | `database/migrations/016_order_cancellation.sql`, `database/schema.sql` |
+| Kuota checkout/katalog setara VIEW | `app/daily-quota.php` |
+| Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |
+| Uji PostgreSQL terisolasi, migrasi, endpoint, batas waktu dan balapan | `scripts/test-order-cancellation.php`, `scripts/test-daily-quota.php` |
+| Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |
+| Aturan dan urutan aktivasi job setiap menit | `docs/aturan-bisnis.md`, `README.md` |
+
+Manual menerima menunggu_pembayaran/menunggu_validasi/diproses sampai akhir H-2
+WIB; refund penuh ditangani Admin di luar aplikasi. Kontak WhatsApp menyusul.
+Job hanya membatalkan unpaid tanpa bukti sejak satu jam created_at; inventaris
+dan dry-run wajib sebelum aktivasi pesanan lama. Implementasi tidak membaca .env
+atau mengaktifkan job/migrasi pada database aplikasi.
+
+## Foto bukti pesanan Admin
+
+- `public/admin/api/orders.php`: upload foto kiriman dan transisi status selesai.
+- `public/admin/assets/admin.js`, fungsi `orderDetail()`: foto terlihat saat
+  diproses maupun selesai; upload hanya saat diproses.
+- `scripts/test-quota-ui.cjs`: uji rendering foto dan pembatasan form upload.
+
 ## Pemilih tanggal bersama
 
 | Kebutuhan | File |
