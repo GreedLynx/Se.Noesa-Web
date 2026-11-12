@@ -790,6 +790,31 @@ a {
     color:var(--red)
 }
 
+.history-rejection-reason,.rejection-notice {
+    background:#fff6f5;
+    border:1px solid #f1d0cc;
+    border-radius:12px;
+    color:var(--red);
+    font-size:11px;
+    line-height:1.55;
+    padding:11px 13px;
+    text-align:left;
+    white-space:pre-wrap
+}
+
+.history-rejection-reason {
+    margin:10px 0 2px
+}
+
+.rejection-notice {
+    margin:16px 0
+}
+
+.history-rejection-reason p,.rejection-notice p {
+    margin:4px 0 0;
+    color:var(--brown)
+}
+
 .history-products {
     display:flex;
     align-items:center;
