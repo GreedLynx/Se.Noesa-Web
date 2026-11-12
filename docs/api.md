@@ -94,6 +94,11 @@ Data bersumber dari VIEW `v_rekap_produksi_harian`. Dashboard menautkan setiap
 pesanan ke detail Admin yang sudah memuat checklist dan tindakan status. Filter
 tanggal memakai parameter `tgl_kirim` yang sama.
 
+Frontend membedakan `production: []` (tidak ada pesanan pada tanggal pilihan)
+dari field rekap yang hilang/tidak valid (gagal dimuat). Rekap yang gagal
+ditampilkan sebagai pesan tetap tanpa menghentikan statistik Dashboard lain.
+Payload `error` dari server tetap dianggap gagal meskipun HTTP berstatus 200.
+
 Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
 pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,
 dispatch, dan alias respons laporan Owner tetap, kecuali tambahan pembatalan berikut.

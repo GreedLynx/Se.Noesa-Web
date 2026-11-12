@@ -47,5 +47,21 @@ vm.runInContext(source.slice(source.indexOf('async function dashboard()'), sourc
     assert.equal(element('[data-stat="orders"]').textContent, '2');
     assert.match(element('#production-list').innerHTML, /belum.*dimuat/i);
 
+    let apiResponse;
+    const apiContext = {
+        $: () => null,
+        location: {},
+        fetch: async () => ({ status: 200, ok: true, json: async () => {
+            if (apiResponse instanceof Error) throw apiResponse;
+            return apiResponse;
+        } }),
+    };
+    vm.createContext(apiContext);
+    vm.runInContext(source.slice(source.indexOf('async function api('), source.indexOf('\nasync function uploadDispatchPhoto(')), apiContext);
+    apiResponse = { error: 'Rekap gagal dimuat' };
+    await assert.rejects(() => apiContext.api('api/dashboard.php'), /Rekap gagal dimuat/);
+    apiResponse = new SyntaxError('Invalid JSON');
+    await assert.rejects(() => apiContext.api('api/dashboard.php'), /Respons server tidak valid/);
+
     console.log('PASS: dashboard keeps statistics on missing/malformed recap, shows empty and populated recap with detail links');
 })().catch(error => { console.error(error); process.exitCode = 1; });

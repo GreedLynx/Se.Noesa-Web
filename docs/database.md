@@ -45,6 +45,10 @@ dan tanggal kirim Asia/Jakarta. Pesanan `ditolak` dan `dibatalkan` dikecualikan.
 Dashboard Admin memfilter VIEW tersebut menurut tanggal pilihan, lalu memakai
 id pesanan untuk tautan ke detail dan checklist yang sudah ada.
 
+VIEW ini harus tersedia di database aplikasi sebelum rekap digunakan. Ledger
+memakai nama file lengkap: migrasi lain bernomor 020 tidak menggantikan
+`020_daily_production_report.sql`.
+
 ## Migrasi 015 dan VIEW
 
 `015_default_product_quota.sql` mengisi default produk lama dari override bertanggal

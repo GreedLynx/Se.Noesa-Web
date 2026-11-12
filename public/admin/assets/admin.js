@@ -25,7 +25,7 @@ async function api(url, options = {}) {
         location.href = "../login.php";
         throw Error("Sesi berakhir");
     }
-    if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
+    if (!response.ok || data?.error) throw Error(data?.error || "Terjadi kesalahan");
     return data;
 }
 async function uploadDispatchPhoto(id, photo) {
@@ -259,8 +259,11 @@ function shell() {
 }
 async function dashboard() {
     const d = await api("api/dashboard.php");
-    $("#production-date").textContent = dateLabel(d.production_date);
-    $("#production-list").innerHTML = d.production.length
+    $("#production-date").textContent = dateLabel(d.production_date || $('#quota-date')?.value);
+    const productionValid = Array.isArray(d.production) && d.production.every(item => item && Array.isArray(item.pesanan));
+    $("#production-list").innerHTML = !productionValid
+        ? '<div class="empty-state" role="alert">Rekap produksi belum dapat dimuat. Muat ulang halaman atau hubungi pengelola aplikasi.</div>'
+        : d.production.length
         ? '<div class="production-list">' + d.production.map(item =>
             '<article class="production-item"><div><h3>' + esc(item.menu) +
             '</h3><strong>' + Number(item.total_porsi).toLocaleString("id-ID") +
@@ -968,6 +971,9 @@ const run = {
 if (run)
     Promise.resolve().then(run).catch((e) => {
         toast(e.message);
+        if (page === "dashboard") {
+            $("#production-list").innerHTML = '<div class="empty-state" role="alert">Dashboard belum dapat dimuat: ' + esc(e.message) + '</div>';
+        }
         if (page === "order-detail") {
             const detail = $("#order-detail");
             if (detail)

@@ -10,6 +10,7 @@
 | Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
 | Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
 | Rekap porsi per menu pada tanggal pilihan, dengan tautan detail pesanan | `database/migrations/020_daily_production_report.sql`, `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+| Uji Dashboard saat rekap hilang/kosong/berisi/tidak valid dan error API | `scripts/test-admin-dashboard.cjs` |
 
 Operasional selalu buka secara default. Kuota tersimpan tidak diubah saat
 rentang libur dibuat. Pesanan lama tidak berubah otomatis; penolakan manual
