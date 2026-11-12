@@ -675,6 +675,24 @@ td small {
 .detail-pair b {
   text-align: right;
 }
+.rejection-reason {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-color: #efcaca;
+  background: #fff8f8;
+}
+.rejection-reason p {
+  margin: 7px 0 0;
+  color: var(--brown);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.reject-order-dialog {
+  width: min(460px, calc(100% - 28px));
+}
+.reject-order-dialog .dialog-actions {
+  justify-content: flex-end;
+}
 .order-summary h3 {
   font-size: 14px;
   margin: 20px 0 5px;

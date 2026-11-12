@@ -96,6 +96,7 @@ CREATE TABLE pesanan (
     ),
   bukti_bayar VARCHAR(200),
   nama_pembayar VARCHAR(100),
+  alasan_penolakan VARCHAR(500),
   foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
   status_updated_at TIMESTAMPTZ DEFAULT now(),

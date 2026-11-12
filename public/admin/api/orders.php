@@ -106,6 +106,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['error' => 'Aksi tidak valid'], 422);
     }
     if (($request['action'] ?? '') === 'reject') {
+        $rejectionReason = $request['alasan_penolakan'] ?? null;
+        if (!is_string($rejectionReason)) {
+            json(['error' => 'Alasan penolakan wajib diisi (maksimal 500 karakter).'], 422);
+        }
+        $rejectionReason = trim($rejectionReason);
+        if ($rejectionReason === '' || strlen($rejectionReason) > 500) {
+            json(['error' => 'Alasan penolakan wajib diisi (maksimal 500 karakter).'], 422);
+        }
         $db = db();
         $db->beginTransaction();
         try {
@@ -119,10 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             // UPDATE mengubah status dan timestamp penolakan dalam transaksi yang sama.
             q("UPDATE pesanan
-                SET status = 'ditolak', status_updated_at = now()
-                WHERE id = ?", [$current['id']]);
+                SET status = 'ditolak', status_updated_at = now(), alasan_penolakan = ?
+                WHERE id = ?", [$rejectionReason, $current['id']]);
             $db->commit();
-            json(['ok' => true, 'status' => 'ditolak']);
+            json(['ok' => true, 'status' => 'ditolak', 'alasan_penolakan' => $rejectionReason]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) {
                 $db->rollBack();

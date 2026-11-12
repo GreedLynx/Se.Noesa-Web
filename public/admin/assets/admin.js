@@ -958,10 +958,21 @@ async function orderDetail() {
         '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
         money(o.total) +
         "</b></div></article>" +
+        (o.status === "ditolak" && o.alasan_penolakan
+            ? '<article class="panel rejection-reason"><b>Alasan penolakan</b><p>' +
+                esc(o.alasan_penolakan) + '</p></article>'
+            : "") +
         checklist +
         dispatch;
     $("#order-detail").innerHTML = isValidation ? validationView : dispatchView;
     const actions = $("#detail-actions");
+    const rejectionDialog = $("#reject-order-dialog");
+    const rejectionForm = $("#reject-order-form");
+    const rejectionReason = $("#rejection-reason");
+    const rejectionError = $("#rejection-reason-error");
+    $$("[data-cancel-rejection]").forEach((button) => {
+        button.onclick = () => rejectionDialog.close();
+    });
     actions.hidden = false;
     $$("[data-order-action]").forEach((btn) => {
         const action = btn.dataset.orderAction;
@@ -972,14 +983,34 @@ async function orderDetail() {
         );
         btn.onclick = async () => {
             // KONFIRMASI UNTUK SEMUA TOMBOL KEPUTUSAN
+            let rejectionNote = "";
             if (action === "reject") {
-                const confirmed = await confirmDialog(
-                    "Tolak Pembayaran",
-                    "Tolak pembayaran untuk pesanan ini? Stok produk akan dikembalikan.",
-                    "Ya, Tolak",
-                    "danger"
-                );
-                if (!confirmed) return;
+                rejectionReason.value = "";
+                rejectionError.textContent = "";
+                rejectionDialog.showModal();
+                const submitted = await new Promise((resolve) => {
+                    const onSubmit = (event) => {
+                        event.preventDefault();
+                        const value = rejectionReason.value.trim();
+                        if (!value) {
+                            rejectionError.textContent = "Alasan penolakan wajib diisi.";
+                            rejectionReason.focus();
+                            return;
+                        }
+                        rejectionForm.removeEventListener("submit", onSubmit);
+                        rejectionDialog.removeEventListener("close", onClose);
+                        rejectionDialog.close();
+                        resolve(value);
+                    };
+                    const onClose = () => {
+                        rejectionForm.removeEventListener("submit", onSubmit);
+                        resolve(null);
+                    };
+                    rejectionForm.addEventListener("submit", onSubmit);
+                    rejectionDialog.addEventListener("close", onClose, { once: true });
+                });
+                if (submitted === null) return;
+                rejectionNote = submitted;
             }
             if (action === "validate") {
                 const confirmed = await confirmDialog(
@@ -1002,7 +1033,10 @@ async function orderDetail() {
 
             btn.disabled = true;
             try {
-                await api("api/orders.php", { method: "POST", body: { id, action } });
+                await api("api/orders.php", {
+                    method: "POST",
+                    body: { id, action, ...(action === "reject" ? { alasan_penolakan: rejectionNote } : {}) },
+                });
                 toast("Status pesanan diperbarui");
                 setTimeout(() => location.reload(), 500);
             } catch (e) {
