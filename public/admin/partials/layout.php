@@ -57,7 +57,7 @@ function admin_head(string $title, string $page): void
                 <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
                 <div class="top-copy">
                     <small>Se.Noesa / Admin</small>
-                    <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
+                    <!-- Tag <h1> dihapus dari sini agar tidak double dengan judul di bawah -->
                 </div>
                 <div class="top-actions">
                     <span class="today-label" id="today-label"></span>

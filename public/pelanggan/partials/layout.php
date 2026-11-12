@@ -83,7 +83,7 @@ function customer_head(string $title, string $page): array
             <header class="customer-top">
                 <div>
                     <small>Se.Noesa / Pelanggan</small>
-                    <h1><?= htmlspecialchars($title) ?></h1>
+                    <!-- Tag <h1> dihapus dari sini agar judul tidak tampil dua kali -->
                 </div>
                 <div class="customer-user">
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>

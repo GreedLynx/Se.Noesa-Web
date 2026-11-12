@@ -38,7 +38,7 @@ function topbar(string $title, bool $back = false)
                 <?php endif; ?>
                 <div>
                     <small>Se.Noesa</small>
-                    <h1><?= $title ?></h1>
+                    <!-- Tag <h1> dihapus dari sini agar judul tidak tampil dua kali -->
                 </div>
             </div>
             <div class="row">
