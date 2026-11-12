@@ -38,7 +38,13 @@ const context = {
     api: async () => orderResponse,
     badge: () => '<span>Selesai</span>',
     dateLabel: () => '-',
-    esc: (value) => String(value ?? ''),
+    esc: (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    })[char]),
     money: () => 'Rp 0',
     uploadDispatchPhoto: async (id, photo) => uploadedPhotos.push({ id, photo }),
     toast: () => {},
@@ -77,6 +83,14 @@ vm.runInContext(source.slice(start, end), context);
     await context.orderDetail();
     await uploadHandler({ preventDefault() {} });
     assert.equal(uploadedPhotos.length, 0);
+
+    orderResponse.status = 'ditolak';
+    orderResponse.alasan_penolakan = '<script>alert(1)</script>Nominal transfer tidak sesuai.';
+    await context.orderDetail();
+    const rejectedDetail = elements.get('#order-detail').innerHTML;
+    assert.match(rejectedDetail, /Alasan penolakan/);
+    assert.match(rejectedDetail, /&lt;script&gt;/);
+    assert.doesNotMatch(rejectedDetail, /<script>/);
 
     const formEntries = [];
     let responseText = '<br /><b>Warning</b>: POST Content-Length exceeded {"ok":true}';

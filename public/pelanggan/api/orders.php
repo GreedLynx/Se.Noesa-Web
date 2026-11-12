@@ -276,7 +276,7 @@ if (isset($_GET['addresses'])) {
 
 if (isset($_GET['id'])) {
     $order = q(
-        'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, bukti_bayar, foto_kiriman, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
+        'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, alasan_penolakan, bukti_bayar, foto_kiriman, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
         [(int) $_GET['id'], $customer['id']]
     )->fetch();
     if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
@@ -304,7 +304,7 @@ $queryArgs = [$customer['id']];
 if ($filter) $queryArgs[] = $status;
 
 $orders = q(
-    "SELECT id, kode, nama_pemesan, total, status, status_updated_at, tgl_kirim, created_at FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
+    "SELECT id, kode, nama_pemesan, total, status, status_updated_at, alasan_penolakan, tgl_kirim, created_at FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
     $queryArgs
 )->fetchAll();
 foreach ($orders as &$order) {

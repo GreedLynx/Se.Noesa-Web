@@ -28,6 +28,10 @@ status `diproses`; kuota produk serta kapasitas dapur pada tanggal kirim
 diperiksa dan dikunci secara atomik seperti checkout online. Respons sukses
 `{ok,id,kode,total,status}` HTTP 201; kuota tidak cukup HTTP 422. Hanya Admin.
 
+POST `admin/api/orders.php` dengan `action=reject` wajib menyertakan
+`alasan_penolakan` (1–500 karakter). Nilai disimpan bersama status ditolak dan
+dikirim ke detail/riwayat pesanan milik pelanggan agar alasan penolakan jelas.
+
 ### Override Admin
 
 POST `admin/api/kuota-harian.php` menerima:

@@ -56,6 +56,12 @@ berstatus `diproses`, menyimpan snapshot harga/detail, dan memakai perhitungan,
 lock, kuota produk, serta batas dapur tanggal kirim yang sama dengan checkout.
 Dengan demikian pesanan offline segera mengurangi sisa kuota pesanan online.
 
+## Alasan penolakan pembayaran
+
+Migrasi 020 menambahkan `pesanan.alasan_penolakan` (maksimal 500 karakter).
+Penolakan pembayaran oleh Admin mewajibkan alasan; detail API pelanggan dan
+riwayat menampilkan alasan tersebut untuk pesanan berstatus `ditolak`.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
