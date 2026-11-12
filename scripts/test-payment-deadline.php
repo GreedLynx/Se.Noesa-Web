@@ -16,6 +16,7 @@ try {
         id INT PRIMARY KEY,
         status VARCHAR(24) NOT NULL CHECK (status IN ('menunggu_pembayaran', 'menunggu_validasi', 'dibatalkan')),
         status_updated_at TIMESTAMPTZ,
+        bukti_bayar TEXT,
         created_at TIMESTAMPTZ NOT NULL,
         tgl_kirim TIMESTAMPTZ NOT NULL
     ) ON COMMIT DROP");
@@ -52,7 +53,7 @@ try {
     $checkoutLayout = file_get_contents(__DIR__ . '/../public/pelanggan/partials/layout.php');
     if (!str_contains($quotaSource, "p.status NOT IN ('ditolak', 'dibatalkan')")
         || !str_contains($migration, "p.status NOT IN ('ditolak', 'dibatalkan')")
-        || !str_contains($customerJs, 'Batas maksimal pembayaran 1 jam')
+        || !str_contains($customerJs, 'd.payment_expires_at')
         || !str_contains($checkoutLayout, 'Batas maksimal pembayaran: 1 jam')) {
         throw new RuntimeException('Cancelled orders must be excluded from daily quota usage.');
     }

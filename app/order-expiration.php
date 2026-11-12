@@ -1,11 +1,11 @@
 <?php
 function expire_unpaid_orders(): int
 {
-    return count(q(
+    return q(
         "UPDATE pesanan
-        SET status = 'dibatalkan', status_updated_at = now()
+        SET status = 'dibatalkan', status_updated_at = clock_timestamp()
         WHERE status = 'menunggu_pembayaran'
-          AND created_at <= now() - INTERVAL '1 hour'
-        RETURNING id"
-    )->fetchAll(PDO::FETCH_COLUMN));
+          AND NULLIF(BTRIM(bukti_bayar), '') IS NULL
+          AND created_at + interval '1 hour' <= statement_timestamp()"
+    )->rowCount();
 }

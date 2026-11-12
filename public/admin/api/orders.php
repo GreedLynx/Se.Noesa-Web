@@ -60,6 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $db = db();
             $db->beginTransaction();
+            // Kunci status sebelum menambahkan galeri agar pembatalan tidak tertimpa.
+            $order = q("SELECT id FROM pesanan WHERE id = ? AND status = 'diproses' FOR UPDATE", [$id])->fetch();
+            if (!$order) {
+                throw new DomainException('Status pesanan sudah berubah');
+            }
             foreach ($savedPaths as $path) {
                 q('INSERT INTO pesanan_foto_kiriman (pesanan_id, path) VALUES (?, ?)', [$id, $path]);
             }
@@ -71,11 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->rollBack();
             }
             foreach ($savedPaths as $path) {
-                @unlink(__DIR__ . '/../../' . $path);
+                @unlink($folder . '/' . basename($path));
             }
-            json(['error' => 'Foto kiriman gagal disimpan'], 500);
+            json(['error' => $e instanceof DomainException ? $e->getMessage() : 'Foto kiriman gagal disimpan'], $e instanceof DomainException ? 409 : 500);
         }
-        json(['ok' => true, 'foto_kiriman_list' => $savedPaths]);
+        json(['ok' => true, 'foto_kiriman' => $savedPaths[0], 'foto_kiriman_list' => $savedPaths]);
     }
     $request = body();
     if (($request['action'] ?? '') === 'create_offline') {
@@ -199,11 +204,12 @@ if (isset($_GET['id'])) {
     json($order);
 }
 $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
-    'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak')",
+    'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak','dibatalkan')",
     'pembayaran' => "('menunggu_pembayaran')",
     'proses' => "('diproses')",
     'selesai' => "('selesai')",
     'ditolak' => "('ditolak')",
+    'dibatalkan' => "('dibatalkan')",
     default => "('menunggu_validasi')"
 };
 $search = '%' . trim($_GET['q'] ?? '') . '%';
@@ -215,7 +221,7 @@ $items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p
         CASE WHEN p.status = 'selesai' THEN COALESCE(p.status_updated_at, p.created_at) END DESC,
         p.created_at DESC", [$search, $search])->fetchAll();
 // Satu query COUNT dengan FILTER menghitung total dan jumlah untuk setiap status.
-$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected
+$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled
     FROM pesanan")->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
 try {

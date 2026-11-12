@@ -25,7 +25,7 @@ function daily_quota_snapshot($date, bool $report = false): array
             [$date]
         )->fetchAll();
     } else {
-        // LEFT JOIN mengambil kuota; SUM menghitung pesanan yang belum ditolak atau dibatalkan.
+        // Pesanan ditolak atau dibatalkan tidak lagi menahan kuota.
         $items = q(
             "SELECT $fields, COALESCE(k.kuota, pr.kuota_harian) AS kuota_harian,
                 COALESCE(k.kuota, pr.kuota_harian) AS kuota, COALESCE(used.qty, 0) AS terpakai,

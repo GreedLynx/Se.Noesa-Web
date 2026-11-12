@@ -61,6 +61,20 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(detail, /dispatch-42\.jpg/);
     assert.equal(elements.get('#detail-actions').hidden, false);
 
+    for (const [status, photo] of [['diproses', 'uploads/dispatch/old.jpg'], ['selesai', 'uploads/dispatch/old.jpg'], ['selesai', ''], ['diproses', ''], ['menunggu_validasi', '']]) {
+        orderResponse.status = status;
+        orderResponse.foto_kiriman = photo;
+        delete orderResponse.foto_kiriman_list;
+        await context.orderDetail();
+        const html = elements.get('#order-detail').innerHTML;
+        assert.equal(html.includes('class="dispatch-photo"'), Boolean(photo));
+        assert.equal(html.includes('id="dispatch-photo-form"'), status === 'diproses');
+    }
+    orderResponse.status = 'selesai';
+    orderResponse.foto_kiriman_list = ['uploads/dispatch/one.jpg', 'uploads/dispatch/two.jpg', 'uploads/dispatch/three.jpg'];
+    await context.orderDetail();
+    assert.equal((elements.get('#order-detail').innerHTML.match(/class="dispatch-photo"/g) || []).length, 3);
+
     orderResponse.menu = [{ nama: 'Menu uji', qty: 2, harga: 0, subtotal: 0, item_id: 1 }];
     await context.orderDetail();
     const completeDetail = elements.get('#order-detail').innerHTML;

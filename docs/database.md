@@ -1,5 +1,8 @@
 # Database
 
+Foto bukti pesanan tersimpan melalui path `pesanan.foto_kiriman`. Penyelesaian
+pesanan mempertahankan path dan file foto; perbaikan tampilannya tidak mengubah skema.
+
 ## Sumber kuota aktif
 
 Skema awal `database/schema.sql` dilanjutkan seluruh migrasi melalui
@@ -15,7 +18,7 @@ per file; nama file tercatat di schema_migrations.
   ON CONFLICT per request. Save terbaru menimpa overlap. Reset menghapus override
   terpilih dan kembali ke default, bukan histori override lama.
 - Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
-  selain ditolak pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
+  selain ditolak/dibatalkan pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
 
 ## Migrasi 015 dan VIEW
 
@@ -45,8 +48,15 @@ override di `kuota_harian`; override tanggal yang sudah tersimpan tetap berlaku.
 Migrasi 018 mengizinkan status `dibatalkan`, membuat indeks pesanan yang belum
 dibayar, dan mengecualikan pesanan `ditolak`/`dibatalkan` dari VIEW kuota.
 `app/order-expiration.php` membatalkan pesanan `menunggu_pembayaran` setelah
-satu jam berdasarkan `created_at`; jadwalkan `scripts/expire-unpaid-orders.php`
-setiap menit agar pembatalan berjalan tanpa pelanggan membuka aplikasi.
+satu jam berdasarkan `created_at`, hanya bila tidak ada bukti; jadwalkan
+`scripts/expire-unpaid-orders.php --apply` setiap menit setelah inventaris/dry-run.
+Katalog dan riwayat tidak memicu perubahan status. Helper memakai UPDATE
+bersyarat atomik; CLI mempertahankan guard kegagalan dan mode read-only.
+
+Dua migrasi bernomor 016 memiliki nama file berbeda dan tetap dipertahankan
+untuk kompatibilitas ledger instalasi kedua branch. Runner mengurutkan nama
+file lengkap; migrasi 018 mengulang constraint/VIEW yang setara dengan
+016_order_cancellation tanpa menghapus data atau mengubah tipe kolom.
 
 ## Pesanan offline Admin
 
@@ -85,4 +95,26 @@ minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
   untuk menyimpan banyak foto. Kolom pesanan.foto_kiriman tetap dipertahankan
   sebagai kompatibilitas foto lama dan di-backfill oleh migrasi 016.
 - Status penolakan ditolak; produk.status_aktif belum ada.
-- jadwal_po, pembayaran, kalender dan konfigurasi rahasia tidak diubah.
+- jadwal_po, kalender dan konfigurasi rahasia tidak diubah.
+
+## Migrasi 016: pembatalan
+
+Pemulihan tampilan kartu pembatalan pelanggan tidak mengubah skema atau kontrak waktu.
+
+`016_order_cancellation.sql` menambahkan `dibatalkan` ke `pesanan_status_check`
+tanpa mengubah lima status lama. VIEW `v_kuota_harian` diganti dengan kolom/tipe
+tetap, mengecualikan `ditolak` dan `dibatalkan`, sama dengan helper checkout.
+Migrasi 006/015 tidak diubah. Tidak ada kolom, tabel, indeks, atau counter baru.
+Skema awal juga menerima status batal; tetap jalankan seluruh migrasi sesudahnya.
+
+`created_at` TIMESTAMPTZ menjadi dasar tenggat satu jam. Batas H-2 memakai tanggal
+pengiriman/hari sekarang pada Asia/Jakarta, bebas dari zona sesi database.
+Cancel/upload pembayaran dan upload galeri mengunci baris pesanan sebelum menulis.
+Cancel/upload pembayaran memakai UPDATE bersyarat dan memeriksa
+waktu aktual database setelah lock. Job memakai UPDATE bersyarat atomik yang
+mengecek ulang status/bukti setelah menunggu lock. Urutan lock checkout tidak diubah.
+
+Tidak ada penghapusan pesanan, detail, bukti, maupun foto. Refund manual di luar
+aplikasi; tidak ada tabel status refund baru. Inventaris/dry-run job read-only;
+lihat urutan aktivasi di README. Migrasi dan job pada database aplikasi belum
+dijalankan oleh implementasi ini; pengujian memakai database khusus terisolasi.

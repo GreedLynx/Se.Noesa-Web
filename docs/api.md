@@ -1,5 +1,8 @@
 # API
 
+Detail pesanan Admin tetap menampilkan `foto_kiriman` setelah status `selesai`.
+Form upload hanya tampil saat `diproses`; endpoint dan payload tidak berubah.
+
 ## Kuota default dan override tanggal
 
 Endpoint per role tetap di `public/<role>/api/`. Tanggal memakai YYYY-MM-DD dalam
@@ -11,7 +14,7 @@ filter `tgl_kirim` tidak ditambahkan pada POST.
 GET `admin/api/products.php` menerima `tgl_kirim` (default hari ini), kategori, q.
 Respons `{items,count,tanggal}`. Setiap item menyertakan `kuota_default` (nilai produk),
 `kuota` dan alias `kuota_harian` (kapasitas efektif tanggal filter), `terpakai`
-(detail pesanan non-ditolak/non-dibatalkan), serta `sisa` minimal 0.
+(detail pesanan selain ditolak/dibatalkan), serta `sisa` minimal 0.
 
 POST produk menyimpan metadata/gambar/min_pesan dan field `kuota_default`,
 integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_harian` diterima bila canonical tidak
@@ -81,7 +84,43 @@ Laporan memakai VIEW; checkout memakai prepared query langsung dengan hasil seta
 
 Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
 pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,
-dispatch, dan alias respons laporan Owner tetap.
+dispatch, dan alias respons laporan Owner tetap, kecuali tambahan pembatalan berikut.
+
+### Pembatalan dan bukti pembayaran pelanggan
+
+POST `pelanggan/api/orders.php` dengan `{action:"cancel_order",id}` membatalkan
+pesanan milik pelanggan sendiri. ID harus integer positif. Status asal yang sah:
+`menunggu_pembayaran`, `menunggu_validasi`, `diproses`. Tanggal kirim harus minimal
+dua tanggal kalender dari hari ini dalam Asia/Jakarta (sampai akhir hari H-2).
+Sukses `{ok:true,status:"dibatalkan"}`. Payload invalid 422, role login selain
+pelanggan 403, belum login 401, tidak ada/bukan milik sendiri 404. Konflik
+status/tenggat 409 (sebelumnya cancel mengembalikan 422). Identitas dari session.
+Refund penuh ditangani Admin di luar aplikasi; endpoint tidak memindahkan uang.
+
+Multipart `action=upload_proof` mempertahankan field `id`, `nama_pembayar`, `proof`
+dan format file yang berlaku. Unpaid hanya menerima upload sebelum
+`created_at + 1 jam`, diperiksa memakai waktu database setelah row lock.
+Status `menunggu_validasi` boleh mengganti bukti tanpa tenggat satu jam lagi.
+Konflik akibat kedaluwarsa/perubahan status menghasilkan 409 dan file baru dibuang.
+Bukti lama tetap disimpan. Respons sukses lama tetap `{ok,bukti_bayar}`.
+
+GET detail `pelanggan/api/orders.php?id=...` menambah:
+
+- `can_cancel`, `can_upload_proof`: boolean izin saat respons dibuat; server tetap
+  memeriksa ulang pada POST.
+- `payment_expires_at`: ISO 8601 ber-offset +07:00, satu jam sejak dibuat, atau NULL.
+- `cancel_before`: ISO 8601 +07:00, awal H-1 sebagai batas eksklusif, atau NULL.
+
+Frontend memakai field tersebut untuk tombol/form, menampilkan tenggat pembayaran
+dan ketentuan refund sebelum konfirmasi. Tidak ada countdown/pemicu job JavaScript.
+Tampilan pembatalan mempertahankan tombol merah penuh, kartu syarat, dan pesan
+batas H-2 terlewati yang sudah ada; izin tombol tetap mengikuti `can_cancel`.
+
+GET pesanan Admin menambah `tab=dibatalkan`; `tab=semua` mencakup status batal dan
+`counts.cancelled` menghitungnya. Owner menambah `tab=semua|dibatalkan` dan
+`count.cancelled`, tetap GET-only. Pendapatan tetap berasal dari selesai.
+Upload foto kiriman Admin kini menghasilkan 409 dan membuang foto baru bila
+pembatalan sudah menang; tidak menimpa foto pesanan batal.
 
 ### Foto kiriman
 
@@ -92,3 +131,7 @@ beberapa file `foto_kiriman[]`. Format JPG, PNG, atau WebP didukung, maksimal
 `foto_kiriman_list`; foto lama di `pesanan.foto_kiriman` tetap disertakan.
 Foto tetap tersedia di Admin dan detail riwayat pelanggan setelah status
 berubah menjadi `selesai`. Migrasi database yang sudah ada: `016_multiple_dispatch_photos.sql`.
+Upload galeri mengunci status `diproses` sebelum INSERT/UPDATE. Jika pembatalan
+menang, transaksi dibatalkan, semua file baru dibuang, dan respons 409.
+Respons upload menyertakan `foto_kiriman` (file pertama) serta `foto_kiriman_list`.
+Katalog/riwayat GET tidak memicu job kedaluwarsa; scheduler CLI memakai `--apply`.

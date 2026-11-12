@@ -26,7 +26,12 @@ if (isset($_GET['id'])) {
     json($order);
 }
 
-$statusFilter = ($_GET['tab'] ?? 'validasi') === 'proses' ? "('diproses','selesai')" : "('menunggu_validasi')";
+$statusFilter = match ($_GET['tab'] ?? 'validasi') {
+    'proses' => "('diproses','selesai')",
+    'dibatalkan' => "('dibatalkan')",
+    'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak','dibatalkan')",
+    default => "('menunggu_validasi')",
+};
 $search = '%' . ($_GET['q'] ?? '') . '%';
 // SELECT memfilter pesanan berdasarkan tab dan kata kunci, lalu mengurutkan yang terbaru.
 $orders = q(
@@ -40,7 +45,8 @@ $orders = q(
 // COUNT FILTER menghitung jumlah pesanan menunggu validasi dan pesanan dalam proses/selesai.
 $counts = q(
     "SELECT COUNT(*) FILTER (WHERE status = 'menunggu_validasi') AS v,
-        COUNT(*) FILTER (WHERE status IN ('diproses', 'selesai')) AS p
+        COUNT(*) FILTER (WHERE status IN ('diproses', 'selesai')) AS p,
+        COUNT(*) FILTER (WHERE status = 'dibatalkan') AS cancelled
     FROM pesanan"
 )->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');

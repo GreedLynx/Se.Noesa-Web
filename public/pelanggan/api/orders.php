@@ -1,50 +1,39 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
+if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403);
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
-require_once __DIR__ . '/../../../app/order-expiration.php';
-expire_unpaid_orders();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request = body();
     
-    // --- FITUR PEMBATALAN PESANAN ---
     if (($request['action'] ?? '') === 'cancel_order') {
-        $id = (int) ($request['id'] ?? 0);
-        $order = q('SELECT id, status, tgl_kirim FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
-        
-        if (!$order) {
-            json(['error' => 'Pesanan tidak ditemukan'], 404);
-        }
-        if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'])) {
-            json(['error' => 'Pesanan tidak dapat dibatalkan pada status ini'], 422);
-        }
-        
-        // Validasi H-2
-        $zone = new DateTimeZone('Asia/Jakarta');
-        $today = new DateTimeImmutable('today', $zone);
-        $deliveryDate = new DateTimeImmutable((new DateTimeImmutable($order['tgl_kirim'], $zone))->format('Y-m-d'), $zone);
-        $daysLeft = $today->diff($deliveryDate)->days;
-        
-        if ($daysLeft < 2) {
-            json(['error' => 'Pembatalan maksimal H-2 sebelum tanggal pengiriman'], 422);
-        }
-        
+        $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id || $id < 1) json(['error' => 'ID pesanan tidak valid'], 422);
         try {
-            $updated = q(
-                "UPDATE pesanan SET status = 'dibatalkan', status_updated_at = now()
-                WHERE id = ? AND user_id = ? AND status IN ('menunggu_pembayaran', 'menunggu_validasi')",
-                [$id, $customer['id']]
-            )->rowCount();
-            if (!$updated) {
-                json(['error' => 'Status pesanan sudah berubah. Muat ulang riwayat pesanan.'], 409);
+            $db = db();
+            $db->beginTransaction();
+            $order = q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            if (!$order) {
+                throw new OutOfBoundsException('Pesanan tidak ditemukan');
             }
-            json(['ok' => true]);
+            // Waktu diperiksa setelah lock agar request yang menunggu tidak melewati H-2.
+            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp()
+                WHERE id = ? AND user_id = ?
+                    AND status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
+                    AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >=
+                        (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date + 2", [$id, $customer['id']])->rowCount();
+            $db->commit();
+        } catch (OutOfBoundsException $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            json(['error' => $e->getMessage()], 404);
         } catch (Throwable $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
             json(['error' => 'Gagal membatalkan pesanan'], 500);
         }
+        if (!$affected) json(['error' => 'Status pesanan tidak dapat dibatalkan atau batas akhir H-2 sudah terlewati'], 409);
+        json(['ok' => true, 'status' => 'dibatalkan']);
     }
-    // --- END FITUR PEMBATALAN ---
 
     if (($request['action'] ?? '') === 'save_address') {
         $label = trim($request['label'] ?? 'Rumah');
@@ -110,13 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (($_POST['action'] ?? '') === 'upload_proof') {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id || $id < 1) json(['error' => 'ID pesanan tidak valid'], 422);
         // SELECT memastikan pesanan milik pelanggan yang sedang login sebelum menerima bukti pembayaran.
         $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
             if ($order['status'] === 'dibatalkan') {
-                json(['error' => 'Batas pembayaran 1 jam telah berakhir dan pesanan dibatalkan.'], 409);
+                json(['error' => 'Pesanan sudah dibatalkan dan tidak dapat menerima bukti pembayaran.'], 409);
             }
             json(['error' => 'Bukti hanya dapat diunggah untuk pesanan yang menunggu pembayaran atau verifikasi'], 409);
         }
@@ -143,23 +133,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!move_uploaded_file($file['tmp_name'], $folder . '/' . $filename)) json(['error' => 'Gagal menyimpan gambar'], 500);
 
         try {
-            // UPDATE menyimpan bukti/nama pembayar dan mengubah status jika pembayaran sebelumnya masih menunggu.
-            $updated = q(
+            $db = db();
+            $db->beginTransaction();
+            // Pisahkan lock dan mutasi agar deadline memakai waktu setelah menunggu lock.
+            q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            $affected = q(
                 "UPDATE pesanan
                 SET bukti_bayar = ?, nama_pembayar = ?,
                     status = CASE WHEN status = 'menunggu_pembayaran' THEN 'menunggu_validasi' ELSE status END,
-                    status_updated_at = CASE WHEN status = 'menunggu_pembayaran' THEN now() ELSE status_updated_at END
-                WHERE id = ? AND user_id = ? AND status IN ('menunggu_pembayaran', 'menunggu_validasi')
-                  AND (status <> 'menunggu_pembayaran' OR created_at > now() - INTERVAL '1 hour')",
+                    status_updated_at = CASE WHEN status = 'menunggu_pembayaran' THEN clock_timestamp() ELSE status_updated_at END
+                WHERE id = ? AND user_id = ? AND (
+                    status = 'menunggu_validasi' OR
+                    (status = 'menunggu_pembayaran' AND clock_timestamp() < created_at + interval '1 hour')
+                )",
                 ['uploads/payments/' . $filename, $payerName, $id, $customer['id']]
             )->rowCount();
-            if (!$updated) {
-                @unlink($folder . '/' . $filename);
-                json(['error' => 'Batas pembayaran 1 jam telah berakhir dan pesanan dibatalkan.'], 409);
-            }
+            $db->commit();
         } catch (Throwable $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
             @unlink($folder . '/' . $filename);
             json(['error' => 'Gagal menyimpan bukti pembayaran'], 500);
+        }
+        if (!$affected) {
+            @unlink($folder . '/' . $filename);
+            json(['error' => 'Status pesanan sudah berubah atau tenggat pembayaran satu jam telah berakhir'], 409);
         }
         json(['ok' => true, 'bukti_bayar' => 'uploads/payments/' . $filename]);
     }
@@ -276,10 +273,23 @@ if (isset($_GET['addresses'])) {
 
 if (isset($_GET['id'])) {
     $order = q(
-        'SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, alasan_penolakan, bukti_bayar, foto_kiriman, tgl_kirim, created_at FROM pesanan WHERE id = ? AND user_id = ?',
+        "SELECT id, kode, nama_pemesan, nama_pembayar, telepon_penerima, alamat_pengiriman, keterangan, pax, total, status, status_updated_at, bukti_bayar, foto_kiriman, tgl_kirim, created_at,
+            created_at + interval '1 hour' AS payment_expires_at,
+            ((tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date - 1)::timestamp AT TIME ZONE 'Asia/Jakarta' AS cancel_before,
+            COALESCE(status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses') AND
+                (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >= (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date + 2, FALSE) AS can_cancel,
+            COALESCE(status = 'menunggu_validasi' OR (status = 'menunggu_pembayaran' AND
+                clock_timestamp() < created_at + interval '1 hour'), FALSE) AS can_upload_proof
+        FROM pesanan WHERE id = ? AND user_id = ?",
         [(int) $_GET['id'], $customer['id']]
     )->fetch();
     if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
+
+    foreach (['payment_expires_at', 'cancel_before'] as $field) {
+        if ($order[$field] !== null) {
+            $order[$field] = (new DateTimeImmutable($order[$field]))->setTimezone(new DateTimeZone('Asia/Jakarta'))->format(DateTimeInterface::ATOM);
+        }
+    }
 
     // SELECT dengan JOIN menggabungkan detail pesanan dan data produk untuk halaman rincian.
     $order['items'] = q(

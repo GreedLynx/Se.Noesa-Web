@@ -2,8 +2,6 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
-require_once __DIR__ . '/../../../app/order-expiration.php';
-expire_unpaid_orders();
 
 header('Cache-Control: no-store');
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->modify('+7 days')->format('Y-m-d');
