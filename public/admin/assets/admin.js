@@ -917,6 +917,7 @@ async function orderDetail() {
         menu +
         "</article>";
     const isValidation = o.status === "menunggu_validasi";
+    const isPendingPayment = o.status === "menunggu_pembayaran";
     const validationView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">VALIDASI QRIS</p><h2>' +
         esc(o.kode) +
@@ -938,6 +939,29 @@ async function orderDetail() {
         proof +
         "</article>" +
         receipt;
+    const pendingPaymentView =
+        '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">MENUNGGU PEMBAYARAN</p><h2>' +
+        esc(o.kode) +
+        "</h2></div>" +
+        badge(o.status) +
+        '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+        (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
+        '</b></div><div class="detail-pair"><span>Sumber pesanan</span><b>' +
+        (o.sumber === "offline" ? "Offline (dicatat Admin)" : "Online") +
+        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' +
+        esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") +
+        '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") +
+        '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        delivery +
+        '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
+        money(o.total) +
+        '</b></div></article>' +
+        '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' +
+        proof +
+        "</article>";
     const dispatchView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">DETAIL PESANAN</p><h2>' +
         esc(o.kode) +
@@ -964,7 +988,11 @@ async function orderDetail() {
             : "") +
         checklist +
         dispatch;
-    $("#order-detail").innerHTML = isValidation ? validationView : dispatchView;
+    $("#order-detail").innerHTML = isValidation
+        ? validationView
+        : isPendingPayment
+          ? pendingPaymentView
+          : dispatchView;
     const actions = $("#detail-actions");
     const rejectionDialog = $("#reject-order-dialog");
     const rejectionForm = $("#reject-order-form");
