@@ -950,6 +950,25 @@ a {
     margin-top:12px
 }
 
+.dispatch-photos {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+    gap:10px
+}
+
+.dispatch-photo-link {
+    display:block;
+    min-width:0
+}
+
+.dispatch-photos .uploaded-proof {
+    display:block;
+    width:100%;
+    height:160px;
+    margin:0;
+    background:var(--soft)
+}
+
 .customer-mobile-nav {
     display:none
 }

@@ -64,3 +64,13 @@ Laporan memakai VIEW; checkout memakai prepared query langsung dengan hasil seta
 Penolakan Admin action=reject tetap mengubah menunggu_validasi ke ditolak; sisa
 pulih melalui agregasi tanpa counter. Kalender, status HTTP lama, pembayaran,
 dispatch, dan alias respons laporan Owner tetap.
+
+### Foto kiriman
+
+Admin mengunggah foto saat pesanan berstatus `diproses` melalui POST
+`admin/api/orders.php` dengan `action=upload_dispatch`, `id`, dan satu atau
+beberapa file `foto_kiriman[]`. Format JPG, PNG, atau WebP didukung, maksimal
+2 MB per foto. GET detail Admin dan pelanggan mengembalikan
+`foto_kiriman_list`; foto lama di `pesanan.foto_kiriman` tetap disertakan.
+Foto tetap tersedia di Admin dan detail riwayat pelanggan setelah status
+berubah menjadi `selesai`. Migrasi database yang sudah ada: `016_multiple_dispatch_photos.sql`.

@@ -52,6 +52,8 @@ minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
   minimum produk 4 porsi, urutan tanggal jadwal.
 - Kolom lama produk.kuota dan produk.terpakai tetap ada tetapi tidak dipakai sebagai
   sumber kuota/counter. pesanan.pax mengikuti skema sampai rename disetujui.
-- Dispatch memakai detail_pesanan.sudah_dicek dan pesanan.foto_kiriman.
+- Dispatch memakai detail_pesanan.sudah_dicek dan tabel pesanan_foto_kiriman
+  untuk menyimpan banyak foto. Kolom pesanan.foto_kiriman tetap dipertahankan
+  sebagai kompatibilitas foto lama dan di-backfill oleh migrasi 016.
 - Status penolakan ditolak; produk.status_aktif belum ada.
 - jadwal_po, pembayaran, kalender dan konfigurasi rahasia tidak diubah.

@@ -3,6 +3,7 @@
 -- Jalankan hanya untuk database baru atau database yang memang siap di-reset.
 -- DDL: hapus tabel berurutan dengan CASCADE agar relasi dependennya ikut dibersihkan.
 DROP TABLE IF EXISTS 
+  pesanan_foto_kiriman,
   detail_pesanan,
   pesanan,
   jadwal_po,
@@ -108,6 +109,15 @@ CREATE TABLE detail_pesanan (
   harga INT NOT NULL CHECK(harga >= 0),
   sudah_dicek BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+-- DDL: simpan seluruh foto kiriman per pesanan; kolom pesanan.foto_kiriman tetap menjadi kompatibilitas foto lama.
+CREATE TABLE pesanan_foto_kiriman (
+  id SERIAL PRIMARY KEY,
+  pesanan_id INT NOT NULL REFERENCES pesanan(id) ON DELETE CASCADE,
+  path VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX pesanan_foto_kiriman_order_idx ON pesanan_foto_kiriman(pesanan_id, id);
 
 -- DDL: tabel alamat tersimpan milik pelanggan.
 CREATE TABLE alamat_pelanggan (

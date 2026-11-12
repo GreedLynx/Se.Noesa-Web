@@ -269,6 +269,13 @@ if (isset($_GET['id'])) {
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]
     )->fetchAll();
+    $order['foto_kiriman_list'] = q(
+        'SELECT path FROM pesanan_foto_kiriman WHERE pesanan_id = ? ORDER BY id',
+        [$order['id']]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    if (!$order['foto_kiriman_list'] && !empty($order['foto_kiriman'])) {
+        $order['foto_kiriman_list'] = [$order['foto_kiriman']];
+    }
     json($order);
 }
 
