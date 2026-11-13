@@ -1,6 +1,8 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
-require_role('admin');
+if (!in_array(me()['role'] ?? '', ['admin', 'owner'], true)) {
+    json(['error' => 'Unauthorized'], 401);
+}
 require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-expiration.php';
 require_once __DIR__ . '/../../../app/offline-orders.php';
