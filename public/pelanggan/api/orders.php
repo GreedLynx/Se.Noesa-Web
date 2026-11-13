@@ -18,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new OutOfBoundsException('Pesanan tidak ditemukan');
             }
             // Waktu diperiksa setelah lock agar request yang menunggu tidak melewati H-2.
-            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp()
+            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp(),
+                    sumber_pembatalan = 'pelanggan', status_sebelum_batal = status
                 WHERE id = ? AND user_id = ?
                     AND status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
                     AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >=
@@ -216,6 +217,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
         // LOCK TABLE mencegah perubahan kuota harian bersamaan dengan checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Checkout dan perubahan tanggal libur diserialisasi agar penutupan baru tidak terlewati.
+        q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
         // SELECT ... FOR UPDATE mengunci baris kuota tanggal pengiriman sampai transaksi selesai.
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
         // SELECT ... FOR UPDATE memilih sekaligus mengunci jadwal PO aktif yang akan dipakai.

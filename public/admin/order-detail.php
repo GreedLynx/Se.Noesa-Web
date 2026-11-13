@@ -17,6 +17,9 @@ admin_head('Detail Pesanan', 'order-detail');
     </article>
 </div>
 <div class="detail-actions" id="detail-actions" hidden>
+    <button class="button primary" data-order-action="review_cancellation">
+        Sudah ditinjau
+    </button>
     <button class="button danger-outline"
         data-order-action="reject">
         Tolak pembayaran
@@ -29,6 +32,7 @@ admin_head('Detail Pesanan', 'order-detail');
         data-order-action="complete">
         Tandai selesai &amp; kirim
     </button>
+    <p class="form-error" id="review-cancellation-error" role="alert"></p>
 </div>
 <dialog id="reject-order-dialog" class="product-dialog reject-order-dialog">
     <form id="reject-order-form">

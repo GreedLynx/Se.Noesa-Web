@@ -16,6 +16,8 @@ try {
         id INT PRIMARY KEY,
         status VARCHAR(24) NOT NULL CHECK (status IN ('menunggu_pembayaran', 'menunggu_validasi', 'dibatalkan')),
         status_updated_at TIMESTAMPTZ,
+        sumber_pembatalan VARCHAR(12),
+        status_sebelum_batal VARCHAR(24),
         bukti_bayar TEXT,
         created_at TIMESTAMPTZ NOT NULL,
         tgl_kirim TIMESTAMPTZ NOT NULL
