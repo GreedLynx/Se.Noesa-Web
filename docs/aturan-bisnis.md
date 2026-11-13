@@ -79,7 +79,7 @@ tetap pulih otomatis ketika tanggal libur dihapus.
 - Pembatalan baru mencatat sumber pelanggan/otomatis dan status sebelumnya.
   Sumber/status asal data lama yang tidak diketahui tetap ditampilkan belum tercatat.
 - Pemberitahuan Dashboard mencakup seluruh pembatalan belum ditinjau tanpa batas
-  usia tujuh hari, termasuk data lama. Maksimal lima tautan ditampilkan dengan
+  usia tujuh hari, termasuk data lama. Maksimal dua tautan ditampilkan dengan
   jumlah total dan tautan ke daftar lengkap.
 - Pesanan yang sebelumnya diproses diprioritaskan untuk menghentikan persiapan/
   pengiriman. Pesanan dari menunggu_validasi atau dengan bukti tersimpan perlu

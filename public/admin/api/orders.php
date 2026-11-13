@@ -3,6 +3,7 @@ require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
+require_once __DIR__ . '/../../../app/offline-orders.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
@@ -109,6 +110,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         json(array_merge(['ok' => true], $review));
     }
+    if (($request['action'] ?? '') === 'create_offline') {
+        try {
+            json(['ok' => true] + create_offline_order($request), 201);
+        } catch (DomainException $error) {
+            json(['error' => $error->getMessage()], 422);
+        } catch (Throwable $error) {
+            error_log('[Se.Noesa offline order] ' . $error);
+            json(['error' => 'Pesanan offline gagal disimpan. Coba beberapa saat lagi.'], 500);
+        }
+    }
     if (($request['action'] ?? '') === 'check_item') {
         // UPDATE ... FROM mengubah checklist hanya jika item milik pesanan yang sedang diproses.
         $item = q("UPDATE detail_pesanan d
@@ -127,6 +138,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['error' => 'Aksi tidak valid'], 422);
     }
     if (($request['action'] ?? '') === 'reject') {
+        $rejectionReason = $request['alasan_penolakan'] ?? null;
+        if (!is_string($rejectionReason)) {
+            json(['error' => 'Alasan penolakan wajib diisi (maksimal 500 karakter).'], 422);
+        }
+        $rejectionReason = trim($rejectionReason);
+        if ($rejectionReason === '' || strlen($rejectionReason) > 500) {
+            json(['error' => 'Alasan penolakan wajib diisi (maksimal 500 karakter).'], 422);
+        }
         $db = db();
         $db->beginTransaction();
         try {
@@ -140,10 +159,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             // UPDATE mengubah status dan timestamp penolakan dalam transaksi yang sama.
             q("UPDATE pesanan
-                SET status = 'ditolak', status_updated_at = now()
-                WHERE id = ?", [$current['id']]);
+                SET status = 'ditolak', status_updated_at = now(), alasan_penolakan = ?
+                WHERE id = ?", [$rejectionReason, $current['id']]);
             $db->commit();
-            json(['ok' => true, 'status' => 'ditolak']);
+            json(['ok' => true, 'status' => 'ditolak', 'alasan_penolakan' => $rejectionReason]);
         } catch (Throwable $e) {
             if ($db->inTransaction()) {
                 $db->rollBack();
@@ -236,7 +255,7 @@ $orderBy = $tab === 'dibatalkan' ? 'p.status_updated_at DESC NULLS LAST, p.id DE
         p.created_at DESC";
 $search = '%' . trim($_GET['q'] ?? '') . '%';
 // SELECT memfilter pesanan menurut tab/status dan kata kunci nama atau kode, lalu mengurutkan hasil.
-$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at,
+$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.sumber, p.status_updated_at, p.tgl_kirim, p.created_at,
         c.cancellation_source, c.status_before_cancel, c.cancelled_at, c.reviewed_at,
         c.reviewed_by, c.reviewed_by_name, c.needs_payment_review, c.production_stop_required
     FROM pesanan p

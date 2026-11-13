@@ -82,6 +82,7 @@ CREATE TABLE pesanan (
   keterangan VARCHAR(120),
   pax INT NOT NULL DEFAULT 0,
   total INT NOT NULL DEFAULT 0 CHECK(total >= 0),
+  sumber VARCHAR(10) NOT NULL DEFAULT 'online' CHECK (sumber IN ('online', 'offline')),
   status VARCHAR(24) NOT NULL DEFAULT 'menunggu_pembayaran'
     CHECK (
       status IN (
@@ -95,6 +96,7 @@ CREATE TABLE pesanan (
     ),
   bukti_bayar VARCHAR(200),
   nama_pembayar VARCHAR(100),
+  alasan_penolakan VARCHAR(500),
   foto_kiriman VARCHAR(200),
   tgl_kirim TIMESTAMPTZ,
   status_updated_at TIMESTAMPTZ DEFAULT now(),

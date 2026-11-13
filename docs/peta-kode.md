@@ -22,6 +22,8 @@ mengelola periode PO.
 
 | Kebutuhan | File |
 |---|---|
+| Admin mencatat pesanan offline langsung berstatus diproses dan memakai kuota tanggal kirim | `public/admin/orders.php`, `public/admin/assets/admin.js`, `public/admin/api/orders.php`, `app/offline-orders.php`, `database/migrations/019_offline_orders.sql` |
+| Alasan penolakan Admin tersimpan dan terlihat pada detail pelanggan/Admin | `public/admin/api/orders.php`, `public/admin/assets/admin.js`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js`, `database/migrations/020_order_rejection_reason.sql` |
 | Cancel milik sendiri sampai H-2, upload sebelum satu jam, izin/waktu detail | `public/pelanggan/api/orders.php` |
 | Tampilan pembatalan lama (tombol merah/kartu syarat/pesan H-2), izin server dan refund | `public/pelanggan/assets/customer.js` |
 | Inventaris/dry-run dan job CLI kedaluwarsa, tanpa route publik | `scripts/expire-unpaid-orders.php` |

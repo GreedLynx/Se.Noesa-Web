@@ -87,6 +87,20 @@ untuk kompatibilitas ledger instalasi kedua branch. Runner mengurutkan nama
 file lengkap; migrasi 018 mengulang constraint/VIEW yang setara dengan
 016_order_cancellation tanpa menghapus data atau mengubah tipe kolom.
 
+## Pesanan offline Admin
+
+Migrasi 019 menambah `pesanan.sumber`, bernilai `online` (default untuk transaksi
+lama dan checkout pelanggan) atau `offline`. Pesanan yang dicatat Admin langsung
+berstatus `diproses`, menyimpan snapshot harga/detail, dan memakai perhitungan,
+lock, kuota produk, serta batas dapur tanggal kirim yang sama dengan checkout.
+Dengan demikian pesanan offline segera mengurangi sisa kuota pesanan online.
+
+## Alasan penolakan pembayaran
+
+Migrasi 020 menambahkan `pesanan.alasan_penolakan` (maksimal 500 karakter).
+Penolakan pembayaran oleh Admin mewajibkan alasan; detail API pelanggan dan
+riwayat menampilkan alasan tersebut untuk pesanan berstatus `ditolak`.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
