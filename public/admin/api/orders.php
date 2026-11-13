@@ -2,6 +2,7 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/order-cancellation.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
@@ -80,6 +81,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['ok' => true, 'foto_kiriman' => $savedPaths[0], 'foto_kiriman_list' => $savedPaths]);
     }
     $request = body();
+    if (($request['action'] ?? '') === 'review_cancellation') {
+        $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id || $id < 1) {
+            json(['error' => 'ID pesanan tidak valid'], 422);
+        }
+        try {
+            $db = db();
+            $db->beginTransaction();
+            $order = q('SELECT id, status FROM pesanan WHERE id = ? FOR UPDATE', [$id])->fetch();
+            if (!$order) {
+                throw new OutOfBoundsException('Pesanan tidak ditemukan');
+            }
+            if ($order['status'] !== 'dibatalkan') {
+                throw new DomainException('Hanya pembatalan pesanan yang dapat ditinjau');
+            }
+            // Tinjauan ulang tidak mengubah peninjau pertama atau waktu pembatalan.
+            q('UPDATE pesanan
+                SET pembatalan_ditinjau_at = clock_timestamp(), pembatalan_ditinjau_oleh = ?
+                WHERE id = ? AND pembatalan_ditinjau_at IS NULL', [(int) me()['id'], $id]);
+            $review = cancellation_metadata(q('SELECT * FROM v_pembatalan_pesanan WHERE id = ?', [$id])->fetch());
+            $db->commit();
+        } catch (Throwable $error) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            $code = $error instanceof OutOfBoundsException ? 404 : ($error instanceof DomainException ? 409 : 500);
+            json(['error' => $code === 500 ? 'Pembatalan belum dapat ditandai ditinjau' : $error->getMessage()], $code);
+        }
+        json(array_merge(['ok' => true], $review));
+    }
     if (($request['action'] ?? '') === 'check_item') {
         // UPDATE ... FROM mengubah checklist hanya jika item milik pesanan yang sedang diproses.
         $item = q("UPDATE detail_pesanan d
@@ -158,10 +187,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 if (isset($_GET['id'])) {
     // LEFT JOIN menampilkan nama akun jika terhubung; jika tidak, nama pemesan tetap tersedia.
-    $order = q("SELECT p.*, COALESCE(u.username, p.nama_pemesan) akun_pemesan, u.phone
+    $order = q("SELECT p.*, COALESCE(u.username, p.nama_pemesan) akun_pemesan, u.phone,
+        c.cancellation_source, c.status_before_cancel, c.cancelled_at, c.reviewed_at,
+        c.reviewed_by, c.reviewed_by_name, c.needs_payment_review, c.production_stop_required
         FROM pesanan p
         LEFT JOIN users u
         ON u.id = p.user_id
+        LEFT JOIN v_pembatalan_pesanan c ON c.id = p.id
         WHERE p.id = ?", [(int) $_GET['id']])->fetch();
     if (!$order) {
         json(['error' => 'Pesanan tidak ditemukan'], 404);
@@ -180,9 +212,10 @@ if (isset($_GET['id'])) {
     if (!$order['foto_kiriman_list'] && !empty($order['foto_kiriman'])) {
         $order['foto_kiriman_list'] = [$order['foto_kiriman']];
     }
-    json($order);
+    json(cancellation_metadata($order));
 }
-$statusFilter = match (($_GET['tab'] ?? 'validasi')) {
+$tab = $_GET['tab'] ?? 'validasi';
+$statusFilter = match ($tab) {
     'semua' => "('menunggu_pembayaran','menunggu_validasi','diproses','selesai','ditolak','dibatalkan')",
     'pembayaran' => "('menunggu_pembayaran')",
     'proses' => "('diproses')",
@@ -191,16 +224,29 @@ $statusFilter = match (($_GET['tab'] ?? 'validasi')) {
     'dibatalkan' => "('dibatalkan')",
     default => "('menunggu_validasi')"
 };
+$review = $_GET['review'] ?? '';
+if (!in_array($review, ['', 'unreviewed', 'reviewed'], true)) {
+    json(['error' => 'Filter tinjauan tidak valid'], 422);
+}
+$reviewFilter = $tab === 'dibatalkan' && $review !== ''
+    ? ($review === 'unreviewed' ? 'AND c.reviewed_at IS NULL' : 'AND c.reviewed_at IS NOT NULL') : '';
+$orderBy = $tab === 'dibatalkan' ? 'p.status_updated_at DESC NULLS LAST, p.id DESC'
+    : "CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,
+        CASE WHEN p.status = 'selesai' THEN COALESCE(p.status_updated_at, p.created_at) END DESC,
+        p.created_at DESC";
 $search = '%' . trim($_GET['q'] ?? '') . '%';
 // SELECT memfilter pesanan menurut tab/status dan kata kunci nama atau kode, lalu mengurutkan hasil.
-$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at
+$items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.status_updated_at, p.tgl_kirim, p.created_at,
+        c.cancellation_source, c.status_before_cancel, c.cancelled_at, c.reviewed_at,
+        c.reviewed_by, c.reviewed_by_name, c.needs_payment_review, c.production_stop_required
     FROM pesanan p
-    WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
-    ORDER BY CASE p.status WHEN 'menunggu_pembayaran' THEN 0 WHEN 'menunggu_validasi' THEN 1 WHEN 'diproses' THEN 2 WHEN 'selesai' THEN 3 ELSE 4 END,
-        CASE WHEN p.status = 'selesai' THEN COALESCE(p.status_updated_at, p.created_at) END DESC,
-        p.created_at DESC", [$search, $search])->fetchAll();
+    LEFT JOIN v_pembatalan_pesanan c ON c.id = p.id
+    WHERE p.status IN $statusFilter AND(p.nama_pemesan ILIKE ? OR p.kode ILIKE ?) $reviewFilter
+    ORDER BY $orderBy", [$search, $search])->fetchAll();
+$items = array_map('cancellation_metadata', $items);
 // Satu query COUNT dengan FILTER menghitung total dan jumlah untuk setiap status.
-$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled
+$count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled,
+        COUNT(*) FILTER (WHERE status = 'dibatalkan' AND pembatalan_ditinjau_at IS NULL) cancellation_unreviewed
     FROM pesanan")->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
 try {

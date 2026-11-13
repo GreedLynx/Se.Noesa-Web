@@ -2,6 +2,7 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/order-cancellation.php';
 
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 // COUNT dengan FILTER menghitung pesanan hari ini dan yang menunggu validasi dalam satu query.
@@ -79,6 +80,15 @@ $recent = q(
     LIMIT 6'
 )->fetchAll();
 
+$cancellationCounts = q('SELECT COUNT(*) AS unreviewed_count,
+        COUNT(*) FILTER (WHERE needs_payment_review OR production_stop_required) AS urgent_count
+    FROM v_pembatalan_pesanan WHERE reviewed_at IS NULL')->fetch();
+$cancellations = q('SELECT * FROM v_pembatalan_pesanan
+    WHERE reviewed_at IS NULL
+    ORDER BY production_stop_required DESC, needs_payment_review DESC,
+        cancelled_at DESC NULLS LAST, id DESC
+    LIMIT 2')->fetchAll();
+
 json([
     'orders' => (int) $stats['orders'],
     'pending' => (int) $stats['pending'],
@@ -91,4 +101,9 @@ json([
     'chart' => $chart,
     'priority' => $priority,
     'recent' => $recent,
+    'cancellations' => [
+        'unreviewed_count' => (int) $cancellationCounts['unreviewed_count'],
+        'urgent_count' => (int) $cancellationCounts['urgent_count'],
+        'items' => array_map('cancellation_metadata', $cancellations),
+    ],
 ]);

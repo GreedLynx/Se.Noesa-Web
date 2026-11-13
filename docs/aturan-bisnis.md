@@ -70,3 +70,27 @@ tetap pulih otomatis ketika tanggal libur dihapus.
   aktivasi. Unpaid dengan waktu NULL atau bukti tersimpan dilaporkan untuk
   pemeriksaan manual dan tidak dibatalkan job.
 - Pendapatan hanya dari `selesai`. Total semua pesanan tetap mencakup pembatalan.
+
+## Tinjauan pembatalan oleh Admin
+
+- Pembatalan yang sah langsung berlaku dan tidak menunggu persetujuan Admin.
+  Tab Dibatalkan menampilkan seluruh riwayat; filter tinjauan membedakan belum
+  dan sudah ditinjau. Pencarian kode/nama tetap tersedia.
+- Pembatalan baru mencatat sumber pelanggan/otomatis dan status sebelumnya.
+  Sumber/status asal data lama yang tidak diketahui tetap ditampilkan belum tercatat.
+- Pemberitahuan Dashboard mencakup seluruh pembatalan belum ditinjau tanpa batas
+  usia tujuh hari, termasuk data lama. Maksimal lima tautan ditampilkan dengan
+  jumlah total dan tautan ke daftar lengkap.
+- Pesanan yang sebelumnya diproses diprioritaskan untuk menghentikan persiapan/
+  pengiriman. Pesanan dari menunggu_validasi atau dengan bukti tersimpan perlu
+  pemeriksaan pembayaran. Bukti unggahan sendiri tidak menjamin uang sudah masuk.
+- Tombol Sudah ditinjau mencatat waktu dan Admin pertama yang memeriksa.
+  Penanda berlaku bersama untuk semua Admin; pengulangan tidak mengubah peninjau
+  atau waktu pertama. Membuka detail atau GET tidak otomatis menandai tinjauan.
+- Sudah ditinjau tidak berarti refund selesai dan tidak mengubah waktu/status
+  pembatalan. Refund penuh tetap ditangani Admin di luar aplikasi jika pembayaran
+  benar-benar diterima. Aplikasi tidak memindahkan uang.
+- Detail batal menyediakan menu, bukti, dan foto yang tersimpan secara read-only;
+  aksi upload/validasi/penyelesaian tetap tidak tersedia pada status terminal ini.
+- Tinjauan tidak menambah pemakaian kuota dan tidak mengembalikan pesanan ke rekap
+  produksi. Informasi diperbarui ketika halaman dimuat ulang; belum push realtime.

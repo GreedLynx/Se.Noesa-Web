@@ -74,6 +74,9 @@ admin_head('Daftar Pesanan', 'orders');
                     0
                 </b>
             </button>
+            <button data-tab="dibatalkan">
+                Dibatalkan <b id="cancelled-count">0</b>
+            </button>
         </div>
         <label class="search">
             <span>
@@ -82,6 +85,15 @@ admin_head('Daftar Pesanan', 'orders');
             <input
                 id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">
         </label>
+    </div>
+    <div class="cancellation-filter" id="cancellation-review-filter" hidden>
+        <label for="cancellation-review">Filter riwayat</label>
+        <select id="cancellation-review">
+            <option value="">Semua pembatalan</option>
+            <option value="unreviewed">Belum ditinjau</option>
+            <option value="reviewed">Sudah ditinjau</option>
+        </select>
+        <span class="muted"><b id="cancellation-unreviewed-count">0</b> belum ditinjau</span>
     </div>
     <div class="table-wrap">
         <table>

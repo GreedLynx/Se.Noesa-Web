@@ -18,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new OutOfBoundsException('Pesanan tidak ditemukan');
             }
             // Waktu diperiksa setelah lock agar request yang menunggu tidak melewati H-2.
-            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp()
+            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp(),
+                    sumber_pembatalan = 'pelanggan', status_sebelum_batal = status
                 WHERE id = ? AND user_id = ?
                     AND status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
                     AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >=

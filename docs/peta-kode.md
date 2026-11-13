@@ -30,16 +30,29 @@ mengelola periode PO.
 | Default semua produk 50 porsi saat migrasi dan default produk baru | `database/migrations/017_default_quota_50.sql`, `public/admin/api/products.php` |
 | Constraint dibatalkan dan VIEW pelepas kuota | `database/migrations/016_order_cancellation.sql`, `database/schema.sql` |
 | Kuota checkout/katalog setara VIEW | `app/daily-quota.php` |
+| Sumber/status asal pembatalan, waktu/ID peninjau, dan VIEW notifikasi | `database/migrations/021_cancellation_admin_review.sql` |
+| Normalisasi metadata pembatalan dan tanggal ISO WIB lintas API | `app/order-cancellation.php`, `cancellation_metadata()` |
+| Tinjauan Admin atomik/idempotent, filter belum/sudah ditinjau | `public/admin/api/orders.php`, action `review_cancellation` |
+| Pemberitahuan belum ditinjau seluruh umur dan maksimal dua tautan prioritas di bawah rekap produksi | `public/admin/api/dashboard.php`, `public/admin/dashboard.php`, `public/admin/assets/admin.js` |
+| Tab/count Dibatalkan, ringkasan detail terstruktur, bukti/foto read-only, tombol Sudah ditinjau | `public/admin/orders.php`, `public/admin/order-detail.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+| Hierarki antrean Dashboard, alasan prioritas, dan penjelasan tinjauan/refund | `public/admin/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
 | Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |
 | Uji PostgreSQL terisolasi, migrasi, endpoint, batas waktu dan balapan | `scripts/test-order-cancellation.php`, `scripts/test-daily-quota.php` |
+| Uji metadata/tinjauan pertama, notifikasi, balapan tinjauan dan fixture job | `scripts/test-order-cancellation.php`, `scripts/test-payment-deadline.php` |
+| Uji tab/count/filter tinjauan dan tautan daftar Admin desktop/mobile | `scripts/test-admin-cancellation-list.cjs` |
 | Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |
 | Aturan dan urutan aktivasi job setiap menit | `docs/aturan-bisnis.md`, `README.md` |
 
 Manual menerima menunggu_pembayaran/menunggu_validasi/diproses sampai akhir H-2
 WIB; refund penuh ditangani Admin di luar aplikasi. Kontak WhatsApp menyusul.
 Job hanya membatalkan unpaid tanpa bukti sejak satu jam created_at; inventaris
-dan dry-run wajib sebelum aktivasi pesanan lama. Implementasi tidak membaca .env
-atau mengaktifkan job/migrasi pada database aplikasi.
+dan dry-run wajib sebelum aktivasi pesanan lama. Migrasi tinjauan 021 diterapkan
+terpisah; job kedaluwarsa tetap belum diaktifkan.
+
+Tinjauan pembatalan berlaku untuk seluruh Admin. Waktu/peninjau pertama disimpan
+tanpa mengganti waktu pembatalan; menandai sudah ditinjau bukan konfirmasi refund.
+Pemberitahuan bertahan sampai ditinjau tanpa batas tujuh hari, termasuk data lama
+yang sumber/status sebelumnya belum tercatat. GET hanya membaca data.
 
 ## Foto bukti pesanan Admin
 

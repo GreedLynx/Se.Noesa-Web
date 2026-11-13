@@ -74,9 +74,8 @@ melewati UI. `jadwal_po` tetap menjadi referensi FK pesanan, tetapi tidak lagi
 dikelola dari halaman Jadwal.
 Pesanan berstatus `menunggu_pembayaran` dibatalkan otomatis satu jam sejak
 `created_at` bila bukti belum dikirim. Jalankan `php scripts/expire-unpaid-orders.php`
-melalui scheduler setiap menit; API katalog
-dan pesanan pelanggan juga menjalankan pembersihan untuk menjaga status tetap
-mutakhir saat ada aktivitas. Status `dibatalkan` tidak memakai kuota.
+melalui scheduler setiap menit; GET katalog dan pesanan pelanggan tidak
+menjalankan pembersihan atau perubahan status. Status `dibatalkan` tidak memakai kuota.
 
 ### Laporan Admin dan Owner
 
@@ -138,6 +137,67 @@ GET pesanan Admin menambah `tab=dibatalkan`; `tab=semua` mencakup status batal d
 `count.cancelled`, tetap GET-only. Pendapatan tetap berasal dari selesai.
 Upload foto kiriman Admin kini menghasilkan 409 dan membuang foto baru bila
 pembatalan sudah menang; tidak menimpa foto pesanan batal.
+
+### Visibilitas dan tinjauan pembatalan Admin
+
+Migrasi `021_cancellation_admin_review.sql` harus tersedia sebelum endpoint
+membaca metadata ini. Sumber serta status sebelum pembatalan ditentukan server
+pada UPDATE pelanggan/job yang berhasil, bukan dari payload pengguna.
+
+GET `admin/api/orders.php?tab=dibatalkan` menerima `review=unreviewed` atau
+`review=reviewed`; tanpa parameter/nilai kosong mencakup keduanya. Filter tinjauan
+hanya diterapkan pada tab batal, sedangkan `q` tetap mencari kode/nama pemesan.
+Nilai review tidak dikenal menghasilkan 422. Tab batal diurutkan berdasarkan
+`status_updated_at DESC NULLS LAST, id DESC`; tab lainnya mempertahankan urutan lama.
+`counts.cancelled` adalah total seluruh pembatalan, dan
+`counts.cancellation_unreviewed` adalah total yang belum ditinjau; keduanya tidak
+dibatasi pencarian atau filter tinjauan.
+
+Daftar/detail Admin serta item pemberitahuan Dashboard menambahkan:
+
+| Field | Isi |
+|---|---|
+| `cancellation_source` | `pelanggan`, `otomatis`, atau NULL untuk riwayat yang belum tercatat. |
+| `status_before_cancel` | Status asal pembatalan, atau NULL bila tidak tercatat. |
+| `cancelled_at` | Waktu status pembatalan tercatat, ISO 8601 +07:00 atau NULL. |
+| `reviewed_at` | Waktu tinjauan pertama, ISO 8601 +07:00 atau NULL. |
+| `reviewed_by` | ID Admin peninjau pertama; NULL jika belum ditinjau/akun sudah dihapus. |
+| `reviewed_by_name` | Nama peninjau yang masih tersedia, atau NULL. |
+| `needs_payment_review` | Boolean: bukti tersimpan atau status asal menunggu_validasi/diproses. Ini bukan bukti pembayaran/refund sudah selesai. |
+| `production_stop_required` | Boolean: status asal diproses, sehingga persiapan perlu dihentikan. |
+
+Pada pesanan bukan batal, metadata tinjauan/pembatalan NULL dan kedua flag false.
+Pesanan batal lama tetap memiliki sumber/status asal NULL dan tidak ditebak dari
+bukti transfer; waktu status yang tercatat tetap dapat ditampilkan sebagai riwayat.
+
+POST `admin/api/orders.php` dengan `{action:"review_cancellation",id}` hanya
+dapat dijalankan Admin. ID wajib integer positif; invalid 422, pesanan tidak ada
+404, status bukan batal 409, kegagalan penyimpanan 500. Sukses mengembalikan
+`{ok:true,...metadata_pembatalan}` beserta id/kode/rincian VIEW yang sama. Row lock
+menjamin hanya peninjau pertama yang mengisi waktu/ID; permintaan ulang berhasil
+tanpa menimpa keduanya. Penanda berlaku bersama untuk semua Admin.
+
+Tinjauan tidak mengubah status, `status_updated_at`, bukti, kuota, atau refund.
+GET tidak pernah menandai pesanan ditinjau. Bukti/foto dan daftar menu pada detail
+batal tetap tersedia read-only untuk pemeriksaan.
+Pada detail pesanan batal, sumber/waktu/status sebelumnya ditampilkan dalam
+blok ringkasan terpisah dari judul kartu; badge status utama ditampilkan sekali.
+
+GET `admin/api/dashboard.php` menambah:
+`cancellations:{unreviewed_count,urgent_count,items}`. `items` maksimal 2 dari
+VIEW `v_pembatalan_pesanan`, seluruhnya belum ditinjau, dengan urutan perlu
+hentikan produksi, perlu periksa pembayaran, lalu waktu pembatalan terbaru/ID.
+Tidak ada batas tujuh hari dan filter `tgl_kirim` tidak membatasi pemberitahuan.
+`urgent_count` menghitung yang memiliki salah satu flag tindak lanjut; penanda
+Sudah ditinjau mengeluarkan item dari pemberitahuan, bukan dari riwayat pesanan.
+Data diperbarui saat halaman dimuat ulang, tanpa push realtime.
+
+Dashboard menampilkan panel pembatalan di bawah rekap menu per tanggal kirim.
+`items` dibatasi maksimal 2 pesanan; total belum ditinjau tetap menyeluruh dan
+tautan daftar membuka seluruh antrean. Dashboard menjelaskan alasan prioritas tiap
+pesanan dan menautkan ke detail untuk memeriksa bukti/status. Tombol Sudah ditinjau
+hanya tersedia pada detail dan hanya mencatat pemeriksaan Admin; pembayaran/refund
+tetap perlu diverifikasi manual.
 
 ### Foto kiriman
 

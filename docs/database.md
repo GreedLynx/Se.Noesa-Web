@@ -97,6 +97,42 @@ EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout.
 Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
 minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
 
+## Migrasi 021: metadata dan tinjauan pembatalan Admin
+
+`021_cancellation_admin_review.sql` menambahkan empat kolom nullable pada `pesanan`:
+
+- `sumber_pembatalan VARCHAR(12)`: CHECK hanya `pelanggan` atau `otomatis`.
+- `status_sebelum_batal VARCHAR(24)`: CHECK hanya tiga status asal pembatalan.
+- `pembatalan_ditinjau_at TIMESTAMPTZ`: waktu tinjauan pertama.
+- `pembatalan_ditinjau_oleh INT REFERENCES users(id) ON DELETE SET NULL`:
+  Admin peninjau pertama. Penghapusan akun mempertahankan waktu tinjauan.
+
+Migrasi tidak mengisi sumber/status asal yang tidak diketahui pada data lama.
+Pembatalan lama tetap belum ditinjau sampai Admin menandainya. Sumber/status asal
+pembatalan baru disimpan bersama perubahan status dalam satu UPDATE: pelanggan
+berasal dari endpoint pemilik pesanan, otomatis berasal dari job kedaluwarsa.
+Tenggat H-2/satu jam dan ketentuan bukti pembayaran tetap berlaku.
+
+VIEW `v_pembatalan_pesanan` memuat satu baris per status batal, metadata tinjauan,
+nama peninjau dari LEFT JOIN users, dan dua flag pemeriksaan pembayaran/produksi.
+Keberadaan bukti bukan kepastian uang diterima; VIEW tidak mengklaim refund selesai.
+`idx_pesanan_pembatalan_belum_ditinjau` adalah indeks parsial berdasarkan
+`status_updated_at DESC, id DESC` untuk status batal yang belum ditinjau.
+
+POST tinjauan Admin memakai `SELECT ... FOR UPDATE` dan UPDATE bersyarat
+`pembatalan_ditinjau_at IS NULL`. Pembatalan ditinjau bersama untuk seluruh Admin;
+dua request bersamaan/ulang mempertahankan peninjau dan waktu pertama. UPDATE
+tinjauan tidak menyentuh `status_updated_at`, sehingga waktu pembatalan tetap utuh.
+Riwayat tetap dapat dibaca setelah tinjauan dan tidak ada kolom status refund baru.
+UI detail menampilkan metadata pembatalan dalam grid ringkasan terpisah dari
+header, tanpa menggandakan badge status pesanan.
+
+Pemberitahuan Dashboard memfilter VIEW dengan `reviewed_at IS NULL` tanpa batas
+umur atau filter tanggal kirim. Terapkan migrasi 021 sebelum kode yang membaca
+kolom/VIEW ini. Penerapan terarah 021 pada database aplikasi sudah diverifikasi;
+47 pesanan tidak berubah dan 15 pesanan batal terbaca pada VIEW. Pengujian mutasi
+tetap dijalankan hanya di PostgreSQL terisolasi.
+
 ## Migrasi dan kompatibilitas lain
 
 - Migrasi 010: idx_pesanan_created_status, idx_detail_pesanan_produk,
@@ -131,5 +167,5 @@ mengecek ulang status/bukti setelah menunggu lock. Urutan lock checkout tidak di
 
 Tidak ada penghapusan pesanan, detail, bukti, maupun foto. Refund manual di luar
 aplikasi; tidak ada tabel status refund baru. Inventaris/dry-run job read-only;
-lihat urutan aktivasi di README. Migrasi dan job pada database aplikasi belum
-dijalankan oleh implementasi ini; pengujian memakai database khusus terisolasi.
+lihat urutan aktivasi di README. Migrasi 021 sudah diterapkan; job kedaluwarsa
+tetap memerlukan aktivasi terpisah sesuai urutan di README.
