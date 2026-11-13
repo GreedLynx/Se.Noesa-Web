@@ -18,6 +18,7 @@ yarn-debug.log*
 .repomixignore
 repomix-output.xml
 repomix.config.json
+HANDOFF.md
 
 # System & IDE Files
 .DS_Store
