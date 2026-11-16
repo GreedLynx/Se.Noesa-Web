@@ -26,6 +26,7 @@ json([
     'items' => $items,
     'schedule' => $schedule,
     'tanggal' => $snapshot['tanggal'],
+    'tanggal_libur' => $snapshot['tanggal_libur'],
     'maxKitchen' => $snapshot['maxKitchen'],
     'kitchenUsed' => $snapshot['kitchenUsed'],
     'kitchenRemaining' => $snapshot['kitchenRemaining'],

@@ -1,9 +1,29 @@
 # Peta Kode
 
+## Kalender libur operasional
+
+| Kebutuhan | File |
+|---|---|
+| UI Admin tambah/edit/hapus rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
+| CRUD tanggal libur role Admin | `public/admin/api/holidays.php` |
+| Uji form tambah/edit dan validasi API libur tanpa database aplikasi | `scripts/test-holidays.cjs` |
+| Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
+| Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
+| Rekap porsi per menu pada tanggal pilihan, dengan tautan detail pesanan | `database/migrations/020_daily_production_report.sql`, `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+| Uji Dashboard saat rekap hilang/kosong/berisi/tidak valid dan error API | `scripts/test-admin-dashboard.cjs` |
+
+Operasional selalu buka secara default. Kuota tersimpan tidak diubah saat
+rentang libur dibuat. Pesanan lama tidak berubah otomatis; penolakan manual
+dengan alasan dan tawaran jadwal ulang menjadi tahap fitur Admin berikutnya.
+`jadwal_po` dipertahankan sebagai referensi pesanan; UI Jadwal tidak lagi
+mengelola periode PO.
+
 ## Pembatalan pesanan dan kedaluwarsa pembayaran
 
 | Kebutuhan | File |
 |---|---|
+| Admin mencatat pesanan offline langsung berstatus diproses dan memakai kuota tanggal kirim | `public/admin/orders.php`, `public/admin/assets/admin.js`, `public/admin/api/orders.php`, `app/offline-orders.php`, `database/migrations/019_offline_orders.sql` |
+| Alasan penolakan Admin tersimpan dan terlihat pada detail pelanggan/Admin | `public/admin/api/orders.php`, `public/admin/assets/admin.js`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js`, `database/migrations/020_order_rejection_reason.sql` |
 | Cancel milik sendiri sampai H-2, upload sebelum satu jam, izin/waktu detail | `public/pelanggan/api/orders.php` |
 | Tampilan pembatalan lama (tombol merah/kartu syarat/pesan H-2), izin server dan refund | `public/pelanggan/assets/customer.js` |
 | Inventaris/dry-run dan job CLI kedaluwarsa, tanpa route publik | `scripts/expire-unpaid-orders.php` |
@@ -12,16 +32,29 @@
 | Default semua produk 50 porsi saat migrasi dan default produk baru | `database/migrations/017_default_quota_50.sql`, `public/admin/api/products.php` |
 | Constraint dibatalkan dan VIEW pelepas kuota | `database/migrations/016_order_cancellation.sql`, `database/schema.sql` |
 | Kuota checkout/katalog setara VIEW | `app/daily-quota.php` |
+| Sumber/status asal pembatalan, waktu/ID peninjau, dan VIEW notifikasi | `database/migrations/021_cancellation_admin_review.sql` |
+| Normalisasi metadata pembatalan dan tanggal ISO WIB lintas API | `app/order-cancellation.php`, `cancellation_metadata()` |
+| Tinjauan Admin atomik/idempotent, filter belum/sudah ditinjau | `public/admin/api/orders.php`, action `review_cancellation` |
+| Pemberitahuan belum ditinjau seluruh umur dan maksimal dua tautan prioritas di bawah rekap produksi | `public/admin/api/dashboard.php`, `public/admin/dashboard.php`, `public/admin/assets/admin.js` |
+| Tab/count Dibatalkan, ringkasan detail terstruktur, bukti/foto read-only, tombol Sudah ditinjau | `public/admin/orders.php`, `public/admin/order-detail.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+| Hierarki antrean Dashboard, alasan prioritas, dan penjelasan tinjauan/refund | `public/admin/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
 | Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |
 | Uji PostgreSQL terisolasi, migrasi, endpoint, batas waktu dan balapan | `scripts/test-order-cancellation.php`, `scripts/test-daily-quota.php` |
+| Uji metadata/tinjauan pertama, notifikasi, balapan tinjauan dan fixture job | `scripts/test-order-cancellation.php`, `scripts/test-payment-deadline.php` |
+| Uji tab/count/filter tinjauan dan tautan daftar Admin desktop/mobile | `scripts/test-admin-cancellation-list.cjs` |
 | Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |
 | Aturan dan urutan aktivasi job setiap menit | `docs/aturan-bisnis.md`, `README.md` |
 
 Manual menerima menunggu_pembayaran/menunggu_validasi/diproses sampai akhir H-2
 WIB; refund penuh ditangani Admin di luar aplikasi. Kontak WhatsApp menyusul.
 Job hanya membatalkan unpaid tanpa bukti sejak satu jam created_at; inventaris
-dan dry-run wajib sebelum aktivasi pesanan lama. Implementasi tidak membaca .env
-atau mengaktifkan job/migrasi pada database aplikasi.
+dan dry-run wajib sebelum aktivasi pesanan lama. Migrasi tinjauan 021 diterapkan
+terpisah; job kedaluwarsa tetap belum diaktifkan.
+
+Tinjauan pembatalan berlaku untuk seluruh Admin. Waktu/peninjau pertama disimpan
+tanpa mengganti waktu pembatalan; menandai sudah ditinjau bukan konfirmasi refund.
+Pemberitahuan bertahan sampai ditinjau tanpa batas tujuh hari, termasuk data lama
+yang sumber/status sebelumnya belum tercatat. GET hanya membaca data.
 
 ## Foto bukti pesanan Admin
 

@@ -34,6 +34,7 @@ try {
     }
     $db->beginTransaction();
     // TEMP TABLE membuat skenario uji terisolasi; ROLLBACK di akhir membuang seluruh data uji.
+    q('CREATE TEMP TABLE tanggal_libur_operasional (id SERIAL,tanggal_mulai DATE,tanggal_selesai DATE) ON COMMIT DROP');
     q('CREATE TEMP TABLE kuota_harian (id SERIAL,produk_id INT,tanggal DATE,kuota INT,UNIQUE(produk_id,tanggal)) ON COMMIT DROP');
     q('CREATE TEMP TABLE produk (id INT PRIMARY KEY,kode TEXT,nama TEXT,kategori TEXT,harga INT,gambar TEXT,min_pesan INT,kuota_harian INT) ON COMMIT DROP');
     q('CREATE TEMP TABLE pesanan (id INT PRIMARY KEY,tgl_kirim TIMESTAMPTZ,status TEXT,created_at TIMESTAMPTZ) ON COMMIT DROP');
