@@ -3,6 +3,35 @@
 // Target selalu dihitung dari detail_pesanan, bukan dari ID yang dikirim browser.
 
 const MENU_NOTICE_ACTIVE_STATUSES = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'];
+const MENU_NOTICE_OPEN_STATUSES = ['menunggu_respons', 'menunggu_konfirmasi', 'menunggu_tindak_lanjut'];
+const MENU_NOTICE_ORDER_CLOSURE_TYPES = ['pembatalan_pesanan', 'kedaluwarsa_pesanan'];
+
+// Namespace key advisory dua-int (int4, int4). PostgreSQL memisahkan key space
+// dua-int dari key bigint yang dipakai scripts/migrate.php, sehingga tidak ada
+// tabrakan dengan advisory lock migrasi.
+const MENU_NOTICE_CREATE_LOCK_NAMESPACE = 0x4D4E4F54; // "MNOT"
+
+/**
+ * Serialisasi pembuatan notifikasi untuk satu produk.
+ *
+ * Advisory lock transaksi dilepas otomatis saat commit atau rollback. Lock ini
+ * diambil sebelum target dihitung ulang sehingga dua Admin tidak dapat membaca
+ * target lama yang sama lalu menyisipkan penerima duplikat.
+ */
+function menu_notice_lock_creation(int $productId): void
+{
+    // Lock transaksi di luar BEGIN akan dilepas saat statement selesai dan tidak
+    // melindungi pengecekan target; tolak pemakaian yang salah sejak awal.
+    if (!db()->inTransaction()) {
+        throw new LogicException('Lock pembuatan notifikasi harus dipanggil di dalam transaksi.');
+    }
+
+    q('SELECT pg_advisory_xact_lock(?::int, ?::int)', [
+        MENU_NOTICE_CREATE_LOCK_NAMESPACE,
+        $productId,
+    ]);
+}
+
 
 function menu_notice_active_status_sql(): string
 {
@@ -46,7 +75,12 @@ function menu_notice_targets(int $productId, bool $lockOrders = false): array
             p.telepon_penerima, p.user_id,
             u.username, u.email, u.phone,
             (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date AS tanggal_kirim,
-            COALESCE(k.kuota, pr.kuota_harian) AS kuota_efektif,
+            CASE WHEN EXISTS (
+                SELECT 1
+                FROM tanggal_libur_operasional libur
+                WHERE libur.tanggal_mulai <= (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+                  AND libur.tanggal_selesai >= (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+            ) THEN 0 ELSE COALESCE(k.kuota, pr.kuota_harian) END AS kuota_efektif,
             EXISTS (
                 SELECT 1
                 FROM pemberitahuan_perubahan_menu_pesanan aktif
@@ -65,7 +99,15 @@ function menu_notice_targets(int $productId, bool $lockOrders = false): array
          WHERE d.produk_id = ?
            AND p.status IN $activeStatuses
            AND p.tgl_kirim IS NOT NULL
-           AND COALESCE(k.kuota, pr.kuota_harian) <= 0
+           AND (
+               COALESCE(k.kuota, pr.kuota_harian) <= 0
+               OR EXISTS (
+                   SELECT 1
+                   FROM tanggal_libur_operasional libur
+                   WHERE libur.tanggal_mulai <= (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+                     AND libur.tanggal_selesai >= (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+               )
+           )
          ORDER BY tanggal_kirim, p.id, d.id$lock",
         [$productId]
     )->fetchAll();
@@ -94,7 +136,8 @@ function menu_notice_order_notifications(int $orderId, int $userId): array
                 r.status_respons, r.status_penyelesaian_selisih,
                 r.kode_produk_lama_snapshot, r.nama_produk_lama_snapshot,
                 r.kode_produk_pengganti_snapshot, r.nama_produk_pengganti_snapshot,
-                r.selisih_total
+                r.selisih_total,
+                r.jenis_penutupan, r.alasan_penutupan, r.ditutup_oleh, r.ditutup_at
          FROM pemberitahuan_perubahan_menu_pesanan r
          JOIN pemberitahuan_perubahan_menu n ON n.id = r.pemberitahuan_id
          JOIN detail_pesanan d ON d.id = r.detail_pesanan_id
@@ -296,6 +339,123 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
     }
 }
 
+/**
+ * Admin menolak pilihan menu pengganti. Hanya status respons dan audit penutupan
+ * yang berubah; detail pesanan, total, dan pembayaran tidak disentuh.
+ */
+function menu_notice_reject_replacement(int $recipientId, int $adminId, string $reason): array
+{
+    $reason = trim($reason);
+    if ($reason === '') {
+        throw new DomainException('Alasan penolakan penggantian wajib diisi.', 422);
+    }
+    if (mb_strlen($reason) > 1000) {
+        throw new DomainException('Alasan penolakan maksimal 1000 karakter.', 422);
+    }
+
+    $db = db();
+    $ownsTransaction = !$db->inTransaction();
+    if ($ownsTransaction) {
+        $db->beginTransaction();
+    }
+
+    try {
+        $row = q(
+            "SELECT r.id, r.status_respons, o.kode_opsi,
+                    p.id AS pesanan_id, p.status AS status_pesanan, p.sumber
+             FROM pemberitahuan_perubahan_menu_pesanan r
+             JOIN detail_pesanan d ON d.id = r.detail_pesanan_id
+             JOIN pesanan p ON p.id = d.pesanan_id
+             LEFT JOIN pemberitahuan_perubahan_menu_opsi o ON o.id = r.opsi_id
+             WHERE r.id = ?
+             FOR UPDATE OF r, p",
+            [$recipientId]
+        )->fetch();
+
+        if (!$row) {
+            throw new DomainException('Respons notifikasi tidak ditemukan.', 404);
+        }
+        if ($row['status_respons'] !== 'menunggu_konfirmasi' || $row['kode_opsi'] !== 'menu_pengganti') {
+            throw new DomainException('Respons ini tidak sedang menunggu konfirmasi penggantian.', 409);
+        }
+        if (!in_array($row['status_pesanan'], MENU_NOTICE_ACTIVE_STATUSES, true)) {
+            throw new DomainException('Pesanan sudah tidak aktif dan penggantian tidak dapat ditolak.', 409);
+        }
+        if ($row['sumber'] !== 'online') {
+            throw new DomainException('Pesanan offline harus ditindaklanjuti secara manual.', 409);
+        }
+
+        q(
+            "UPDATE pemberitahuan_perubahan_menu_pesanan
+             SET status_respons = 'selesai',
+                 jenis_penutupan = 'penolakan_pengganti',
+                 alasan_penutupan = ?,
+                 ditutup_oleh = ?,
+                 ditutup_at = now()
+             WHERE id = ?
+               AND status_respons = 'menunggu_konfirmasi'",
+            [$reason, $adminId, $recipientId]
+        );
+
+        if ($ownsTransaction) {
+            $db->commit();
+        }
+
+        return [
+            'id' => $recipientId,
+            'pesanan_id' => (int) $row['pesanan_id'],
+            'status_respons' => 'selesai',
+            'jenis_penutupan' => 'penolakan_pengganti',
+            'alasan_penutupan' => $reason,
+            'status_pesanan' => $row['status_pesanan'],
+        ];
+    } catch (Throwable $error) {
+        if ($ownsTransaction && $db->inTransaction()) {
+            $db->rollBack();
+        }
+        throw $error;
+    }
+}
+
+/**
+ * Tutup seluruh respons yang masih terbuka untuk satu pesanan.
+ * Dipakai oleh transaksi pembatalan dan expiration; status selesai/dikonfirmasi
+ * tidak pernah ditimpa dan riwayat tetap tersimpan.
+ */
+function menu_notice_close_for_order(
+    int $orderId,
+    string $closureType,
+    string $reason,
+    ?int $actorId = null
+): int {
+    if (!in_array($closureType, MENU_NOTICE_ORDER_CLOSURE_TYPES, true)) {
+        throw new DomainException('Jenis penutupan pesanan tidak valid.', 422);
+    }
+    $reason = trim($reason);
+    if ($reason === '') {
+        throw new DomainException('Alasan penutupan notifikasi wajib diisi.', 422);
+    }
+    if (mb_strlen($reason) > 1000) {
+        throw new DomainException('Alasan penutupan maksimal 1000 karakter.', 422);
+    }
+
+    return q(
+        "UPDATE pemberitahuan_perubahan_menu_pesanan r
+         SET status_respons = 'selesai',
+             jenis_penutupan = ?,
+             alasan_penutupan = ?,
+             ditutup_oleh = ?,
+             ditutup_at = now()
+         FROM detail_pesanan d
+         WHERE d.id = r.detail_pesanan_id
+           AND d.pesanan_id = ?
+           AND r.status_respons IN (
+               'menunggu_respons', 'menunggu_konfirmasi', 'menunggu_tindak_lanjut'
+           )",
+        [$closureType, $reason, $actorId, $orderId]
+    )->rowCount();
+}
+
 function menu_notice_settle_difference(int $recipientId, int $adminId): array
 {
     $db = db();
@@ -353,21 +513,32 @@ function menu_notice_complete_follow_up(int $recipientId, int $adminId, string $
 
     try {
         $row = q(
-            "SELECT id, status_respons, opsi_id
-             FROM pemberitahuan_perubahan_menu_pesanan
-             WHERE id = ?
-             FOR UPDATE",
+            "SELECT r.id, r.status_respons, r.opsi_id, p.sumber, p.user_id
+             FROM pemberitahuan_perubahan_menu_pesanan r
+             JOIN detail_pesanan d ON d.id = r.detail_pesanan_id
+             JOIN pesanan p ON p.id = d.pesanan_id
+             WHERE r.id = ?
+             FOR UPDATE OF r",
             [$recipientId]
         )->fetch();
         if (!$row) {
             throw new DomainException('Respons notifikasi tidak ditemukan.', 404);
         }
-        $optionCode = q(
-            'SELECT kode_opsi FROM pemberitahuan_perubahan_menu_opsi WHERE id = ?',
-            [(int) $row['opsi_id']]
-        )->fetchColumn();
-        if ($row['status_respons'] !== 'menunggu_tindak_lanjut'
-            || !in_array($optionCode, ['hubungi_admin', 'tunggu_informasi'], true)) {
+
+        // Penerima offline tidak memiliki akun/opsi respons, jadi tindak lanjut
+        // manual diselesaikan langsung dari status awal menunggu_respons.
+        $isOffline = $row['sumber'] === 'offline' || $row['user_id'] === null;
+        if ($isOffline) {
+            $canComplete = $row['status_respons'] === 'menunggu_respons';
+        } else {
+            $optionCode = q(
+                'SELECT kode_opsi FROM pemberitahuan_perubahan_menu_opsi WHERE id = ?',
+                [(int) $row['opsi_id']]
+            )->fetchColumn();
+            $canComplete = $row['status_respons'] === 'menunggu_tindak_lanjut'
+                && in_array($optionCode, ['hubungi_admin', 'tunggu_informasi'], true);
+        }
+        if (!$canComplete) {
             throw new DomainException('Respons ini tidak sedang menunggu tindak lanjut manual.', 409);
         }
         if (trim($note) === '') {

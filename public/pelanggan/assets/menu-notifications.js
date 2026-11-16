@@ -78,6 +78,12 @@
         tunggu_informasi: "Kamu akan dihubungi lagi saat informasi sudah tersedia.",
     };
 
+    const closureLabels = {
+        penolakan_pengganti: "Penggantian ditolak Admin",
+        pembatalan_pesanan: "Notifikasi ditutup karena pesanan dibatalkan",
+        kedaluwarsa_pesanan: "Notifikasi ditutup karena pembayaran kedaluwarsa",
+    };
+
     let offset = 0;
     let total = 0;
     let unread = 0;
@@ -223,7 +229,13 @@
                 "Admin sudah mengonfirmasi perubahan ini. Terima kasih sudah merespons.";
         } else if (status === "selesai") {
             lockMessage =
-                "Perubahan menu untuk pesanan ini sudah selesai diproses.";
+                recipient.jenis_penutupan === "penolakan_pengganti"
+                    ? "Admin menolak pilihan menu pengganti. Pesanan, total, dan pembayaran tidak berubah. Hubungi Admin bila perlu bantuan."
+                    : recipient.jenis_penutupan === "pembatalan_pesanan"
+                      ? "Pesanan dibatalkan sehingga notifikasi ini ditutup."
+                      : recipient.jenis_penutupan === "kedaluwarsa_pesanan"
+                        ? "Pembayaran kedaluwarsa sehingga pesanan dibatalkan dan notifikasi ditutup."
+                        : "Perubahan menu untuk pesanan ini sudah selesai diproses.";
         } else if (status === "menunggu_respons") {
             lockMessage =
                 "Pesanan ini sudah tidak aktif sehingga pilihan tidak dapat dikirim. Hubungi Admin bila perlu bantuan.";
@@ -252,6 +264,11 @@
                     : ""}
                 ${difference
                     ? `<div class="mnc-answer-row"><span>Selisih</span><b>${html(difference)}</b></div>`
+                    : ""}
+                ${recipient.jenis_penutupan
+                    ? `<div class="mnc-answer-row"><span>Status</span><b>${html(
+                          closureLabels[recipient.jenis_penutupan] || "Notifikasi ditutup",
+                      )}${recipient.alasan_penutupan ? " — " + html(recipient.alasan_penutupan) : ""}</b></div>`
                     : ""}
                 <div class="mnc-answer-row">
                     <span>Dikirim</span>

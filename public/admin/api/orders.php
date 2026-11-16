@@ -3,6 +3,10 @@ require __DIR__ . '/../../../app/bootstrap.php';
 if (!in_array(me()['role'] ?? '', ['admin', 'owner'], true)) {
     json(['error' => 'Unauthorized'], 401);
 }
+// Owner hanya membaca; seluruh mutasi pesanan tetap khusus Admin.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    require_role('admin');
+}
 require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
 require_once __DIR__ . '/../../../app/offline-orders.php';

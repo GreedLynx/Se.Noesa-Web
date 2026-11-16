@@ -83,6 +83,12 @@
         selesai: "selesai",
     };
 
+    const closureLabels = {
+        penolakan_pengganti: "Penggantian ditolak Admin",
+        pembatalan_pesanan: "Notifikasi ditutup karena pesanan dibatalkan",
+        kedaluwarsa_pesanan: "Notifikasi ditutup karena pembayaran kedaluwarsa",
+    };
+
     const badge = (label, tone = "") =>
         `<span class="${isOwner ? "owner-status" : "status-badge"} ${html(tone)}">${html(label)}</span>`;
 
@@ -209,6 +215,16 @@
                 "Setujui dan ganti menu",
                 `data-mn-action="confirm" data-recipient="${num(recipient.id)}"`,
             );
+            actions += `
+                <label class="mn-followup">
+                    Alasan penolakan penggantian
+                    <textarea data-reject-reason="${num(recipient.id)}" rows="2" maxlength="1000"
+                        placeholder="Jelaskan alasan penggantian ditolak"></textarea>
+                </label>
+                ${secondaryButton(
+                    "Tolak penggantian",
+                    `data-mn-action="reject_replacement" data-recipient="${num(recipient.id)}"`,
+                )}`;
         }
         if (
             !isOwner &&
@@ -222,7 +238,11 @@
                 `data-mn-action="settle_difference" data-recipient="${num(recipient.id)}"`,
             );
         }
-        if (!isOwner && recipient.status_respons === "menunggu_tindak_lanjut") {
+        if (
+            !isOwner &&
+            (recipient.status_respons === "menunggu_tindak_lanjut" ||
+                (offline && recipient.status_respons === "menunggu_respons"))
+        ) {
             actions += `
                 <label class="mn-followup">
                     Catatan tindak lanjut manual
@@ -281,6 +301,7 @@
                 </div>
                 ${recipient.catatan_respons ? `<div class="mn-selisih">Catatan pelanggan: ${html(recipient.catatan_respons)}</div>` : ""}
                 ${difference}
+                ${recipient.jenis_penutupan ? `<div class="mn-selisih">${html(closureLabels[recipient.jenis_penutupan] || "Notifikasi ditutup")}${recipient.alasan_penutupan ? ": " + html(recipient.alasan_penutupan) : ""}</div>` : ""}
                 ${recipient.catatan_tindak_lanjut ? `<div class="mn-selisih">Catatan tindak lanjut: ${html(recipient.catatan_tindak_lanjut)}</div>` : ""}
                 ${actions ? `<div class="mn-actions">${actions}</div>` : ""}
                 <p class="form-error" data-mn-action-error="${num(recipient.id)}" role="alert"></p>
@@ -349,6 +370,21 @@
             title = "Setujui penggantian menu?";
             message = "Menu dan total pesanan akan diperbarui sesuai pilihan pelanggan. Status pesanan dan pembayaran tidak berubah.";
             label = "Ya, setujui";
+        } else if (action === "reject_replacement") {
+            const reason =
+                detailBody
+                    .querySelector(`[data-reject-reason="${recipientId}"]`)
+                    ?.value.trim() || "";
+            if (!reason) {
+                const error = detailBody.querySelector(`[data-mn-action-error="${recipientId}"]`);
+                if (error) error.textContent = "Alasan penolakan penggantian wajib diisi.";
+                return;
+            }
+            requestBody.alasan_penolakan = reason;
+            title = "Tolak penggantian menu?";
+            message =
+                "Pesanan, total, dan pembayaran tidak berubah. Pelanggan akan melihat alasan penolakan ini.";
+            label = "Ya, tolak";
         } else if (action === "settle_difference") {
             title = "Tandai selisih selesai?";
             message = "Pastikan penagihan atau pengembalian sudah dilakukan secara manual di luar aplikasi.";
@@ -381,9 +417,11 @@
             toast(
                 action === "confirm"
                     ? "Penggantian menu disetujui; status pesanan dan pembayaran tidak berubah."
-                    : action === "settle_difference"
-                      ? "Penyelesaian selisih dicatat."
-                      : "Tindak lanjut manual dicatat.",
+                    : action === "reject_replacement"
+                      ? "Penggantian menu ditolak; pesanan, total, dan pembayaran tidak berubah."
+                      : action === "settle_difference"
+                        ? "Penyelesaian selisih dicatat."
+                        : "Tindak lanjut manual dicatat.",
             );
             await loadList(true);
             await openDetail(activeNoticeId);

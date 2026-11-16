@@ -25,6 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     AND status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
                     AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >=
                         (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date + 2", [$id, $customer['id']])->rowCount();
+            if ($affected) {
+                // Penutupan notifikasi ikut transaksi: kegagalan membatalkan seluruh pembatalan.
+                menu_notice_close_for_order(
+                    (int) $id,
+                    'pembatalan_pesanan',
+                    'Pesanan dibatalkan oleh pelanggan.',
+                    (int) $customer['id']
+                );
+            }
             $db->commit();
         } catch (OutOfBoundsException $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();

@@ -40,6 +40,7 @@ mengelola periode PO.
 | Hierarki antrean Dashboard, alasan prioritas, dan penjelasan tinjauan/refund | `public/admin/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
 | Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |
 | Uji PostgreSQL terisolasi, migrasi, endpoint, batas waktu dan balapan | `scripts/test-order-cancellation.php`, `scripts/test-daily-quota.php` |
+| Uji concurrency pembuatan notifikasi dengan dua koneksi PostgreSQL independen | `scripts/test-menu-notification-concurrency.php` |
 | Uji metadata/tinjauan pertama, notifikasi, balapan tinjauan dan fixture job | `scripts/test-order-cancellation.php`, `scripts/test-payment-deadline.php` |
 | Uji tab/count/filter tinjauan dan tautan daftar Admin desktop/mobile | `scripts/test-admin-cancellation-list.cjs` |
 | Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |

@@ -49,8 +49,20 @@ Target dihitung ulang oleh server dari `detail_pesanan`. Pesanan aktif adalah
 pernah menjadi target baru. Menu dianggap tidak tersedia bila kuota efektif
 `COALESCE(kuota_harian.kuota, produk.kuota_harian)` pada tanggal kirim
 Asia/Jakarta bernilai 0. Override positif tetap membuat menu tersedia meskipun
-default produk 0. Pesanan offline ikut ditautkan untuk tindak lanjut manual,
-tetapi ditandai `notifikasi_in_app=false` karena tidak memiliki `user_id`.
+default produk 0, kecuali tanggal kirim yang tercakup
+`tanggal_libur_operasional`; tanggal libur selalu dianggap tidak tersedia
+dengan kuota efektif 0, sama seperti `daily_quota_snapshot()`. Pesanan offline
+ikut ditautkan untuk tindak lanjut manual, tetapi ditandai
+`notifikasi_in_app=false` karena tidak memiliki `user_id`.
+
+Pembuatan notifikasi memakai advisory lock transaksi PostgreSQL dengan namespace
+`0x4D4E4F54` ("MNOT") dan key kedua `produk_id`. Lock diambil sebelum target
+dihitung ulang, sehingga dua Admin yang membuat notifikasi untuk produk yang sama
+diproses berurutan: Admin pertama menyimpan targetnya, Admin kedua memeriksa
+ulang target setelah lock dan mendapat HTTP 422
+`Tidak ada pesanan aktif yang belum dinotifikasi untuk menu ini.` beserta
+`dilewati_sudah_dinotifikasi`. Lock dilepas otomatis pada commit/rollback dan
+tidak menghalangi notifikasi baru setelah notifikasi sebelumnya `selesai`.
 
 - GET `?action=list&limit=20&offset=0` mengembalikan riwayat
   `{items,total,limit,offset}`. Setiap item memuat snapshot produk, catatan,
@@ -62,7 +74,9 @@ tetapi ditandai `notifikasi_in_app=false` karena tidak memiliki `user_id`.
   `sudah_dinotifikasi`.
 - GET `?action=detail&id=...` mengembalikan header notifikasi, opsi, seluruh
   penerima, snapshot menu lama, menu pengganti bila ada, `selisih_total`
-  bertanda, status respons, dan ringkasan respons.
+  bertanda, status respons, dan ringkasan respons. Setiap penerima juga memuat
+  `jenis_penutupan`, `alasan_penutupan`, `ditutup_oleh`, dan `ditutup_at` agar
+  penolakan penggantian atau penutupan otomatis terlihat oleh Admin/Owner.
 - POST `{action:"create",produk_id,catatan_admin,opsi?}` membuat notifikasi
   dalam satu transaksi. `catatan_admin` wajib 1–2000 karakter. `opsi` berisi
   `menu_pengganti`, `hubungi_admin`, dan/atau `tunggu_informasi`; bila kosong
@@ -81,22 +95,34 @@ tetapi ditandai `notifikasi_in_app=false` karena tidak memiliki `user_id`.
   selisih bertanda disimpan. Status pesanan dan pembayaran tidak berubah.
   Selisih positif menunggu tagihan manual; selisih
   negatif menunggu pengembalian manual; selisih nol tidak memerlukan penyelesaian.
+- POST `{action:"reject_replacement",id,alasan_penolakan}` hanya Admin. Hanya
+  respons `menu_pengganti` berstatus `menunggu_konfirmasi` pada pesanan aktif
+  yang dapat ditolak. `alasan_penolakan` wajib 1–1000 karakter. Server menyimpan
+  `status_respons='selesai'`, `jenis_penutupan='penolakan_pengganti'`,
+  `alasan_penolakan`, `ditutup_oleh`, dan `ditutup_at` tanpa mengubah
+  `detail_pesanan`, `pesanan.total`, status pesanan, atau bukti pembayaran.
+  Penolakan kedua, alasan kosong, opsi bukan pengganti, dan pesanan tidak aktif
+  ditolak HTTP 409/422.
 - POST `{action:"settle_difference",id}` mencatat bahwa tagihan/pengembalian
   manual telah diselesaikan. Endpoint tidak memindahkan uang atau mengubah status
   pembayaran.
 - POST `{action:"complete_follow_up",id,catatan_tindak_lanjut}` mencatat hasil
-  kontak Admin untuk pilihan `hubungi_admin` atau `tunggu_informasi`. Catatan
-  wajib dan maksimal 1000 karakter.
+  kontak Admin untuk penerima online dengan status `menunggu_tindak_lanjut` dan
+  pilihan `hubungi_admin` atau `tunggu_informasi`, atau untuk penerima offline
+  (`pesanan.sumber='offline'` atau `pesanan.user_id IS NULL`) yang masih
+  `menunggu_respons`. Catatan wajib dan maksimal 1000 karakter; status lain
+  ditolak HTTP 409.
 
 Respons memakai `json_encode` tanpa `JSON_NUMERIC_CHECK` agar nomor telepon
 berawalan 0 tetap string. Aksi `confirm` menghitung selisih untuk audit, tetapi
 tidak menagih atau memindahkan uang; tindak lanjut selisih dilakukan manual.
 
 UI Admin (`admin/menu-notifications.php`) memakai endpoint ini untuk memilih
-menu, memuat produk per tanggal acuan, preview target, konfirmasi, riwayat, dan
-detail respons. UI Owner (`owner/menu-notifications.php`) membaca endpoint yang
-sama secara langsung dan hanya menampilkan riwayat serta detail tanpa form
-pembuatan atau aksi persetujuan. Skrip bersama berada di
+menu, memuat produk per tanggal acuan, preview target, konfirmasi/penolakan
+penggantian, riwayat, dan detail respons. UI Owner
+(`owner/menu-notifications.php`) membaca endpoint yang sama secara langsung dan
+hanya menampilkan riwayat serta detail tanpa form pembuatan atau aksi
+persetujuan/penolakan. Skrip bersama berada di
 `assets/js/menu-notifications.js` dengan mode `admin`/`owner`.
 
 ### Notifikasi perubahan menu pelanggan
@@ -116,7 +142,13 @@ tampil di endpoint ini.
   lama, menu pengganti yang sudah dipilih, catatan pelanggan, status, dan
   `bisa_merespons`. Bila masih boleh merespons, `pilihan_menu` berisi produk
   lain yang sisa kuotanya cukup untuk jumlah lama dan jumlah lama memenuhi
-  minimum porsi pada tanggal kirim. Menu lama selalu dikecualikan.
+  minimum porsi pada tanggal kirim. Menu lama selalu dikecualikan. Setiap
+  penerima juga memuat `jenis_penutupan`, `alasan_penutupan`, `ditutup_oleh`, dan
+  `ditutup_at`; `alasan_penutupan` adalah alasan penolakan penggantian atau
+  alasan penutupan otomatis yang dapat dibaca pelanggan.
+- POST `{action:"respond",...}` menolak HTTP 409 bila notifikasi sudah ditutup
+  (`status_respons='selesai'`) atau pesanan sudah tidak aktif. Pelanggan tidak
+  dapat mengirim respons baru setelah pesanan dibatalkan atau kedaluwarsa.
 - POST `{action:"read",id}` menandai seluruh baris penerima pelanggan pada
   notifikasi itu sebagai dibaca. Respons `{ok,dibaca,belum_dibaca}`. Notifikasi
   milik pelanggan lain menghasilkan HTTP 404.
@@ -305,6 +337,28 @@ GET tidak pernah menandai pesanan ditinjau. Bukti/foto dan daftar menu pada deta
 batal tetap tersedia read-only untuk pemeriksaan.
 Pada detail pesanan batal, sumber/waktu/status sebelumnya ditampilkan dalam
 blok ringkasan terpisah dari judul kartu; badge status utama ditampilkan sekali.
+
+### Penutupan notifikasi perubahan menu saat pesanan berakhir
+
+Migrasi `023_menu_change_closure_audit.sql` menambahkan kolom audit
+`jenis_penutupan`, `alasan_penutupan`, `ditutup_oleh`, dan `ditutup_at` pada
+`pemberitahuan_perubahan_menu_pesanan`. Kolom ini terpisah dari
+`catatan_tindak_lanjut` agar jenis penutupan tidak tercampur dengan catatan
+manual.
+
+Saat pelanggan membatalkan pesanan atau job `expire-unpaid-orders.php`
+membatalkan pesanan kedaluwarsa, seluruh respons berstatus
+`menunggu_respons`, `menunggu_konfirmasi`, dan `menunggu_tindak_lanjut` untuk
+pesanan itu ditutup dalam transaksi yang sama dengan pembatalan. Penutupan
+memakai `status_respons='selesai'`, `jenis_penutupan='pembatalan_pesanan'` atau
+`'kedaluwarsa_pesanan'`, alasan yang sesuai, serta pelaku (`ditutup_oleh`) untuk
+pembatalan pelanggan dan NULL untuk job otomatis. Respons `selesai` dan
+`dikonfirmasi` tidak pernah ditimpa, dan riwayat tidak dihapus.
+
+Bila penutupan notifikasi gagal, seluruh transaksi pembatalan/job di-rollback;
+pesanan tidak boleh berakhir batal sebagian. Setelah penutupan, pelanggan tidak
+dapat mengirim respons baru dan Admin tidak dapat menyetujui atau menolak
+penggantian pada pesanan yang sudah batal/kedaluwarsa (HTTP 409).
 
 GET `admin/api/dashboard.php` menambah:
 `cancellations:{unreviewed_count,urgent_count,items}`. `items` maksimal 2 dari

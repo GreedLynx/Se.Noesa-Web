@@ -183,6 +183,10 @@ CREATE TABLE pemberitahuan_perubahan_menu_pesanan (
   tindak_lanjut_oleh INT REFERENCES users(id) ON DELETE RESTRICT,
   tindak_lanjut_at TIMESTAMPTZ,
   catatan_tindak_lanjut TEXT,
+  jenis_penutupan VARCHAR(30),
+  alasan_penutupan TEXT,
+  ditutup_oleh INT REFERENCES users(id) ON DELETE RESTRICT,
+  ditutup_at TIMESTAMPTZ,
   CONSTRAINT pemberitahuan_menu_pesanan_perubahan_snapshot_check CHECK (
     (kode_produk_pengganti_snapshot IS NULL
       AND nama_produk_pengganti_snapshot IS NULL
@@ -205,6 +209,23 @@ CREATE TABLE pemberitahuan_perubahan_menu_pesanan (
   ),
   CONSTRAINT pemberitahuan_menu_pesanan_follow_up_check CHECK (
     (tindak_lanjut_oleh IS NULL) = (tindak_lanjut_at IS NULL)
+  ),
+  CONSTRAINT pemberitahuan_menu_pesanan_closure_type_check CHECK (
+    jenis_penutupan IS NULL
+    OR jenis_penutupan IN (
+      'penolakan_pengganti',
+      'pembatalan_pesanan',
+      'kedaluwarsa_pesanan'
+    )
+  ),
+  CONSTRAINT pemberitahuan_menu_pesanan_closure_audit_check CHECK (
+    (jenis_penutupan IS NULL) = (alasan_penutupan IS NULL)
+    AND (jenis_penutupan IS NULL) = (ditutup_at IS NULL)
+    AND (alasan_penutupan IS NULL OR length(btrim(alasan_penutupan)) > 0)
+  ),
+  CONSTRAINT pemberitahuan_menu_pesanan_closure_actor_check CHECK (
+    (ditutup_oleh IS NULL OR jenis_penutupan IS NOT NULL)
+    AND (jenis_penutupan IS DISTINCT FROM 'penolakan_pengganti' OR ditutup_oleh IS NOT NULL)
   ),
   CONSTRAINT pemberitahuan_menu_pesanan_unique_detail UNIQUE (pemberitahuan_id, detail_pesanan_id),
   CONSTRAINT pemberitahuan_menu_pesanan_option_fk
