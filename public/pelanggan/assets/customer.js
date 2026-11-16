@@ -433,6 +433,22 @@ async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
     const items = d.items.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
+    const menuNoticeLabels = {
+        menunggu_respons: 'Menunggu responsmu',
+        menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+        menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+        dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+        selesai: 'Tindak lanjut selesai',
+    };
+    const menuNotices = Array.isArray(d.menu_notifications) ? d.menu_notifications : [];
+    const menuNoticeSection = menuNotices.length
+        ? '<section class="detail-section"><h3>Notifikasi perubahan menu</h3>' + menuNotices.map(notice =>
+            '<div class="detail-menu-line"><span><b>' + esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot)
+            + '</b><small>' + esc(menuNoticeLabels[notice.status_respons] || notice.status_respons || '')
+            + ' · ' + esc(notice.catatan_admin || '') + '</small></span><a class="customer-button secondary" href="menu-notifications.php?notice_id='
+            + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
+        ).join('') + '</section>'
+        : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
         + '" alt="Bukti pembayaran">' : '';
     const paymentData = await api('api/payment-methods.php');
@@ -516,6 +532,7 @@ async function openHistoryDetail(id) {
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + money(d.total) + '</b></div>' 
+        + menuNoticeSection
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 

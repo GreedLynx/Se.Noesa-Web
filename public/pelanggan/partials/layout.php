@@ -1,10 +1,13 @@
 <?php
 require_once __DIR__ . '/../../../app/bootstrap.php';
+require_once __DIR__ . '/../../../app/menu-notifications.php';
 
 function customer_head(string $title, string $page): array
 {
     $customer = require_role('pelanggan', false);
     $GLOBALS['customer_page'] = $page;
+    $unreadNotifications = menu_notice_customer_unread_count((int) $customer['id']);
+    $GLOBALS['customer_unread'] = $unreadNotifications;
     $css = fn($file) => filemtime(__DIR__ . '/../assets/' . $file);
 ?>
 <!doctype html>
@@ -21,6 +24,7 @@ function customer_head(string $title, string $page): array
     <link rel="stylesheet" href="assets/quantity-input.css?v=<?= $css('quantity-input.css') ?>">
     <link rel="stylesheet" href="assets/catalog-mobile.css?v=<?= $css('catalog-mobile.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
+    <link rel="stylesheet" href="assets/menu-notifications.css?v=<?= $css('menu-notifications.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page) ?>">
@@ -44,6 +48,10 @@ function customer_head(string $title, string $page): array
                 <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
                     <span>☰</span>
                     <small>Riwayat</small>
+                </a>
+                <a class="<?= $page === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php">
+                    <span>✉</span>
+                    <small>Notifikasi</small>
                 </a>
             </nav>
             <?php if ($page === 'catalog'): ?>
@@ -74,7 +82,7 @@ function customer_head(string $title, string $page): array
                     </button>
                 </nav>
             <?php endif; ?>
-            <?php if (in_array($page, ['catalog', 'history'], true)): ?>
+            <?php if (in_array($page, ['catalog', 'history', 'notifications'], true)): ?>
                 <div class="customer-bottom-user" aria-label="<?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?>">
                     <?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></div>
             <?php endif; ?>
@@ -86,6 +94,12 @@ function customer_head(string $title, string $page): array
                     <h1><?= htmlspecialchars($title) ?></h1>
                 </div>
                 <div class="customer-user">
+                    <a class="customer-notif-link" href="menu-notifications.php" aria-label="Notifikasi menu">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+                        </svg>
+                        <b class="customer-notif-count" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
+                    </a>
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
                     <button class="logout-text" type="button" data-logout>Keluar</button>
@@ -98,6 +112,7 @@ function customer_head(string $title, string $page): array
 
 function customer_foot(): void
 {
+    $unreadNotifications = (int) ($GLOBALS['customer_unread'] ?? 0);
 ?>
             </div>
         </main>
@@ -114,6 +129,13 @@ function customer_foot(): void
                     <path d="M5 6h14M5 12h14M5 18h14" />
                 </svg>
                 <span>Riwayat</span>
+            </a>
+            <a class="<?= $GLOBALS['customer_page'] === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php" aria-label="Notifikasi">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+                </svg>
+                <span>Notifikasi</span>
+                <b class="customer-notif-count mobile" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
             </a>
             <button type="button" data-logout aria-label="Keluar">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -188,6 +210,7 @@ function customer_foot(): void
         <div id="customer-toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
+    <script src="assets/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../assets/menu-notifications.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>
 
