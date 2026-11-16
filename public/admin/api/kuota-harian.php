@@ -22,6 +22,7 @@ set_exception_handler(static function (Throwable $error): void {
 });
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
     $request = body();
     $action = $request['action'] ?? 'save';
     if (!in_array($action, ['save', 'reset', 'delete'], true)) {

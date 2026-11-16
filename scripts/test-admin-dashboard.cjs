@@ -86,7 +86,13 @@ vm.runInContext(source.slice(source.indexOf('async function dashboard()'), sourc
         } }),
     };
     vm.createContext(apiContext);
-    vm.runInContext(source.slice(source.indexOf('async function api('), source.indexOf('\nasync function uploadDispatchPhoto(')), apiContext);
+    vm.runInContext(
+      source.slice(
+        source.indexOf("// Token CSRF dari meta tag layout"),
+        source.indexOf("\nasync function uploadDispatchPhoto("),
+      ),
+      apiContext,
+    );
     apiResponse = { error: 'Rekap gagal dimuat' };
     await assert.rejects(() => apiContext.api('api/dashboard.php'), /Rekap gagal dimuat/);
     apiResponse = new SyntaxError('Invalid JSON');

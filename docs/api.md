@@ -77,6 +77,8 @@ tidak menghalangi notifikasi baru setelah notifikasi sebelumnya `selesai`.
   bertanda, status respons, dan ringkasan respons. Setiap penerima juga memuat
   `jenis_penutupan`, `alasan_penutupan`, `ditutup_oleh`, dan `ditutup_at` agar
   penolakan penggantian atau penutupan otomatis terlihat oleh Admin/Owner.
+  Setiap penerima juga memuat `info_harga` dan `pembayaran` untuk transparansi
+  Tahap 4A (lihat di bawah).
 - POST `{action:"create",produk_id,catatan_admin,opsi?}` membuat notifikasi
   dalam satu transaksi. `catatan_admin` wajib 1–2000 karakter. `opsi` berisi
   `menu_pengganti`, `hubungi_admin`, dan/atau `tunggu_informasi`; bila kosong
@@ -116,6 +118,37 @@ tidak menghalangi notifikasi baru setelah notifikasi sebelumnya `selesai`.
 Respons memakai `json_encode` tanpa `JSON_NUMERIC_CHECK` agar nomor telepon
 berawalan 0 tetap string. Aksi `confirm` menghitung selisih untuk audit, tetapi
 tidak menagih atau memindahkan uang; tindak lanjut selisih dilakukan manual.
+
+Kebijakan harga penggantian (Tahap 4A): harga dikunci pada saat pelanggan
+memilih (`MENU_NOTICE_PRICE_POLICY = 'snapshot_saat_pelanggan_memilih'`).
+Konfirmasi Admin memakai harga snapshot untuk `detail_pesanan` dan
+`pesanan.total`; perubahan harga katalog setelahnya hanya diaudit. Kolom
+`harga_katalog_saat_konfirmasi` dan `perbedaan_harga_katalog`
+(migrasi 024) mencatat harga katalog saat konfirmasi dan selisihnya terhadap
+snapshot. Detail respons memuat `info_harga` (`harga_snapshot`,
+`harga_katalog_sekarang`, `perbedaan_harga_katalog`, `kebijakan_harga`,
+`catatan_harga`) sehingga Admin melihat perbedaan harga sebelum dan sesudah
+menyetujui.
+
+Ringkasan pembayaran pada detail respons (Tahap 4A): field `pembayaran`
+memuat `status_pembayaran` (`belum_membayar`, `menunggu_verifikasi`,
+`terverifikasi`, `tidak_ada_bukti`, `manual_offline`, atau `tidak_berlaku`),
+`tahap_pembayaran` berupa keterangan singkat, `sudah_membayar` (hanya true
+untuk `terverifikasi`), `nominal_tagihan` dari `pesanan.total`,
+`total_pesanan_lama`, `total_pesanan_baru`, `selisih_total`,
+`status_penyelesaian_selisih`, `bukti_bayar`, `nama_pembayar`, dan `sumber`.
+Ringkasan ini hanya membaca data yang sudah ada (status pesanan, bukti, total);
+tidak ada status pembayaran baru, charge, atau refund otomatis. Field
+`status_pembayaran` dan `sudah_membayar` juga diulang di level penerima agar
+Admin langsung membedakan pelanggan yang sudah dan belum membayar.
+
+Locking kuota dan tanggal libur (Tahap 4A): urutan lock tabel kanonik
+`produk` → `kuota_harian` → `tanggal_libur_operasional`
+(SHARE ROW EXCLUSIVE) dibungkus dalam `daily_quota_lock_tables()` di
+`app/daily-quota.php` dan dipakai bersama oleh checkout pelanggan, pesanan
+offline, respons penggantian pelanggan, dan konfirmasi/penolakan Admin. Urutan
+sama pada semua pemanggil mencegah deadlock; pengecekan kuota dan tanggal libur
+berlangsung dalam transaksi yang sama dengan penyimpanan pesanan.
 
 UI Admin (`admin/menu-notifications.php`) memakai endpoint ini untuk memilih
 menu, memuat produk per tanggal acuan, preview target, konfirmasi/penolakan

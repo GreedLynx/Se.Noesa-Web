@@ -127,6 +127,21 @@ function daily_quota_range($startDate, $endDate): array
     return [$startDate, $endDate];
 }
 
+/**
+ * Lock global urut untuk transaksi yang membaca kuota dan tanggal operasional.
+ *
+ * Urutan produk -> kuota_harian -> tanggal_libur_operasional dipakai bersama
+ * oleh checkout, pesanan offline, respons pelanggan, dan konfirmasi penggantian
+ * agar tidak ada deadlock serta pengecekan libur selalu dalam transaksi yang
+ * sama dengan pengecekan kuota.
+ */
+function daily_quota_lock_tables(): void
+{
+    q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
+    q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+    q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
+}
+
 // Pemanggil memegang transaksi dan lock kuota sampai seluruh rentang tersimpan.
 function daily_quota_write_range(int $productId, string $start, string $end, ?int $quota): int
 {

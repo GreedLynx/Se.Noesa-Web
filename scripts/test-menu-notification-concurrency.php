@@ -65,6 +65,9 @@ if (($argv[1] ?? '') === '--create') {
 
     q('SELECT set_config(?, ?, false)', ['search_path', $schema]);
     $_SESSION['user'] = ['id' => 1, 'role' => 'admin'];
+    // Token CSRF fixture: validasi CSRF asli di bootstrap tetap dijalankan.
+    $_SESSION['csrf_token'] = 'mnconc-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'mnconc-test-token';
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_POST = [
         'action' => 'create',
@@ -80,6 +83,50 @@ if (($argv[1] ?? '') === '--create') {
         $source
     );
     // Biarkan exception naik ke harness agar rollback endpoint tetap diuji apa adanya.
+    $source = str_replace('set_exception_handler(', 'concurrency_noop_handler(', $source);
+
+    try {
+        eval('?>' . $source);
+    } catch (ConcurrencyResponse $response) {
+        echo json_encode(['status' => $response->status, 'data' => $response->data]);
+        exit(0);
+    } catch (Throwable $error) {
+        echo json_encode([
+            'status' => $error instanceof DomainException ? $error->getCode() : 500,
+            'data' => ['error' => $error->getMessage()],
+        ]);
+        exit(0);
+    }
+
+    echo json_encode(['status' => 500, 'data' => ['error' => 'Endpoint tidak menghasilkan respons']]);
+    exit(0);
+}
+
+if (($argv[1] ?? '') === '--confirm') {
+    $schema = (string) ($argv[2] ?? '');
+    $recipientId = filter_var($argv[3] ?? null, FILTER_VALIDATE_INT);
+    if (!preg_match('/^mnconc_test_[a-f0-9]+$/D', $schema)
+        || $recipientId === false || $recipientId < 1) {
+        fwrite(STDERR, "Argumen proses anak konfirmasi tidak valid\n");
+        exit(3);
+    }
+    q('SELECT set_config(?, ?, false)', ['search_path', $schema]);
+    q('SELECT set_config(?, ?, false)', [
+        'application_name',
+        'mnconc_c6_' . $recipientId,
+    ]);
+    $_SESSION['user'] = ['id' => 1, 'role' => 'admin'];
+    $_SESSION['csrf_token'] = 'mnconc-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'mnconc-test-token';
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_POST = ['action' => 'confirm', 'id' => $recipientId];
+
+    $source = concurrency_source(__DIR__ . '/../public/admin/api/menu-notifications.php');
+    $source = preg_replace(
+        '/function api_json\(\$data, int \$code = 200\): void\s*\{.*?\n\}/s',
+        'function api_json($data, int $code = 200): void { throw new ConcurrencyResponse($data, $code); }',
+        $source
+    );
     $source = str_replace('set_exception_handler(', 'concurrency_noop_handler(', $source);
 
     try {
@@ -181,6 +228,80 @@ function concurrency_check(bool $ok, string $message): void
         throw new RuntimeException($message);
     }
     echo 'PASS: ' . $message . PHP_EOL;
+}
+
+function concurrency_child_confirm(string $schema, int $recipientId): array
+{
+    $process = proc_open(
+        [PHP_BINARY, __FILE__, '--confirm', $schema, (string) $recipientId],
+        [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes
+    );
+    if (!is_resource($process)) {
+        throw new RuntimeException('Gagal menjalankan proses konfirmasi uji');
+    }
+
+    return [$process, $pipes];
+}
+
+function concurrency_child_pid(int $recipientId): ?int
+{
+    $row = q(
+        'SELECT pid FROM pg_stat_activity
+          WHERE application_name = ? AND pid <> pg_backend_pid()',
+        ['mnconc_c6_' . $recipientId]
+    )->fetch();
+
+    return $row ? (int) $row['pid'] : null;
+}
+
+function concurrency_child_locks(int $recipientId): array
+{
+    $granted = [];
+    $waiting = [];
+    $rows = q(
+        "SELECT c.relname, l.granted FROM pg_locks l
+          JOIN pg_class c ON c.oid = l.relation
+          WHERE l.locktype = 'relation' AND l.pid = ?
+            AND c.relname IN ('produk', 'kuota_harian', 'tanggal_libur_operasional')
+          ORDER BY c.relname",
+        [concurrency_child_pid($recipientId)]
+    )->fetchAll();
+    foreach ($rows as $row) {
+        if ($row['granted']) {
+            $granted[] = $row['relname'];
+        } else {
+            $waiting[] = $row['relname'];
+        }
+    }
+
+    return [$granted, $waiting];
+}
+
+function concurrency_wait_child_lock(
+    array $child,
+    int $recipientId,
+    array $expectedGranted,
+    string $expectedWaiting,
+    string $message
+): void {
+    $deadline = microtime(true) + 10.0;
+    while (microtime(true) < $deadline) {
+        [$granted, $waiting] = concurrency_child_locks($recipientId);
+        if (!array_diff($expectedGranted, $granted) && in_array($expectedWaiting, $waiting, true)) {
+            return;
+        }
+        if (!proc_get_status($child[0])['running']) {
+            $result = concurrency_finish($child);
+            throw new RuntimeException(
+                $message . ' — proses anak berhenti lebih awal: HTTP ' . $result['status']
+                . ' ' . $result['output'] . ' ' . $result['errors']
+            );
+        }
+        usleep(50000);
+    }
+
+    throw new RuntimeException($message);
 }
 
 function concurrency_server_side_notification(int $productId): int
@@ -326,7 +447,89 @@ try {
         'Notifikasi baru dapat dibuat setelah notifikasi sebelumnya selesai tanpa menghapus riwayat'
     );
 
-    echo "Seluruh uji concurrency notifikasi lulus.\n";
+    // Skenario 4 (C6): konfirmasi penggantian dan perubahan kuota/libur bersamaan.
+    q('DELETE FROM pemberitahuan_perubahan_menu_pesanan');
+    q('DELETE FROM pemberitahuan_perubahan_menu_opsi');
+    q('DELETE FROM pemberitahuan_perubahan_menu');
+
+    q("INSERT INTO produk (id, kode, nama, kategori, harga, kuota_harian)
+       VALUES (2, 'C6', 'Menu Pengganti C6', 'makanan', 15000, 100)");
+    $c6NoticeId = (int) q(
+        'INSERT INTO pemberitahuan_perubahan_menu
+            (produk_id, kode_produk_snapshot, nama_produk_snapshot, catatan_admin, created_by)
+         VALUES (1, ?, ?, ?, 1) RETURNING id',
+        ['C5', 'Menu Concurrency', 'C6-CONFIRM']
+    )->fetchColumn();
+    $c6OptionId = (int) q(
+        "INSERT INTO pemberitahuan_perubahan_menu_opsi (pemberitahuan_id, kode_opsi, label)
+         VALUES (?, 'menu_pengganti', 'Pilih menu pengganti') RETURNING id",
+        [$c6NoticeId]
+    )->fetchColumn();
+    $c6RecipientId = (int) q(
+        "INSERT INTO pemberitahuan_perubahan_menu_pesanan
+            (pemberitahuan_id, detail_pesanan_id, opsi_id, status_respons, dibaca_at,
+             produk_lama_id, kode_produk_lama_snapshot, nama_produk_lama_snapshot,
+             qty_lama, harga_lama,
+             produk_pengganti_id, kode_produk_pengganti_snapshot, nama_produk_pengganti_snapshot,
+             qty_pengganti, harga_pengganti, responded_at)
+         VALUES (?, 1, ?, 'menunggu_konfirmasi', now(),
+             1, 'C5', 'Menu Concurrency', 4, 12000,
+             2, 'C6', 'Menu Pengganti C6', 4, 15000, now())
+         RETURNING id",
+        [$c6NoticeId, $c6OptionId]
+    )->fetchColumn();
+
+    // Transaksi induk mensimulasikan Admin yang sedang mengubah kuota dan tanggal
+    // libur bersamaan dengan persetujuan penggantian.
+    db()->beginTransaction();
+    try {
+        q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
+
+        $confirmChild = concurrency_child_confirm($schema, $c6RecipientId);
+        concurrency_wait_child_lock(
+            $confirmChild,
+            $c6RecipientId,
+            ['produk'],
+            'kuota_harian',
+            'Proses konfirmasi tidak memegang lock produk lalu menunggu kuota_harian (urutan kanonik dilanggar)'
+        );
+        concurrency_check(
+            true,
+            'Konfirmasi penggantian mengambil produk lebih dulu lalu menunggu kuota_harian yang sedang diubah'
+        );
+
+        db()->commit();
+    } catch (Throwable $error) {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+        if (isset($confirmChild) && proc_get_status($confirmChild[0])['running']) {
+            proc_terminate($confirmChild[0]);
+            concurrency_finish($confirmChild);
+        }
+        throw $error;
+    }
+
+    $confirmResult = concurrency_finish($confirmChild);
+    concurrency_check(
+        $confirmResult['exit'] === 0 && $confirmResult['status'] === 200,
+        'Konfirmasi penggantian selesai tanpa deadlock setelah lock kuota/libur dilepas'
+    );
+    concurrency_check(
+        q('SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id = ?', [$c6RecipientId])
+            ->fetchColumn() === 'dikonfirmasi'
+        && (int) q('SELECT selisih_total FROM pemberitahuan_perubahan_menu_pesanan WHERE id = ?', [$c6RecipientId])
+            ->fetchColumn() === 12000
+        && (int) q('SELECT total FROM pesanan WHERE id = 1')->fetchColumn() === 60000
+        && (int) q('SELECT harga_katalog_saat_konfirmasi FROM pemberitahuan_perubahan_menu_pesanan WHERE id = ?', [$c6RecipientId])
+            ->fetchColumn() === 15000
+        && (int) q('SELECT perbedaan_harga_katalog FROM pemberitahuan_perubahan_menu_pesanan WHERE id = ?', [$c6RecipientId])
+            ->fetchColumn() === 0,
+        'Konfirmasi bersamaan tetap konsisten: total ikut snapshot dan audit harga katalog tersimpan'
+    );
+
+    echo "Seluruh uji concurrency notifikasi dan locking C6 lulus.\n";
 } catch (Throwable $error) {
     fwrite(STDERR, 'FAIL: ' . $error->getMessage() . PHP_EOL);
     exit(1);

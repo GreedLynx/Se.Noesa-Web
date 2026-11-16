@@ -203,6 +203,7 @@ if ($method === 'POST') {
     if ($isOwner) {
         api_json(['error' => 'Hanya Admin yang dapat membuat notifikasi'], 403);
     }
+    csrf_require();
 
     $request = body();
     $action = $request['action'] ?? 'create';
@@ -446,17 +447,21 @@ if ($action === 'detail') {
                 r.confirmed_by, r.confirmed_at,
                 r.selisih_diselesaikan_oleh, r.selisih_diselesaikan_at,
                 r.total_pesanan_lama, r.total_pesanan_baru,
+                r.harga_katalog_saat_konfirmasi, r.perbedaan_harga_katalog,
                 r.tindak_lanjut_oleh, r.tindak_lanjut_at, r.catatan_tindak_lanjut,
                 r.jenis_penutupan, r.alasan_penutupan, r.ditutup_oleh, r.ditutup_at,
                 p.id AS pesanan_id, p.kode AS kode_pesanan, p.nama_pemesan,
                 p.status AS status_pesanan, p.sumber, p.tgl_kirim,
                 p.telepon_penerima, p.user_id,
+                p.total AS total_pesanan, p.bukti_bayar, p.nama_pembayar,
                 u.username, u.email, u.phone,
+                hp.harga AS harga_katalog_sekarang,
                 (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date AS tanggal_kirim
          FROM pemberitahuan_perubahan_menu_pesanan r
          JOIN detail_pesanan d ON d.id = r.detail_pesanan_id
          JOIN pesanan p ON p.id = d.pesanan_id
          LEFT JOIN users u ON u.id = p.user_id
+         LEFT JOIN produk hp ON hp.id = r.produk_pengganti_id
          LEFT JOIN pemberitahuan_perubahan_menu_opsi o ON o.id = r.opsi_id
          WHERE r.pemberitahuan_id = ?
          ORDER BY tanggal_kirim, p.id, r.id",
@@ -475,6 +480,11 @@ if ($action === 'detail') {
                 'total' => (int) $row['qty_pengganti'] * (int) $row['harga_pengganti'],
             ]
             : null;
+
+        $catalogPrice = $row['harga_katalog_saat_konfirmasi'] !== null
+            ? $row['harga_katalog_saat_konfirmasi']
+            : $row['harga_katalog_sekarang'];
+        $paymentInfo = menu_notice_payment_summary($row);
 
         $recipients[] = [
             'id' => (int) $row['id'],
@@ -497,6 +507,13 @@ if ($action === 'detail') {
                 'total' => (int) $row['qty_lama'] * (int) $row['harga_lama'],
             ],
             'menu_pengganti' => $replacement,
+            'info_harga' => menu_notice_price_info(
+                $row['harga_pengganti'] !== null ? (int) $row['harga_pengganti'] : null,
+                $catalogPrice !== null ? (int) $catalogPrice : null
+            ),
+            'pembayaran' => $paymentInfo,
+            'status_pembayaran' => $paymentInfo['status_pembayaran'],
+            'sudah_membayar' => $paymentInfo['sudah_membayar'],
             'selisih_total' => $row['selisih_total'] !== null ? (int) $row['selisih_total'] : null,
             'catatan_respons' => $row['catatan_respons'],
             'dibaca_at' => menu_notice_iso($row['dibaca_at']),

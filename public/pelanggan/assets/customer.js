@@ -9,9 +9,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     "'": '&#39;'
 }[c]));
 
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+
 async function api(url, options = {}) {
     const headers = {...options.headers};
     if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (options.method && options.method.toUpperCase() !== 'GET') {
+        headers['X-CSRF-Token'] = csrfToken();
+    }
 
     const response = await fetch(url, {
         ...options,
@@ -450,7 +457,11 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    const items = d.items.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
+    // Handle case where items might be undefined (order exists but has no detail items,
+    // or API response structure differs from expected). This prevents
+    // "Cannot read properties of undefined (reading 'map')" error.
+    const itemsArray = Array.isArray(d.items) ? d.items : [];
+    const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
     const menuNoticeLabels = {
         menunggu_respons: 'Menunggu responsmu',

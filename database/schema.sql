@@ -180,6 +180,8 @@ CREATE TABLE pemberitahuan_perubahan_menu_pesanan (
   selisih_diselesaikan_at TIMESTAMPTZ,
   total_pesanan_lama INT CHECK (total_pesanan_lama IS NULL OR total_pesanan_lama >= 0),
   total_pesanan_baru INT CHECK (total_pesanan_baru IS NULL OR total_pesanan_baru >= 0),
+  harga_katalog_saat_konfirmasi INT,
+  perbedaan_harga_katalog BIGINT,
   tindak_lanjut_oleh INT REFERENCES users(id) ON DELETE RESTRICT,
   tindak_lanjut_at TIMESTAMPTZ,
   catatan_tindak_lanjut TEXT,
@@ -206,6 +208,10 @@ CREATE TABLE pemberitahuan_perubahan_menu_pesanan (
   ),
   CONSTRAINT pemberitahuan_menu_pesanan_order_total_snapshot_check CHECK (
     (total_pesanan_lama IS NULL) = (total_pesanan_baru IS NULL)
+  ),
+  CONSTRAINT pemberitahuan_menu_pesanan_catalog_price_check CHECK (
+    (harga_katalog_saat_konfirmasi IS NULL) = (perbedaan_harga_katalog IS NULL)
+    AND (harga_katalog_saat_konfirmasi IS NULL OR harga_katalog_saat_konfirmasi >= 0)
   ),
   CONSTRAINT pemberitahuan_menu_pesanan_follow_up_check CHECK (
     (tindak_lanjut_oleh IS NULL) = (tindak_lanjut_at IS NULL)

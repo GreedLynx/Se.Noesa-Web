@@ -16,6 +16,8 @@ if ($action === 'logout') {
 }
 
 if ($action === 'login') {
+    // Login adalah permintaan mutasi (membuat sesi baru) dan wajib CSRF (D1).
+    csrf_require();
     $identity = trim($request['identity'] ?? '');
     // SELECT mencari akun melalui email atau username dengan parameter terikat.
     $user = q(
@@ -34,6 +36,7 @@ if ($action === 'login') {
 }
 
 if ($action === 'register') {
+    csrf_require();
     foreach (['username', 'email', 'password', 'phone'] as $field) {
         if (empty($request[$field])) {
             json(['error' => "Kolom $field wajib diisi"], 422);

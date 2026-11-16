@@ -9,12 +9,19 @@ const esc = (s) =>
                 c
             ],
     );
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+const csrfHeaders = (options = {}) =>
+    options.method && options.method.toUpperCase() !== "GET"
+        ? { "X-CSRF-Token": csrfToken() }
+        : {};
 async function api(url, options = {}) {
     if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url) && !/[?&]tgl_kirim=/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
     const response = await fetch(url, {
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...csrfHeaders(options) },
         ...options,
         body: options.body ? JSON.stringify(options.body) : undefined,
     });
@@ -35,6 +42,7 @@ async function uploadDispatchPhoto(id, photo) {
     form.append("foto_kiriman[]", photo);
     const response = await fetch("api/orders.php", {
         method: "POST",
+        headers: { "X-CSRF-Token": csrfToken() },
         body: form,
         cache: "no-store",
     });
@@ -826,6 +834,7 @@ function productsPage() {
         try {
             const response = await fetch("api/products.php", {
                     method: "POST",
+                    headers: { "X-CSRF-Token": csrfToken() },
                     body,
                 }),
                 data = await response

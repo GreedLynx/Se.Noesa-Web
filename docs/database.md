@@ -146,6 +146,27 @@ menu dan total pesanan secara transaksional; status pesanan/pembayaran tidak
 diubah. Selisih bertanda dicatat sebagai menunggu tagihan atau pengembalian.
 Penyelesaian tersebut tetap manual dan tidak memindahkan uang.
 
+Migrasi 023 menambahkan audit penutupan respons (`jenis_penutupan`,
+`alasan_penutupan`, `ditutup_oleh`, `ditutup_at`) sehingga penolakan penggantian
+serta penutupan otomatis oleh pembatalan/kedaluwarsa pesanan terekam tanpa
+menghapus riwayat.
+
+Migrasi 024 menambahkan audit harga katalog pada konfirmasi penggantian:
+`harga_katalog_saat_konfirmasi` (harga produk pengganti pada tabel `produk`
+saat Admin menyetujui) dan `perbedaan_harga_katalog` (selisih harga katalog
+terhadap snapshot pelanggan, bertanda). Keduanya hanya audit: total pesanan
+tetap memakai harga snapshot yang dikunci saat pelanggan memilih
+(`MENU_NOTICE_PRICE_POLICY = 'snapshot_saat_pelanggan_memilih'`), dan
+pembayaran tidak diubah. CHECK idempoten memastikan kedua kolom selalu
+terisi bersama dan harga katalog tidak negatif.
+
+Locking: urutan lock tabel kanonik `produk` → `kuota_harian` →
+`tanggal_libur_operasional` (SHARE ROW EXCLUSIVE) dibungkus
+`daily_quota_lock_tables()` dan dipakai checkout pelanggan, pesanan offline,
+respons penggantian pelanggan, serta konfirmasi/penolakan Admin. Urutan sama
+pada semua pemanggil mencegah deadlock; pengecekan kuota dan tanggal libur
+berlangsung dalam satu transaksi dengan penyimpanan pesanan.
+
 Runner `scripts/migrate.php` mengurutkan nama file migrasi lengkap, merekam nama
 file di `schema_migrations`, dan menjalankan setiap file dalam transaksi.
 Migrasi 021 menggunakan `CREATE TABLE IF NOT EXISTS` dan `CREATE INDEX IF NOT
@@ -160,7 +181,11 @@ sudah berisi data.
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
 commit. Save/reset/delete override memakai transaksi dan lock tabel kuota_harian.
 Update produk memperoleh ROW EXCLUSIVE implisit, menunggu lock checkout SHARE ROW
-EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout.
+EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout. Urutan
+kanonik kini juga mencakup `tanggal_libur_operasional` dan dibungkus
+`daily_quota_lock_tables()` (`app/daily-quota.php`); checkout pelanggan, pesanan
+offline, respons penggantian pelanggan, dan konfirmasi Admin memakai helper yang
+sama agar urutan lock konsisten dan bebas deadlock.
 
 Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
 minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
