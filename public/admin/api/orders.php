@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
 require_once __DIR__ . '/../../../app/offline-orders.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
         // SELECT memastikan pesanan berstatus diproses sebelum foto pengiriman disimpan.

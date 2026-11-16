@@ -6,6 +6,10 @@ const MENU_NOTICE_ACTIVE_STATUSES = ['menunggu_pembayaran', 'menunggu_validasi',
 const MENU_NOTICE_OPEN_STATUSES = ['menunggu_respons', 'menunggu_konfirmasi', 'menunggu_tindak_lanjut'];
 const MENU_NOTICE_ORDER_CLOSURE_TYPES = ['pembatalan_pesanan', 'kedaluwarsa_pesanan'];
 
+// Kebijakan harga: total pesanan memakai snapshot yang dikunci saat pelanggan
+// memilih. Perubahan harga katalog setelahnya hanya dicatat sebagai audit.
+const MENU_NOTICE_PRICE_POLICY = 'snapshot_saat_pelanggan_memilih';
+
 // Namespace key advisory dua-int (int4, int4). PostgreSQL memisahkan key space
 // dua-int dari key bigint yang dipakai scripts/migrate.php, sehingga tidak ada
 // tabrakan dengan advisory lock migrasi.
@@ -44,6 +48,86 @@ function menu_notice_default_options(): array
         ['kode_opsi' => 'menu_pengganti', 'label' => 'Pilih menu pengganti'],
         ['kode_opsi' => 'hubungi_admin', 'label' => 'Hubungi Admin'],
         ['kode_opsi' => 'tunggu_informasi', 'label' => 'Tunggu informasi'],
+    ];
+}
+
+/**
+ * Informasi harga penggantian untuk pelanggan dan Admin.
+ *
+ * Harga snapshot yang dipakai pada total pesanan; harga katalog hanya untuk
+ * transparansi dan audit perubahan harga setelah pelanggan memilih.
+ */
+function menu_notice_price_info(?int $snapshotPrice, ?int $catalogPrice): ?array
+{
+    if ($snapshotPrice === null) {
+        return null;
+    }
+
+    return [
+        'harga_snapshot' => $snapshotPrice,
+        'harga_katalog_sekarang' => $catalogPrice,
+        'perbedaan_harga_katalog' => $catalogPrice === null ? null : $catalogPrice - $snapshotPrice,
+        'kebijakan_harga' => MENU_NOTICE_PRICE_POLICY,
+        'catatan_harga' => 'Harga penggantian dikunci pada saat pelanggan memilih.',
+    ];
+}
+
+/** Tahap pembayaran yang bisa dibaca Admin dari status pesanan dan bukti. */
+function menu_notice_payment_stage(string $status, string $source, bool $hasProof): array
+{
+    if ($source === 'offline') {
+        return ['manual_offline', 'Pesanan offline — pembayaran ditangani manual', false];
+    }
+    if ($status === 'menunggu_pembayaran') {
+        return ['belum_membayar', 'Belum mengunggah bukti pembayaran', false];
+    }
+    if ($status === 'ditolak') {
+        return ['tidak_berlaku', 'Pesanan ditolak; pembayaran tidak diproses', false];
+    }
+    if ($status === 'dibatalkan') {
+        return ['tidak_berlaku', 'Pesanan dibatalkan; refund ditangani Admin di luar aplikasi', false];
+    }
+    if (!$hasProof) {
+        return ['tidak_ada_bukti', 'Belum ada bukti pembayaran yang tersimpan', false];
+    }
+    if ($status === 'menunggu_validasi') {
+        return ['menunggu_verifikasi', 'Bukti terkirim; menunggu verifikasi Admin', false];
+    }
+
+    return ['terverifikasi', 'Bukti pembayaran terverifikasi Admin', true];
+}
+
+/**
+ * Ringkasan pembayaran per penerima notifikasi.
+ *
+ * Sumber nominal adalah total pesanan; bukti dan nama pembayar berasal dari
+ * pesanan. Helper ini tidak membuat status pembayaran baru dan tidak memindahkan
+ * uang.
+ */
+function menu_notice_payment_summary(array $row): array
+{
+    $status = (string) ($row['status_pesanan'] ?? '');
+    $source = (string) ($row['sumber'] ?? 'online');
+    $proof = isset($row['bukti_bayar']) ? trim((string) $row['bukti_bayar']) : '';
+    $payer = isset($row['nama_pembayar']) ? trim((string) $row['nama_pembayar']) : '';
+    [$stage, $label, $paid] = menu_notice_payment_stage($status, $source, $proof !== '');
+
+    $integerOrNull = static function ($value): ?int {
+        return $value === null || $value === '' ? null : (int) $value;
+    };
+
+    return [
+        'status_pembayaran' => $stage,
+        'tahap_pembayaran' => $label,
+        'sudah_membayar' => $paid,
+        'nominal_tagihan' => (int) ($row['total_pesanan'] ?? 0),
+        'total_pesanan_lama' => $integerOrNull($row['total_pesanan_lama'] ?? null),
+        'total_pesanan_baru' => $integerOrNull($row['total_pesanan_baru'] ?? null),
+        'selisih_total' => $integerOrNull($row['selisih_total'] ?? null),
+        'status_penyelesaian_selisih' => (string) ($row['status_penyelesaian_selisih'] ?? 'belum_dihitung'),
+        'bukti_bayar' => $proof === '' ? null : $proof,
+        'nama_pembayar' => $payer === '' ? null : $payer,
+        'sumber' => $source,
     ];
 }
 
@@ -190,8 +274,10 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
     }
 
     try {
-        q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
-        q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Urutan lock kanonik yang sama dengan checkout: produk, kuota_harian,
+        // lalu tanggal libur operasional. Pengecukupan kuota/libur diperiksa
+        // setelah semua lock ini diperoleh.
+        daily_quota_lock_tables();
 
         $row = q(
             "SELECT r.id, r.status_respons, r.produk_lama_id,
@@ -238,7 +324,7 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
         }
 
         $replacement = q(
-            'SELECT id
+            'SELECT id, harga
              FROM produk
              WHERE id = ?
              FOR SHARE',
@@ -247,6 +333,8 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
         if (!$replacement) {
             throw new DomainException('Menu pengganti sudah tidak tersedia.', 409);
         }
+        $catalogPrice = (int) $replacement['harga'];
+        $catalogDifference = $catalogPrice - (int) $row['harga_pengganti'];
         $available = menu_notice_available_products(
             (string) $row['tanggal_kirim'],
             (int) $row['produk_lama_id'],
@@ -303,6 +391,8 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
                  status_penyelesaian_selisih = ?,
                  total_pesanan_lama = ?,
                  total_pesanan_baru = ?,
+                 harga_katalog_saat_konfirmasi = ?,
+                 perbedaan_harga_katalog = ?,
                  confirmed_by = ?,
                  confirmed_at = now()
              WHERE id = ?',
@@ -312,6 +402,8 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
                 $settlementStatus,
                 $oldOrderTotal,
                 $newOrderTotal,
+                $catalogPrice,
+                $catalogDifference,
                 $adminId,
                 $recipientId,
             ]
@@ -330,6 +422,10 @@ function menu_notice_confirm_replacement(int $recipientId, int $adminId): array
             'total_pesanan_lama' => $oldOrderTotal,
             'total_pesanan_baru' => $newOrderTotal,
             'status_pesanan' => $row['status_pesanan'],
+            'info_harga' => menu_notice_price_info((int) $row['harga_pengganti'], $catalogPrice),
+            'perbedaan_harga_katalog' => $catalogDifference,
+            'harga_katalog_saat_konfirmasi' => $catalogPrice,
+            'kebijakan_harga' => MENU_NOTICE_PRICE_POLICY,
         ];
     } catch (Throwable $error) {
         if ($ownsTransaction && $db->inTransaction()) {

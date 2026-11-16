@@ -95,7 +95,7 @@ try {
     );
     $replacementId = $insertId(
         "INSERT INTO produk (kode, nama, harga, kuota_harian)
-         VALUES ('ALT-01', 'Menu Pengganti', 15000, 10) RETURNING id"
+         VALUES ('ALT-01', 'Menu Pengganti', 15000, 100) RETURNING id"
     );
     $outOfStockId = $insertId(
         "INSERT INTO produk (kode, nama, harga, kuota_harian)
@@ -158,6 +158,14 @@ try {
     }
     $pdo->exec($closureMigration);
     $pdo->exec($closureMigration);
+    $priceAuditMigration = file_get_contents(
+        __DIR__ . '/../database/migrations/024_menu_change_price_audit.sql'
+    );
+    if ($priceAuditMigration === false || trim($priceAuditMigration) === '') {
+        throw new RuntimeException('Migration 024 is empty or unreadable.');
+    }
+    $pdo->exec($priceAuditMigration);
+    $pdo->exec($priceAuditMigration);
 
     if ((int) $pdo->query('SELECT COUNT(*) FROM pesanan')->fetchColumn() !== $ordersBefore
         || (int) $pdo->query('SELECT COUNT(*) FROM detail_pesanan')->fetchColumn() !== $detailsBefore) {
@@ -822,7 +830,253 @@ try {
     if ($orderStatus->fetchColumn() !== 'diproses') {
         throw new RuntimeException('The migration or its notification data changed the order status.');
     }
-    echo "PASS: migrations 021/022/023 are idempotent; target selection, holiday availability, ownership, unread, capacity, confirmation, rejection, automatic closure, price difference, online/offline manual follow-up, atomic failure, and history checks pass.\n";
+
+    // ---- D2: harga penggantian terkunci saat pelanggan memilih ----
+    $priceInfoSame = menu_notice_price_info(15000, 15000);
+    if ($priceInfoSame === null
+        || $priceInfoSame['perbedaan_harga_katalog'] !== 0
+        || $priceInfoSame['kebijakan_harga'] !== MENU_NOTICE_PRICE_POLICY) {
+        throw new RuntimeException('Informasi harga snapshot tidak konsisten dengan kebijakan harga.');
+    }
+    if (menu_notice_price_info(null, null) !== null) {
+        throw new RuntimeException('Informasi harga seharusnya kosong bila belum ada menu pengganti.');
+    }
+
+    $paymentMatrix = [
+        ['menunggu_pembayaran', null, 'online', 'belum_membayar', false],
+        ['menunggu_validasi', 'uploads/payments/a.png', 'online', 'menunggu_verifikasi', false],
+        ['diproses', 'uploads/payments/a.png', 'online', 'terverifikasi', true],
+        ['selesai', 'uploads/payments/a.png', 'online', 'terverifikasi', true],
+        ['diproses', null, 'online', 'tidak_ada_bukti', false],
+        ['diproses', null, 'offline', 'manual_offline', false],
+        ['dibatalkan', 'uploads/payments/a.png', 'online', 'tidak_berlaku', false],
+    ];
+    foreach ($paymentMatrix as [$paymentStatus, $paymentProof, $paymentSource, $expectedStage, $expectedPaid]) {
+        $summary = menu_notice_payment_summary([
+            'status_pesanan' => $paymentStatus,
+            'sumber' => $paymentSource,
+            'bukti_bayar' => $paymentProof,
+            'nama_pembayar' => $paymentProof === null ? null : 'Penguji',
+            'total_pesanan' => 48000,
+            'total_pesanan_lama' => null,
+            'total_pesanan_baru' => null,
+            'selisih_total' => null,
+            'status_penyelesaian_selisih' => 'belum_dihitung',
+        ]);
+        if ($summary['status_pembayaran'] !== $expectedStage
+            || $summary['sudah_membayar'] !== $expectedPaid
+            || $summary['nominal_tagihan'] !== 48000
+            || $summary['bukti_bayar'] !== $paymentProof
+            || $summary['sumber'] !== $paymentSource) {
+            throw new RuntimeException(
+                'Ringkasan pembayaran salah untuk ' . $paymentStatus . '/' . $paymentSource . '.'
+            );
+        }
+    }
+
+    $createPriceCase = static function (string $suffix) use (
+        $insertId,
+        $insertRecipient,
+        $customerId,
+        $productId,
+        $adminId,
+        $deliveryDate
+    ): array {
+        $orderId = $insertId(
+            "INSERT INTO pesanan (kode, user_id, status, sumber, total, tgl_kirim)
+             VALUES (?, ?, 'diproses', 'online', 48000, ?) RETURNING id",
+            ['SN-D2-' . $suffix, $customerId, $deliveryDate]
+        );
+        $detailId = $insertId(
+            'INSERT INTO detail_pesanan (pesanan_id, produk_id, qty, harga) VALUES (?, ?, 4, 12000) RETURNING id',
+            [$orderId, $productId]
+        );
+        $noticeId = $insertId(
+            'INSERT INTO pemberitahuan_perubahan_menu
+                (produk_id, kode_produk_snapshot, nama_produk_snapshot, catatan_admin, created_by)
+             VALUES (?, ?, ?, ?, ?) RETURNING id',
+            [$productId, 'OLD-01', 'Menu Lama', 'Uji kebijakan harga.', $adminId]
+        );
+        $optionId = $insertId(
+            "INSERT INTO pemberitahuan_perubahan_menu_opsi (pemberitahuan_id, kode_opsi, label)
+             VALUES (?, 'menu_pengganti', 'Pilih menu pengganti') RETURNING id",
+            [$noticeId]
+        );
+        $recipientId = $insertRecipient($noticeId, $detailId);
+
+        return [$orderId, $detailId, $noticeId, $optionId, $recipientId];
+    };
+    $pendingReplacementAt = static function (int $recipientId, int $optionId, int $price) use (
+        $pdo,
+        $replacementId
+    ): void {
+        $statement = $pdo->prepare(
+            "UPDATE pemberitahuan_perubahan_menu_pesanan
+             SET opsi_id = ?, status_respons = 'menunggu_konfirmasi',
+                 produk_pengganti_id = ?,
+                 kode_produk_pengganti_snapshot = 'ALT-01',
+                 nama_produk_pengganti_snapshot = 'Menu Pengganti',
+                 qty_pengganti = 4, harga_pengganti = ?, responded_at = now()
+             WHERE id = ?"
+        );
+        $statement->execute([$optionId, $replacementId, $price, $recipientId]);
+    };
+
+    [$d2aOrderId, $d2aDetailId, , $d2aOptionId, $d2aRecipientId] = $createPriceCase('A');
+    $pendingReplacementAt($d2aRecipientId, $d2aOptionId, 15000);
+    $d2a = menu_notice_confirm_replacement($d2aRecipientId, $adminId);
+    if ($d2a['selisih_total'] !== 12000
+        || $d2a['total_pesanan_lama'] !== 48000
+        || $d2a['total_pesanan_baru'] !== 60000
+        || $d2a['perbedaan_harga_katalog'] !== 0) {
+        throw new RuntimeException('Konfirmasi tanpa perubahan harga katalog tidak sesuai.');
+    }
+    if ((int) q('SELECT total FROM pesanan WHERE id = ?', [$d2aOrderId])->fetchColumn() !== 60000
+        || (int) q('SELECT harga FROM detail_pesanan WHERE id = ?', [$d2aDetailId])->fetchColumn() !== 15000) {
+        throw new RuntimeException('Total pesanan atau harga detail tidak mengikuti snapshot pelanggan.');
+    }
+
+    [$d2bOrderId, $d2bDetailId, , $d2bOptionId, $d2bRecipientId] = $createPriceCase('B');
+    $pendingReplacementAt($d2bRecipientId, $d2bOptionId, 15000);
+    q('UPDATE produk SET harga = 18000 WHERE id = ?', [$replacementId]);
+    $d2b = menu_notice_confirm_replacement($d2bRecipientId, $adminId);
+    if ($d2b['total_pesanan_baru'] !== 60000
+        || $d2b['selisih_total'] !== 12000
+        || $d2b['perbedaan_harga_katalog'] !== 3000
+        || $d2b['harga_katalog_saat_konfirmasi'] !== 18000) {
+        throw new RuntimeException('Kenaikan harga katalog tidak dicatat sebagai audit tanpa mengubah total.');
+    }
+    $persistedPrice = q(
+        'SELECT harga_katalog_saat_konfirmasi, perbedaan_harga_katalog
+         FROM pemberitahuan_perubahan_menu_pesanan WHERE id = ?',
+        [$d2bRecipientId]
+    )->fetch();
+    if ((int) $persistedPrice['harga_katalog_saat_konfirmasi'] !== 18000
+        || (int) $persistedPrice['perbedaan_harga_katalog'] !== 3000
+        || (int) q('SELECT total FROM pesanan WHERE id = ?', [$d2bOrderId])->fetchColumn() !== 60000
+        || (int) q('SELECT harga FROM detail_pesanan WHERE id = ?', [$d2bDetailId])->fetchColumn() !== 15000) {
+        throw new RuntimeException('Audit harga katalog tidak tersimpan atau total berubah dari snapshot.');
+    }
+    q('UPDATE produk SET harga = 15000 WHERE id = ?', [$replacementId]);
+
+    [$d2cOrderId, $d2cDetailId, , $d2cOptionId, $d2cRecipientId] = $createPriceCase('C');
+    $pendingReplacementAt($d2cRecipientId, $d2cOptionId, 15000);
+    q('UPDATE produk SET harga = 13000 WHERE id = ?', [$replacementId]);
+    $d2c = menu_notice_confirm_replacement($d2cRecipientId, $adminId);
+    if ($d2c['total_pesanan_baru'] !== 60000
+        || $d2c['selisih_total'] !== 12000
+        || $d2c['perbedaan_harga_katalog'] !== -2000) {
+        throw new RuntimeException('Penurunan harga katalog tidak dicatat sebagai audit tanpa mengubah total.');
+    }
+    q('UPDATE produk SET harga = 15000 WHERE id = ?', [$replacementId]);
+
+    // ---- D3: transparansi pembayaran dan penyelesaian selisih tanpa mutasi otomatis ----
+    [$d3PosOrderId, , , $d3PosOptionId, $d3PosRecipientId] = $createPriceCase('SETTLE-POS');
+    $pendingReplacementAt($d3PosRecipientId, $d3PosOptionId, 15000);
+    $d3PosBeforeConfirm = q(
+        'SELECT status, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3PosOrderId]
+    )->fetch();
+    $d3PosConfirm = menu_notice_confirm_replacement($d3PosRecipientId, $adminId);
+    $d3PosAfterConfirm = q(
+        'SELECT status, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3PosOrderId]
+    )->fetch();
+    if ($d3PosConfirm['status_penyelesaian_selisih'] !== 'menunggu_tagihan'
+        || $d3PosBeforeConfirm !== $d3PosAfterConfirm) {
+        throw new RuntimeException('Konfirmasi penggantian mengubah status atau bukti pembayaran.');
+    }
+    $d3PosBeforeSettle = q(
+        'SELECT status, total, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3PosOrderId]
+    )->fetch();
+    $d3PosSettle = menu_notice_settle_difference($d3PosRecipientId, $adminId);
+    $d3PosAfterSettle = q(
+        'SELECT status, total, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3PosOrderId]
+    )->fetch();
+    if ($d3PosSettle['status_penyelesaian_selisih'] !== 'selesai'
+        || $d3PosBeforeSettle !== $d3PosAfterSettle) {
+        throw new RuntimeException('Penyelesaian selisih positif memakai mekanisme pembayaran otomatis.');
+    }
+
+    [$d3NegOrderId, , , $d3NegOptionId, $d3NegRecipientId] = $createPriceCase('SETTLE-NEG');
+    $pendingReplacementAt($d3NegRecipientId, $d3NegOptionId, 10000);
+    $d3NegConfirm = menu_notice_confirm_replacement($d3NegRecipientId, $adminId);
+    $d3NegBeforeSettle = q(
+        'SELECT status, total, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3NegOrderId]
+    )->fetch();
+    $d3NegSettle = menu_notice_settle_difference($d3NegRecipientId, $adminId);
+    $d3NegAfterSettle = q(
+        'SELECT status, total, bukti_bayar, nama_pembayar FROM pesanan WHERE id = ?',
+        [$d3NegOrderId]
+    )->fetch();
+    if ($d3NegConfirm['selisih_total'] !== -8000
+        || $d3NegConfirm['total_pesanan_baru'] !== 40000
+        || $d3NegConfirm['status_penyelesaian_selisih'] !== 'menunggu_pengembalian'
+        || $d3NegSettle['status_penyelesaian_selisih'] !== 'selesai'
+        || $d3NegBeforeSettle !== $d3NegAfterSettle) {
+        throw new RuntimeException('Selisih negatif atau pengembalian mengubah pembayaran pesanan.');
+    }
+
+    [$d3ZeroOrderId, , , $d3ZeroOptionId, $d3ZeroRecipientId] = $createPriceCase('SETTLE-ZERO');
+    $pendingReplacementAt($d3ZeroRecipientId, $d3ZeroOptionId, 12000);
+    $d3ZeroConfirm = menu_notice_confirm_replacement($d3ZeroRecipientId, $adminId);
+    if ($d3ZeroConfirm['selisih_total'] !== 0
+        || $d3ZeroConfirm['total_pesanan_baru'] !== 48000
+        || $d3ZeroConfirm['status_penyelesaian_selisih'] !== 'tidak_ada') {
+        throw new RuntimeException('Penggantian tanpa selisih tidak ditandai dengan benar.');
+    }
+    $expectDomain(409, 'Settlement without a price difference', static function () use ($d3ZeroRecipientId, $adminId): void {
+        menu_notice_settle_difference($d3ZeroRecipientId, $adminId);
+    });
+
+    // ---- C6: urutan locking kanonik dan kontrak pemanggil ----
+    $quotaSource = file_get_contents(__DIR__ . '/../app/daily-quota.php');
+    $lockFunctionStart = strpos($quotaSource, 'function daily_quota_lock_tables');
+    if ($lockFunctionStart === false) {
+        throw new RuntimeException('Helper locking kanonik tidak ditemukan.');
+    }
+    $lockFunctionBody = substr($quotaSource, $lockFunctionStart);
+    $lockPositions = [
+        strpos($lockFunctionBody, 'LOCK TABLE produk'),
+        strpos($lockFunctionBody, 'LOCK TABLE kuota_harian'),
+        strpos($lockFunctionBody, 'LOCK TABLE tanggal_libur_operasional'),
+    ];
+    if (in_array(false, $lockPositions, true)
+        || $lockPositions[0] >= $lockPositions[1]
+        || $lockPositions[1] >= $lockPositions[2]) {
+        throw new RuntimeException('Urutan lock kanonik harus produk, kuota_harian, lalu tanggal libur.');
+    }
+    foreach ([
+        __DIR__ . '/../public/pelanggan/api/orders.php',
+        __DIR__ . '/../app/offline-orders.php',
+        __DIR__ . '/../app/menu-notifications.php',
+        __DIR__ . '/../public/pelanggan/api/menu-notifications.php',
+    ] as $lockCaller) {
+        if (!str_contains((string) file_get_contents($lockCaller), 'daily_quota_lock_tables(')) {
+            throw new RuntimeException('Pemanggil lock kanonik belum memakai helper bersama: ' . basename($lockCaller));
+        }
+    }
+    $pdo->exec('SAVEPOINT mn_c6_lock_order');
+    daily_quota_lock_tables();
+    $lockedTables = q(
+        "SELECT c.relname
+          FROM pg_locks l
+          JOIN pg_class c ON c.oid = l.relation
+          WHERE l.locktype = 'relation' AND l.mode = 'ShareRowExclusiveLock'
+            AND l.granted AND l.pid = pg_backend_pid()
+            AND c.relname IN ('produk', 'kuota_harian', 'tanggal_libur_operasional')
+          ORDER BY c.relname"
+    )->fetchAll(PDO::FETCH_COLUMN);
+    $pdo->exec('ROLLBACK TO SAVEPOINT mn_c6_lock_order');
+    $pdo->exec('RELEASE SAVEPOINT mn_c6_lock_order');
+    if ($lockedTables !== ['kuota_harian', 'produk', 'tanggal_libur_operasional']) {
+        throw new RuntimeException('Helper locking kanonik tidak mengambil ketiga lock tabel.');
+    }
+
+    echo "PASS: migrations 021/022/023/024 are idempotent; target selection, holiday availability, ownership, unread, capacity, confirmation, rejection, automatic closure, price policy and catalog drift audit, payment transparency, difference settlement without automatic charge/refund, canonical lock order, online/offline manual follow-up, atomic failure, and history checks pass.\n";
 } finally {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();

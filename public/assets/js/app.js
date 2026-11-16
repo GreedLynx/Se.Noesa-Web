@@ -13,12 +13,23 @@ const productImage = (value) => {
 };
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+const csrfHeaders = (opt = {}) =>
+    opt.method && opt.method.toUpperCase() !== "GET"
+        ? { "X-CSRF-Token": csrfToken() }
+        : {};
 async function api(url, opt = {}) {
     if (!opt.method && $('#quota-date') && /^api\/(products|orders)\.php/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
     const multipart = opt.body instanceof FormData;
     const r = await fetch(url, {
-        headers: multipart ? {} : { "Content-Type": "application/json" },
+        headers: {
+            ...(multipart ? {} : { "Content-Type": "application/json" }),
+            ...csrfHeaders(opt),
+            ...(opt.headers || {}),
+        },
         ...opt,
         body: opt.body ? (multipart ? opt.body : JSON.stringify(opt.body)) : undefined,
     });

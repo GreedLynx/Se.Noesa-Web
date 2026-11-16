@@ -127,6 +127,19 @@ async function testAdminAndOwner() {
         catatan_respons: null,
         responded_at: "2026-11-16T01:00:00+07:00",
         catatan_tindak_lanjut: null,
+        pembayaran: {
+          status_pembayaran: "tidak_ada_bukti",
+          tahap_pembayaran: "Belum ada bukti pembayaran yang tersimpan",
+          sudah_membayar: false,
+          nominal_tagihan: 24000,
+          total_pesanan_lama: null,
+          total_pesanan_baru: null,
+          selisih_total: null,
+          status_penyelesaian_selisih: "belum_dihitung",
+          bukti_bayar: null,
+          nama_pembayar: null,
+          sumber: "online",
+        },
         pesanan: {
           id: 33,
           kode: "SN-ON-2",
@@ -150,6 +163,26 @@ async function testAdminAndOwner() {
         catatan_tindak_lanjut: null,
         jenis_penutupan: null,
         alasan_penutupan: null,
+        info_harga: {
+          harga_snapshot: 15000,
+          harga_katalog_sekarang: 18000,
+          perbedaan_harga_katalog: 3000,
+          kebijakan_harga: "snapshot_saat_pelanggan_memilih",
+          catatan_harga: "Harga penggantian dikunci pada saat pelanggan memilih.",
+        },
+        pembayaran: {
+          status_pembayaran: "terverifikasi",
+          tahap_pembayaran: "Bukti pembayaran terverifikasi Admin",
+          sudah_membayar: true,
+          nominal_tagihan: 48000,
+          total_pesanan_lama: null,
+          total_pesanan_baru: null,
+          selisih_total: null,
+          status_penyelesaian_selisih: "belum_dihitung",
+          bukti_bayar: "uploads/payments/<script>alert(1)</script>.png",
+          nama_pembayar: "Pembayar Uji",
+          sumber: "online",
+        },
         pesanan: {
           id: 34,
           kode: "SN-ON-3",
@@ -268,6 +301,16 @@ async function testAdminAndOwner() {
       /Penggantian ditolak Admin: Stok pengganti habis\./,
     );
     assert.doesNotMatch(detailBody.innerHTML, /data-reject-reason="25"/);
+    // D2/D3: audit harga katalog dan ringkasan pembayaran tampil dengan aman.
+    assert.match(
+      detailBody.innerHTML,
+      /Harga katalog saat konfirmasi Rp ?18\.000 berbeda lebih Rp ?3\.000 dari harga saat pelanggan memilih \(Rp ?15\.000\)\. Total pesanan memakai harga saat pelanggan memilih\./,
+    );
+    assert.match(detailBody.innerHTML, /Bukti pembayaran terverifikasi Admin/);
+    assert.match(detailBody.innerHTML, /Tersimpan \(uploads\/payments\/&lt;script&gt;alert\(1\)&lt;\/script&gt;\.png\)/);
+    assert.doesNotMatch(detailBody.innerHTML, /<script>alert\(1\)<\/script>/);
+    assert.match(detailBody.innerHTML, /Tagihan<\/small>\s*<span>Rp ?48\.000<\/span>/);
+    assert.match(detailBody.innerHTML, /Belum ada bukti/);
   }
 }
 

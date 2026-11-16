@@ -197,6 +197,13 @@
         const replacement = recipient.menu_pengganti;
         const offline = customer.kanal === "offline";
         const differenceHandled = recipient.status_penyelesaian_selisih === "selesai";
+        const paymentInfo = recipient.pembayaran || null;
+        const priceInfo = recipient.info_harga || null;
+        const priceNote = priceInfo && priceInfo.perbedaan_harga_katalog !== null
+            && priceInfo.perbedaan_harga_katalog !== undefined
+            && priceInfo.perbedaan_harga_katalog !== 0
+            ? `Harga katalog saat konfirmasi ${money(priceInfo.harga_katalog_sekarang)} berbeda ${priceInfo.perbedaan_harga_katalog > 0 ? "lebih" : "lebih rendah"} ${money(Math.abs(priceInfo.perbedaan_harga_katalog))} dari harga saat pelanggan memilih (${money(priceInfo.harga_snapshot)}). Total pesanan memakai harga saat pelanggan memilih.`
+            : "";
         let difference = "";
         let actions = "";
 
@@ -298,7 +305,21 @@
                         <small>Total pesanan setelah perubahan</small>
                         <span>${money(recipient.total_pesanan_lama)} → ${money(recipient.total_pesanan_baru)}</span>
                     </div>` : ""}
+                    ${paymentInfo ? `
+                    <div class="mn-kv">
+                        <small>Pembayaran</small>
+                        <span>${html(paymentInfo.tahap_pembayaran || paymentInfo.status_pembayaran || "-")}</span>
+                    </div>
+                    <div class="mn-kv">
+                        <small>Tagihan</small>
+                        <span>${paymentInfo.nominal_tagihan !== null && paymentInfo.nominal_tagihan !== undefined ? money(paymentInfo.nominal_tagihan) : "-"}</span>
+                    </div>
+                    <div class="mn-kv">
+                        <small>Bukti bayar</small>
+                        <span>${paymentInfo.bukti_bayar ? `Tersimpan (${html(paymentInfo.bukti_bayar)})` : "Belum ada bukti"}</span>
+                    </div>` : ""}
                 </div>
+                ${priceNote ? `<div class="mn-selisih">${html(priceNote)}</div>` : ""}
                 ${recipient.catatan_respons ? `<div class="mn-selisih">Catatan pelanggan: ${html(recipient.catatan_respons)}</div>` : ""}
                 ${difference}
                 ${recipient.jenis_penutupan ? `<div class="mn-selisih">${html(closureLabels[recipient.jenis_penutupan] || "Notifikasi ditutup")}${recipient.alasan_penutupan ? ": " + html(recipient.alasan_penutupan) : ""}</div>` : ""}

@@ -53,6 +53,7 @@ set_exception_handler(static function (Throwable $error): void {
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'POST') {
+    csrf_require();
     $request = body();
     $action = (string) ($request['action'] ?? '');
 
@@ -123,8 +124,8 @@ if ($method === 'POST') {
     $db = db();
     $db->beginTransaction();
     try {
-        q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
-        q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Urutan lock kanonik yang sama dengan checkout dan konfirmasi penggantian.
+        daily_quota_lock_tables();
 
         $row = q(
             "SELECT r.id, r.pemberitahuan_id, r.status_respons,

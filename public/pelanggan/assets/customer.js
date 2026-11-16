@@ -9,9 +9,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     "'": '&#39;'
 }[c]));
 
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+
 async function api(url, options = {}) {
     const headers = {...options.headers};
     if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (options.method && options.method.toUpperCase() !== 'GET') {
+        headers['X-CSRF-Token'] = csrfToken();
+    }
 
     const response = await fetch(url, {
         ...options,

@@ -80,6 +80,9 @@ function cancellation_file(): array
 function cancellation_api(string $role, string $method, array $payload, array $files = [], ?int $actorId = null): CancellationResponse
 {
     $_SESSION['user'] = ['id' => $actorId ?? ($role === 'other' ? 2 : 1), 'role' => $role === 'other' ? 'pelanggan' : $role];
+    // Token CSRF fixture: validasi CSRF asli di bootstrap tetap dijalankan pada POST.
+    $_SESSION['csrf_token'] = 'cancel-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'cancel-test-token';
     $_SERVER['REQUEST_METHOD'] = $method;
     $_GET = $method === 'GET' ? $payload : [];
     $_POST = $method === 'POST' ? $payload : [];
@@ -225,6 +228,9 @@ if (($argv[1] ?? '') === '--menu-api') {
         'id' => $actor !== '' ? (int) $actor : ($role === 'pelanggan' ? 1 : 3),
         'role' => $role !== '' ? $role : ($area === 'admin' ? 'admin' : 'pelanggan'),
     ];
+    // Token CSRF fixture: validasi CSRF asli di bootstrap tetap dijalankan pada POST.
+    $_SESSION['csrf_token'] = 'cancel-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'cancel-test-token';
     $_SERVER['REQUEST_METHOD'] = $method;
     $_GET = $method === 'GET' ? $payload : [];
     $_POST = $method === 'POST' ? $payload : [];

@@ -126,6 +126,10 @@ ringkasan kapasitas admin. Penolakan memulihkan ketersediaan melalui agregasi st
 |---|---|
 | Tabel notifikasi, opsi, target, snapshot, status respons | `database/migrations/021_menu_change_notifications.sql` |
 | Audit total pesanan dan tindak lanjut manual | `database/migrations/022_menu_change_confirmation_audit.sql` |
+| Audit closure dan penutupan otomatis | `database/migrations/023_menu_change_closure_audit.sql` |
+| Audit harga katalog saat konfirmasi penggantian | `database/migrations/024_menu_change_price_audit.sql` |
+| Kebijakan harga snapshot, ringkasan pembayaran, dan penyelesaian selisih | `app/menu-notifications.php` |
+| Lock tabel kanonik produk → kuota_harian → tanggal_libur_operasional | `app/daily-quota.php` |
 | Skema baseline dan dokumentasi database | `database/schema.sql`, `docs/database.md` |
 | Hitung target dan validasi sisa kuota/minimum porsi | `app/menu-notifications.php` |
 | API riwayat, preview, detail, pembuatan, persetujuan, dan tindak lanjut | `public/admin/api/menu-notifications.php` |
@@ -146,7 +150,12 @@ Pesanan offline tetap ditautkan untuk tindak lanjut manual, tanpa notifikasi in-
 API tidak mengubah detail pesanan, status pembayaran, atau menjalankan
 penggantian/refund tanpa persetujuan. Aksi konfirmasi Admin mengubah detail dan
 total hanya setelah respons pelanggan; status pesanan/pembayaran tetap. Tagihan
-dan pengembalian manual tidak dilakukan oleh aplikasi.
+dan pengembalian manual tidak dilakukan oleh aplikasi. Harga penggantian dikunci
+saat pelanggan memilih; perbedaan harga katalog saat konfirmasi hanya diaudit
+pada `harga_katalog_saat_konfirmasi`/`perbedaan_harga_katalog`. Detail respons
+memuat `info_harga` dan `pembayaran` (status pembayaran, bukti, nominal,
+total lama/baru, dan status penyelesaian selisih) agar Admin dapat membedakan
+pelanggan yang sudah dan belum membayar tanpa status pembayaran baru.
 
 UI Admin memakai pola `admin_head`/`admin_foot`, sedangkan Owner memakai
 `head`/`topbar`/`nav`/`foot`. Keduanya memuat satu skrip bersama dengan mode
