@@ -2,6 +2,7 @@
 require __DIR__ . '/../../../app/bootstrap.php';
 require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/order-cancellation.php';
 
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 // COUNT dengan FILTER menghitung pesanan hari ini dan yang menunggu validasi dalam satu query.
@@ -19,11 +20,41 @@ try {
     json(['error' => $e->getMessage()], 422);
 }
 
+$productionRows = q(
+    'SELECT produk_id, menu, pesanan_id, kode, status, porsi
+    FROM v_rekap_produksi_harian
+    WHERE tanggal = ?
+    ORDER BY menu, produk_id, pesanan_id',
+    [$quota['tanggal']]
+)->fetchAll();
+$production = [];
+foreach ($productionRows as $row) {
+    $productId = (int) $row['produk_id'];
+    if (!isset($production[$productId])) {
+        $production[$productId] = [
+            'produk_id' => $productId,
+            'menu' => $row['menu'],
+            'total_porsi' => 0,
+            'pesanan' => [],
+        ];
+    }
+    $production[$productId]['total_porsi'] += (int) $row['porsi'];
+    $production[$productId]['pesanan'][] = [
+        'id' => (int) $row['pesanan_id'],
+        'kode' => $row['kode'],
+        'status' => $row['status'],
+        'porsi' => (int) $row['porsi'],
+    ];
+}
+
 $capacity = ['kapasitas' => $quota['maxKitchen'], 'pakai' => $quota['kitchenUsed']];
 $critical = count(array_filter(
     $quota['items'],
     static fn($product) => (int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2
 ));
+if ($quota['tanggal_libur']) {
+    $critical = 0;
+}
 // LEFT JOIN ke rentang tujuh hari dan COUNT FILTER menghasilkan grafik pesanan selesai per hari.
 $chart = q(
     "SELECT d::date AS hari, to_char(d, 'Dy') AS label,
@@ -49,13 +80,30 @@ $recent = q(
     LIMIT 6'
 )->fetchAll();
 
+$cancellationCounts = q('SELECT COUNT(*) AS unreviewed_count,
+        COUNT(*) FILTER (WHERE needs_payment_review OR production_stop_required) AS urgent_count
+    FROM v_pembatalan_pesanan WHERE reviewed_at IS NULL')->fetch();
+$cancellations = q('SELECT * FROM v_pembatalan_pesanan
+    WHERE reviewed_at IS NULL
+    ORDER BY production_stop_required DESC, needs_payment_review DESC,
+        cancelled_at DESC NULLS LAST, id DESC
+    LIMIT 2')->fetchAll();
+
 json([
     'orders' => (int) $stats['orders'],
     'pending' => (int) $stats['pending'],
     'capacity' => (int) $capacity['kapasitas'],
     'used' => (int) $capacity['pakai'],
+    'production_date' => $quota['tanggal'],
+    'production' => array_values($production),
+    'tanggal_libur' => $quota['tanggal_libur'],
     'critical' => $critical,
     'chart' => $chart,
     'priority' => $priority,
     'recent' => $recent,
+    'cancellations' => [
+        'unreviewed_count' => (int) $cancellationCounts['unreviewed_count'],
+        'urgent_count' => (int) $cancellationCounts['urgent_count'],
+        'items' => array_map('cancellation_metadata', $cancellations),
+    ],
 ]);

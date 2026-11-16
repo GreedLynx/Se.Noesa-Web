@@ -17,7 +17,7 @@ try {
     json(['error' => $e->getMessage()], 422);
 }
 
-$critical = static fn($product) => (int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2;
+$critical = static fn($product) => !$snapshot['tanggal_libur'] && ((int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2);
 $items = array_values(array_filter($snapshot['items'], static function ($product) use ($query, $category, $critical) {
     return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
         && ($category !== 'kritis' || $critical($product))
@@ -31,6 +31,7 @@ json([
         'kritis' => count(array_filter($snapshot['items'], $critical)),
     ],
     'tanggal' => $date,
+    'tanggal_libur' => $snapshot['tanggal_libur'],
     'maxKitchen' => $snapshot['maxKitchen'],
     'kitchenUsed' => $snapshot['kitchenUsed'],
     'kitchenRemaining' => $snapshot['kitchenRemaining'],

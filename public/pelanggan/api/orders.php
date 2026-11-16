@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
+require_once __DIR__ . '/../../../app/menu-notifications.php';
 if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403);
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
@@ -18,11 +19,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new OutOfBoundsException('Pesanan tidak ditemukan');
             }
             // Waktu diperiksa setelah lock agar request yang menunggu tidak melewati H-2.
-            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp()
+            $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp(),
+                    sumber_pembatalan = 'pelanggan', status_sebelum_batal = status
                 WHERE id = ? AND user_id = ?
                     AND status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
                     AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >=
                         (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date + 2", [$id, $customer['id']])->rowCount();
+            if ($affected) {
+                // Penutupan notifikasi ikut transaksi: kegagalan membatalkan seluruh pembatalan.
+                menu_notice_close_for_order(
+                    (int) $id,
+                    'pembatalan_pesanan',
+                    'Pesanan dibatalkan oleh pelanggan.',
+                    (int) $customer['id']
+                );
+            }
             $db->commit();
         } catch (OutOfBoundsException $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
@@ -216,6 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
         // LOCK TABLE mencegah perubahan kuota harian bersamaan dengan checkout.
         q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Checkout dan perubahan tanggal libur diserialisasi agar penutupan baru tidak terlewati.
+        q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
         // SELECT ... FOR UPDATE mengunci baris kuota tanggal pengiriman sampai transaksi selesai.
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
         // SELECT ... FOR UPDATE memilih sekaligus mengunci jadwal PO aktif yang akan dipakai.
@@ -296,6 +309,10 @@ if (isset($_GET['id'])) {
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]
     )->fetchAll();
+    $order['menu_notifications'] = menu_notice_order_notifications(
+        (int) $order['id'],
+        (int) $customer['id']
+    );
     $order['foto_kiriman_list'] = q(
         'SELECT path FROM pesanan_foto_kiriman WHERE pesanan_id = ? ORDER BY id',
         [$order['id']]

@@ -131,6 +131,33 @@ admin_head('Dashboard', 'dashboard');
         </div>
     </article>
 </section>
+<section class="panel production-panel" aria-labelledby="production-title">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">PERSIAPAN PRODUKSI</p>
+            <h2 id="production-title">Rekap menu per tanggal kirim</h2>
+            <p class="muted">Jumlah mencakup pesanan aktif; pesanan ditolak dan dibatalkan dikecualikan.</p>
+        </div>
+        <span class="pill soft" id="production-date"></span>
+    </div>
+    <div id="production-list" aria-live="polite">
+        <div class="loading">Memuat rekap produksi...</div>
+    </div>
+</section>
+<section class="panel cancellation-panel" aria-labelledby="cancellation-title">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">ANTREAN TINJAUAN</p>
+            <h2 id="cancellation-title">Pembatalan belum ditinjau <span id="cancellation-count">--</span></h2>
+            <p class="muted" id="cancellation-urgent-count">Memuat pembatalan...</p>
+        </div>
+        <a href="orders.php?tab=dibatalkan&amp;review=unreviewed">Lihat semua &rarr;</a>
+    </div>
+    <p class="cancellation-intro">Buka detail untuk memeriksa status, bukti bayar, dan tindak lanjut. Menandai sudah ditinjau hanya mencatat pemeriksaan; refund tidak diproses di aplikasi.</p>
+    <div id="cancellation-list" aria-live="polite">
+        <div class="loading">Memuat pembatalan...</div>
+    </div>
+</section>
 <section class="panel activity-panel">
     <div class="panel-heading">
         <div>

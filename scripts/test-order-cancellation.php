@@ -20,9 +20,13 @@ $bootstrap = file_get_contents(__DIR__ . '/../app/bootstrap.php');
 $bootstrap = str_replace("require __DIR__ . '/../config/config.php'", 'cancellation_test_config()', $bootstrap);
 $bootstrap = str_replace('function q(string $sql, array $params = []): PDOStatement' . "\n{",
     'function q(string $sql, array $params = []): PDOStatement' . "\n{\n    \$sql = cancellation_test_sql(\$sql);", str_replace("\r\n", "\n", $bootstrap));
+$bootstrap = preg_replace('/function json\(\$data, int \$code = 200\): void\s*\{.*?\n\}/s',
+    'function json($data, int $code = 200): void { cancellation_json($data, $code); }', $bootstrap);
 eval('?>' . $bootstrap);
 require __DIR__ . '/../app/daily-quota.php';
 require __DIR__ . '/../app/order-expiration.php';
+require __DIR__ . '/../app/order-cancellation.php';
+require_once __DIR__ . '/../app/menu-notifications.php';
 
 function cancellation_test_sql(string $sql): string
 {
@@ -50,11 +54,7 @@ function cancellation_source(string $path): string
 {
     $source = file_get_contents($path);
     $source = preg_replace('/^require(?:_once)? __DIR__ .*;\R/m', '', $source);
-    $now = getenv('SENOESA_TEST_NOW');
-    if ($now) {
-        $time = (new DateTimeImmutable($now))->format('Y-m-d H:i:s.uP');
-        $source = str_replace(['clock_timestamp()', 'statement_timestamp()'], "TIMESTAMPTZ '$time'", $source);
-    }
+    // Freeze time in q() after PHP has parsed the SQL string, including single-quoted queries.
     $resolved = '';
     foreach (token_get_all($source) as $token) {
         $resolved .= is_array($token) ? match ($token[0]) {
@@ -77,15 +77,18 @@ function cancellation_file(): array
     file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='));
     return ['name' => 'proof.png', 'tmp_name' => $path, 'size' => filesize($path), 'error' => UPLOAD_ERR_OK];
 }
-function cancellation_api(string $role, string $method, array $payload, array $files = []): CancellationResponse
+function cancellation_api(string $role, string $method, array $payload, array $files = [], ?int $actorId = null): CancellationResponse
 {
-    $_SESSION['user'] = ['id' => $role === 'other' ? 2 : 1, 'role' => $role === 'other' ? 'pelanggan' : $role];
+    $_SESSION['user'] = ['id' => $actorId ?? ($role === 'other' ? 2 : 1), 'role' => $role === 'other' ? 'pelanggan' : $role];
     $_SERVER['REQUEST_METHOD'] = $method;
     $_GET = $method === 'GET' ? $payload : [];
     $_POST = $method === 'POST' ? $payload : [];
     $_FILES = $files;
-    $area = in_array($role, ['admin', 'owner'], true) ? $role : 'pelanggan';
-    if (($payload['action'] ?? '') === 'cancel_order') $area = 'pelanggan';
+    // Aksi pelanggan memakai endpoint pelanggan; mutasi lain diuji pada endpoint Admin asli.
+    $customerAction = in_array($payload['action'] ?? '', ['cancel_order', 'upload_proof'], true);
+    $area = $customerAction
+        ? 'pelanggan'
+        : (($method === 'POST' || in_array($role, ['admin', 'owner'], true)) ? 'admin' : 'pelanggan');
     $source = cancellation_source(__DIR__ . '/../public/' . $area . '/api/orders.php');
     if ($GLOBALS['cancellation_fail_db'] ?? false) $source = str_replace('db()', 'cancellation_failed_db()', $source);
     $source = str_replace('json(', 'cancellation_json(', $source);
@@ -100,6 +103,44 @@ function cancellation_api(string $role, string $method, array $payload, array $f
         return $response;
     }
     throw new RuntimeException('Endpoint tidak menghasilkan respons');
+}
+function cancellation_noop_handler(callable $handler): void {}
+function cancellation_menu_api(
+    string $area,
+    string $method,
+    array $payload,
+    ?string $role = null,
+    ?int $actorId = null
+): CancellationResponse {
+    [$exit, $output, $errors] = cancellation_finish(cancellation_child([
+        '--menu-api',
+        $area,
+        $method,
+        json_encode($payload),
+        $role ?? '',
+        $actorId !== null ? (string) $actorId : '',
+    ]));
+    if ($exit !== 0) {
+        throw new RuntimeException('Endpoint notifikasi menu gagal: ' . trim($output . ' ' . $errors));
+    }
+    $decoded = json_decode(trim($output), true);
+    if (!is_array($decoded)) {
+        throw new RuntimeException('Endpoint notifikasi menu tidak menghasilkan JSON: ' . trim($output));
+    }
+    return new CancellationResponse($decoded['data'] ?? [], (int) ($decoded['status'] ?? 500));
+}
+function cancellation_dashboard(array $query = []): CancellationResponse
+{
+    $_SESSION['user'] = ['id' => 3, 'role' => 'admin'];
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_GET = $query;
+    $source = str_replace('json(', 'cancellation_json(', cancellation_source(__DIR__ . '/../public/admin/api/dashboard.php'));
+    try {
+        eval('?>' . $source);
+    } catch (CancellationResponse $response) {
+        return $response;
+    }
+    throw new RuntimeException('Dashboard tidak menghasilkan respons');
 }
 function cancellation_child(array $args): array
 {
@@ -164,12 +205,51 @@ if (($argv[1] ?? '') === '--race') {
         'validate' => ['action' => 'validate', 'id' => 1],
         'complete' => ['action' => 'complete', 'id' => 1],
         'dispatch' => ['action' => 'upload_dispatch', 'id' => 1],
+        'review' => ['action' => 'review_cancellation', 'id' => 1],
         default => ['action' => 'cancel_order', 'id' => 1],
     };
-    $response = cancellation_api(in_array($kind, ['validate', 'complete', 'dispatch'], true) ? 'admin' : 'pelanggan', 'POST', $payload,
-        in_array($kind, ['upload', 'dispatch'], true) ? [$kind === 'upload' ? 'proof' : 'foto_kiriman' => cancellation_file()] : []);
+    $response = cancellation_api(in_array($kind, ['validate', 'complete', 'dispatch', 'review'], true) ? 'admin' : 'pelanggan', 'POST', $payload,
+        in_array($kind, ['upload', 'dispatch'], true) ? [$kind === 'upload' ? 'proof' : 'foto_kiriman' => cancellation_file()] : [], $kind === 'review' ? 3 : null);
     echo json_encode(['status' => $response->status, 'data' => $response->data]);
     exit;
+}
+
+if (($argv[1] ?? '') === '--menu-api') {
+    $area = $argv[2] ?? 'admin';
+    $method = $argv[3] ?? 'GET';
+    $payload = json_decode($argv[4] ?? '{}', true);
+    $payload = is_array($payload) ? $payload : [];
+    $role = $argv[5] ?? '';
+    $actor = $argv[6] ?? '';
+    $_SESSION['user'] = [
+        'id' => $actor !== '' ? (int) $actor : ($role === 'pelanggan' ? 1 : 3),
+        'role' => $role !== '' ? $role : ($area === 'admin' ? 'admin' : 'pelanggan'),
+    ];
+    $_SERVER['REQUEST_METHOD'] = $method;
+    $_GET = $method === 'GET' ? $payload : [];
+    $_POST = $method === 'POST' ? $payload : [];
+    $source = cancellation_source(__DIR__ . '/../public/' . $area . '/api/menu-notifications.php');
+    // Tangkap respons endpoint lokal tanpa exit; handler bawaan endpoint dinonaktifkan.
+    $source = preg_replace(
+        '/function (api_json|mnc_json)\(\$data, int \$code = 200\): void\s*\{.*?\n\}/s',
+        'function $1($data, int $code = 200): void { cancellation_json($data, $code); }',
+        $source
+    );
+    $source = str_replace('set_exception_handler(', 'cancellation_noop_handler(', $source);
+    try {
+        eval('?>' . $source);
+    } catch (CancellationResponse $response) {
+        echo json_encode(['status' => $response->status, 'data' => $response->data]);
+        exit(0);
+    } catch (Throwable $error) {
+        echo json_encode([
+            'status' => $error instanceof DomainException ? $error->getCode() : 500,
+            'data' => ['error' => $error->getMessage()],
+        ]);
+        exit(0);
+    }
+    echo json_encode(['status' => 500, 'data' => ['error' => 'Endpoint tidak menghasilkan respons']]);
+    exit(0);
 }
 
 try {
@@ -182,10 +262,19 @@ try {
     $schemaSql = substr($schemaSql, 0, strpos($schemaSql, '-- SEED'));
     db()->exec($schemaSql);
     foreach (glob(__DIR__ . '/../database/migrations/*.sql') as $file) {
+        if (basename($file) === '021_cancellation_admin_review.sql') {
+            q("INSERT INTO pesanan (id,kode,nama_pemesan,status,status_updated_at)
+                VALUES (99,'LEGACY','Riwayat lama','dibatalkan','2020-01-01 08:00+07')");
+        }
         db()->exec(file_get_contents($file));
     }
-    cancellation_check(true, 'Skema baru dan seluruh migrasi sampai 018 berhasil');
+    $legacy = q('SELECT sumber_pembatalan,status_sebelum_batal,pembatalan_ditinjau_at,pembatalan_ditinjau_oleh,status_updated_at FROM pesanan WHERE id=99')->fetch();
+    cancellation_check($legacy['sumber_pembatalan'] === null && $legacy['status_sebelum_batal'] === null &&
+        $legacy['pembatalan_ditinjau_at'] === null && $legacy['pembatalan_ditinjau_oleh'] === null &&
+        str_starts_with($legacy['status_updated_at'], '2020-01-01'), 'Seluruh migrasi sampai 021 berhasil; riwayat batal lama tetap tanpa metadata yang dikarang');
+    q('DELETE FROM pesanan WHERE id=99');
     q("INSERT INTO users (id,username,email,password_hash) VALUES (1,'penguji','uji@example.invalid','x'),(2,'lain','lain@example.invalid','x')");
+    q("INSERT INTO users (id,username,email,password_hash,role) VALUES (3,'adminuji','admin@example.invalid','x','admin'),(4,'adminlain','adminlain@example.invalid','x','admin')");
     q("INSERT INTO produk (id,kode,nama,kategori,harga,kuota_harian) VALUES (1,'UJI','Menu Uji','makanan',10000,50)");
     q("INSERT INTO jadwal_po (id,nama,tgl_buka,tgl_tutup,kapasitas) VALUES (1,'Jadwal Uji','2030-01-01','2030-12-31',50)");
     q("INSERT INTO pesanan (id,kode,user_id,jadwal_id,nama_pemesan,pax,total,tgl_kirim,created_at)
@@ -208,6 +297,7 @@ try {
     }
     $reset = function (string $status = 'menunggu_pembayaran'): void {
         q("UPDATE pesanan SET status=?, bukti_bayar=NULL, foto_kiriman=NULL, nama_pembayar=NULL,
+            sumber_pembatalan=NULL, status_sebelum_batal=NULL, pembatalan_ditinjau_at=NULL, pembatalan_ditinjau_oleh=NULL,
             tgl_kirim='2030-11-20 12:00+07', created_at='2030-11-18 23:30+07' WHERE id=1", [$status]);
         q('UPDATE detail_pesanan SET sudah_dicek=FALSE');
         q('DELETE FROM pesanan_foto_kiriman');
@@ -233,6 +323,8 @@ try {
         q("UPDATE pesanan SET bukti_bayar='uploads/payments/old.png', foto_kiriman='uploads/dispatch/old.png' WHERE id=1");
         cancellation_check($cancel()->status === 200, 'Pembatalan ' . $status . ' sampai akhir H-2 diterima');
         $row = q('SELECT * FROM pesanan WHERE id=1')->fetch();
+        cancellation_check($row['sumber_pembatalan'] === 'pelanggan' && $row['status_sebelum_batal'] === $status &&
+            $row['pembatalan_ditinjau_at'] === null, 'Pembatalan menyimpan sumber pelanggan dan status asal ' . $status);
         cancellation_check($row['status'] === 'dibatalkan' && $row['bukti_bayar'] === 'uploads/payments/old.png' &&
             $row['foto_kiriman'] === 'uploads/dispatch/old.png' && (int) q('SELECT COUNT(*) FROM detail_pesanan')->fetchColumn() === 1, 'Riwayat dan bukti tetap tersimpan');
     }
@@ -261,6 +353,87 @@ try {
     $snapshot = daily_quota_snapshot('2030-11-20');
     cancellation_check($snapshot['kitchenUsed'] === 0 && (int) $snapshot['items'][0]['sisa'] === 50 &&
         $snapshot === daily_quota_snapshot('2030-11-20', true), 'Pembatalan memulihkan kuota produk/dapur; VIEW dan checkout sama');
+    cancellation_check((int) q("SELECT COUNT(*) FROM v_rekap_produksi_harian WHERE tanggal='2030-11-20'")->fetchColumn() === 0,
+        'Pesanan batal tidak muncul di VIEW rekap produksi');
+
+    // Tinjauan berlaku bersama untuk semua Admin dan tidak menandakan refund selesai.
+    $cancelledAt = q('SELECT status_updated_at FROM pesanan WHERE id=1')->fetchColumn();
+    $review = fn($id = 1, int $actor = 3) => cancellation_api('admin', 'POST', ['action' => 'review_cancellation', 'id' => $id], [], $actor);
+    foreach (['pelanggan', 'owner', 'other'] as $role) {
+        cancellation_check(cancellation_api($role, 'POST', ['action' => 'review_cancellation', 'id' => 1])->status === 401,
+            'Role ' . $role . ' tidak dapat menandai pembatalan ditinjau');
+    }
+    foreach ([0, -1, '1x', [], null] as $id) cancellation_check($review($id)->status === 422, 'ID tinjauan invalid ditolak');
+    cancellation_check($review(999)->status === 404, 'ID tinjauan yang tidak ada menghasilkan 404');
+    putenv('SENOESA_TEST_NOW=2030-11-25T08:00:00+07:00');
+    $firstReview = $review()->data;
+    cancellation_check($firstReview['ok'] === true && $firstReview['reviewed_by'] === 3 &&
+        $firstReview['reviewed_by_name'] === 'adminuji' && $firstReview['reviewed_at'] === '2030-11-25T08:00:00+07:00' &&
+        q('SELECT status_updated_at FROM pesanan WHERE id=1')->fetchColumn() === $cancelledAt,
+        'Tinjauan menyimpan Admin/waktu WIB tanpa mengubah waktu pembatalan');
+    putenv('SENOESA_TEST_NOW=2030-11-26T09:00:00+07:00');
+    $repeatReview = $review(1, 4)->data;
+    cancellation_check($repeatReview['reviewed_by'] === 3 && $repeatReview['reviewed_at'] === $firstReview['reviewed_at'],
+        'Tinjauan ulang oleh Admin lain mempertahankan peninjau/waktu pertama');
+    $detail = cancellation_api('admin', 'GET', ['id' => 1])->data;
+    cancellation_check($detail['cancellation_source'] === 'pelanggan' && $detail['status_before_cancel'] === 'menunggu_pembayaran' &&
+        $detail['reviewed_by_name'] === 'adminuji' && $detail['needs_payment_review'] === false,
+        'Detail Admin mengirim metadata pembatalan dan tinjauan');
+
+    foreach (['menunggu_pembayaran', 'menunggu_validasi', 'diproses', 'selesai', 'ditolak'] as $status) {
+        $reset($status);
+        cancellation_check($review()->status === 409, 'Tinjauan status nonbatal ' . $status . ' ditolak');
+    }
+    $reset('dibatalkan');
+    q("UPDATE pesanan SET status_updated_at='2000-01-01 08:00+07' WHERE id=1");
+    for ($id = 10; $id < 17; $id++) {
+        q("INSERT INTO pesanan (id,kode,user_id,nama_pemesan,status,status_updated_at,sumber_pembatalan,status_sebelum_batal,bukti_bayar)
+            VALUES (?, ?, 1, 'Pembatalan uji', 'dibatalkan', '2000-01-01 08:00+07', ?, ?, ?)",
+            [$id, 'BATAL-' . $id, $id === 10 ? 'pelanggan' : 'otomatis', $id === 10 ? 'diproses' : 'menunggu_pembayaran', $id === 11 ? 'uploads/payments/old.png' : null]);
+    }
+    $dashboard = cancellation_dashboard(['tgl_kirim' => '2030-11-20'])->data;
+    cancellation_check($dashboard['cancellations']['unreviewed_count'] === 8 && $dashboard['cancellations']['urgent_count'] === 2 &&
+        count($dashboard['cancellations']['items']) === 2 && (int) $dashboard['cancellations']['items'][0]['id'] === 10 &&
+        $dashboard['cancellations']['items'][0]['production_stop_required'] === true,
+        'Dashboard mempertahankan pembatalan belum ditinjau lebih dari tujuh hari, membatasi dua, dan mendahulukan produksi/pembayaran');
+    $unreviewed = cancellation_api('admin', 'GET', ['tab' => 'dibatalkan', 'review' => 'unreviewed', 'tgl_kirim' => '2030-11-20'])->data;
+    cancellation_check(count($unreviewed['items']) === 8 && (int) $unreviewed['counts']['cancelled'] === 8 &&
+        (int) $unreviewed['counts']['cancellation_unreviewed'] === 8, 'Tab batal mengirim hitungan total dan belum ditinjau');
+    cancellation_check(cancellation_api('admin', 'GET', ['tab' => 'dibatalkan', 'review' => 'invalid'])->status === 422,
+        'Filter tinjauan invalid ditolak');
+    $review(10);
+    $reviewed = cancellation_api('admin', 'GET', ['tab' => 'dibatalkan', 'review' => 'reviewed', 'tgl_kirim' => '2030-11-20'])->data;
+    cancellation_check(count($reviewed['items']) === 1 && (int) $reviewed['items'][0]['id'] === 10 &&
+        $reviewed['items'][0]['reviewed_by'] === 3 &&
+        cancellation_dashboard(['tgl_kirim' => '2030-11-20'])->data['cancellations']['unreviewed_count'] === 7,
+        'Sudah ditinjau keluar dari notifikasi tetapi tetap ada di histori/filter ditinjau');
+    $searched = cancellation_api('admin', 'GET', ['tab' => 'dibatalkan', 'q' => 'BATAL-10', 'tgl_kirim' => '2030-11-20'])->data;
+    cancellation_check(count($searched['items']) === 1 && (int) $searched['items'][0]['id'] === 10,
+        'Pencarian kode tetap bekerja bersama tab pembatalan');
+    q('DELETE FROM pesanan WHERE id BETWEEN 10 AND 16');
+
+    // Dua Admin yang meninjau bersamaan harus mempertahankan keputusan pertama.
+    $reset('dibatalkan');
+    db()->beginTransaction();
+    q('SELECT id FROM pesanan WHERE id=1 FOR UPDATE');
+    $child = cancellation_child(['--race', 'review']);
+    if (trim(fgets($child[1][1])) !== 'READY') throw new RuntimeException('Child review tidak siap');
+    $waiting = false;
+    $limit = microtime(true) + 5;
+    do {
+        $waiting = (bool) q("SELECT 1 FROM pg_stat_activity WHERE application_name=? AND wait_event_type='Lock'", [$schema])->fetchColumn();
+        if (!$waiting) usleep(20000);
+    } while (!$waiting && microtime(true) < $limit);
+    if (!$waiting) throw new RuntimeException('Review kedua tidak menunggu lock');
+    q("UPDATE pesanan SET pembatalan_ditinjau_at='2030-11-25 08:00+07', pembatalan_ditinjau_oleh=4 WHERE id=1");
+    db()->commit();
+    [$exit, $output, $errors] = cancellation_finish($child);
+    $race = json_decode($output, true);
+    cancellation_check($exit === 0 && $errors === '' && ($race['status'] ?? null) === 200 &&
+        $race['data']['reviewed_by'] === 4 && $race['data']['reviewed_at'] === '2030-11-25T08:00:00+07:00',
+        'Dua Admin bersamaan mempertahankan peninjau pertama dan respons idempotent');
+    $reset();
+    putenv('SENOESA_TEST_NOW=2030-11-18T23:59:59.999999+07:00');
 
     $reset();
     putenv('SENOESA_TEST_NOW=2030-11-19T00:29:59+07:00');
@@ -285,6 +458,9 @@ try {
         cancellation_check($exit === 0 && str_contains($output, '"eligible":1') && q('SELECT status FROM pesanan')->fetchColumn() === 'menunggu_pembayaran', $mode . ' read-only melaporkan kandidat lama');
     }
     cancellation_check(cancellation_job('--apply')[0] === 0 && q('SELECT status FROM pesanan')->fetchColumn() === 'dibatalkan', 'Job membatalkan tepat satu jam tanpa traffic web');
+    $expired = q('SELECT sumber_pembatalan,status_sebelum_batal,pembatalan_ditinjau_at FROM pesanan WHERE id=1')->fetch();
+    cancellation_check($expired['sumber_pembatalan'] === 'otomatis' && $expired['status_sebelum_batal'] === 'menunggu_pembayaran' &&
+        $expired['pembatalan_ditinjau_at'] === null, 'Job menyimpan sumber otomatis dan menunggu tinjauan Admin');
     cancellation_check(str_contains(cancellation_job('--apply')[1], 'Dibatalkan: 0'), 'Job aman dijalankan ulang');
     foreach (['menunggu_validasi', 'diproses', 'selesai', 'ditolak', 'dibatalkan'] as $status) {
         $reset($status);
@@ -358,10 +534,409 @@ try {
     $cancel();
     foreach (['admin', 'owner'] as $role) {
         $response = cancellation_api($role, 'GET', ['tab' => 'semua', 'tgl_kirim' => '2030-11-20'])->data;
-        $items = $response[$role === 'admin' ? 'items' : 'orders'];
+        $items = $response['items'];
         cancellation_check(count($items) === 1 && $items[0]['status'] === 'dibatalkan', 'Daftar semua ' . $role . ' memuat pembatalan');
     }
-    cancellation_check(cancellation_api('owner', 'POST', ['action' => 'validate', 'id' => 1])->status === 405, 'Owner tetap read-only');
+    cancellation_check(cancellation_api('owner', 'POST', ['action' => 'validate', 'id' => 1])->status === 401, 'Owner tetap read-only');
+
+    // Urutan runtime daftar Admin: rank status, selesai terbaru, lalu created_at.
+    q("INSERT INTO pesanan (id,kode,nama_pemesan,status,sumber,total,tgl_kirim,status_updated_at,created_at) VALUES
+        (101,'SORT-PAY','Sort C5','menunggu_pembayaran','online',10000,'2030-11-20 12:00+07','2030-11-18 08:00+07','2030-11-18 08:00+07'),
+        (102,'SORT-VAL','Sort C5','menunggu_validasi','online',10000,'2030-11-20 12:00+07','2030-11-18 09:00+07','2030-11-18 09:00+07'),
+        (103,'SORT-PRO','Sort C5','diproses','online',10000,'2030-11-20 12:00+07','2030-11-18 10:00+07','2030-11-18 10:00+07'),
+        (104,'SORT-DONE-NEW','Sort C5','selesai','online',10000,'2030-11-20 12:00+07','2030-11-20 10:00+07','2030-11-15 10:00+07'),
+        (105,'SORT-DONE-OLD','Sort C5','selesai','online',10000,'2030-11-20 12:00+07','2030-11-19 10:00+07','2030-11-15 10:00+07'),
+        (106,'SORT-REJECT','Sort C5','ditolak','online',10000,'2030-11-20 12:00+07','2030-11-18 12:00+07','2030-11-18 12:00+07'),
+        (107,'SORT-CANCEL','Sort C5','dibatalkan','online',10000,'2030-11-20 12:00+07','2030-11-18 11:00+07','2030-11-17 12:00+07')");
+    $sortedAll = array_column(
+        cancellation_api('admin', 'GET', ['tab' => 'semua', 'q' => 'Sort C5', 'tgl_kirim' => '2030-11-20'])->data['items'],
+        'kode'
+    );
+    cancellation_check(
+        $sortedAll === [
+            'SORT-PAY', 'SORT-VAL', 'SORT-PRO', 'SORT-DONE-NEW', 'SORT-DONE-OLD',
+            'SORT-REJECT', 'SORT-CANCEL',
+        ],
+        'Daftar Admin mengurutkan rank status, selesai terbaru, lalu created_at'
+    );
+    $sortedDone = array_column(
+        cancellation_api('admin', 'GET', ['tab' => 'selesai', 'q' => 'Sort C5', 'tgl_kirim' => '2030-11-20'])->data['items'],
+        'kode'
+    );
+    cancellation_check(
+        $sortedDone === ['SORT-DONE-NEW', 'SORT-DONE-OLD'],
+        'Tab selesai mengurutkan status_updated_at terbaru lebih dulu'
+    );
+    q('DELETE FROM pesanan WHERE id BETWEEN 101 AND 107');
+
+    // C3/C4: penolakan Admin dan penutupan otomatis notifikasi perubahan menu.
+    q("INSERT INTO produk (id,kode,nama,kategori,harga,kuota_harian)
+       VALUES (2,'ALT','Menu Pengganti','makanan',15000,50) ON CONFLICT (id) DO NOTHING");
+    // ID pesanan sebelumnya diisi eksplisit oleh harness; selaraskan sequence.
+    q("SELECT setval(pg_get_serial_sequence('pesanan','id'),
+        (SELECT COALESCE(MAX(id),0)+1 FROM pesanan), false)");
+
+    $menuFixture = static function (
+        string $orderStatus,
+        string $responseStatus,
+        bool $replacement = false,
+        string $createdAt = '2030-11-18 23:30+07',
+        ?string $proof = 'uploads/payments/menu.png'
+    ): array {
+        $orderId = (int) q(
+            "INSERT INTO pesanan (kode,user_id,nama_pemesan,status,sumber,total,tgl_kirim,bukti_bayar,nama_pembayar,created_at)
+             VALUES (?,1,'Penguji',?,'online',36000,'2030-11-20 12:00+07',?, 'Penguji', ?) RETURNING id",
+            ['MN-' . bin2hex(random_bytes(4)), $orderStatus, $proof, $createdAt]
+        )->fetchColumn();
+        $detailId = (int) q(
+            'INSERT INTO detail_pesanan (pesanan_id,produk_id,qty,harga) VALUES (?,1,3,12000) RETURNING id',
+            [$orderId]
+        )->fetchColumn();
+        $noticeId = (int) q(
+            "INSERT INTO pemberitahuan_perubahan_menu
+                (produk_id,kode_produk_snapshot,nama_produk_snapshot,catatan_admin,created_by)
+             VALUES (1,'UJI','Menu Uji','Uji C3/C4',3) RETURNING id"
+        )->fetchColumn();
+        $optionId = (int) q(
+            'INSERT INTO pemberitahuan_perubahan_menu_opsi (pemberitahuan_id,kode_opsi,label)
+             VALUES (?,?,?) RETURNING id',
+            [$noticeId, $replacement ? 'menu_pengganti' : 'hubungi_admin',
+                $replacement ? 'Pilih menu pengganti' : 'Hubungi Admin']
+        )->fetchColumn();
+        $respondedAt = $responseStatus === 'menunggu_respons' ? null : '2030-11-18 23:40+07';
+        $recipientId = (int) q(
+            "INSERT INTO pemberitahuan_perubahan_menu_pesanan
+                (pemberitahuan_id,detail_pesanan_id,produk_lama_id,kode_produk_lama_snapshot,
+                 nama_produk_lama_snapshot,qty_lama,harga_lama,opsi_id,status_respons,responded_at)
+             VALUES (?,?,1,'UJI','Menu Uji',3,12000,?,?,?) RETURNING id",
+            [$noticeId, $detailId, $optionId, $responseStatus, $respondedAt]
+        )->fetchColumn();
+        if ($replacement) {
+            q(
+                "UPDATE pemberitahuan_perubahan_menu_pesanan
+                 SET produk_pengganti_id=2,kode_produk_pengganti_snapshot='ALT',
+                     nama_produk_pengganti_snapshot='Menu Pengganti',qty_pengganti=3,
+                     harga_pengganti=15000,selisih_total=9000
+                 WHERE id=?",
+                [$recipientId]
+            );
+        }
+        return [$orderId, $detailId, $noticeId, $recipientId];
+    };
+    $installClosureFailure = static function (): void {
+        q("CREATE OR REPLACE FUNCTION fail_menu_closure() RETURNS trigger AS \$\$
+           BEGIN
+             IF NEW.jenis_penutupan IS NOT NULL THEN
+               RAISE EXCEPTION 'simulasi gagal menutup notifikasi';
+             END IF;
+             RETURN NEW;
+           END;
+           \$\$ LANGUAGE plpgsql");
+        q('CREATE TRIGGER fail_menu_closure BEFORE UPDATE ON pemberitahuan_perubahan_menu_pesanan
+           FOR EACH ROW EXECUTE FUNCTION fail_menu_closure()');
+    };
+    $removeClosureFailure = static function (): void {
+        q('DROP TRIGGER IF EXISTS fail_menu_closure ON pemberitahuan_perubahan_menu_pesanan');
+        q('DROP FUNCTION IF EXISTS fail_menu_closure()');
+    };
+
+    // C3: Admin rejects a replacement with a required reason.
+    [$rejectOrderId, $rejectDetailId, $rejectNoticeId, $rejectRecipientId] = $menuFixture(
+        'diproses',
+        'menunggu_konfirmasi',
+        true
+    );
+    $rejectResponse = cancellation_menu_api('admin', 'POST', [
+        'action' => 'reject_replacement',
+        'id' => $rejectRecipientId,
+        'alasan_penolakan' => 'Stok pengganti habis.',
+    ], 'admin', 3);
+    $rejectedRow = q(
+        'SELECT status_respons,jenis_penutupan,alasan_penutupan,ditutup_oleh,ditutup_at,confirmed_by
+         FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+        [$rejectRecipientId]
+    )->fetch();
+    $rejectedDetail = q('SELECT produk_id,qty,harga FROM detail_pesanan WHERE id=?', [$rejectDetailId])->fetch();
+    $rejectedOrder = q('SELECT total,status,bukti_bayar,nama_pembayar FROM pesanan WHERE id=?', [$rejectOrderId])->fetch();
+    cancellation_check(
+        $rejectResponse->status === 200
+        && $rejectResponse->data['result']['status_respons'] === 'selesai'
+        && $rejectedRow['status_respons'] === 'selesai'
+        && $rejectedRow['jenis_penutupan'] === 'penolakan_pengganti'
+        && $rejectedRow['alasan_penutupan'] === 'Stok pengganti habis.'
+        && (int) $rejectedRow['ditutup_oleh'] === 3
+        && $rejectedRow['ditutup_at'] !== null
+        && $rejectedRow['confirmed_by'] === null
+        && (int) $rejectedDetail['produk_id'] === 1
+        && (int) $rejectedDetail['qty'] === 3
+        && (int) $rejectedDetail['harga'] === 12000
+        && (int) $rejectedOrder['total'] === 36000
+        && $rejectedOrder['status'] === 'diproses'
+        && $rejectedOrder['bukti_bayar'] === 'uploads/payments/menu.png'
+        && $rejectedOrder['nama_pembayar'] === 'Penguji',
+        'Admin menolak penggantian dengan alasan tanpa mengubah detail, total, atau pembayaran'
+    );
+    $customerRejectNotice = cancellation_menu_api(
+        'pelanggan',
+        'GET',
+        ['action' => 'detail', 'id' => $rejectNoticeId],
+        'pelanggan',
+        1
+    )->data;
+    $customerRejectRecipient = null;
+    foreach ($customerRejectNotice['penerima'] as $entry) {
+        if ((int) $entry['id'] === $rejectRecipientId) {
+            $customerRejectRecipient = $entry;
+            break;
+        }
+    }
+    $rejectOrderDetail = cancellation_api('pelanggan', 'GET', ['id' => $rejectOrderId])->data;
+    $orderNoticeEntry = null;
+    foreach ($rejectOrderDetail['menu_notifications'] as $entry) {
+        if ((int) $entry['penerima_id'] === $rejectRecipientId) {
+            $orderNoticeEntry = $entry;
+            break;
+        }
+    }
+    cancellation_check(
+        $customerRejectRecipient !== null
+        && $customerRejectRecipient['jenis_penutupan'] === 'penolakan_pengganti'
+        && $customerRejectRecipient['alasan_penutupan'] === 'Stok pengganti habis.'
+        && $customerRejectRecipient['bisa_merespons'] === false
+        && $orderNoticeEntry !== null
+        && $orderNoticeEntry['jenis_penutupan'] === 'penolakan_pengganti'
+        && $orderNoticeEntry['alasan_penutupan'] === 'Stok pengganti habis.',
+        'Pelanggan membaca alasan penolakan pada detail notifikasi dan detail pesanan'
+    );
+    cancellation_check(
+        cancellation_menu_api('admin', 'POST', [
+            'action' => 'reject_replacement',
+            'id' => $rejectRecipientId,
+            'alasan_penolakan' => 'Penolakan kedua.',
+        ], 'admin', 3)->status === 409,
+        'Penolakan kedua ditolak setelah status selesai'
+    );
+
+    [, , , $emptyRejectRecipientId] = $menuFixture('diproses', 'menunggu_konfirmasi', true);
+    cancellation_check(
+        cancellation_menu_api('admin', 'POST', [
+            'action' => 'reject_replacement',
+            'id' => $emptyRejectRecipientId,
+            'alasan_penolakan' => "  \n ",
+        ], 'admin', 3)->status === 422
+        && q(
+            'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$emptyRejectRecipientId]
+        )->fetchColumn() === 'menunggu_konfirmasi',
+        'Alasan penolakan kosong ditolak tanpa mengubah status'
+    );
+
+    [, , , $ownerRejectRecipientId] = $menuFixture('diproses', 'menunggu_konfirmasi', true);
+    cancellation_check(
+        cancellation_menu_api('admin', 'POST', [
+            'action' => 'reject_replacement',
+            'id' => $ownerRejectRecipientId,
+            'alasan_penolakan' => 'Owner tidak boleh.',
+        ], 'owner', 4)->status === 403
+        && cancellation_menu_api('admin', 'POST', [
+            'action' => 'reject_replacement',
+            'id' => $ownerRejectRecipientId,
+            'alasan_penolakan' => 'Pelanggan tidak boleh.',
+        ], 'pelanggan', 1)->status === 401
+        && q(
+            'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$ownerRejectRecipientId]
+        )->fetchColumn() === 'menunggu_konfirmasi',
+        'Owner dan pelanggan tidak dapat menolak penggantian'
+    );
+
+    // C4: cancellation closes all open recipients, leaves completed ones intact.
+    putenv('SENOESA_TEST_NOW=2030-11-18T23:59:59+07:00');
+    foreach (['menunggu_respons', 'menunggu_konfirmasi', 'menunggu_tindak_lanjut'] as $openStatus) {
+        [$closureOrderId, $closureDetailId, , $closureRecipientId] = $menuFixture(
+            'diproses',
+            $openStatus,
+            $openStatus === 'menunggu_konfirmasi'
+        );
+        $closureResponse = cancellation_api('pelanggan', 'POST', [
+            'action' => 'cancel_order',
+            'id' => $closureOrderId,
+        ]);
+        $closedRow = q(
+            'SELECT status_respons,jenis_penutupan,alasan_penutupan,ditutup_oleh,ditutup_at
+             FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$closureRecipientId]
+        )->fetch();
+        $closedDetail = q('SELECT produk_id,qty,harga FROM detail_pesanan WHERE id=?', [$closureDetailId])->fetch();
+        $closedOrder = q('SELECT total,status,bukti_bayar,nama_pembayar FROM pesanan WHERE id=?', [$closureOrderId])->fetch();
+        cancellation_check(
+            $closureResponse->status === 200
+            && $closedOrder['status'] === 'dibatalkan'
+            && (int) $closedOrder['total'] === 36000
+            && $closedOrder['bukti_bayar'] === 'uploads/payments/menu.png'
+            && $closedRow['status_respons'] === 'selesai'
+            && $closedRow['jenis_penutupan'] === 'pembatalan_pesanan'
+            && $closedRow['alasan_penutupan'] === 'Pesanan dibatalkan oleh pelanggan.'
+            && (int) $closedRow['ditutup_oleh'] === 1
+            && $closedRow['ditutup_at'] !== null
+            && (int) $closedDetail['produk_id'] === 1
+            && (int) $closedDetail['qty'] === 3
+            && (int) $closedDetail['harga'] === 12000
+            && (int) q(
+                'SELECT COUNT(*) FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+                [$closureRecipientId]
+            )->fetchColumn() === 1,
+            'Pembatalan menutup notifikasi ' . $openStatus . ' tanpa menghapus riwayat'
+        );
+    }
+    foreach (['selesai', 'dikonfirmasi'] as $completedStatus) {
+        [$completedOrderId, , , $completedRecipientId] = $menuFixture(
+            'diproses',
+            $completedStatus
+        );
+        cancellation_check(
+            cancellation_api('pelanggan', 'POST', [
+                'action' => 'cancel_order',
+                'id' => $completedOrderId,
+            ])->status === 200
+            && q(
+                'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+                [$completedRecipientId]
+            )->fetchColumn() === $completedStatus
+            && q(
+                'SELECT jenis_penutupan FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+                [$completedRecipientId]
+            )->fetchColumn() === null,
+            'Pembatalan tidak menimpa notifikasi ' . $completedStatus
+        );
+    }
+
+    [$respondOrderId, , , $respondRecipientId] = $menuFixture('diproses', 'menunggu_respons');
+    cancellation_api('pelanggan', 'POST', ['action' => 'cancel_order', 'id' => $respondOrderId]);
+    cancellation_check(
+        cancellation_menu_api('pelanggan', 'POST', [
+            'action' => 'respond',
+            'id' => $respondRecipientId,
+            'opsi' => 'hubungi_admin',
+        ], 'pelanggan', 1)->status === 409
+        && (function () use ($respondRecipientId): bool {
+            $noticeId = (int) q(
+                'SELECT pemberitahuan_id FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+                [$respondRecipientId]
+            )->fetchColumn();
+            $detail = cancellation_menu_api(
+                'pelanggan',
+                'GET',
+                ['action' => 'detail', 'id' => $noticeId],
+                'pelanggan',
+                1
+            )->data;
+            foreach ($detail['penerima'] as $entry) {
+                if ((int) $entry['id'] === $respondRecipientId) {
+                    return $entry['bisa_merespons'] === false;
+                }
+            }
+            return false;
+        })(),
+        'Pelanggan tidak dapat merespons setelah pesanan dibatalkan'
+    );
+
+    [$blockedConfirmOrderId, , , $blockedConfirmRecipientId] = $menuFixture(
+        'diproses',
+        'menunggu_konfirmasi',
+        true
+    );
+    cancellation_api('pelanggan', 'POST', ['action' => 'cancel_order', 'id' => $blockedConfirmOrderId]);
+    cancellation_check(
+        cancellation_menu_api('admin', 'POST', [
+            'action' => 'confirm',
+            'id' => $blockedConfirmRecipientId,
+        ], 'admin', 3)->status === 409
+        && cancellation_menu_api('admin', 'POST', [
+            'action' => 'reject_replacement',
+            'id' => $blockedConfirmRecipientId,
+            'alasan_penolakan' => 'Pesanan sudah batal.',
+        ], 'admin', 3)->status === 409,
+        'Admin tidak dapat menyetujui atau menolak penggantian pada pesanan batal'
+    );
+
+    [$atomicOrderId, , , $atomicRecipientId] = $menuFixture('diproses', 'menunggu_respons');
+    $installClosureFailure();
+    $atomicCancel = cancellation_api('pelanggan', 'POST', ['action' => 'cancel_order', 'id' => $atomicOrderId]);
+    $removeClosureFailure();
+    cancellation_check(
+        $atomicCancel->status === 500
+        && q('SELECT status FROM pesanan WHERE id=?', [$atomicOrderId])->fetchColumn() === 'diproses'
+        && q(
+            'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$atomicRecipientId]
+        )->fetchColumn() === 'menunggu_respons',
+        'Gagal menutup notifikasi membatalkan seluruh transaksi pembatalan'
+    );
+
+    // C4: expiration job closes notifications atomically.
+    [$expireOpenOrderId, , , $expireOpenRecipientId] = $menuFixture(
+        'menunggu_pembayaran',
+        'menunggu_respons',
+        false,
+        '2030-11-18 22:00+07',
+        null
+    );
+    [$expireDoneOrderId, , , $expireDoneRecipientId] = $menuFixture(
+        'menunggu_pembayaran',
+        'selesai',
+        false,
+        '2030-11-18 22:00+07',
+        null
+    );
+    putenv('SENOESA_TEST_NOW=2030-11-19T00:30:00+07:00');
+    [$expireExit, $expireOutput] = cancellation_job('--apply');
+    $expiredOpenRow = q(
+        'SELECT status_respons,jenis_penutupan,alasan_penutupan,ditutup_oleh,ditutup_at
+         FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+        [$expireOpenRecipientId]
+    )->fetch();
+    cancellation_check(
+        $expireExit === 0
+        && str_contains($expireOutput, 'Dibatalkan: 2')
+        && q('SELECT status FROM pesanan WHERE id=?', [$expireOpenOrderId])->fetchColumn() === 'dibatalkan'
+        && q('SELECT status FROM pesanan WHERE id=?', [$expireDoneOrderId])->fetchColumn() === 'dibatalkan'
+        && $expiredOpenRow['status_respons'] === 'selesai'
+        && $expiredOpenRow['jenis_penutupan'] === 'kedaluwarsa_pesanan'
+        && $expiredOpenRow['alasan_penutupan'] === 'Pesanan dibatalkan otomatis karena kedaluwarsa pembayaran.'
+        && $expiredOpenRow['ditutup_oleh'] === null
+        && $expiredOpenRow['ditutup_at'] !== null
+        && q(
+            'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$expireDoneRecipientId]
+        )->fetchColumn() === 'selesai'
+        && q(
+            'SELECT jenis_penutupan FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$expireDoneRecipientId]
+        )->fetchColumn() === null,
+        'Job kedaluwarsa menutup notifikasi terbuka tanpa aktor dan tidak menimpa yang selesai'
+    );
+
+    [$expireAtomicOrderId, , , $expireAtomicRecipientId] = $menuFixture(
+        'menunggu_pembayaran',
+        'menunggu_respons',
+        false,
+        '2030-11-18 22:00+07',
+        null
+    );
+    $installClosureFailure();
+    [$expireAtomicExit, , $expireAtomicErrors] = cancellation_job('--apply');
+    $removeClosureFailure();
+    cancellation_check(
+        $expireAtomicExit === 1
+        && q('SELECT status FROM pesanan WHERE id=?', [$expireAtomicOrderId])->fetchColumn() === 'menunggu_pembayaran'
+        && q(
+            'SELECT status_respons FROM pemberitahuan_perubahan_menu_pesanan WHERE id=?',
+            [$expireAtomicRecipientId]
+        )->fetchColumn() === 'menunggu_respons',
+        'Job kedaluwarsa rollback total saat penutupan notifikasi gagal'
+    );
+
     foreach (['test-daily-quota.php', 'test-quota-api.php', 'test-payment-deadline.php'] as $file) {
         [$exit, $output, $errors] = cancellation_finish(cancellation_child(['--existing', $file]));
         if ($exit !== 0 || $errors !== '') throw new RuntimeException($file . ': ' . $output . $errors);

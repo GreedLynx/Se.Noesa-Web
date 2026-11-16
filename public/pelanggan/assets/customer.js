@@ -61,7 +61,7 @@ function imagePath(name) {
 }
 
 let catalog = [], productCache = {
-}, category = '', schedule = null, cart = {
+}, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
     wireLogout();
@@ -124,7 +124,10 @@ function catalogPage() {
         $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
         try {
             await loadCatalog();
-            $('#schedule-note').textContent = 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.'
+            $('#schedule-note').textContent = catalogClosed
+                ? 'Tanggal ini libur. Pesanan untuk tanggal tersebut tidak dapat dikirim.'
+                : 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.';
+            $('#submit-order').disabled = catalogClosed;
         } catch (err) {
             $('#checkout-error').textContent = err.message
         }
@@ -147,6 +150,11 @@ async function loadCatalog(animate = false) {
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
+    catalogClosed = Boolean(d.tanggal_libur);
+    $('#delivery-hint').textContent = catalogClosed
+        ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
+        : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    $('#checkout-button').disabled = catalogClosed;
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -273,6 +281,10 @@ function renderCart() {
 }
 
 function openCart() {
+    if (catalogClosed) {
+        toast('Tanggal pengiriman ini libur. Silakan pilih tanggal lain.');
+        return;
+    }
     const lines = $('#cart-lines');
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
@@ -325,8 +337,11 @@ async function openCheckout() {
     form.elements.tgl_kirim.min = $('#catalog-delivery-date').min;
     form.elements.tgl_kirim.removeAttribute('max');
     form.elements.tgl_kirim.value = $('#catalog-delivery-date').value;
-    $('#schedule-note').textContent = 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
+    $('#schedule-note').textContent = catalogClosed
+        ? 'Tanggal ini libur. Pesanan untuk tanggal tersebut tidak dapat dikirim.'
+        : 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
     $('#checkout-error').textContent = '';
+    $('#submit-order').disabled = catalogClosed;
     $('#checkout-dialog').showModal()
 }
 
@@ -334,6 +349,10 @@ async function submitOrder(e) {
     e.preventDefault();
     const form = e.currentTarget,
         button = $('#submit-order');
+    if (catalogClosed) {
+        $('#checkout-error').textContent = 'Tanggal pengiriman ini libur. Silakan pilih tanggal lain.';
+        return;
+    }
     button.disabled = true;
     $('#checkout-error').textContent = '';
     try {
@@ -433,6 +452,22 @@ async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
     const items = d.items.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
+    const menuNoticeLabels = {
+        menunggu_respons: 'Menunggu responsmu',
+        menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+        menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+        dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+        selesai: 'Tindak lanjut selesai',
+    };
+    const menuNotices = Array.isArray(d.menu_notifications) ? d.menu_notifications : [];
+    const menuNoticeSection = menuNotices.length
+        ? '<section class="detail-section"><h3>Notifikasi perubahan menu</h3>' + menuNotices.map(notice =>
+            '<div class="detail-menu-line"><span><b>' + esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot)
+            + '</b><small>' + esc(menuNoticeLabels[notice.status_respons] || notice.status_respons || '')
+            + ' · ' + esc(notice.catatan_admin || '') + '</small></span><a class="customer-button secondary" href="menu-notifications.php?notice_id='
+            + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
+        ).join('') + '</section>'
+        : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
         + '" alt="Bukti pembayaran">' : '';
     const paymentData = await api('api/payment-methods.php');
@@ -516,6 +551,7 @@ async function openHistoryDetail(id) {
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + money(d.total) + '</b></div>' 
+        + menuNoticeSection
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 
