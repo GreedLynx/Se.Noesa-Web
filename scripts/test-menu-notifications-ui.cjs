@@ -29,7 +29,29 @@ const element = (extra = {}) => ({
 
 async function testAdminAndOwner() {
   for (const mode of ["admin", "owner"]) {
-    const listEl = element();
+    const listEl = element({
+      listeners: {},
+      addEventListener(type, handler) {
+        this.listeners[type] = handler;
+      },
+    });
+    const detailBody = element();
+    const detailDialog = {
+      open: false,
+      showModal() {
+        this.open = true;
+      },
+      close() {
+        this.open = false;
+      },
+      querySelector(selector) {
+        return selector === "[data-mn-detail-body]" ? detailBody : null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+      addEventListener() {},
+    };
     const root = {
       dataset: {
         mode,
@@ -42,13 +64,135 @@ async function testAdminAndOwner() {
       getElementById(id) {
         if (id === "mn-page") return root;
         if (id === "mn-list") return listEl;
+        if (id === "mn-detail-dialog") return detailDialog;
         return null;
       },
       querySelectorAll() {
         return [];
       },
     };
-    const api = async () => ({
+    const recipients = [
+      {
+        id: 21,
+        status_respons: "menunggu_respons",
+        status_penyelesaian_selisih: "belum_dihitung",
+        opsi: null,
+        menu_lama: { nama: "Menu Lama", qty: 3, harga: 12000, total: 36000 },
+        menu_pengganti: null,
+        selisih_total: null,
+        total_pesanan_lama: null,
+        total_pesanan_baru: null,
+        catatan_respons: null,
+        responded_at: null,
+        catatan_tindak_lanjut: null,
+        pesanan: {
+          id: 31,
+          kode: "SN-OFF-1",
+          status: "diproses",
+          tanggal_kirim: "2026-11-20",
+        },
+        pelanggan: { nama: "Pelanggan Offline", kanal: "offline" },
+      },
+      {
+        id: 22,
+        status_respons: "menunggu_respons",
+        status_penyelesaian_selisih: "belum_dihitung",
+        opsi: null,
+        menu_lama: { nama: "Menu Lama", qty: 4, harga: 12000, total: 48000 },
+        menu_pengganti: null,
+        selisih_total: null,
+        total_pesanan_lama: null,
+        total_pesanan_baru: null,
+        catatan_respons: null,
+        responded_at: null,
+        catatan_tindak_lanjut: null,
+        pesanan: {
+          id: 32,
+          kode: "SN-ON-1",
+          status: "diproses",
+          tanggal_kirim: "2026-11-20",
+        },
+        pelanggan: { nama: "Pelanggan Online", kanal: "online" },
+      },
+      {
+        id: 23,
+        status_respons: "menunggu_tindak_lanjut",
+        status_penyelesaian_selisih: "belum_dihitung",
+        opsi: { kode_opsi: "hubungi_admin", label: "Hubungi Admin" },
+        menu_lama: { nama: "Menu Lama", qty: 2, harga: 12000, total: 24000 },
+        menu_pengganti: null,
+        selisih_total: null,
+        total_pesanan_lama: null,
+        total_pesanan_baru: null,
+        catatan_respons: null,
+        responded_at: "2026-11-16T01:00:00+07:00",
+        catatan_tindak_lanjut: null,
+        pesanan: {
+          id: 33,
+          kode: "SN-ON-2",
+          status: "diproses",
+          tanggal_kirim: "2026-11-20",
+        },
+        pelanggan: { nama: "Pelanggan Online 2", kanal: "online" },
+      },
+      {
+        id: 24,
+        status_respons: "menunggu_konfirmasi",
+        status_penyelesaian_selisih: "belum_dihitung",
+        opsi: { kode_opsi: "menu_pengganti", label: "Pilih menu pengganti" },
+        menu_lama: { nama: "Menu Lama", qty: 4, harga: 12000, total: 48000 },
+        menu_pengganti: { nama: "Menu Pengganti", qty: 4, harga: 15000, total: 60000 },
+        selisih_total: 12000,
+        total_pesanan_lama: null,
+        total_pesanan_baru: null,
+        catatan_respons: null,
+        responded_at: "2026-11-16T01:00:00+07:00",
+        catatan_tindak_lanjut: null,
+        jenis_penutupan: null,
+        alasan_penutupan: null,
+        pesanan: {
+          id: 34,
+          kode: "SN-ON-3",
+          status: "diproses",
+          tanggal_kirim: "2026-11-20",
+        },
+        pelanggan: { nama: "Pelanggan Online 3", kanal: "online" },
+      },
+      {
+        id: 25,
+        status_respons: "selesai",
+        status_penyelesaian_selisih: "belum_dihitung",
+        opsi: { kode_opsi: "menu_pengganti", label: "Pilih menu pengganti" },
+        menu_lama: { nama: "Menu Lama", qty: 4, harga: 12000, total: 48000 },
+        menu_pengganti: { nama: "Menu Pengganti", qty: 4, harga: 15000, total: 60000 },
+        selisih_total: 12000,
+        total_pesanan_lama: null,
+        total_pesanan_baru: null,
+        catatan_respons: null,
+        responded_at: "2026-11-16T01:00:00+07:00",
+        catatan_tindak_lanjut: null,
+        jenis_penutupan: "penolakan_pengganti",
+        alasan_penutupan: "Stok pengganti habis.",
+        pesanan: {
+          id: 35,
+          kode: "SN-ON-4",
+          status: "dibatalkan",
+          tanggal_kirim: "2026-11-20",
+        },
+        pelanggan: { nama: "Pelanggan Online 4", kanal: "online" },
+      },
+    ];
+    const detailPayload = {
+      id: 5,
+      produk: { kode: "OLD-01", nama: "Menu Lama" },
+      catatan_admin: "Menu sedang tidak tersedia.",
+      created_at: "2026-11-16T01:00:00+07:00",
+      created_by: { username: "admin" },
+      opsi: [{ kode_opsi: "hubungi_admin", label: "Hubungi Admin" }],
+      penerima: recipients,
+      ringkasan: { jumlah_penerima: 5, sudah_merespons: 2, belum_merespons: 3, offline: 1 },
+    };
+    const listPayload = {
       items: [
         {
           id: 5,
@@ -66,9 +210,11 @@ async function testAdminAndOwner() {
         },
       ],
       total: 1,
-    });
+    };
+    const api = async (url) =>
+      String(url).includes("action=detail") ? detailPayload : listPayload;
 
-    const context = vm.createContext({ document, api });
+    const context = vm.createContext({ document, api, confirm: () => true });
     vm.runInContext(
       fs.readFileSync("public/assets/js/menu-notifications.js", "utf8"),
       context,
@@ -85,6 +231,43 @@ async function testAdminAndOwner() {
       listEl.html,
       mode === "owner" ? /owner-secondary/ : /button secondary small/,
     );
+
+    listEl.listeners.click({
+      target: {
+        closest(selector) {
+          return selector === "[data-mn-detail]"
+            ? { dataset: { mnDetail: "5" } }
+            : null;
+        },
+      },
+    });
+    await flush();
+
+    assert.match(detailBody.innerHTML, /Pelanggan Offline/);
+    assert.match(detailBody.innerHTML, /Pelanggan Online/);
+    assert.match(detailBody.innerHTML, /mn-chip offline">Offline/);
+    assert.match(detailBody.innerHTML, /mn-chip">Online/);
+    if (mode === "owner") {
+      assert.doesNotMatch(detailBody.innerHTML, /data-followup-note=/);
+      assert.doesNotMatch(detailBody.innerHTML, /complete_follow_up/);
+      assert.doesNotMatch(detailBody.innerHTML, /reject_replacement/);
+      assert.doesNotMatch(detailBody.innerHTML, /data-reject-reason=/);
+    } else {
+      assert.match(detailBody.innerHTML, /data-followup-note="21"/);
+      assert.match(detailBody.innerHTML, /complete_follow_up" data-recipient="21"/);
+      assert.doesNotMatch(detailBody.innerHTML, /data-followup-note="22"/);
+      assert.doesNotMatch(detailBody.innerHTML, /complete_follow_up" data-recipient="22"/);
+      assert.match(detailBody.innerHTML, /data-followup-note="23"/);
+      assert.match(detailBody.innerHTML, /complete_follow_up" data-recipient="23"/);
+      assert.match(detailBody.innerHTML, /data-mn-action="confirm" data-recipient="24"/);
+      assert.match(detailBody.innerHTML, /data-reject-reason="24"/);
+      assert.match(detailBody.innerHTML, /data-mn-action="reject_replacement" data-recipient="24"/);
+    }
+    assert.match(
+      detailBody.innerHTML,
+      /Penggantian ditolak Admin: Stok pengganti habis\./,
+    );
+    assert.doesNotMatch(detailBody.innerHTML, /data-reject-reason="25"/);
   }
 }
 
@@ -176,9 +359,40 @@ async function testCustomer() {
               tgl_kirim: "2026-11-20T12:00:00+07:00",
               tanggal_kirim: "2026-11-20",
             },
+            jenis_penutupan: null,
+            alasan_penutupan: null,
+          },
+          {
+            id: 12,
+            status_respons: "selesai",
+            status_penyelesaian_selisih: "belum_dihitung",
+            bisa_merespons: false,
+            opsi: { kode_opsi: "menu_pengganti", label: "Pilih menu pengganti" },
+            menu_lama: { nama: "Menu Lama", qty: 4, harga: 12000, total: 48000 },
+            menu_pengganti: {
+              nama: "Menu Pengganti",
+              qty: 4,
+              harga: 15000,
+              total: 60000,
+            },
+            selisih_total: 12000,
+            total_pesanan_lama: null,
+            total_pesanan_baru: null,
+            catatan_respons: null,
+            responded_at: "2026-11-16T01:00:00+07:00",
+            pilihan_menu: [],
+            pesanan: {
+              id: 10,
+              kode: "SN-10",
+              status: "dibatalkan",
+              tgl_kirim: "2026-11-20T12:00:00+07:00",
+              tanggal_kirim: "2026-11-20",
+            },
+            jenis_penutupan: "penolakan_pengganti",
+            alasan_penutupan: "Stok habis.",
           },
         ],
-        ringkasan: { jumlah_penerima: 1, sudah_merespons: 0, belum_merespons: 1, belum_dibaca: 1 },
+        ringkasan: { jumlah_penerima: 2, sudah_merespons: 1, belum_merespons: 1, belum_dibaca: 1 },
         belum_dibaca: 1,
       };
     }
@@ -229,6 +443,9 @@ async function testCustomer() {
   assert.match(detailEl.innerHTML, /Pilih tindakan/);
   assert.match(detailEl.innerHTML, /data-respond="11"/);
   assert.match(detailEl.innerHTML, /Rp 48.000/);
+  assert.match(detailEl.innerHTML, /Penggantian ditolak Admin — Stok habis\./);
+  assert.match(detailEl.innerHTML, /Admin menolak pilihan menu pengganti/);
+  assert.doesNotMatch(detailEl.innerHTML, /data-respond="12"/);
   assert.ok(dialog.open, "Detail dialog dibuka dari tautan notice_id");
 
   const readCall = calls.find(

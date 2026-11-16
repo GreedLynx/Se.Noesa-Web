@@ -341,6 +341,7 @@ if ($action === 'detail') {
                 r.qty_pengganti, r.harga_pengganti,
                 r.selisih_total, r.total_pesanan_lama, r.total_pesanan_baru,
                 r.catatan_respons,
+                r.jenis_penutupan, r.alasan_penutupan, r.ditutup_oleh, r.ditutup_at,
                 r.dibaca_at, r.responded_at,
                 p.id AS pesanan_id, p.kode AS kode_pesanan,
                 p.status AS status_pesanan, p.tgl_kirim,
@@ -441,6 +442,10 @@ if ($action === 'detail') {
                 ? (int) $row['total_pesanan_baru']
                 : null,
             'catatan_respons' => $row['catatan_respons'],
+            'jenis_penutupan' => $row['jenis_penutupan'],
+            'alasan_penutupan' => $row['alasan_penutupan'],
+            'ditutup_oleh' => $row['ditutup_oleh'] !== null ? (int) $row['ditutup_oleh'] : null,
+            'ditutup_at' => mnc_iso($row['ditutup_at']),
             'dibaca_at' => mnc_iso($row['dibaca_at']),
             'responded_at' => mnc_iso($row['responded_at']),
             'pilihan_menu' => $choices,

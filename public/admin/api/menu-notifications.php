@@ -206,7 +206,7 @@ if ($method === 'POST') {
 
     $request = body();
     $action = $request['action'] ?? 'create';
-    if (in_array($action, ['confirm', 'settle_difference', 'complete_follow_up'], true)) {
+    if (in_array($action, ['confirm', 'reject_replacement', 'settle_difference', 'complete_follow_up'], true)) {
         $recipientId = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
         if ($recipientId === false || $recipientId < 1) {
             api_json(['error' => 'ID penerima tidak valid'], 422);
@@ -217,6 +217,20 @@ if ($method === 'POST') {
                 api_json([
                     'ok' => true,
                     'result' => menu_notice_confirm_replacement((int) $recipientId, (int) $user['id']),
+                ]);
+            }
+            if ($action === 'reject_replacement') {
+                $reason = trim((string) ($request['alasan_penolakan'] ?? ''));
+                if ($reason === '') {
+                    api_json(['error' => 'Alasan penolakan penggantian wajib diisi'], 422);
+                }
+                api_json([
+                    'ok' => true,
+                    'result' => menu_notice_reject_replacement(
+                        (int) $recipientId,
+                        (int) $user['id'],
+                        $reason
+                    ),
                 ]);
             }
             if ($action === 'settle_difference') {
@@ -274,6 +288,10 @@ if ($method === 'POST') {
     $db = db();
     $db->beginTransaction();
     try {
+        // Kunci per produk selalu diambil paling awal. Target dihitung ulang
+        // setelah lock agar Admin kedua melihat notifikasi yang baru di-commit
+        // Admin pertama, dan urutan lock tidak pernah terbalik.
+        menu_notice_lock_creation($productId);
         // Target dihitung ulang di server dan baris pesanan dikunci sampai commit.
         $targets = menu_notice_targets($productId, true);
         $eligible = [];
@@ -429,6 +447,7 @@ if ($action === 'detail') {
                 r.selisih_diselesaikan_oleh, r.selisih_diselesaikan_at,
                 r.total_pesanan_lama, r.total_pesanan_baru,
                 r.tindak_lanjut_oleh, r.tindak_lanjut_at, r.catatan_tindak_lanjut,
+                r.jenis_penutupan, r.alasan_penutupan, r.ditutup_oleh, r.ditutup_at,
                 p.id AS pesanan_id, p.kode AS kode_pesanan, p.nama_pemesan,
                 p.status AS status_pesanan, p.sumber, p.tgl_kirim,
                 p.telepon_penerima, p.user_id,
@@ -493,6 +512,10 @@ if ($action === 'detail') {
             'tindak_lanjut_oleh' => $row['tindak_lanjut_oleh'] !== null ? (int) $row['tindak_lanjut_oleh'] : null,
             'tindak_lanjut_at' => menu_notice_iso($row['tindak_lanjut_at']),
             'catatan_tindak_lanjut' => $row['catatan_tindak_lanjut'],
+            'jenis_penutupan' => $row['jenis_penutupan'],
+            'alasan_penutupan' => $row['alasan_penutupan'],
+            'ditutup_oleh' => $row['ditutup_oleh'] !== null ? (int) $row['ditutup_oleh'] : null,
+            'ditutup_at' => menu_notice_iso($row['ditutup_at']),
             'pesanan' => menu_notice_shape_order($row),
             'pelanggan' => menu_notice_shape_customer($row),
         ];
