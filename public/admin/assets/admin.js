@@ -890,6 +890,12 @@ async function orderDetail() {
             esc(proofUrl) +
             '" alt="Bukti transfer pelanggan"></a>'
         : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
+    // Khusus status menunggu_pembayaran: tampilkan catatan eksplisit bila bukti kosong
+    const proofPending = raw
+        ? proof
+        : '<div class="proof-empty"><span>?</span><b>Tidak ada bukti pembayaran</b>' +
+          '<p class="muted">Pelanggan belum mengunggah bukti transfer untuk pesanan ini. ' +
+          'Pesanan akan otomatis dibatalkan bila bukti tidak diunggah dalam 1 jam.</p></div>';
     const proofPanel = '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti transfer pelanggan</h2><span class="tag soft">QRIS</span></div>' + proof + '</article>';
     const receipt =
         '<article class="panel"><div class="panel-heading"><h2>Data pada pembayaran</h2><span class="tag soft">QRIS</span></div><div class="detail-pair"><span>Nama pengirim</span><b>' +
@@ -1006,7 +1012,7 @@ async function orderDetail() {
         money(o.total) +
         '</b></div></article>' +
         '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' +
-        proof +
+        proofPending +
         "</article>";
     const dispatchView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">DETAIL PESANAN</p><h2>' +
@@ -1046,8 +1052,18 @@ async function orderDetail() {
                 esc(cancellationTime(o.reviewed_at)) + '.</p>' : '<p class="cancellation-unreviewed">Belum ditinjau.</p>') +
             '<p class="muted">Sudah ditinjau berarti pembatalan telah diperiksa, bukan konfirmasi refund selesai.</p></article>'
         : '';
-    $("#order-detail").innerHTML = isValidation ? validationView : cancellationInfo + dispatchView +
-        (o.status === "dibatalkan" ? proofPanel + receipt : '');
+        
+    // ==========================================
+    // PERBAIKAN: RENDER HTML UNTUK SEMUA STATUS
+    // ==========================================
+    const proofSection = isPendingPayment 
+        ? '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' + proofPending + '</article>'
+        : (o.status === "dibatalkan" ? proofPanel + receipt : '');
+
+    $("#order-detail").innerHTML = isValidation 
+        ? validationView 
+        : cancellationInfo + dispatchView + proofSection;
+
     const actions = $("#detail-actions");
     const rejectionDialog = $("#reject-order-dialog");
     const rejectionForm = $("#reject-order-form");
