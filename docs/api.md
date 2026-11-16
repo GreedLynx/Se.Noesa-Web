@@ -35,6 +35,116 @@ POST `admin/api/orders.php` dengan `action=reject` wajib menyertakan
 `alasan_penolakan` (1–500 karakter). Nilai disimpan bersama status ditolak dan
 dikirim ke detail/riwayat pesanan milik pelanggan agar alasan penolakan jelas.
 
+### Notifikasi perubahan menu Admin/Owner
+
+Endpoint `admin/api/menu-notifications.php` dipakai Admin untuk membuat notifikasi
+dan Owner untuk membaca. GET tersedia untuk Admin/Owner; POST hanya Admin
+(Owner mendapat HTTP 403). Aksi `create` tidak mengubah pesanan. Aksi
+`confirm` memperbarui detail menu dan total pesanan hanya setelah pelanggan
+memilih pengganti dan Admin menyetujuinya; status pesanan/pembayaran dan
+konfigurasi kuota tidak diubah.
+
+Target dihitung ulang oleh server dari `detail_pesanan`. Pesanan aktif adalah
+`menunggu_pembayaran`, `menunggu_validasi`, dan `diproses`; status terminal tidak
+pernah menjadi target baru. Menu dianggap tidak tersedia bila kuota efektif
+`COALESCE(kuota_harian.kuota, produk.kuota_harian)` pada tanggal kirim
+Asia/Jakarta bernilai 0. Override positif tetap membuat menu tersedia meskipun
+default produk 0. Pesanan offline ikut ditautkan untuk tindak lanjut manual,
+tetapi ditandai `notifikasi_in_app=false` karena tidak memiliki `user_id`.
+
+- GET `?action=list&limit=20&offset=0` mengembalikan riwayat
+  `{items,total,limit,offset}`. Setiap item memuat snapshot produk, catatan,
+  pembuat, jumlah target/pesanan, online/offline, serta jumlah yang sudah dan
+  belum merespons. `limit` dibatasi 1–100.
+- GET `?action=preview&produk_id=...` mengembalikan produk, daftar target aktif
+  yang terdampak, dan ringkasan per tanggal. Setiap target memuat detail pesanan,
+  qty/harga snapshot, status pesanan, data pelanggan, kanal online/offline, serta
+  `sudah_dinotifikasi`.
+- GET `?action=detail&id=...` mengembalikan header notifikasi, opsi, seluruh
+  penerima, snapshot menu lama, menu pengganti bila ada, `selisih_total`
+  bertanda, status respons, dan ringkasan respons.
+- POST `{action:"create",produk_id,catatan_admin,opsi?}` membuat notifikasi
+  dalam satu transaksi. `catatan_admin` wajib 1–2000 karakter. `opsi` berisi
+  `menu_pengganti`, `hubungi_admin`, dan/atau `tunggu_informasi`; bila kosong
+  ketiganya dipakai dengan label bawaan. Target dihitung ulang dan baris
+  pesanan/detail dikunci `FOR SHARE` sampai commit. Detail yang masih memiliki
+  notifikasi berstatus `menunggu_respons`, `menunggu_konfirmasi`, atau
+  `menunggu_tindak_lanjut` dilewati dan dilaporkan sebagai
+  `dilewati_sudah_dinotifikasi`. Bila tidak ada target baru, HTTP 422 dan seluruh
+  transaksi dibatalkan. Sukses `{ok,id,jumlah_target,jumlah_pesanan,online,offline}`
+  HTTP 201.
+- POST `{action:"confirm",id}` hanya Admin. Aksi ini hanya menerima respons
+  `menu_pengganti` yang masih menunggu konfirmasi dan pesanan yang masih aktif.
+  Server mengunci pesanan serta kuota, memvalidasi ulang produk/sisa kuota dan
+  minimum porsi, lalu dalam satu transaksi mengubah item dan total pesanan
+  memakai harga snapshot yang disetujui pelanggan. Snapshot total lama/baru dan
+  selisih bertanda disimpan. Status pesanan dan pembayaran tidak berubah.
+  Selisih positif menunggu tagihan manual; selisih
+  negatif menunggu pengembalian manual; selisih nol tidak memerlukan penyelesaian.
+- POST `{action:"settle_difference",id}` mencatat bahwa tagihan/pengembalian
+  manual telah diselesaikan. Endpoint tidak memindahkan uang atau mengubah status
+  pembayaran.
+- POST `{action:"complete_follow_up",id,catatan_tindak_lanjut}` mencatat hasil
+  kontak Admin untuk pilihan `hubungi_admin` atau `tunggu_informasi`. Catatan
+  wajib dan maksimal 1000 karakter.
+
+Respons memakai `json_encode` tanpa `JSON_NUMERIC_CHECK` agar nomor telepon
+berawalan 0 tetap string. Aksi `confirm` menghitung selisih untuk audit, tetapi
+tidak menagih atau memindahkan uang; tindak lanjut selisih dilakukan manual.
+
+UI Admin (`admin/menu-notifications.php`) memakai endpoint ini untuk memilih
+menu, memuat produk per tanggal acuan, preview target, konfirmasi, riwayat, dan
+detail respons. UI Owner (`owner/menu-notifications.php`) membaca endpoint yang
+sama secara langsung dan hanya menampilkan riwayat serta detail tanpa form
+pembuatan atau aksi persetujuan. Skrip bersama berada di
+`assets/js/menu-notifications.js` dengan mode `admin`/`owner`.
+
+### Notifikasi perubahan menu pelanggan
+
+Endpoint `pelanggan/api/menu-notifications.php` hanya untuk sesi pelanggan.
+Pengguna lain mendapat HTTP 401. Semua query membatasi data dengan
+`pesanan.user_id` milik sesi dan `pesanan.sumber = 'online'`; ID dari browser
+tidak pernah dipakai sebagai bukti kepemilikan. Pesanan offline tidak pernah
+tampil di endpoint ini.
+
+- GET `?action=list&limit=20&offset=0` mengembalikan `{items,total,limit,offset,
+  belum_dibaca}`. Setiap item memuat snapshot produk, catatan Admin, jumlah
+  pesanan/penerima, jumlah yang sudah merespons, status respons, dan
+  `belum_dibaca` per notifikasi. `limit` dibatasi 1–100.
+- GET `?action=detail&id=...` mengembalikan header notifikasi, opsi respons, dan
+  hanya baris penerima milik pelanggan. Setiap penerima memuat snapshot menu
+  lama, menu pengganti yang sudah dipilih, catatan pelanggan, status, dan
+  `bisa_merespons`. Bila masih boleh merespons, `pilihan_menu` berisi produk
+  lain yang sisa kuotanya cukup untuk jumlah lama dan jumlah lama memenuhi
+  minimum porsi pada tanggal kirim. Menu lama selalu dikecualikan.
+- POST `{action:"read",id}` menandai seluruh baris penerima pelanggan pada
+  notifikasi itu sebagai dibaca. Respons `{ok,dibaca,belum_dibaca}`. Notifikasi
+  milik pelanggan lain menghasilkan HTTP 404.
+- POST `{action:"respond",id,opsi,catatan_respons?,produk_pengganti_id?}`
+  menyimpan pilihan pada satu baris penerima. `id` adalah ID penerima, bukan ID
+  notifikasi. Hanya `status_respons='menunggu_respons'` dengan pesanan masih
+  aktif (`menunggu_pembayaran`, `menunggu_validasi`, `diproses`) yang dapat
+  merespons; selain itu HTTP 409. Opsi harus terdaftar pada notifikasi. Untuk
+  `menu_pengganti`, produk wajib berbeda dari menu lama, tersedia pada tanggal
+  kirim, memiliki sisa kuota cukup, dan memenuhi minimum porsi; snapshot
+  kode/nama/qty/harga disimpan tanpa menghitung `selisih_total`. Status menjadi `menunggu_konfirmasi` untuk
+  `menu_pengganti`, atau `menunggu_tindak_lanjut` untuk `hubungi_admin` dan
+  `tunggu_informasi`. `catatan_respons` maksimal 1000 karakter. Setelah respons
+  terkirim, pilihan terkunci sampai Admin memprosesnya. Respons sukses memuat
+  `{ok,id,status_respons,opsi,menu_pengganti,belum_dibaca}`.
+
+GET `pelanggan/api/orders.php?id=...` juga memuat `menu_notifications` milik
+pesanan tersebut. Data ini dibatasi oleh `pesanan.user_id` sesi pelanggan dan
+menyediakan tautan langsung ke detail notifikasi.
+
+Halaman pelanggan memakai `pelanggan/menu-notifications.php` dengan
+`pelanggan/assets/menu-notifications.js` dan `menu-notifications.css`. Jumlah
+belum dibaca dirender server pada lonceng topbar dan navigasi bawah, lalu
+diperbarui dari respons API. Membuka detail memanggil aksi `read` secara
+terpisah, bukan sebagai efek samping GET. UI menjelaskan bahwa perubahan menu
+belum berlaku dan status pesanan/pembayaran tidak berubah sampai Admin
+mengonfirmasi.
+
 ### Override Admin
 
 POST `admin/api/kuota-harian.php` menerima:

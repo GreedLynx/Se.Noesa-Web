@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
+require_once __DIR__ . '/../../../app/menu-notifications.php';
 if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403);
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
@@ -299,6 +300,10 @@ if (isset($_GET['id'])) {
         'SELECT pr.nama, pr.gambar, d.qty, d.harga, d.qty * d.harga AS subtotal FROM detail_pesanan d JOIN produk pr ON pr.id = d.produk_id WHERE d.pesanan_id = ? ORDER BY pr.nama',
         [$order['id']]
     )->fetchAll();
+    $order['menu_notifications'] = menu_notice_order_notifications(
+        (int) $order['id'],
+        (int) $customer['id']
+    );
     $order['foto_kiriman_list'] = q(
         'SELECT path FROM pesanan_foto_kiriman WHERE pesanan_id = ? ORDER BY id',
         [$order['id']]

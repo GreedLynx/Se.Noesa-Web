@@ -101,6 +101,60 @@ Migrasi 020 menambahkan `pesanan.alasan_penolakan` (maksimal 500 karakter).
 Penolakan pembayaran oleh Admin mewajibkan alasan; detail API pelanggan dan
 riwayat menampilkan alasan tersebut untuk pesanan berstatus `ditolak`.
 
+## Pemberitahuan perubahan menu
+
+Migrasi 021 menambahkan tiga tabel tanpa mengubah `pesanan`, `detail_pesanan`,
+status pesanan, status pembayaran, atau mekanisme kuota:
+
+- `pemberitahuan_perubahan_menu` menyimpan produk sumber, snapshot kode/nama
+  produk, catatan Admin, pembuat, dan waktu pembuatan.
+- `pemberitahuan_perubahan_menu_opsi` menyimpan opsi yang tersedia untuk satu
+  pemberitahuan (`menu_pengganti`, `hubungi_admin`, atau `tunggu_informasi`).
+- `pemberitahuan_perubahan_menu_pesanan` menghubungkan pemberitahuan dengan satu
+  `detail_pesanan`, menyimpan status respons, snapshot menu/kuantitas/harga lama
+  dan pengganti, serta audit konfirmasi dan penyelesaian selisih harga.
+
+Satu detail pesanan hanya dapat ditautkan satu kali pada pemberitahuan yang sama.
+Relasi pemberitahuan, opsi, dan detail memakai `ON DELETE RESTRICT`; menghapus
+pesanan/detail yang menjadi target tidak menghapus riwayat pemberitahuan.
+Referensi produk lama/pengganti dapat menjadi NULL bila produk dihapus, tetapi
+snapshot kode, nama, dan harga tetap tersimpan. Perubahan kuota atau penonaktifan
+produk tidak menghapus tabel-tabel ini.
+
+`status_respons` dan `status_penyelesaian_selisih` hanya mencatat alur pemberitahuan
+dan penyelesaian selisih; keduanya bukan status pesanan maupun pembayaran.
+`selisih_total` menyimpan selisih bertanda: positif untuk tagihan pelanggan dan
+negatif untuk pengembalian. Status penyelesaian dapat menandai tindak lanjut
+manual tanpa memindahkan dana atau mengubah status pembayaran.
+
+Target pemberitahuan mengacu ke detail pesanan, sehingga kepemilikan pelanggan
+harus selalu ditentukan melalui `detail_pesanan.pesanan_id` dan
+`pesanan.user_id` pada query/API pelanggan. Pesanan offline tetap dapat ditautkan
+untuk tindak lanjut manual karena target menggunakan detail pesanan dan tidak
+mewajibkan `pesanan.user_id`.
+
+Status pesanan aktif untuk pemilihan target adalah `menunggu_pembayaran`,
+`menunggu_validasi`, dan `diproses`, mengikuti status yang masih dapat
+ditindaklanjuti dalam alur pesanan saat ini. Status terminal tetap tersimpan
+sebagai riwayat, tetapi tidak menjadi target pemberitahuan baru. Migrasi tidak
+membuat pemberitahuan historis dan tidak menjalankan penggantian, pembatalan,
+atau perubahan status otomatis.
+
+Migrasi 022 menambahkan snapshot total pesanan sebelum/sesudah persetujuan serta
+audit Admin dan catatan untuk tindak lanjut manual. Persetujuan memperbarui detail
+menu dan total pesanan secara transaksional; status pesanan/pembayaran tidak
+diubah. Selisih bertanda dicatat sebagai menunggu tagihan atau pengembalian.
+Penyelesaian tersebut tetap manual dan tidak memindahkan uang.
+
+Runner `scripts/migrate.php` mengurutkan nama file migrasi lengkap, merekam nama
+file di `schema_migrations`, dan menjalankan setiap file dalam transaksi.
+Migrasi 021 menggunakan `CREATE TABLE IF NOT EXISTS` dan `CREATE INDEX IF NOT
+EXISTS`; migrasi 022 menambahkan kolom secara idempoten. Pemanggilan ulang
+melalui runner melewati file yang sudah tercatat. Definisi akhir tabel dan
+indeks juga ada pada `database/schema.sql` untuk instalasi baru. File skema
+tersebut menghapus tabel saat inisialisasi; jangan jalankan pada database yang
+sudah berisi data.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga

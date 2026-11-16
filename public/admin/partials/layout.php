@@ -16,6 +16,7 @@ function admin_head(string $title, string $page): void
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/admin.css?v=<?= filemtime(__DIR__ . '/../assets/admin.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
+    <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES, 'UTF-8') ?>">
@@ -42,6 +43,9 @@ function admin_head(string $title, string $page): void
                             <path d="M12 7v5l3 3"/>
                         </svg>
                     </span>Jadwal
+                </a>
+                <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#9993;</span>Notifikasi
                 </a>
             </nav>
             <div class="sidebar-bottom">
@@ -101,6 +105,7 @@ function admin_foot(): void
                     </svg>
                     <span>Jadwal</span>
                 </a>
+                <a href="menu-notifications.php">&#9993;<span>Notifikasi</span></a>
                 <button data-logout>&#10140;<span>Keluar</span></button>
             </nav>
         </main>
@@ -122,6 +127,7 @@ function admin_foot(): void
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
+    <script src="../assets/js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
 </body>
 
 </html>
