@@ -59,9 +59,8 @@ function admin_head(string $title, string $page): void
         <main class="main-panel">
             <header class="topbar">
                 <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
-                <div class="top-copy">
-                    <small>Se.Noesa / Admin</small>
-                    <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
+                <div class="top-copy" style="display: flex; align-items: center; height: 100%;">
+                    <small style="font-size: 20px; font-weight: 600; color: var(--green-dark); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Admin</small>
                 </div>
                 <div class="top-actions">
                     <span class="today-label" id="today-label"></span>

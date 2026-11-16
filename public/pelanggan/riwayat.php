@@ -17,6 +17,7 @@ customer_head('Riwayat Pesanan', 'history'); ?>
     <button data-status="diproses">Diproses</button>
     <button data-status="selesai">Selesai</button>
     <button data-status="ditolak">Ditolak</button>
+    <button data-status="dibatalkan">Dibatalkan</button> <!-- Tombol Baru Ditambahkan -->
 </div>
 <section class="history-list" id="history-list">
     <div class="loading">Memuat riwayat pesanan...</div>

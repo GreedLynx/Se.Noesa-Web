@@ -89,9 +89,8 @@ function customer_head(string $title, string $page): array
         </aside>
         <main class="customer-main">
             <header class="customer-top">
-                <div>
-                    <small>Se.Noesa / Pelanggan</small>
-                    <h1><?= htmlspecialchars($title) ?></h1>
+                <div style="display: flex; align-items: center; height: 100%;">
+                    <small style="font-size: 20px; font-weight: 600; color: var(--brown); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Pelanggan</small>
                 </div>
                 <div class="customer-user">
                     <a class="customer-notif-link" href="menu-notifications.php" aria-label="Notifikasi menu">
