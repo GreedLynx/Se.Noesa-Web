@@ -13,10 +13,12 @@ yarn-debug.log*
 /public/uploads/*
 !/public/uploads/.gitkeep
 .opencode/docs/
-.opencode/rules.md
+.opencode/*
+.codex/*
 .repomixignore
 repomix-output.xml
 repomix.config.json
+HANDOFF.md
 
 # System & IDE Files
 .DS_Store
@@ -25,3 +27,4 @@ Thumbs.db
 .idea/
 !/public/uploads/products/
 !/public/uploads/products/.gitkeep
+AGENTS.md

@@ -1,6 +1,7 @@
-<?php require_once __DIR__ . '/../app/bootstrap.php';
-$u = me();
-$go = $u ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/index.php', 'owner' => 'owner/dashboard.php'][$u['role']] ?? 'login.php') : 'login.php'; ?>
+<?php
+require_once __DIR__ . '/../app/bootstrap.php';
+$user = me();
+$go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/index.php', 'owner' => 'owner/dashboard.php'][$user['role']] ?? 'login.php') : 'login.php'; ?>
 <!doctype html>
 <html lang="id">
 

@@ -1,1 +1,2 @@
-<?php require __DIR__.'/../../api/auth.php';
+<?php
+require __DIR__ . '/../../api/auth.php';

@@ -1,7 +1,33 @@
 <?php
-require __DIR__.'/../../../app/bootstrap.php'; require_role('pelanggan');
-$category=$_GET['kategori']??'';$query='%'.trim($_GET['q']??'').'%';
-$filter=in_array($category,['makanan','minuman','snack'],true)?'AND kategori=?':'';$args=[$query,$query];if($filter)$args[]=$category;
-$items=q("SELECT id,kode,nama,kategori,harga,kuota,terpakai,min_pesan,kuota-terpakai sisa,gambar FROM produk WHERE kuota>terpakai AND (nama ILIKE ? OR kode ILIKE ?) $filter ORDER BY kategori,nama",$args)->fetchAll();
-$schedule=q("SELECT id,tgl_buka,tgl_tutup,nama FROM jadwal_po WHERE aktif AND current_date BETWEEN tgl_buka AND tgl_tutup ORDER BY tgl_buka LIMIT 1")->fetch();
-json(['items'=>$items,'schedule'=>$schedule]);
+require __DIR__ . '/../../../app/bootstrap.php';
+require_role('pelanggan');
+require_once __DIR__ . '/../../../app/daily-quota.php';
+
+header('Cache-Control: no-store');
+$date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->modify('+7 days')->format('Y-m-d');
+
+try {
+    $snapshot = daily_quota_snapshot($date);
+} catch (DomainException $e) {
+    json(['error' => $e->getMessage()], 422);
+}
+
+$category = $_GET['kategori'] ?? '';
+$query = trim($_GET['q'] ?? '');
+$items = array_values(array_filter($snapshot['items'], static function ($product) use ($category, $query) {
+    return (int) $product['kuota_harian'] > 0
+        && (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
+        && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
+}));
+// SELECT memilih satu jadwal PO aktif yang tanggal bukanya paling awal.
+$schedule = q('SELECT id, tgl_buka, tgl_tutup, nama FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1')->fetch();
+
+json([
+    'items' => $items,
+    'schedule' => $schedule,
+    'tanggal' => $snapshot['tanggal'],
+    'tanggal_libur' => $snapshot['tanggal_libur'],
+    'maxKitchen' => $snapshot['maxKitchen'],
+    'kitchenUsed' => $snapshot['kitchenUsed'],
+    'kitchenRemaining' => $snapshot['kitchenRemaining'],
+]);

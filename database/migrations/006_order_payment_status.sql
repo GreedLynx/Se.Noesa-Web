@@ -1,3 +1,4 @@
+-- DDL: ganti batasan status agar mendukung alur pembayaran dan penolakan pesanan.
 ALTER TABLE pesanan DROP CONSTRAINT IF EXISTS pesanan_status_check;
 ALTER TABLE pesanan ALTER COLUMN status TYPE VARCHAR(24);
 ALTER TABLE pesanan ALTER COLUMN status SET DEFAULT 'menunggu_pembayaran';

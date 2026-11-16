@@ -1,3 +1,4 @@
+-- DDL: buat tabel metode pembayaran beserta status aktif dan timestamp.
 CREATE TABLE IF NOT EXISTS metode_pembayaran (
   id SERIAL PRIMARY KEY,
   nama VARCHAR(80) NOT NULL,
