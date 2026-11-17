@@ -337,10 +337,12 @@ Basis: `REVISI-LANJUTAN-SE.NOESA.md`, `revisi-senoesa.md`, kondisi aktual reposi
 
 | Status | Jumlah | ID |
 |--------|--------|-----|
-| DONE | 38 | CUS-01,02,03,05,06,07,08,09,12,13,14,15,16,19,23,26,27,28; ADM-01,02,04,05,07,08,09,11,14,15,16,19,22,24,26; OWN-01,05,06,07,08,09,11,14,16,19; GEN-01,02; IMG-ADM-01,05 |
-| PARTIAL | 18 | IMG-CUS-? (none), IMG-ADM-03,04, IMG-OWN-01; CUS-04,10,11,18,21,29; ADM-03,06,12,13,17,28,29; OWN-02,03,04,18,20,21 |
-| NOT IMPLEMENTED | 22 | IMG-CUS-01,02, IMG-ADM-02; CUS-17,20,22,24,25; ADM-10,18,20,21,23,25,27; OWN-10,12,13,15,17; |
-| NEEDS CONFIRMATION | 14 | Pertanyaan #1-#14 (bagian 7) |
+| DONE | 47 | CUS-01,02,03,05,06,07,08,09,12,13,14,15,16,19,23,26,27,28; ADM-01,02,04,05,07,08,09,11,14,15,16,19,22,24,26; OWN-01,05,06,07,08,09,11,14,16,19; GEN-01,02; IMG-ADM-01,05 |
+| PARTIAL | 22 | IMG-ADM-03,04, IMG-OWN-01; CUS-04,10,11,18,21,29; ADM-03,06,12,13,17,28,29; OWN-02,03,04,18,20,21 |
+| NOT IMPLEMENTED | 20 | IMG-CUS-01,02, IMG-ADM-02; CUS-17,20,22,24,25; ADM-10,18,20,21,23,25,27; OWN-10,12,13,15,17 |
+| NEEDS CONFIRMATION | 14 | Bukan ID revisi — 14 keputusan bisnis #1–#14 (bagian 7), lihat `KEPUTUSAN-BISNIS-SE.NOESA.md` |
+
+**Catatan revisi (TASK-00, 2026-11-17):** Angka ringkasan sebelumnya (38 / 18 / 22) tidak sesuai dengan daftar ID pada bagian 3. Hitung ulang menghasilkan **47 DONE, 22 PARTIAL, 20 NOT IMPLEMENTED** dari total **89 ID revisi unik**. Tidak ada duplikat ID, tidak ada ID yang hilang, dan tidak ada status yang bertentangan antara bagian 3 dan daftar pada bagian ini; yang dikoreksi hanya angka dan placeholder `IMG-CUS-? (none)`. Rincian jejak perubahan ada di `docs/AUDIT-REVISI-TAHAP-2-CORRECTION.md`.
 
 **Catatan:** Status di atas berdasarkan audit kode aktual, bukan hanya ringkasan tahap sebelumnya. Beberapa item yang sebelumnya diklaim "Done" ternyata "Partial" atau "Not Implemented" setelah verifikasi kode.
 
