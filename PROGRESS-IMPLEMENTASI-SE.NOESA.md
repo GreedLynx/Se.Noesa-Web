@@ -3,16 +3,16 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-14)
+- Current HEAD: (checkpoint TASK-16)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 10 |
+| DONE | 11 |
 | PARTIAL | 0 |
 | BLOCKED | 8 |
-| TODO | 6 |
+| TODO | 5 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -32,9 +32,9 @@
 | TASK-11 | DONE | 1371442 | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
 | TASK-12 | DONE | e824f49 | lolos (lint + audit alur) | Filter produk dipertahankan setelah simpan; feedback sukses/gagal ada |
 | TASK-13 | BLOCKED | 055d350 | audit selesai | Tidak ada kolom `aktif`/snapshot; butuh DECISION-NEW-01 + migration |
-| TASK-14 | DONE | (checkpoint ini) | lolos (API 5 skenario + UI 3 skenario) | Info kuota penuh per tanggal & kategori; checkout tetap ditolak backend |
+| TASK-14 | DONE | ae9a58b | lolos (API 5 skenario + UI 3 skenario) | Info kuota penuh per tanggal & kategori; checkout tetap ditolak backend |
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
-| TASK-16 | TODO | - | - | Dialog Pelanggan |
+| TASK-16 | DONE | (checkpoint ini) | lolos (3/3 unit dialog) | Backdrop close ditambah ke cart & checkout; konten tidak ikut tertutup |
 | TASK-17 | TODO | - | - | Label keranjang (dep TASK-05) |
 | TASK-18 | TODO | - | - | Navigasi/dashboard Pelanggan |
 | TASK-19 | BLOCKED | - | - | Menunggu keputusan #14 |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-16
-- Tujuan: Tambahkan backdrop close pada cart dialog dan checkout dialog Pelanggan tanpa menutup saat klik konten
-- File yang akan disentuh: public/pelanggan/assets/customer.js, public/pelanggan/index.php/partials (audit); file progres
-- Risiko: Rendah — jangan mengubah perilaku Escape/fokus/scroll lock yang sudah ada
-- Dependency: TASK-00 (selesai)
+- ID: TASK-17
+- Tujuan: Rapikan label dan kontrol keranjang Pelanggan sesuai revisi CUS-18/20/21
+- File yang akan disentuh: public/pelanggan/index.php, public/pelanggan/assets/customer.js (audit); file progres
+- Risiko: Rendah — jangan tertukar antara “Jumlah” dan “Sisa Porsi”
+- Dependency: TASK-05 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -92,7 +92,8 @@
 | 2026-11-17 23:58 | 1371442 | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
 | 2026-11-18 00:10 | e824f49 | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
 | 2026-11-18 00:25 | 055d350 | TASK-13 | BLOCKED (audit) | Tidak ada `aktif`/snapshot; DECISION-NEW-01 dicatat |
-| 2026-11-18 00:45 | (checkpoint ini) | TASK-14 | lolos (8 skenario) | Info kuota penuh per tanggal; filter kategori ikut diterapkan |
+| 2026-11-18 00:45 | ae9a58b | TASK-14 | lolos (8 skenario) | Info kuota penuh per tanggal; filter kategori ikut diterapkan |
+| 2026-11-18 01:00 | (checkpoint ini) | TASK-16 | lolos (3/3 unit dialog) | Backdrop close cart & checkout; Escape/fokus native dipertahankan |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

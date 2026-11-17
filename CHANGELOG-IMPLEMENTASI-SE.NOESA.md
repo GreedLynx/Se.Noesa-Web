@@ -98,10 +98,16 @@
 - Implementasi keterangan “produk dinonaktifkan” memerlukan definisi bisnis + migration (kolom `aktif` dan/atau snapshot). Tidak ada keputusan yang tersedia ⇒ task ditandai BLOCKED, kode tidak diubah.
 - Tambah `DECISION-NEW-01` pada `KEPUTUSAN-BISNIS-SE.NOESA.md` (keputusan baru yang ditemukan saat implementasi, bukan bagian dari 14 keputusan awal).
 
-### TASK-14 — (checkpoint ini)
+### TASK-14 — ae9a58b
 - `feat(TASK-14): inform customers about full quota per delivery date`
 - `public/pelanggan/api/catalog.php`: ekspos `habis` (produk dengan `sisa <= 0`) yang tetap mengikuti filter kategori/pencarian aktif; `items` tetap hanya berisi produk tersedia.
 - `public/pelanggan/index.php`: tambah elemen `#quota-full-hint` di panel tanggal.
 - `public/pelanggan/assets/customer.js`: render pesan “Kuota penuh untuk tanggal …: <nama produk>” pada `loadCatalog()`, sehingga otomatis diperbarui saat tanggal, kategori, atau pencarian berubah. Pesan disembunyikan pada hari libur agar tidak menimpa pesan libur.
 - Backend checkout sudah menolak produk habis lewat `daily_quota_validate()` ⇒ tidak ada perubahan pada endpoint checkout.
+- Migration: tidak ada.
+
+### TASK-16 — (checkpoint ini)
+- `fix(TASK-16): add backdrop close to customer cart and checkout dialogs`
+- Audit: detail dialog dan history dialog sudah memiliki pola `click` dengan `e.target === dialog`; cart dan checkout belum.
+- Perbaikan `public/pelanggan/assets/customer.js`: pasang handler backdrop close pada `#cart-dialog` dan `#checkout-dialog` mengikuti pola yang sama; klik di dalam konten tidak menutup dialog; Escape/fokus tetap memakai perilaku native `<dialog>`; tidak ada scroll-lock JS yang perlu dipulihkan.
 - Migration: tidak ada.

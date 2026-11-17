@@ -154,3 +154,10 @@
 - **Lint:** `php -l catalog.php` OK, `php -l index.php` OK, `node --check customer.js` OK.
 - **Belum diuji:** render browser dan perubahan tanggal secara interaktif (tidak ada browser automation).
 - **Kesimpulan:** LULUS untuk API + unit UI; pesan mengikuti tanggal dan filter.
+
+### TASK-16 — Dialog Pelanggan
+- **Jenis:** unit test terhadap potongan kode dialog asli dari `customer.js` + lint.
+- **Hasil (`node test_dialog_backdrop.js`, 3/3 PASS):** `detail-dialog`, `cart-dialog`, dan `checkout-dialog` semuanya menutup saat klik backdrop (`e.target === dialog`) dan tidak menutup saat klik konten.
+- **Lint:** `node --check customer.js` OK.
+- **Belum diuji:** klik mouse/ Escape sungguhan di browser, fokus keyboard, dan scroll body (tidak ada browser automation); `scroll lock` tidak ditemukan di kode sehingga tidak ada state yang perlu dipulihkan.
+- **Kesimpulan:** LULUS untuk perilaku backdrop yang dapat diuji secara unit. Tidak ada klaim test browser.

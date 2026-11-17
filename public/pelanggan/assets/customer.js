@@ -129,14 +129,24 @@ function catalogPage() {
     $$('[data-close-detail]').forEach(b => b.onclick = () => $('#detail-dialog').close());
 
     const detailDialog = $('#detail-dialog'),
-        detailContent = $('#detail-content');
+        detailContent = $('#detail-content'),
+        cartDialog = $('#cart-dialog'),
+        checkoutDialog = $('#checkout-dialog');
     detailContent.addEventListener('click', e => {
         if (e.target.closest('.quantity-control')) e.stopPropagation()
     });
+    // Pola yang sama dengan detail/history dialog: klik backdrop menutup,
+    // klik di dalam konten tidak menutup. Escape/fokus tetap ditangani native <dialog>.
     detailDialog.addEventListener('click', e => {
         if (e.target === detailDialog) detailDialog.close()
     });
-    $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
+    cartDialog.addEventListener('click', e => {
+        if (e.target === cartDialog) cartDialog.close()
+    });
+    checkoutDialog.addEventListener('click', e => {
+        if (e.target === checkoutDialog) checkoutDialog.close()
+    });
+    $$('[data-close-checkout]').forEach(b => b.onclick = () => checkoutDialog.close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
     $('#catalog-delivery-date').onchange = () => refreshCatalog();
