@@ -225,3 +225,30 @@ Upload galeri mengunci status `diproses` sebelum INSERT/UPDATE. Jika pembatalan
 menang, transaksi dibatalkan, semua file baru dibuang, dan respons 409.
 Respons upload menyertakan `foto_kiriman` (file pertama) serta `foto_kiriman_list`.
 Katalog/riwayat GET tidak memicu job kedaluwarsa; scheduler CLI memakai `--apply`.
+
+### Tawaran jadwal pengganti
+
+Admin dapat mengirim POST `admin/api/orders.php` dengan
+`{action:"offer_reschedule",id,alasan,tanggal_usulan}` untuk pesanan online
+berstatus `menunggu_pembayaran`, `menunggu_validasi`, atau `diproses` yang
+tanggal pengirimannya ditutup. Pesanan offline tanpa akun pelanggan tidak dapat
+menerima tawaran. Untuk `menunggu_validasi`, adanya bukti menjadi syarat dan
+tawaran berarti Admin menyatakan pembayaran valid. Alasan wajib 1–500 karakter;
+tanggal tujuan harus tanggal nyata setelah hari ini, bukan tanggal libur, serta
+kuota produk dan dapur harus tersedia. Kuota tujuan diperiksa lagi saat pelanggan
+menerima dan tidak dipesan saat tawaran dibuat.
+
+Tawaran disimpan terpisah pada satu baris per pesanan. Status pesanan/tanggal lama
+tidak berubah saat tawaran dikirim. Tawaran unpaid berakhir pada tenggat asli
+`created_at + 1 jam`; tawaran `menunggu_validasi`/`diproses` berlaku 24 jam.
+Detail Admin dan pelanggan menambahkan `reschedule_offer` dengan tanggal asal,
+tanggal usulan, alasan, status, `dibuat_at` (token versi), dan batas waktu.
+
+Pelanggan pemilik pesanan menjawab lewat POST `pelanggan/api/orders.php` dengan
+`{action:"respond_reschedule",id,decision:"accept"|"reject",offer_version}`.
+Versi harus sama dengan `dibuat_at` yang ditampilkan. Accept memeriksa ulang
+tanggal libur/kuota secara atomik, mengganti tanggal sambil mempertahankan jam,
+dan mengubah `menunggu_validasi` menjadi `diproses`. Reject membatalkan pesanan
+serta mencatat sumber/status asal pembatalan; refund yang sudah dibayar tetap
+ditangani Admin di luar aplikasi. Versi lama, tawaran kedaluwarsa, atau status
+pesanan yang berubah menghasilkan HTTP 409. Endpoint GET hanya membaca tawaran.

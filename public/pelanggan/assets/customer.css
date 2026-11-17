@@ -1891,3 +1891,5 @@ a {
     color:#666;
     text-decoration:line-through;
 }
+.reschedule-offer { border: 1px solid var(--sage, #91a58f); border-radius: 12px; padding: 16px; }
+.reschedule-offer button { margin: 6px 6px 0 0; }

@@ -21,7 +21,7 @@ const uploadedPhotos = [];
 const postedActions = [];
 const timers = [];
 let reviewFails = false, confirmed = true, confirmation = '', reloaded = 0;
-const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false }));
+const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation', 'offer_reschedule'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false }));
 const orderResponse = {
     id: 42,
     kode: 'ORD-42',
@@ -174,6 +174,19 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(rejectedDetail, /Alasan penolakan/);
     assert.match(rejectedDetail, /&lt;script&gt;/);
     assert.doesNotMatch(rejectedDetail, /<script>/);
+
+    orderResponse.status = 'diproses';
+    orderResponse.menu = [{ nama: 'Menu uji', qty: 2, harga: 10, subtotal: 20, item_id: 1, sudah_dicek: false }];
+    orderResponse.reschedule_offer = { status_tawaran: 'menunggu', status_asal: 'diproses', tanggal_asal: '2030-11-20',
+        tanggal_usulan: '2030-11-22', alasan: 'Tanggal lama ditutup', dibuat_at: '2030-11-18T10:00:00+07:00', berlaku_sampai: '2030-11-19T10:00:00+07:00' };
+    orderResponse.can_offer_reschedule = true;
+    await context.orderDetail();
+    const pendingOfferDetail = elements.get('#order-detail').innerHTML;
+    assert.match(pendingOfferDetail, /Jeda produksi/);
+    assert.match(pendingOfferDetail, /data-item-check="1"[^>]*disabled/);
+    assert.doesNotMatch(pendingOfferDetail, /id="dispatch-photo-form"/);
+    assert.equal(actionButtons.find(button => button.dataset.orderAction === 'complete').hidden, true);
+    assert.equal(actionButtons.find(button => button.dataset.orderAction === 'offer_reschedule').hidden, false);
 
     const formEntries = [];
     let responseText = '<br /><b>Warning</b>: POST Content-Length exceeded {"ok":true}';

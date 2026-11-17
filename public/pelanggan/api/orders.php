@@ -6,6 +6,65 @@ require_once __DIR__ . '/../../../app/daily-quota.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $request = body();
+
+    if (($request['action'] ?? '') === 'respond_reschedule') {
+        $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
+        $decision = $request['decision'] ?? '';
+        $version = $request['offer_version'] ?? '';
+        if (!$id || $id < 1 || !in_array($decision, ['accept', 'reject'], true) || !is_string($version) || $version === '') {
+            json(['error' => 'Respons tawaran jadwal tidak valid'], 422);
+        }
+        try {
+            $db = db();
+            $db->beginTransaction();
+            if ($decision === 'accept') {
+                q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
+                q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+                q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
+            }
+            $order = q('SELECT id, status, tgl_kirim FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            if (!$order) throw new OutOfBoundsException('Pesanan tidak ditemukan');
+            $offer = q('SELECT * FROM penawaran_jadwal_ulang WHERE pesanan_id = ? FOR UPDATE', [$id])->fetch();
+            if (!$offer || $offer['status_tawaran'] !== 'menunggu' || $offer['status_asal'] !== $order['status']
+                || (string) $offer['dibuat_at'] !== $version) {
+                throw new DomainException('Tawaran sudah berubah atau tidak lagi tersedia. Muat ulang detail pesanan.');
+            }
+            if (!(bool) q('SELECT CASE WHEN CAST(? AS timestamptz) > clock_timestamp() THEN 1 ELSE 0 END', [$offer['berlaku_sampai']])->fetchColumn()) {
+                q("UPDATE penawaran_jadwal_ulang SET status_tawaran = 'kedaluwarsa' WHERE id = ?", [$offer['id']]);
+                throw new DomainException('Masa berlaku tawaran jadwal sudah berakhir');
+            }
+            if ($decision === 'reject') {
+                q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp(),
+                        sumber_pembatalan = 'pelanggan', status_sebelum_batal = status
+                    WHERE id = ?", [$id]);
+                q("UPDATE penawaran_jadwal_ulang SET status_tawaran = 'ditolak', ditanggapi_at = clock_timestamp() WHERE id = ?", [$offer['id']]);
+            } else {
+                $date = $offer['tanggal_usulan'];
+                $today = q("SELECT (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date")->fetchColumn();
+                if ($date <= $today) throw new DomainException('Tanggal usulan sudah lewat. Minta Admin mengirim tanggal pengganti baru.');
+                q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
+                $quantities = [];
+                foreach (q('SELECT produk_id, SUM(qty) qty FROM detail_pesanan WHERE pesanan_id = ? GROUP BY produk_id ORDER BY produk_id', [$id])->fetchAll() as $item) {
+                    $quantities[(int) $item['produk_id']] = (int) $item['qty'];
+                }
+                if (!$quantities) throw new DomainException('Rincian pesanan tidak tersedia');
+                daily_quota_validate(daily_quota_snapshot($date), $quantities);
+                $targetStatus = $order['status'] === 'menunggu_validasi' ? 'diproses' : $order['status'];
+                $updated = q("UPDATE pesanan SET tgl_kirim =
+                        ((CAST(? AS date) + (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::time) AT TIME ZONE 'Asia/Jakarta'),
+                        status = ?, status_updated_at = CASE WHEN status <> ? THEN clock_timestamp() ELSE status_updated_at END
+                    WHERE id = ? AND user_id = ? AND status = ?", [$date, $targetStatus, $targetStatus, $id, $customer['id'], $order['status']])->rowCount();
+                if (!$updated) throw new DomainException('Status pesanan sudah berubah');
+                q("UPDATE penawaran_jadwal_ulang SET status_tawaran = 'diterima', ditanggapi_at = clock_timestamp() WHERE id = ?", [$offer['id']]);
+            }
+            $db->commit();
+        } catch (Throwable $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            $code = $e instanceof OutOfBoundsException ? 404 : ($e instanceof DomainException ? 409 : 500);
+            json(['error' => $code === 500 ? 'Respons tawaran jadwal gagal disimpan' : $e->getMessage()], $code);
+        }
+        json(['ok' => true, 'status' => $decision === 'reject' ? 'dibatalkan' : $targetStatus]);
+    }
     
     if (($request['action'] ?? '') === 'cancel_order') {
         $id = filter_var($request['id'] ?? null, FILTER_VALIDATE_INT);
@@ -16,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $order = q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
             if (!$order) {
                 throw new OutOfBoundsException('Pesanan tidak ditemukan');
+            }
+            if ((bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
+                throw new DomainException('Gunakan tombol Tolak jadwal untuk merespons tawaran aktif');
             }
             // Waktu diperiksa setelah lock agar request yang menunggu tidak melewati H-2.
             $affected = q("UPDATE pesanan SET status = 'dibatalkan', status_updated_at = clock_timestamp(),
@@ -28,6 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (OutOfBoundsException $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
             json(['error' => $e->getMessage()], 404);
+        } catch (DomainException $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            json(['error' => $e->getMessage()], 409);
         } catch (Throwable $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
             json(['error' => 'Gagal membatalkan pesanan'], 500);
@@ -111,6 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             json(['error' => 'Bukti hanya dapat diunggah untuk pesanan yang menunggu pembayaran atau verifikasi'], 409);
         }
+        if ((bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
+            json(['error' => 'Selesaikan respons tawaran jadwal sebelum mengunggah bukti'], 409);
+        }
 
         $file = $_FILES['proof'] ?? null;
         if (!$file) json(['error' => 'Pilih file bukti pembayaran terlebih dahulu'], 422);
@@ -138,6 +206,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->beginTransaction();
             // Pisahkan lock dan mutasi agar deadline memakai waktu setelah menunggu lock.
             q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            if ((bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
+                throw new DomainException('Tawaran jadwal sedang menunggu respons');
+            }
             $affected = q(
                 "UPDATE pesanan
                 SET bukti_bayar = ?, nama_pembayar = ?,
@@ -153,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Throwable $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
             @unlink($folder . '/' . $filename);
-            json(['error' => 'Gagal menyimpan bukti pembayaran'], 500);
+            json(['error' => $e instanceof DomainException ? $e->getMessage() : 'Gagal menyimpan bukti pembayaran'], $e instanceof DomainException ? 409 : 500);
         }
         if (!$affected) {
             @unlink($folder . '/' . $filename);
@@ -288,6 +359,15 @@ if (isset($_GET['id'])) {
     )->fetch();
     if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
 
+    $offer = q("SELECT id, status_asal, tanggal_asal, alasan, tanggal_usulan,
+            CASE WHEN status_tawaran = 'menunggu' AND berlaku_sampai <= clock_timestamp() THEN 'kedaluwarsa' ELSE status_tawaran END status_tawaran,
+            dibuat_at, berlaku_sampai, ditanggapi_at
+        FROM penawaran_jadwal_ulang WHERE pesanan_id = ?", [$order['id']])->fetch();
+    $order['reschedule_offer'] = $offer ?: null;
+    $order['can_respond_reschedule'] = $offer && $offer['status_tawaran'] === 'menunggu'
+        && $offer['status_asal'] === $order['status'];
+    if ($order['can_respond_reschedule']) $order['can_upload_proof'] = false;
+
     foreach (['payment_expires_at', 'cancel_before'] as $field) {
         if ($order[$field] !== null) {
             $order[$field] = (new DateTimeImmutable($order[$field]))->setTimezone(new DateTimeZone('Asia/Jakarta'))->format(DateTimeInterface::ATOM);
@@ -317,7 +397,9 @@ $queryArgs = [$customer['id']];
 if ($filter) $queryArgs[] = $status;
 
 $orders = q(
-    "SELECT id, kode, nama_pemesan, total, status, status_updated_at, alasan_penolakan, tgl_kirim, created_at FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
+    "SELECT id, kode, nama_pemesan, total, status, status_updated_at, alasan_penolakan, tgl_kirim, created_at,
+        EXISTS (SELECT 1 FROM penawaran_jadwal_ulang r WHERE r.pesanan_id = pesanan.id AND r.status_tawaran = 'menunggu' AND r.berlaku_sampai > clock_timestamp()) reschedule_pending
+        FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
     $queryArgs
 )->fetchAll();
 foreach ($orders as &$order) {

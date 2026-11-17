@@ -175,6 +175,11 @@ function cancellationSummary(order) {
         esc(cancellationTime(order.cancelled_at)) + '</small><small>' +
         (order.reviewed_at ? "Sudah ditinjau" : "Belum ditinjau") + '</small></div>';
 }
+function rescheduleSummary(order) {
+    return order.reschedule_pending
+        ? '<span class="tag soft reschedule-tag">Menunggu konfirmasi jadwal</span>'
+        : '';
+}
 function countUp(el, target) {
     const start = performance.now(),
         duration = 750;
@@ -432,7 +437,7 @@ async function loadOrders() {
                 " porsi</td><td><b>" +
                 money(o.total) +
                 "</b></td><td>" +
-                badge(o.status) + cancellationSummary(o) +
+                badge(o.status) + rescheduleSummary(o) + cancellationSummary(o) +
                 '</td><td><a class="button small secondary" href="order-detail.php?id=' +
                 Number(o.id) +
                 '">Lihat detail</a></td></tr>',
@@ -451,7 +456,7 @@ async function loadOrders() {
                     esc(o.kode) +
                     "</b>" +
                     (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
-                    badge(o.status) +
+                    badge(o.status) + rescheduleSummary(o) +
                     "</span><b>" +
                     esc(o.nama_pemesan) +
                     "</b><small>" +
@@ -904,6 +909,8 @@ async function orderDetail() {
         delivery +
         "</b></div></article>";
     const menuItems = Array.isArray(o.menu) ? o.menu : [];
+    const offer = o.reschedule_offer;
+    const offerPending = offer?.status_tawaran === "menunggu" && new Date(offer.berlaku_sampai) > new Date();
     const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
     const menu = menuItems
         .map(
@@ -913,7 +920,7 @@ async function orderDetail() {
                 '" ' +
                 (m.sudah_dicek ? "checked" : "") +
                 " " +
-                (o.status === "diproses" ? "" : "disabled") +
+                (o.status === "diproses" && !offerPending ? "" : "disabled") +
                 "><span><b>" +
                 esc(m.nama) +
                 "</b><small>" +
@@ -950,7 +957,7 @@ async function orderDetail() {
         o.status === "diproses" || o.status === "selesai" || (o.status === "dibatalkan" && sentPhotos.length)
             ? '<article class="panel"><div class="panel-heading"><h2>' + (o.status === "dibatalkan" ? 'Foto pesanan tersimpan' : 'Foto makanan siap kirim') + '</h2><span class="tag soft">Foto kiriman</span></div>' +
                 sentPhotoGallery +
-                (o.status === "diproses"
+                (o.status === "diproses" && !offerPending
                     ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
                     : "") +
                   "</article>"
@@ -1022,24 +1029,51 @@ async function orderDetail() {
                 esc(cancellationTime(o.reviewed_at)) + '.</p>' : '<p class="cancellation-unreviewed">Belum ditinjau.</p>') +
             '<p class="muted">Sudah ditinjau berarti pembatalan telah diperiksa, bukan konfirmasi refund selesai.</p></article>'
         : '';
-    $("#order-detail").innerHTML = isValidation ? validationView : cancellationInfo + dispatchView +
-        (o.status === "dibatalkan" ? proofPanel + receipt : '');
+    const offerStatus = offer?.status_tawaran || '';
+    const offerStatusLabel = offerStatus === 'menunggu' ? 'Menunggu jawaban pelanggan'
+        : offerStatus === 'diterima' ? 'Diterima pelanggan'
+        : offerStatus === 'ditolak' ? 'Ditolak pelanggan'
+        : 'Kedaluwarsa';
+    const rescheduleInfo = offer
+        ? '<article class="panel reschedule-detail"><div class="panel-heading"><div><p class="eyebrow">JADWAL PENGGANTI</p><h2>' +
+            esc(offerStatusLabel) + '</h2></div><span class="tag soft">' + esc(offerStatusLabel) + '</span></div>' +
+            '<div class="detail-pair"><span>Tanggal sebelumnya</span><b>' + esc(dateLabel(offer.tanggal_asal)) + '</b></div>' +
+            '<div class="detail-pair"><span>Tanggal usulan</span><b>' + esc(dateLabel(offer.tanggal_usulan)) + '</b></div>' +
+            '<div class="detail-pair"><span>Berlaku sampai</span><b>' + esc(dateLabel(offer.berlaku_sampai, true)) + ' WIB</b></div>' +
+            '<div class="reschedule-reason"><b>Catatan Admin</b><p>' + esc(offer.alasan) + '</p></div>' +
+            (offerStatus === 'menunggu' && offer.status_asal === 'diproses'
+                ? '<p class="reschedule-warning" role="alert"><b>Jeda produksi.</b> Tunggu keputusan pelanggan sebelum melanjutkan persiapan atau pengiriman.</p>'
+                : '') +
+            '<p class="muted">Tanggal tujuan belum memesan kuota. Sistem memeriksa ulang kuota ketika pelanggan menerima.</p></article>'
+        : '';
+    $("#order-detail").innerHTML = rescheduleInfo + (isValidation ? validationView : cancellationInfo + dispatchView +
+        (o.status === "dibatalkan" ? proofPanel + receipt : ''));
     const actions = $("#detail-actions");
     const rejectionDialog = $("#reject-order-dialog");
     const rejectionForm = $("#reject-order-form");
     const rejectionReason = $("#rejection-reason");
     const rejectionError = $("#rejection-reason-error");
+    const rescheduleDialog = $("#reschedule-order-dialog");
+    const rescheduleForm = $("#reschedule-order-form");
+    const rescheduleDate = $("#reschedule-date");
+    const rescheduleReason = $("#reschedule-reason");
+    const rescheduleError = $("#reschedule-order-error");
+    const reschedulePaymentNote = $("#reschedule-payment-note");
     $$("[data-cancel-rejection]").forEach((button) => {
         button.onclick = () => rejectionDialog.close();
+    });
+    $$("[data-cancel-reschedule]").forEach((button) => {
+        button.onclick = () => rescheduleDialog.close();
     });
     actions.hidden = false;
     const actionButtons = $$("[data-order-action]");
     actionButtons.forEach((btn) => {
         const action = btn.dataset.orderAction;
         btn.hidden = !(
-            (o.status === "menunggu_validasi" &&
+            (!offerPending && o.status === "menunggu_validasi" &&
                 (action === "validate" || action === "reject")) ||
-            (o.status === "diproses" && action === "complete") ||
+            (!offerPending && o.status === "diproses" && action === "complete") ||
+            (o.can_offer_reschedule === true && action === "offer_reschedule") ||
             (o.status === "dibatalkan" && !o.reviewed_at && action === "review_cancellation")
         );
         btn.onclick = async () => {
@@ -1055,6 +1089,38 @@ async function orderDetail() {
                 $("#review-cancellation-error").textContent = "";
             }
             let rejectionNote = "";
+            let reschedulePayload = null;
+            if (action === "offer_reschedule") {
+                reschedulePaymentNote.hidden = o.status !== "menunggu_validasi";
+                rescheduleDate.min = new Date(Date.now() + 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+                rescheduleDate.value = offerStatus === "menunggu" || offerStatus === "kedaluwarsa" ? offer.tanggal_usulan : "";
+                rescheduleReason.value = offerStatus === "menunggu" || offerStatus === "kedaluwarsa" ? offer.alasan : "";
+                rescheduleError.textContent = "";
+                rescheduleDialog.showModal();
+                reschedulePayload = await new Promise((resolve) => {
+                    const onSubmit = (event) => {
+                        event.preventDefault();
+                        const tanggal = rescheduleDate.value;
+                        const alasan = rescheduleReason.value.trim();
+                        if (!tanggal || !alasan) {
+                            rescheduleError.textContent = "Tanggal dan alasan wajib diisi.";
+                            (!tanggal ? rescheduleDate : rescheduleReason).focus();
+                            return;
+                        }
+                        rescheduleForm.removeEventListener("submit", onSubmit);
+                        rescheduleDialog.removeEventListener("close", onClose);
+                        rescheduleDialog.close();
+                        resolve({ tanggal_usulan: tanggal, alasan });
+                    };
+                    const onClose = () => {
+                        rescheduleForm.removeEventListener("submit", onSubmit);
+                        resolve(null);
+                    };
+                    rescheduleForm.addEventListener("submit", onSubmit);
+                    rescheduleDialog.addEventListener("close", onClose, { once: true });
+                });
+                if (reschedulePayload === null) return;
+            }
             if (action === "reject") {
                 rejectionReason.value = "";
                 rejectionError.textContent = "";
@@ -1106,9 +1172,12 @@ async function orderDetail() {
             try {
                 await api("api/orders.php", {
                     method: "POST",
-                    body: { id, action, ...(action === "reject" ? { alasan_penolakan: rejectionNote } : {}) },
+                    body: { id, action,
+                        ...(action === "reject" ? { alasan_penolakan: rejectionNote } : {}),
+                        ...(action === "offer_reschedule" ? reschedulePayload : {}) },
                 });
-                toast(action === "review_cancellation" ? "Pembatalan ditandai sudah ditinjau" : "Status pesanan diperbarui");
+                toast(action === "review_cancellation" ? "Pembatalan ditandai sudah ditinjau"
+                    : action === "offer_reschedule" ? "Tawaran jadwal dikirim" : "Status pesanan diperbarui");
                 setTimeout(() => location.reload(), 500);
             } catch (e) {
                 toast(e.message);

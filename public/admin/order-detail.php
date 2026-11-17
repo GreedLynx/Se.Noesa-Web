@@ -17,6 +17,9 @@ admin_head('Detail Pesanan', 'order-detail');
     </article>
 </div>
 <div class="detail-actions" id="detail-actions" hidden>
+    <button class="button secondary" data-order-action="offer_reschedule">
+        Tawarkan jadwal pengganti
+    </button>
     <button class="button primary" data-order-action="review_cancellation">
         Sudah ditinjau
     </button>
@@ -52,6 +55,31 @@ admin_head('Detail Pesanan', 'order-detail');
         <div class="dialog-actions">
             <button type="button" class="button secondary" data-cancel-rejection>Batal</button>
             <button type="submit" class="button danger-outline">Tolak pembayaran</button>
+        </div>
+    </form>
+</dialog>
+<dialog id="reschedule-order-dialog" class="product-dialog reject-order-dialog" aria-labelledby="reschedule-order-title">
+    <form id="reschedule-order-form">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">JADWAL PENGGANTI</p>
+                <h2 id="reschedule-order-title">Tawarkan tanggal baru</h2>
+            </div>
+            <button type="button" class="icon-close" data-cancel-reschedule aria-label="Tutup">&times;</button>
+        </div>
+        <p class="muted">Kuota tanggal baru akan diperiksa kembali ketika pelanggan menerima tawaran.</p>
+        <p id="reschedule-payment-note" class="muted" hidden>Mengirim tawaran ini menyatakan pembayaran sudah valid. Jika pelanggan menerima, pesanan langsung berstatus Diproses.</p>
+        <label for="reschedule-date">Tanggal pengiriman baru
+            <input id="reschedule-date" name="tanggal_usulan" type="date" required>
+        </label>
+        <label for="reschedule-reason">Alasan perubahan jadwal
+            <textarea id="reschedule-reason" name="alasan" rows="4" maxlength="500" required
+                placeholder="Contoh: Operasional pada tanggal sebelumnya ditutup."></textarea>
+        </label>
+        <p id="reschedule-order-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+            <button type="button" class="button secondary" data-cancel-reschedule>Batal</button>
+            <button type="submit" class="button primary">Kirim tawaran</button>
         </div>
     </form>
 </dialog>

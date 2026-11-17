@@ -1,8 +1,9 @@
 # Handoff Se.Noesa-Web
 
 ## Kondisi saat ini
-- PR #44 untuk branch `feature/pembatalan-pesanan` sudah merge ke `dev` pada 2026-11-13 (`3f782a7`). HEAD lokal saat ini `c98a903` (`docs: refresh project handoff`); branch fitur selaras dengan `origin/feature/pembatalan-pesanan` dan memuat merge PR #44 dari `dev`.
-- Tidak ada perubahan kode aplikasi yang belum di-commit. `HANDOFF.md` sedang diperbarui untuk melengkapi konteks sesi berikutnya; perubahan ini belum di-commit.
+- PR #45 sudah menggabungkan branch `feature/pembatalan-pesanan` ke `dev` pada commit `62e3a23`.
+- Branch aktif `feature/penolakan-reschedule` dibuat dari `dev` lokal yang sudah di-fast-forward ke `origin/dev` (`62e3a23`).
+- Implementasi penolakan dan tawaran jadwal ulang selesai pada branch ini. Perubahan belum di-commit atau di-push; migrasi 022 belum diterapkan ke database.
 
 ## Fitur yang sudah masuk
 - Rentang libur operasional dapat ditambah, diedit, dan dihapus; checkout tanggal libur diblokir tanpa mengubah pesanan lama.
@@ -34,6 +35,21 @@
 - Detail skema dan kontrak endpoint: `docs/database.md` dan `docs/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
 
 ## Pekerjaan berikutnya
-- Fitur penolakan pesanan dengan alasan dan tawaran reschedule masih terpisah. Belum diputuskan status yang dapat ditolak dan apakah tawaran reschedule hanya berupa usulan atau alur penerimaan pelanggan.
-- Sebelum implementasi reschedule, minta keputusan: status pesanan mana yang dapat ditolak; dan apakah Admin hanya mengirim alasan beserta tanggal usulan atau pelanggan perlu menerima tawaran lalu menjalani alur perubahan tanggal.
+- Klarifikasi pengguna: pembatalan/penolakan oleh Admin mencakup status `Menunggu pembayaran`, `Menunggu Validasi`, dan `Diproses`, dilakukan manual per pesanan.
+- `Menunggu pembayaran`: penanganan bergantung kondisi; kasus yang sudah ditetapkan adalah pesanan dibuat sebelum Admin melakukan close order pada tanggal pengiriman tersebut. Admin dapat membatalkan dengan catatan dan tawaran jadwal pengiriman pengganti.
+- `Menunggu Validasi`: jika pembayaran tidak valid, Admin dapat menolak dengan catatan alasan kegagalan pembayaran. Jika pembayaran valid tetapi tanggal pengiriman ditutup oleh Admin, Admin dapat menolak dengan catatan dan tawaran jadwal pengganti.
+- `Diproses`: pembatalan hanya ketika tanggal pengiriman ditutup oleh Admin setelah pesanan dibuat, disertai catatan dan tawaran jadwal pengganti.
+- Pengguna menyetujui alur dalam aplikasi: Admin memberi satu tanggal usulan; pelanggan menerima atau menolak. Penerimaan memeriksa ulang tanggal libur dan kuota; penolakan membatalkan pesanan dan refund pembayaran valid tetap manual di luar aplikasi.
+- Rencana minimum mempertahankan status pesanan selama tawaran menunggu dan menyimpan tawaran pada tabel terpisah. Tawaran paid/diproses berlaku 24 jam; unpaid tetap mengikuti tenggat pembayaran satu jam. Tanggal tujuan tidak memesan kuota sampai diterima.
+- Rencana dan hasil eksekusi ada di `docs/rencana-penolakan-reschedule.md`. Migrasi 022 menambah tabel tawaran terpisah; Admin membuat/mengganti tawaran dan pelanggan menerima/menolak dengan token versi. Accept memeriksa kuota ulang; reject mencatat pembatalan pelanggan. Aksi pembayaran/produksi yang bentrok dijaga di server.
+- Verifikasi yang lulus: PHP lint pada API Admin/Pelanggan dan job kedaluwarsa; JavaScript syntax check; `scripts/test-order-cancellation-ui.cjs`, `scripts/test-admin-order-detail.cjs`, `scripts/test-admin-cancellation-list.cjs`, `scripts/test-admin-dashboard.cjs`; `git diff --check`.
+- Verifikasi yang belum dilakukan: integrasi PostgreSQL/migrasi dan browser login. Tes `scripts/test-payment-deadline.php` disesuaikan untuk tawaran aktif tetapi tidak dijalankan karena harness tersebut membaca konfigurasi proyek dan variabel koneksi PostgreSQL uji tidak tersedia. Tidak ada akses ke `.env` atau database aplikasi.
+- Review sumber akhir selesai: tiga temuan tentang lock, tanggal kedaluwarsa, dan tombol Admin diperbaiki; reviewer tidak menemukan isu tambahan. Berikutnya, jalankan suite PostgreSQL terisolasi dan migrasi fresh/upgrade saat koneksi test tersedia, lalu commit dengan Conventional Commit. Jangan push/merge tanpa langkah eksplisit berikutnya.
+- Percobaan awal membuat branch gagal karena sandbox tidak dapat menulis `.git`; operasi diulang dengan izin Git, lalu `dev` berhasil di-fast-forward dan branch fitur berhasil dibuat tanpa kehilangan perubahan handoff.
 - Tidak ada perubahan `.env`; tidak ada push yang dilakukan pada tugas ini.
+
+## Catatan lanjutan (16 Nov 2026)
+- Saat endpoint `public/pelanggan/api/orders.php` memuat daftar pesanan, koneksi PostgreSQL gagal pada `PDO::__construct` dengan `SSL SYSCALL error: Connection reset by peer`; kegagalan terjadi sebelum query daftar pesanan berjalan, jadi ini belum menunjukkan bug SQL pada fitur reschedule.
+- Log yang dibagikan memuat kredensial DB dalam trace argumen PDO. Rotasi password database dan pembaruan secret di konfigurasi/deployment diperlukan; kredensial tidak disimpan di repo/HANDOFF.
+- Lingkungan sesi ini tidak menyediakan variabel koneksi PostgreSQL uji dan tidak ada utilitas `psql`/`pg_isready`; verifikasi DB terisolasi dan migrasi 022 tetap belum bisa dijalankan. Jangan menerapkan migrasi ke DB aplikasi sebagai pengganti.
+- Syntax PHP endpoint tetap valid (`php -l`); `git diff --check` bersih.
