@@ -1,6 +1,6 @@
 # Keputusan Bisnis Se.Noesa — Menunggu Persetujuan Pemilik/Mitra
 
-> Dokumen ini berisi 14 keputusan bisnis dari `docs/TASKS-IMPLEMENTASI-SE.NOESA.md` (TASK-01) dan `docs/REVISI-LANJUTAN-SE.NOESA.md` bagian 10.
+> Dokumen ini berisi 14 keputusan bisnis dari `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md` (TASK-01) dan `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md` bagian 10.
 > **Aturan:** pertanyaan dipertahankan apa adanya. Agent tidak memilih jawaban. Kolom "Keputusan final" dikosongkan sampai ada persetujuan tertulis.
 > Status: `PENDING` / `APPROVED` / `REJECTED`.
 

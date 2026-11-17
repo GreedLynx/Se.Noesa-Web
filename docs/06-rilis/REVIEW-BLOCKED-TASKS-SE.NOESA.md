@@ -3,7 +3,7 @@
 - Tanggal: 2026-11-18
 - Branch / HEAD: `feature/full-stack` / `43da86d`
 - Sifat dokumen: **REVIEW ONLY**. Status task tidak diubah; tidak ada kode/migration/database yang disentuh.
-- Sumber: `docs/TASKS-IMPLEMENTASI-SE.NOESA.md`, `PROGRESS-IMPLEMENTASI-SE.NOESA.md`, `KEPUTUSAN-BISNIS-SE.NOESA.md`, dan inspeksi kode statis.
+- Sumber: `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md`, `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`, `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md`, dan inspeksi kode statis.
 
 ---
 
@@ -56,7 +56,7 @@
 - **Dependency:** #11.
 - **Dependency aktual:** `daily_quota_snapshot` (`app/daily-quota.php:69-78`) memakai `maxKitchen = intdiv(capacity*4,5)` dan `kitchenUsed = SUM(terpakai)`. Tidak ada tabel kapasitas dapur tersendiri. TASK-10 secara eksplisit melarang mengubah rumus 80% sebelum definisi disetujui.
 - **Jenis hambatan:** murni keputusan bisnis.
-- **Yang bisa dikerjakan tanpa keputusan:** dokumentasi pemetaan kuota produk → kuota harian → kapasitas dapur (sudah ada di `docs/AUDIT-CONCURRENCY-KUOTA.md`), tidak lebih.
+- **Yang bisa dikerjakan tanpa keputusan:** dokumentasi pemetaan kuota produk → kuota harian → kapasitas dapur (sudah ada di `docs/03-audit/AUDIT-CONCURRENCY-KUOTA.md`), tidak lebih.
 - **Risiko:** mengubah 80% tanpa keputusan akan merusak validasi checkout (`daily_quota_validate:104`).
 
 ### TASK-13 — Keterangan produk dinonaktifkan
@@ -93,7 +93,7 @@
 ### TASK-23 — Release readiness
 
 - **Dependency:** TASK-22.
-- **Dependency aktual:** TASK-22 belum bisa dijalankan penuh. Dokumen `RELEASE-READINESS-SE.NOESA.md` sudah dibuat sebagai **draft NO-GO** sesuai master prompt §10, tetapi keputusan final perlu diulang setelah TASK-22.
+- **Dependency aktual:** TASK-22 belum bisa dijalankan penuh. Dokumen `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` sudah dibuat sebagai **draft NO-GO** sesuai master prompt §10, tetapi keputusan final perlu diulang setelah TASK-22.
 - **Jenis hambatan:** dependency.
 - **Yang bisa dikerjakan tanpa keputusan:** pemutakhiran draft readiness dengan hasil regression terbatas (sudah ada).
 

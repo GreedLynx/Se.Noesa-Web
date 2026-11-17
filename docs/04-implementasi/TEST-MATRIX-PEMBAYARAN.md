@@ -36,7 +36,7 @@
 
 | ID | Temuan | Bukti | Tindakan |
 |---|---|---|---|
-| ~~BUG-001~~ | **Koreksi TASK-07: false alarm.** Definisi final `v_kuota_harian` ada di `database/migrations/016_order_cancellation.sql:12`, yang sudah mengecualikan `ditolak` **dan** `dibatalkan`. Migration 011 adalah definisi lama yang ditimpa. Agregat DB aktual: 0 baris selisih. | `016_order_cancellation.sql:12`, `docs/AUDIT-CONCURRENCY-KUOTA.md` | Tidak ada tindakan; dicatat sebagai koreksi. |
+| ~~BUG-001~~ | **Koreksi TASK-07: false alarm.** Definisi final `v_kuota_harian` ada di `database/migrations/016_order_cancellation.sql:12`, yang sudah mengecualikan `ditolak` **dan** `dibatalkan`. Migration 011 adalah definisi lama yang ditimpa. Agregat DB aktual: 0 baris selisih. | `016_order_cancellation.sql:12`, `docs/03-audit/AUDIT-CONCURRENCY-KUOTA.md` | Tidak ada tindakan; dicatat sebagai koreksi. |
 | OBS-001 | 6 pesanan `menunggu_pembayaran` tanpa bukti sudah melewati tenggat 1 jam; menunggu `scripts/expire-unpaid-orders.php` dijalankan penjadwal. | query agregat | Operasional, bukan bug kode. Perlu dipastikan cron aktif. |
 | OBS-002 | 4 pesanan `ditolak` tanpa `alasan_penolakan` (data historis sebelum validasi alasan wajib). | query agregat | Tidak diubah; jangan backfill tanpa keputusan. |
 | OBS-003 | Teks refund penuh di `customer.js:563` menyatakan kebijakan yang masih menunggu keputusan #1. | kode | Tidak diubah sampai #1 disetujui. |

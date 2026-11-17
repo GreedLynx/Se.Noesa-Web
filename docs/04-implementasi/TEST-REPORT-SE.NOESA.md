@@ -62,9 +62,9 @@
   - `ditolak` tanpa alasan: 4 (data historis).
   - Metode pembayaran aktif: 1.
   - Selisih `v_kuota_harian.terpakai` vs agregat status aktif: **0 baris** (data saat ini konsisten).
-- **Matrix:** 14 skenario di `docs/TEST-MATRIX-PEMBAYARAN.md`.
+- **Matrix:** 14 skenario di `docs/04-implementasi/TEST-MATRIX-PEMBAYARAN.md`.
 - **Belum dijalankan (dan alasannya):** semua skenario mutasi (checkout, upload/ganti bukti, verifikasi, penolakan, pembatalan, expire) karena dilarang menulis ke DB remote; render browser tidak diuji karena tidak ada browser automation dan dilarang memakai data pelanggan nyata untuk mutasi.
-- **Temuan:** BUG-001 (latent), OBS-001, OBS-002, OBS-003 — tercatat di `PROGRESS-IMPLEMENTASI-SE.NOESA.md` dan matrix. Tidak ada perbaikan kode yang dilakukan di task ini.
+- **Temuan:** BUG-001 (latent), OBS-001, OBS-002, OBS-003 — tercatat di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md` dan matrix. Tidak ada perbaikan kode yang dilakukan di task ini.
 - **Kesimpulan:** LULUS sebagai audit + test matrix. Tidak ada klaim fungsional browser/mutasi.
 
 ### TASK-05 — Minimum pemesanan
@@ -209,5 +209,5 @@
 ## TASK-22 & TASK-23
 
 - **TASK-22 (regression lintas role): BLOCKED** — dependency "semua task implementasi relevan selesai" belum terpenuhi (7 task BLOCKED menunggu keputusan, 1 PARTIAL). Yang dapat dijalankan hanyalah lint menyeluruh di atas; itu **bukan** pengganti regression matrix lintas role.
-- **TASK-23: BLOCKED** oleh TASK-22. Sesuai master prompt §10, dokumen `RELEASE-READINESS-SE.NOESA.md` tetap disusun dengan keputusan **NO-GO**.
+- **TASK-23: BLOCKED** oleh TASK-22. Sesuai master prompt §10, dokumen `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` tetap disusun dengan keputusan **NO-GO**.
 - Tidak ada klaim siap rilis.

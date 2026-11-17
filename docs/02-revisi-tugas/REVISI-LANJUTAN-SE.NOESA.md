@@ -326,7 +326,7 @@ Jangan menebak jawaban pertanyaan berikut saat implementasi:
 
 Gunakan prompt berikut ketika dokumen ini diberikan kepada OpenCode, Antigravity, Codex, atau coding agent lain:
 
-> Baca seluruh dokumen `REVISI-LANJUTAN-SE.NOESA.md` dan audit repository Se.Noesa-Web sebelum melakukan perubahan.
+> Baca seluruh dokumen `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md` dan audit repository Se.Noesa-Web sebelum melakukan perubahan.
 >
 > Kerjakan sebagai kelanjutan aplikasi yang sudah ada, bukan membuat ulang proyek. Pertahankan stack, arsitektur, database, autentikasi, dan fitur yang telah berjalan. Baca `AGENTS.md`, PRD, design system, migration, schema, API, dan komponen terkait terlebih dahulu.
 >

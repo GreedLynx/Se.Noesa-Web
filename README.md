@@ -118,12 +118,12 @@ tidak mengubah pesanan. Pesanan yang dibatalkan tidak lagi memakai kuota.
 
 Admin mengatur kuota produk untuk setiap tanggal pengiriman. Pelanggan hanya dapat memesan produk yang masih memiliki sisa kuota pada tanggal yang dipilih. Sistem juga membatasi total pesanan hingga 80% dari akumulasi kuota produk pada tanggal tersebut.
 
-Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/api.md`.
+Rincian teknis database dan endpoint tersedia di `docs/01-spesifikasi/database.md` dan `docs/01-spesifikasi/api.md`.
 
 ## Lupa Password
 
 Halaman login menyediakan alur reset password menggunakan OTP enam digit yang dikirim ke email terdaftar. OTP berlaku 10 menit, maksimal lima kali percobaan, dan permintaan ulang dibatasi satu kali per akun setiap 60 detik. Untuk mengaktifkannya, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, dan `SMTP_FROM_EMAIL` pada `.env`. Gmail memerlukan Verifikasi 2 Langkah dan App Password; jangan gunakan atau bagikan password login Gmail. Jalankan `composer install` dan `php scripts/migrate.php` pada database yang sudah ada. Migrasi reset password berada di `012_password_resets.sql` dan `013_password_reset_otps.sql` setelah migrasi kuota.
-Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.
+Panduan konsistensi penulisan tersedia di `docs/00-panduan/gaya-kode.md`.
 
 ## Pembatalan dan aktivasi job pembayaran
 
@@ -192,3 +192,10 @@ User uji default `postgres`; bila perlu isi `SENOESA_TEST_PGUSER` dan
 menjalankan migrasi/endpoint/dua koneksi/job dan tes kuota yang ada, lalu
 menghapus fixture uji. Perpindahan file HTTP disimulasikan hanya pada harness CLI;
 upload browser dan scheduler lingkungan target perlu diverifikasi saat aktivasi.
+
+## Dokumentasi lengkap
+
+Indeks seluruh dokumentasi proyek (panduan, spesifikasi, revisi, audit,
+implementasi, keputusan bisnis, dan persiapan rilis) ada di
+[`docs/README.md`](docs/README.md). File `.md` dikelompokkan per peran di
+subfolder `docs/`; dokumen dependency tetap berada di `vendor/`.

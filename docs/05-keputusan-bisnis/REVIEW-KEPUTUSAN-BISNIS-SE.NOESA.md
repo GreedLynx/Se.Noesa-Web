@@ -1,11 +1,11 @@
 # Review Keputusan Bisnis Se.Noesa — Post-Implementation
 
 - Tanggal: 2026-11-18
-- Sumber: `KEPUTUSAN-BISNIS-SE.NOESA.md` (14 keputusan + DECISION-NEW-01)
+- Sumber: `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` (14 keputusan + DECISION-NEW-01)
 - Branch / HEAD: `feature/full-stack` / `43da86d`
 - Sifat dokumen: **REVIEW ONLY**. Tidak ada kode, database, atau status keputusan yang diubah.
 
-> **Aturan penting:** Seluruh 15 keputusan masih **PENDING**. Rekomendasi di bawah adalah bahan pertimbangan untuk pemilik proyek, **bukan pengganti keputusan**. Kolom "Keputusan final" di `KEPUTUSAN-BISNIS-SE.NOESA.md` tetap kosong sampai ada persetujuan tertulis.
+> **Aturan penting:** Seluruh 15 keputusan masih **PENDING**. Rekomendasi di bawah adalah bahan pertimbangan untuk pemilik proyek, **bukan pengganti keputusan**. Kolom "Keputusan final" di `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` tetap kosong sampai ada persetujuan tertulis.
 
 ## Ringkasan prioritas jawaban
 
@@ -227,6 +227,6 @@
 
 ## Prosedur penetapan (tidak dijalankan agent)
 
-1. Pemilik menulis jawaban langsung di kolom **Keputusan final** pada `KEPUTUSAN-BISNIS-SE.NOESA.md` dan mengubah status menjadi `APPROVED`/`REJECTED`.
+1. Pemilik menulis jawaban langsung di kolom **Keputusan final** pada `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` dan mengubah status menjadi `APPROVED`/`REJECTED`.
 2. Agent tidak mengisi, tidak menebak, dan tidak mengubah status tanpa tulisan pemilik.
-3. Setiap jawaban memicu penyesuaian task board: task yang terkunci dievaluasi ulang di `REVIEW-BLOCKED-TASKS-SE.NOESA.md`.
+3. Setiap jawaban memicu penyesuaian task board: task yang terkunci dievaluasi ulang di `docs/06-rilis/REVIEW-BLOCKED-TASKS-SE.NOESA.md`.

@@ -9,7 +9,7 @@ memastikan perubahan tidak mengubah perilaku aplikasi.
 
 ## Dokumentasi yang ditambahkan
 
-- `docs/gaya-kode.md` sebagai pedoman PHP, SQL, HTML, CSS, JavaScript, API,
+- `docs/00-panduan/gaya-kode.md` sebagai pedoman PHP, SQL, HTML, CSS, JavaScript, API,
   dokumentasi, dan commit.
 - README menautkan pedoman tersebut.
 

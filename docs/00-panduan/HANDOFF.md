@@ -33,12 +33,12 @@
   - `scripts/test-payment-deadline.php` hanya dijalankan lewat harness `scripts/test-order-cancellation.php` (mode `--existing`); mode standalone menyambung ke DB konfigurasi aplikasi dan tidak boleh dipakai.
 
 ## Rujukan implementasi utama
-- Aturan dan indeks file fitur: `docs/peta-kode.md` (kalender libur, rekap produksi, pembatalan, tinjauan Admin).
+- Aturan dan indeks file fitur: `docs/00-panduan/peta-kode.md` (kalender libur, rekap produksi, pembatalan, tinjauan Admin).
 - Kalender libur: `public/admin/schedules.php`, `public/admin/api/holidays.php`, `app/daily-quota.php`; migrasi `019_operational_holidays.sql`.
 - Rekap produksi: `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`; VIEW pada `020_daily_production_report.sql`.
 - Pembatalan pelanggan dan job kedaluwarsa: `public/pelanggan/api/orders.php`, `app/order-cancellation.php`, `app/order-expiration.php`, `scripts/expire-unpaid-orders.php`; migrasi terkait `016_order_cancellation.sql` dan `018_payment_deadline.sql`.
 - Tinjauan pembatalan Admin: `public/admin/orders.php`, `public/admin/order-detail.php`, `public/admin/api/orders.php`, `public/admin/api/dashboard.php`; migrasi `021_cancellation_admin_review.sql`.
-- Detail skema dan kontrak endpoint: `docs/database.md` dan `docs/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
+- Detail skema dan kontrak endpoint: `docs/01-spesifikasi/database.md` dan `docs/01-spesifikasi/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
 
 ## Pekerjaan berikutnya
 - Fitur penolakan pesanan dengan alasan dan tawaran reschedule masih terpisah. Belum diputuskan status yang dapat ditolak dan apakah tawaran reschedule hanya berupa usulan atau alur penerimaan pelanggan.

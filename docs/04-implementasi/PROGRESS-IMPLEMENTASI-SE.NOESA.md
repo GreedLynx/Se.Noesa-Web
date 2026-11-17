@@ -41,13 +41,13 @@
 | TASK-20 | PARTIAL | 671e1da | lolos (1/1 unit tanggal) | OWN-20/17/10 selesai; OWN-09/11 metrik & OWN-02/03 visual menunggu #13/QA |
 | TASK-21 | DONE | a378cec | lolos (lint + cek statis) | Username lebih menonjol, nav aktif, ikon SVG seragam, profil ganda hilang |
 | TASK-22 | BLOCKED | - | lint menyeluruh hanya | Dependency tidak terpenuhi (7 BLOCKED, 1 PARTIAL); regression penuh belum dapat dijalankan |
-| TASK-23 | BLOCKED | - | - | Terblokir oleh TASK-22; dokumen `RELEASE-READINESS-SE.NOESA.md` disusun sebagai laporan akhir (NO-GO) |
+| TASK-23 | BLOCKED | - | - | Terblokir oleh TASK-22; dokumen `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` disusun sebagai laporan akhir (NO-GO) |
 
 ## Task aktif
 - Tidak ada task eligible. Eksekusi selesai dengan status BLOCKED.
 - Terakhir dikerjakan: TASK-21 (DONE, `a378cec`).
 - TASK-22 & TASK-23: BLOCKED oleh dependency.
-- Laporan akhir: `RELEASE-READINESS-SE.NOESA.md` (NO-GO).
+- Laporan akhir: `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` (NO-GO).
 
 ## Ringkasan eksekusi
 - Task DONE: 14; PARTIAL: 1; BLOCKED: 9; FAILED: 0.
@@ -76,7 +76,7 @@
 ## Bug/regresi yang ditemukan
 | ID | Gejala | Commit terkait | Status | Tindakan |
 |---|---|---|---|---|
-| BUG-001 | ~~`v_kuota_harian` hanya mengecualikan `ditolak`, bukan `dibatalkan`.~~ **FALSE ALARM** — koreksi TASK-07: definisi final ada di `016_order_cancellation.sql:12` yang sudah mengecualikan keduanya; 0 selisih pada DB aktual dan test TEMP lolos. | 011_daily_quota_report.sql (definisi lama, ditimpa 016) | CLOSED | Tidak ada tindakan. Dicatat sebagai koreksi di `docs/AUDIT-CONCURRENCY-KUOTA.md`. |
+| BUG-001 | ~~`v_kuota_harian` hanya mengecualikan `ditolak`, bukan `dibatalkan`.~~ **FALSE ALARM** — koreksi TASK-07: definisi final ada di `016_order_cancellation.sql:12` yang sudah mengecualikan keduanya; 0 selisih pada DB aktual dan test TEMP lolos. | 011_daily_quota_report.sql (definisi lama, ditimpa 016) | CLOSED | Tidak ada tindakan. Dicatat sebagai koreksi di `docs/03-audit/AUDIT-CONCURRENCY-KUOTA.md`. |
 | OBS-001 | 6 pesanan `menunggu_pembayaran` tanpa bukti sudah lewat tenggat 1 jam. | - | OPEN | Operasional: penjadwal `scripts/expire-unpaid-orders.php` perlu dipastikan aktif. |
 | OBS-002 | 4 pesanan `ditolak` tanpa `alasan_penolakan` (data historis). | - | OPEN | Tidak di-backfill tanpa keputusan. |
 | OBS-003 | Teks “refund penuh ditangani Admin” di `customer.js:563` menyatakan kebijakan yang masih PENDING (#1). | - | OPEN | Tidak diubah; tunggu keputusan #1. |
@@ -117,8 +117,8 @@
 - **Kondisi awal terverifikasi:** branch `feature/full-stack`, HEAD `43da86d` (sesuai checkpoint terakhir), working tree bersih, lokal ahead 18 / behind 20 terhadap `origin/feature/full-stack`. Tidak ada pull/merge/rebase/reset/push.
 - **Dokumen dibaca:** `PROGRESS`, `CHANGELOG`, `TEST-REPORT`, `RELEASE-READINESS`, `KEPUTUSAN-BISNIS`, `TASKS-IMPLEMENTASI`. `AGENTS.md`, `PRD.md`, `DESIGN.md` tetap tidak ditemukan.
 - **Dokumen baru:**
-  - `REVIEW-KEPUTUSAN-BISNIS-SE.NOESA.md` — review 15 keputusan PENDING (14 + DECISION-NEW-01), lengkap dengan opsi, dampak DB/backend/frontend/operasional, dan rekomendasi **bukan keputusan**.
-  - `REVIEW-BLOCKED-TASKS-SE.NOESA.md` — analisis 9 task BLOCKED + lampiran audit lanjutan TASK-20 (metrik, konsistensi angka, query mahal, QA visual, prosedur DB isolat).
-  - `TEST-PLAN-RELEASE-SE.NOESA.md` — 8 paket pengujian yang belum dijalankan, masing-masing memuat prasyarat, langkah, hasil diharapkan, risiko, dan bukti.
+  - `docs/05-keputusan-bisnis/REVIEW-KEPUTUSAN-BISNIS-SE.NOESA.md` — review 15 keputusan PENDING (14 + DECISION-NEW-01), lengkap dengan opsi, dampak DB/backend/frontend/operasional, dan rekomendasi **bukan keputusan**.
+  - `docs/06-rilis/REVIEW-BLOCKED-TASKS-SE.NOESA.md` — analisis 9 task BLOCKED + lampiran audit lanjutan TASK-20 (metrik, konsistensi angka, query mahal, QA visual, prosedur DB isolat).
+  - `docs/06-rilis/TEST-PLAN-RELEASE-SE.NOESA.md` — 8 paket pengujian yang belum dijalankan, masing-masing memuat prasyarat, langkah, hasil diharapkan, risiko, dan bukti.
 - **Status task tidak berubah:** 14 DONE, 1 PARTIAL, 9 BLOCKED, 0 FAILED. Release tetap **NO-GO**.
 - **HEAD setelah review:** tidak berubah (`43da86d`) sampai checkpoint dokumentasi review dibuat.

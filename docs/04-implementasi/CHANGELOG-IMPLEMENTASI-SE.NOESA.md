@@ -6,8 +6,8 @@
 
 ### baseline — f7ff4d3
 - `docs: establish baseline by organizing implementation docs into docs/`
-- Memindahkan `REVISI-LANJUTAN-SE.NOESA.md` dan `revisi-senoesa.md` ke `docs/` (rename 100%).
-- Menambahkan `docs/AUDIT-REVISI-TAHAP-2.md`, `docs/PROMPT-EKSEKUSI-SE.NOESA.md`, `docs/TASKS-IMPLEMENTASI-SE.NOESA.md`.
+- Memindahkan `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md` dan `docs/02-revisi-tugas/revisi-senoesa.md` ke `docs/` (rename 100%).
+- Menambahkan `docs/03-audit/AUDIT-REVISI-TAHAP-2.md`, `docs/02-revisi-tugas/PROMPT-EKSEKUSI-SE.NOESA.md`, `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md`.
 - Dilakukan atas izin eksplisit user untuk membersihkan working tree sebelum eksekusi.
 
 ### TASK-00 — 9b7f8f5
@@ -15,12 +15,12 @@
 - Hitung ulang seluruh ID revisi: 89 ID unik — DONE 47, PARTIAL 22, NOT IMPLEMENTED 20.
 - Koreksi angka ringkasan bagian 9 dari 38/18/22 menjadi 47/22/20.
 - Hapus placeholder `IMG-CUS-? (none)` pada daftar PARTIAL.
-- Tambah `docs/AUDIT-REVISI-TAHAP-2-CORRECTION.md` sebagai jejak perubahan.
+- Tambah `docs/03-audit/AUDIT-REVISI-TAHAP-2-CORRECTION.md` sebagai jejak perubahan.
 - Tidak ada perubahan kode aplikasi, migration, atau konfigurasi.
 
 ### TASK-01 — 6be9681
 - `docs(TASK-01): document 14 pending business decisions`
-- Buat `KEPUTUSAN-BISNIS-SE.NOESA.md` berisi 14 keputusan dari task board dan revisi lanjutan.
+- Buat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` berisi 14 keputusan dari task board dan revisi lanjutan.
 - Setiap keputusan memiliki pertanyaan asli, konteks audit, opsi, kolom keputusan final yang dikosongkan, dampak, dan task terdampak.
 - Semua keputusan berstatus `PENDING`; tidak ada jawaban yang diisi agent.
 - Task yang bergantung (#3, #4, #5, #6, #8, #9, #10, #11, #12, #13, #14) tetap BLOCKED.
@@ -39,11 +39,11 @@
 
 ### TASK-04 — 2bf0153
 - `audit(TASK-04): map payment flow and record test matrix`
-- Buat `docs/TEST-MATRIX-PEMBAYARAN.md` berisi 14 skenario sukses/gagal beserta bukti kode dan bukti agregat DB read-only.
+- Buat `docs/04-implementasi/TEST-MATRIX-PEMBAYARAN.md` berisi 14 skenario sukses/gagal beserta bukti kode dan bukti agregat DB read-only.
 - Verifikasi: status awal `menunggu_pembayaran`, tenggat 1 jam, upload/ganti bukti terikat `id` + `user_id`, verifikasi/penolakan Admin bersyarat, alasan penolakan tampil ke Pelanggan, kuota dilepas hanya untuk `ditolak`/`dibatalkan`.
 - Tidak mengubah status, istilah, timeout, atau kebijakan refund (keputusan #1 dan #12 masih PENDING).
 - Tidak ada kode aplikasi yang diubah. Temuan dicatat: BUG-001 (view kuota), OBS-001..003.
-- Update `KEPUTUSAN-BISNIS-SE.NOESA.md` #1 dengan bukti teks refund di `customer.js:563`.
+- Update `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` #1 dengan bukti teks refund di `customer.js:563`.
 
 ### TASK-05 — 626cb9f
 - `fix(TASK-05): enforce per-product minimum in cart and clarify admin validation`
@@ -65,7 +65,7 @@
 
 ### TASK-07 — 7a2572c
 - `audit(TASK-07): verify quota checkout locking and rollback behavior`
-- Buat `docs/AUDIT-CONCURRENCY-KUOTA.md` berisi peta jalur kuota, urutan lock kanonik, analisis isolation/rollback, dan koreksi BUG-001.
+- Buat `docs/03-audit/AUDIT-CONCURRENCY-KUOTA.md` berisi peta jalur kuota, urutan lock kanonik, analisis isolation/rollback, dan koreksi BUG-001.
 - Menjalankan salinan sementara `scripts/test-daily-quota.php` tanpa bagian lock produksi: 44 PASS, 0 FAIL; seluruh fixture berada di TEMP table dan di-rollback.
 - Tidak menjalankan script asli karena bagian akhir mengunci `kuota_harian` pada database remote.
 - Tidak ada perubahan kode (tidak ada race condition yang terbukti).
@@ -96,7 +96,7 @@
 - Audit: `produk` tidak memiliki kolom `aktif`; `detail_pesanan` tidak memiliki kolom snapshot nama/detail (verifikasi `information_schema`: 0 kolom). FK `detail_pesanan.produk_id → produk.id` mencegah penghapusan produk yang sudah dipesan.
 - Konsekuensi: baris histori tidak hilang, tetapi detail pesanan menampilkan `produk.nama` saat ini, sehingga penggantian nama produk mengubah tampilan pesanan lama.
 - Implementasi keterangan “produk dinonaktifkan” memerlukan definisi bisnis + migration (kolom `aktif` dan/atau snapshot). Tidak ada keputusan yang tersedia ⇒ task ditandai BLOCKED, kode tidak diubah.
-- Tambah `DECISION-NEW-01` pada `KEPUTUSAN-BISNIS-SE.NOESA.md` (keputusan baru yang ditemukan saat implementasi, bukan bagian dari 14 keputusan awal).
+- Tambah `DECISION-NEW-01` pada `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` (keputusan baru yang ditemukan saat implementasi, bukan bagian dari 14 keputusan awal).
 
 ### TASK-14 — ae9a58b
 - `feat(TASK-14): inform customers about full quota per delivery date`
@@ -147,7 +147,7 @@
 ### Finalisasi — (checkpoint ini)
 - `docs: finalize implementation progress and release readiness`
 - TASK-22 & TASK-23 ditandai BLOCKED (dependency belum terpenuhi).
-- Buat `RELEASE-READINESS-SE.NOESA.md` dengan keputusan **NO-GO** beserta daftar blocker, checkpoint, dan cara revert.
-- Perbarui `PROGRESS-IMPLEMENTASI-SE.NOESA.md` dengan ringkasan akhir 14 DONE / 1 PARTIAL / 9 BLOCKED.
-- Perbarui `TEST-REPORT-SE.NOESA.md` dengan hasil lint menyeluruh (78 PHP, 7 JS, 10 CJS — 0 gagal).
+- Buat `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` dengan keputusan **NO-GO** beserta daftar blocker, checkpoint, dan cara revert.
+- Perbarui `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md` dengan ringkasan akhir 14 DONE / 1 PARTIAL / 9 BLOCKED.
+- Perbarui `docs/04-implementasi/TEST-REPORT-SE.NOESA.md` dengan hasil lint menyeluruh (78 PHP, 7 JS, 10 CJS — 0 gagal).
 - Tidak ada push, deploy, atau perubahan produksi.
