@@ -25,7 +25,7 @@
 - Semua keputusan berstatus `PENDING`; tidak ada jawaban yang diisi agent.
 - Task yang bergantung (#3, #4, #5, #6, #8, #9, #10, #11, #12, #13, #14) tetap BLOCKED.
 
-### TASK-02 — (checkpoint ini)
+### TASK-02 — 2ba8f69
 - `task(TASK-02): verify owner order synchronization and enforce read-only UI`
 - Audit: `public/owner/api/orders.php` hanya `require` `public/admin/api/orders.php`, sehingga query/filter/detail/count identik oleh konstruksi. Tidak ada pagination di kedua endpoint (semua baris dikembalikan), sehingga tidak ada perbedaan pagination.
 - Backend read-only sudah benar: role `owner`/`admin` diizinkan untuk GET; POST wajib `admin`.
@@ -36,3 +36,11 @@
   - `public/owner/partials/layout.php`: tambah `data-role="owner"` pada `<body>`.
   - `public/assets/js/app.js`: pasang blok offline hanya bila kontrol tersedia; jangan render form unggah foto kirim dan jangan pasang handler aksi pada Owner; jaga `actions` null-safe.
 - Tidak ada perubahan pada endpoint API, skema, atau migration.
+
+### TASK-04 — (checkpoint ini)
+- `audit(TASK-04): map payment flow and record test matrix`
+- Buat `docs/TEST-MATRIX-PEMBAYARAN.md` berisi 14 skenario sukses/gagal beserta bukti kode dan bukti agregat DB read-only.
+- Verifikasi: status awal `menunggu_pembayaran`, tenggat 1 jam, upload/ganti bukti terikat `id` + `user_id`, verifikasi/penolakan Admin bersyarat, alasan penolakan tampil ke Pelanggan, kuota dilepas hanya untuk `ditolak`/`dibatalkan`.
+- Tidak mengubah status, istilah, timeout, atau kebijakan refund (keputusan #1 dan #12 masih PENDING).
+- Tidak ada kode aplikasi yang diubah. Temuan dicatat: BUG-001 (view kuota), OBS-001..003.
+- Update `KEPUTUSAN-BISNIS-SE.NOESA.md` #1 dengan bukti teks refund di `customer.js:563`.

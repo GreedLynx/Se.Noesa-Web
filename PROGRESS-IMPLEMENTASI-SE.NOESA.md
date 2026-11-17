@@ -3,16 +3,16 @@
 - Last updated: 2026-11-17 21:45 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-02)
+- Current HEAD: (checkpoint TASK-04)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 3 |
+| DONE | 4 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 14 |
+| TODO | 13 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -20,9 +20,9 @@
 |---|---|---|---|---|
 | TASK-00 | DONE | 9b7f8f5 | lolos | 89 ID unik; ringkasan dikoreksi 38/18/22 → 47/22/20; tanpa perubahan kode |
 | TASK-01 | DONE | 6be9681 | lolos | 14 keputusan PENDING, tidak ada asumsi agent |
-| TASK-02 | DONE | (checkpoint ini) | lolos | Output Owner=Admin identik 11 skenario; kontrol mutasi Owner dihapus |
+| TASK-02 | DONE | 2ba8f69 | lolos | Output Owner=Admin identik 11 skenario; kontrol mutasi Owner dihapus |
 | TASK-03 | BLOCKED | - | - | Menunggu keputusan #3, #4 |
-| TASK-04 | TODO | - | - | Audit/test pembayaran E2E |
+| TASK-04 | DONE | (checkpoint ini) | lolos (14 skenario terpetakan) | Audit + test matrix; tanpa perubahan status/timeout; BUG-001 dicatat |
 | TASK-05 | TODO | - | - | Minimum pemesanan |
 | TASK-06 | TODO | - | - | Upload foto produk |
 | TASK-07 | TODO | - | - | Concurrency kuota (dep TASK-02, 05) |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-04
-- Tujuan: Audit dan uji alur pembayaran end-to-end tanpa mengubah kebijakan status/timeout
-- File yang akan disentuh: public/pelanggan/api/orders.php, app/daily-quota.php, frontend pembayaran (audit); file progres
-- Risiko: Sedang — DB remote bersifat read-only untuk agent; test mutasi tidak dapat dijalankan
-- Dependency: TASK-00 (selesai); TASK-01 keputusan #12 hanya jika mengubah istilah status (tidak dilakukan)
+- ID: TASK-05
+- Tujuan: Samakan validasi minimum pemesanan per produk antara frontend dan backend
+- File yang akan disentuh: app/daily-quota.php, public/pelanggan/assets/customer.js, public/admin/api/products.php, public/admin/assets/admin.js (audit); file progres
+- Risiko: Sedang — jangan mengubah angka minimum tanpa keputusan; gunakan sumber nilai yang sudah ada
+- Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -71,7 +71,10 @@
 ## Bug/regresi yang ditemukan
 | ID | Gejala | Commit terkait | Status | Tindakan |
 |---|---|---|---|---|
-| (belum ada) | | | | |
+| BUG-001 | `v_kuota_harian` hanya mengecualikan status `ditolak`, bukan `dibatalkan` ⇒ berpotensi menghitung pesanan batal sebagai pemakaian kuota. Belum ter-reproduksi (0 baris selisih pada data aktual). | 011_daily_quota_report.sql:9 vs app/daily-quota.php:44 | OPEN | Perlu migration `CREATE OR REPLACE VIEW` + uji pada data dengan pesanan batal; tidak dijalankan agent (dilarang mengubah DB). Perlu task baru. |
+| OBS-001 | 6 pesanan `menunggu_pembayaran` tanpa bukti sudah lewat tenggat 1 jam. | - | OPEN | Operasional: penjadwal `scripts/expire-unpaid-orders.php` perlu dipastikan aktif. |
+| OBS-002 | 4 pesanan `ditolak` tanpa `alasan_penolakan` (data historis). | - | OPEN | Tidak di-backfill tanpa keputusan. |
+| OBS-003 | Teks “refund penuh ditangani Admin” di `customer.js:563` menyatakan kebijakan yang masih PENDING (#1). | - | OPEN | Tidak diubah; tunggu keputusan #1. |
 
 ## Riwayat checkpoint
 | Waktu | Commit | Task | Hasil test | Catatan |
@@ -79,7 +82,8 @@
 | 2026-11-17 21:25 | f7ff4d3 | baseline | git status clean | Organisasi docs ke folder docs/ (diizinkan user) |
 | 2026-11-17 21:45 | 9b7f8f5 | TASK-00 | lolos (hitung ulang 89 ID) | Koreksi ringkasan audit; tanpa perubahan kode aplikasi |
 | 2026-11-17 21:55 | 6be9681 | TASK-01 | lolos (14/14 keputusan) | Dokumentasi keputusan bisnis; semua PENDING |
-| 2026-11-17 22:15 | (checkpoint ini) | TASK-02 | lolos (11 skenario identik) | Owner read-only frontend diperketat; tanpa perubahan API |
+| 2026-11-17 22:15 | 2ba8f69 | TASK-02 | lolos (11 skenario identik) | Owner read-only frontend diperketat; tanpa perubahan API |
+| 2026-11-17 22:40 | (checkpoint ini) | TASK-04 | lolos (14 skenario, agregat DB) | Audit pembayaran; test matrix; BUG-001/OBS-001..003 dicatat |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

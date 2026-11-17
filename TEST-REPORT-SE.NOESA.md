@@ -50,3 +50,19 @@
 - **Lint:** `node --check public/assets/js/app.js` OK; `php -l` untuk 5 file terkait OK; `git diff --check` bersih.
 - **Belum diuji:** interaksi browser desktop/mobile (tidak ada browser automation), klik tombol secara nyata, dan mutasi DB (dilarang oleh batasan lingkungan).
 - **Kesimpulan:** LULUS untuk acceptance criteria yang dapat diuji di lingkungan ini. Tidak ada data pelanggan yang dicantumkan dalam laporan ini.
+
+### TASK-04 — Alur pembayaran end-to-end
+- **Jenis:** audit kode + query agregat read-only (`SELECT`), tanpa mutasi DB.
+- **Perintah:** `php snoesa_payment_audit.php`, `php snoesa_quota_view_check.php` (script di temp).
+- **Hasil agregat DB (tanpa data pribadi):**
+  - Status: dibatalkan 18, diproses 9, ditolak 9, menunggu_pembayaran 6, menunggu_validasi 3, selesai 19 (total 64).
+  - `menunggu_pembayaran` dengan bukti: 0 (konsisten dengan status awal).
+  - `menunggu_pembayaran` tanpa bukti & lewat 1 jam: 6 (menunggu penjadwal expire).
+  - `menunggu_validasi` tanpa bukti: 0 (sesuai guard verifikasi Admin).
+  - `ditolak` tanpa alasan: 4 (data historis).
+  - Metode pembayaran aktif: 1.
+  - Selisih `v_kuota_harian.terpakai` vs agregat status aktif: **0 baris** (data saat ini konsisten).
+- **Matrix:** 14 skenario di `docs/TEST-MATRIX-PEMBAYARAN.md`.
+- **Belum dijalankan (dan alasannya):** semua skenario mutasi (checkout, upload/ganti bukti, verifikasi, penolakan, pembatalan, expire) karena dilarang menulis ke DB remote; render browser tidak diuji karena tidak ada browser automation dan dilarang memakai data pelanggan nyata untuk mutasi.
+- **Temuan:** BUG-001 (latent), OBS-001, OBS-002, OBS-003 — tercatat di `PROGRESS-IMPLEMENTASI-SE.NOESA.md` dan matrix. Tidak ada perbaikan kode yang dilakukan di task ini.
+- **Kesimpulan:** LULUS sebagai audit + test matrix. Tidak ada klaim fungsional browser/mutasi.

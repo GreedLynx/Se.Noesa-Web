@@ -11,7 +11,7 @@
 
 ## #1 — Refund pembayaran terverifikasi
 - **Pertanyaan:** Refund: jika pembayaran sudah diverifikasi lalu pesanan dibatalkan dalam kondisi khusus, apakah refund manual, sebagian, atau tidak ada refund?
-- **Konteks audit:** CUS-06 / CUS-26 menyatakan pembatalan maksimal H-2 dan dilarang setelah verifikasi Admin. Tidak ada mekanisme refund otomatis di kode. `app/order-cancellation.php` hanya menyimpan metadata pembatalan.
+- **Konteks audit:** CUS-06 / CUS-26 menyatakan pembatalan maksimal H-2 dan dilarang setelah verifikasi Admin. Tidak ada mekanisme refund otomatis di kode. `app/order-cancellation.php` hanya menyimpan metadata pembatalan. Catatan TASK-04: `public/pelanggan/assets/customer.js:563` saat ini menampilkan teks “refund penuh ditangani Admin di luar aplikasi”, yang menyatakan kebijakan refund penuh sebelum keputusan ini disetujui; teks tidak diubah oleh agent.
 - **Opsi (jika didukung audit):** (a) refund manual penuh, (b) refund manual sebagian, (c) tanpa refund.
 - **Keputusan final:** _(kosong — menunggu pemilik)_
 - **Status:** PENDING
