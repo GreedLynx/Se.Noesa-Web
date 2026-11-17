@@ -32,17 +32,11 @@ admin_head('Daftar Pesanan', 'orders');
         <div class="tabs" id="order-tabs">
             <button class="active" data-tab="semua">
                 Semua
-                <b
-                    id="all-count">
-                    0
-                </b>
+                <b id="all-count">0</b>
             </button>
             <button data-tab="pembayaran">
                 Menunggu pembayaran
-                <b
-                    id="payment-count">
-                    0
-                </b>
+                <b id="payment-count">0</b>
             </button>
                 <button data-tab="validasi">
                     Menunggu verifikasi
@@ -53,24 +47,15 @@ admin_head('Daftar Pesanan', 'orders');
             </button>
             <button data-tab="proses">
                 Proses
-                <b
-                    id="processing-count">
-                    0
-                </b>
+                <b id="processing-count">0</b>
             </button>
             <button data-tab="selesai">
                 Selesai
-                <b
-                    id="completed-count">
-                    0
-                </b>
+                <b id="completed-count">0</b>
             </button>
             <button data-tab="ditolak">
                 Tolak
-                <b
-                    id="rejected-count">
-                    0
-                </b>
+                <b id="rejected-count">0</b>
             </button>
             <button data-tab="dibatalkan">
                 Dibatalkan <b id="cancelled-count">0</b>
@@ -80,40 +65,38 @@ admin_head('Daftar Pesanan', 'orders');
             <span>
                 &#9906;
             </span>
-            <input
-                id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">
+            <input id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">
         </label>
     </div>
     <div class="cancellation-filter" id="cancellation-review-filter" hidden>
-        <label for="cancellation-review">Filter riwayat</label>
+        <label for="cancellation-review">Status tinjauan</label>
         <select id="cancellation-review">
-            <option value="">Semua pembatalan</option>
+            <option value="">Semua status</option>
             <option value="unreviewed">Belum ditinjau</option>
             <option value="reviewed">Sudah ditinjau</option>
         </select>
+        
+        <label for="cancellation-source">Sumber pembatalan</label>
+        <select id="cancellation-source">
+            <option value="">Semua sumber</option>
+            <option value="pelanggan">Oleh pelanggan</option>
+            <option value="otomatis">Otomatis (sistem)</option>
+            <option value="lainnya">Lainnya / Admin</option>
+        </select>
+
         <span class="muted"><b id="cancellation-unreviewed-count">0</b> belum ditinjau</span>
     </div>
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>
-                        Kode / Waktu
-                    </th>
-                    <th>
-                        Pemesan
-                    </th>
-                    <th>
-                        Pesanan
-                    </th>
-                    <th>
-                        Total
-                    </th>
-                    <th>
-                        Status
-                    </th>
-                    <th>
-                    </th>
+                    <!-- HEADER DITUKAR: Pemesan di kiri, Kode/Waktu di kanan -->
+                    <th>Pemesan</th>
+                    <th>Kode / Waktu</th>
+                    <th>Pesanan</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="order-rows">
