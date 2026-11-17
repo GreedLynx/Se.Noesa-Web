@@ -477,9 +477,7 @@
 }
 
 @media (min-width: 701px) {
-    .customer-rail .rail-logout {
-        display: none;
-    }
+    /* Logout rail tetap terlihat di desktop: mobile-nav disembunyikan pada lebar ini. */
     .customer-bottom-user {
         display: none !important;
     }

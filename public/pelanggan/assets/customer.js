@@ -511,7 +511,13 @@ function historyPage() {
 }
 
 async function loadHistory() {
-    const d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
+    let d;
+    try {
+        d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
+    } catch (err) {
+        $('#history-list').innerHTML = '<div class="empty-state" role="alert">Riwayat pesanan belum dapat dimuat. ' + esc(err.message) + '</div>';
+        return;
+    }
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
         return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
