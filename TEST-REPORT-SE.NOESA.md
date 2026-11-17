@@ -104,3 +104,18 @@
 - **Analisis lock:** jalur yang menambah pemakaian (checkout, offline order, konfirmasi penggantian menu) memakai urutan lock kanonik yang sama dengan mode `SHARE ROW EXCLUSIVE` ⇒ saling serialize. Jalur yang melepas kuota tidak mengambil lock tersebut ⇒ tidak dapat menyebabkan oversold.
 - **Koreksi:** BUG-001 (TASK-04) dinyatakan false alarm; migration `016_order_cancellation.sql:12` sudah mengecualikan `dibatalkan` dari view, dan query agregat DB aktual menghasilkan 0 selisih.
 - **Kesimpulan:** LULUS sebagai audit + test terbatas. Tidak ada perubahan kode. Tidak ada klaim test konkuren dengan data nyata.
+
+### TASK-11 — Status dan filter Admin
+- **Jenis:** test API read-only (semua skenario GET) + verifikasi label statis + lint.
+- **Hasil filter (9/9 sesuai):**
+  - `tab=dibatalkan` → 18 item, semuanya `dibatalkan`; `review=unreviewed` → 18; `review=reviewed` → 0 ✅
+  - `tab=ditolak` → 9 item, semuanya `ditolak` ✅
+  - `tab=validasi` → 3 item `menunggu_validasi` ✅
+  - `tab=pembayaran` → 6 item `menunggu_pembayaran` ✅
+  - `tab=proses` → 9 item `diproses` ✅
+  - `tab=selesai` → 19 item `selesai` ✅
+  - `tab=semua` → 64 item, 6 status berbeda; `counts.total=64`, `cancelled=18`, `cancellation_unreviewed=18` ✅
+- **Konsistensi label:** tidak ada lagi teks “Menunggu validasi” pada file UI Admin/Owner/menu-notifications; seluruhnya “Menunggu verifikasi”. Nilai status DB dan `data-tab` tidak diubah.
+- **Lint:** 3 file JS lolos `node --check`; `php -l owner/orders.php` OK; `git diff --check` bersih.
+- **Belum diuji:** render browser desktop/mobile; perubahan istilah status final (menunggu keputusan #12).
+- **Kesimpulan:** LULUS. Tidak ada nilai status database yang diubah.

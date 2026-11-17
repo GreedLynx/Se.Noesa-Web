@@ -63,10 +63,21 @@
 - Tidak ada perubahan kode aplikasi. Skenario upload valid tidak dijalankan karena akan menulis file dan database.
 - Temuan: OBS-004 — file yang sudah dipindahkan dapat menjadi orphan bila UPDATE/INSERT DB gagal (tidak ada cleanup); tidak diubah di task ini.
 
-### TASK-07 — (checkpoint ini)
+### TASK-07 — 7a2572c
 - `audit(TASK-07): verify quota checkout locking and rollback behavior`
 - Buat `docs/AUDIT-CONCURRENCY-KUOTA.md` berisi peta jalur kuota, urutan lock kanonik, analisis isolation/rollback, dan koreksi BUG-001.
 - Menjalankan salinan sementara `scripts/test-daily-quota.php` tanpa bagian lock produksi: 44 PASS, 0 FAIL; seluruh fixture berada di TEMP table dan di-rollback.
 - Tidak menjalankan script asli karena bagian akhir mengunci `kuota_harian` pada database remote.
 - Tidak ada perubahan kode (tidak ada race condition yang terbukti).
 - Koreksi: BUG-001 dari TASK-04 dinyatakan false alarm karena migration 016 sudah memperbaiki definisi view.
+
+### TASK-11 — (checkpoint ini)
+- `fix(TASK-11): align order status labels and verify status filters`
+- Audit 6 nilai status DB (`menunggu_pembayaran`, `menunggu_validasi`, `diproses`, `selesai`, `ditolak`, `dibatalkan`) dan semua tab filter API/UI.
+- Perbaikan label UI yang masih memakai “Menunggu validasi” menjadi “Menunggu verifikasi” (selaras dengan perubahan ADM-19 yang sudah berlaku):
+  - `public/owner/orders.php` (tab status)
+  - `public/assets/js/app.js` (badge status daftar & detail Owner)
+  - `public/admin/assets/admin.js` (badge antrean prioritas & empty state)
+  - `public/assets/js/menu-notifications.js` (label status notifikasi)
+- Tidak ada nilai status database, action name, atau istilah final yang diubah (keputusan #12 masih PENDING).
+- Migration: tidak ada.

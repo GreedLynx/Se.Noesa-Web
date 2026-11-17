@@ -19,7 +19,7 @@ topbar('Pesanan');
 <div class="seg order-tabs rise" id="order-tabs" role="tablist" aria-label="Filter status pesanan">
     <button class="on" type="button" data-tab="semua">Semua <b id="all-count">0</b></button>
     <button type="button" data-tab="pembayaran">Menunggu pembayaran <b id="payment-count">0</b></button>
-    <button type="button" data-tab="validasi">Menunggu validasi <b id="pending-count">0</b></button>
+    <button type="button" data-tab="validasi">Menunggu verifikasi <b id="pending-count">0</b></button>
     <button type="button" data-tab="proses">Proses <b id="processing-count">0</b></button>
     <button type="button" data-tab="selesai">Selesai <b id="completed-count">0</b></button>
     <button type="button" data-tab="ditolak">Ditolak <b id="rejected-count">0</b></button>

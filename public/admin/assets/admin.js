@@ -368,7 +368,7 @@ async function dashboard() {
                         esc(o.kode) +
                         " · " +
                         esc(o.nama_pemesan) +
-                        '</b><span class="tag warning">Menunggu validasi</span></div><p>' +
+                        '</b><span class="tag warning">Menunggu verifikasi</span></div><p>' +
                         esc(o.keterangan || o.pax + " porsi") +
                         " · Kirim " +
                         dateLabel(o.tgl_kirim) +
@@ -377,7 +377,7 @@ async function dashboard() {
                         "</strong></a>",
                 )
                 .join("")
-        : '<div class="empty-state">Tidak ada pesanan yang menunggu validasi.</div>';
+        : '<div class="empty-state">Tidak ada pesanan yang menunggu verifikasi.</div>';
     $("#activity-list").innerHTML = d.recent.length
         ? d.recent
                 .map(

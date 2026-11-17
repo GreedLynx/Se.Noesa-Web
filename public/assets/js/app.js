@@ -451,7 +451,7 @@ const PAGES = {
         };
         const labels = {
             menunggu_pembayaran: "Menunggu pembayaran",
-            menunggu_validasi: "Menunggu validasi",
+            menunggu_validasi: "Menunggu verifikasi",
             diproses: "Sedang diproses",
             selesai: "Selesai",
             ditolak: "Ditolak",
@@ -576,7 +576,7 @@ const PAGES = {
         };
         const labels = {
             menunggu_pembayaran: "Menunggu pembayaran",
-            menunggu_validasi: "Menunggu validasi",
+            menunggu_validasi: "Menunggu verifikasi",
             diproses: "Sedang diproses",
             selesai: "Selesai",
             ditolak: "Ditolak",

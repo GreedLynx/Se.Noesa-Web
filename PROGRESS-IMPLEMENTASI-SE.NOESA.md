@@ -3,16 +3,16 @@
 - Last updated: 2026-11-17 21:45 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-07)
+- Current HEAD: (checkpoint TASK-11)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 7 |
+| DONE | 8 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 10 |
+| TODO | 9 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -25,11 +25,11 @@
 | TASK-04 | DONE | 2bf0153 | lolos (14 skenario terpetakan) | Audit + test matrix; tanpa perubahan status/timeout; BUG-001 dicatat |
 | TASK-05 | DONE | 626cb9f | lolos (5/5 unit skenario) | Cart clamp ke minimum; pesan error Admin diperjelas |
 | TASK-06 | DONE | d76a988 | lolos (5/5 skenario gagal) | Validasi upload diuji via HTTP; skenario valid tidak dijalankan (mutasi dilarang) |
-| TASK-07 | DONE | (checkpoint ini) | lolos (44 PASS TEMP-table) | Lock kanonik terverifikasi; simulasi checkout konkuren tidak dijalankan |
+| TASK-07 | DONE | 7a2572c | lolos (44 PASS TEMP-table) | Lock kanonik terverifikasi; simulasi checkout konkuren tidak dijalankan |
 | TASK-08 | BLOCKED | - | - | Menunggu keputusan #6 |
 | TASK-09 | BLOCKED | - | - | Menunggu keputusan #8, #9, #10 |
 | TASK-10 | BLOCKED | - | - | Menunggu keputusan #11 |
-| TASK-11 | TODO | - | - | Status/filter Admin |
+| TASK-11 | DONE | (checkpoint ini) | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
 | TASK-12 | TODO | - | - | Auto-refresh Admin |
 | TASK-13 | TODO | - | - | Produk nonaktif di histori |
 | TASK-14 | TODO | - | - | Kuota penuh Pelanggan (dep TASK-07) |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-11
-- Tujuan: Konsistensi status dan filter pesanan Admin tanpa mengganti nilai status DB
-- File yang akan disentuh: public/admin/api/orders.php, public/admin/assets/admin.js, public/admin/orders.php, public/assets/js/app.js (audit); file progres
-- Risiko: Sedang — keputusan #12 masih PENDING, sehingga hanya label/filter yang diperbaiki, bukan istilah status final
-- Dependency: TASK-00 (selesai); #12 hanya bila mengubah istilah (tidak dilakukan)
+- ID: TASK-12
+- Tujuan: Konsistensi auto-refresh setelah aksi Admin
+- File yang akan disentuh: public/admin/assets/admin.js, public/admin/api/*.php (audit); file progres
+- Risiko: Sedang — hindari reload berlebihan tetapi jangan mempertahankan data stale; pertahankan filter/periode
+- Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -87,7 +87,8 @@
 | 2026-11-17 22:40 | 2bf0153 | TASK-04 | lolos (14 skenario, agregat DB) | Audit pembayaran; test matrix; BUG-001/OBS-001..003 dicatat |
 | 2026-11-17 23:00 | 626cb9f | TASK-05 | lolos (5/5 skenario cart) | Clamp minimum di keranjang; pesan error Admin spesifik |
 | 2026-11-17 23:20 | d76a988 | TASK-06 | lolos (5/5 skenario upload gagal) | Validasi upload diuji via HTTP; tanpa perubahan kode |
-| 2026-11-17 23:45 | (checkpoint ini) | TASK-07 | lolos (44 PASS TEMP-table) | Audit lock kanonik; BUG-001 dikoreksi sebagai false alarm |
+| 2026-11-17 23:45 | 7a2572c | TASK-07 | lolos (44 PASS TEMP-table) | Audit lock kanonik; BUG-001 dikoreksi sebagai false alarm |
+| 2026-11-17 23:58 | (checkpoint ini) | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).
