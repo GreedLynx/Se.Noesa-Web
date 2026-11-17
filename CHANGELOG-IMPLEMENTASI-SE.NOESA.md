@@ -55,10 +55,18 @@
 - Tidak mengubah angka/aturan minimum bisnis.
 - Migration: tidak ada.
 
-### TASK-06 — (checkpoint ini)
+### TASK-06 — d76a988
 - `test(TASK-06): verify admin product image upload validation`
 - Audit `public/admin/api/products.php` (validasi error upload, `is_uploaded_file`, ≤2 MB, MIME via `getimagesize`, nama file generated dari hex acak + ekstensi MIME, folder `public/uploads/products`, transaksi DB terpisah).
 - Uji fungsional 5 skenario gagal lewat server PHP lokal + router sementara (tanpa menyentuh DB/storage produksi):
   - format tidak didukung → 422, ukuran > batas → 422, nama file traversal → 422, field wajib kosong → 422, minimum < 4 → 422.
 - Tidak ada perubahan kode aplikasi. Skenario upload valid tidak dijalankan karena akan menulis file dan database.
 - Temuan: OBS-004 — file yang sudah dipindahkan dapat menjadi orphan bila UPDATE/INSERT DB gagal (tidak ada cleanup); tidak diubah di task ini.
+
+### TASK-07 — (checkpoint ini)
+- `audit(TASK-07): verify quota checkout locking and rollback behavior`
+- Buat `docs/AUDIT-CONCURRENCY-KUOTA.md` berisi peta jalur kuota, urutan lock kanonik, analisis isolation/rollback, dan koreksi BUG-001.
+- Menjalankan salinan sementara `scripts/test-daily-quota.php` tanpa bagian lock produksi: 44 PASS, 0 FAIL; seluruh fixture berada di TEMP table dan di-rollback.
+- Tidak menjalankan script asli karena bagian akhir mengunci `kuota_harian` pada database remote.
+- Tidak ada perubahan kode (tidak ada race condition yang terbukti).
+- Koreksi: BUG-001 dari TASK-04 dinyatakan false alarm karena migration 016 sudah memperbaiki definisi view.

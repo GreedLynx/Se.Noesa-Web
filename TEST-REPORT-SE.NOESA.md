@@ -96,3 +96,11 @@
 - **Belum dijalankan:** upload valid (JPG/PNG/WebP ≤2 MB) → akan menulis file dan UPDATE/INSERT DB, dilarang; kegagalan storage/permission sungguhan; render browser.
 - **Temuan:** OBS-004 (file orphan bila DB gagal setelah file dipindahkan) — dicatat, tidak diubah.
 - **Kesimpulan:** LULUS untuk skenario yang diizinkan; tidak ada klaim upload valid.
+
+### TASK-07 — Concurrency kuota
+- **Jenis:** audit statis + test TEMP-table (salinan `scripts/test-daily-quota.php` tanpa lock produksi).
+- **Hasil:** 44 PASS, 0 FAIL. Meliputi indeks, default/override, batas 80%, sisa kuota, pemulihan kuota saat ditolak/dibatalkan, batas tepat diterima, minimum 4 porsi, timezone, UPSERT rentang, validasi tanggal, dan kesetaraan view laporan vs query checkout. Semua data uji di TEMP table dan di-rollback.
+- **Tidak dijalankan:** script asli `scripts/test-daily-quota.php` (mengunci `kuota_harian` produksi) dan simulasi dua checkout konkuren dengan mutasi — keduanya dilarang karena database remote.
+- **Analisis lock:** jalur yang menambah pemakaian (checkout, offline order, konfirmasi penggantian menu) memakai urutan lock kanonik yang sama dengan mode `SHARE ROW EXCLUSIVE` ⇒ saling serialize. Jalur yang melepas kuota tidak mengambil lock tersebut ⇒ tidak dapat menyebabkan oversold.
+- **Koreksi:** BUG-001 (TASK-04) dinyatakan false alarm; migration `016_order_cancellation.sql:12` sudah mengecualikan `dibatalkan` dari view, dan query agregat DB aktual menghasilkan 0 selisih.
+- **Kesimpulan:** LULUS sebagai audit + test terbatas. Tidak ada perubahan kode. Tidak ada klaim test konkuren dengan data nyata.
