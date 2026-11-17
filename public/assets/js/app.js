@@ -13,12 +13,23 @@ const productImage = (value) => {
 };
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+const csrfHeaders = (opt = {}) =>
+    opt.method && opt.method.toUpperCase() !== "GET"
+        ? { "X-CSRF-Token": csrfToken() }
+        : {};
 async function api(url, opt = {}) {
     if (!opt.method && $('#quota-date') && /^api\/(products|orders)\.php/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
     const multipart = opt.body instanceof FormData;
     const r = await fetch(url, {
-        headers: multipart ? {} : { "Content-Type": "application/json" },
+        headers: {
+            ...(multipart ? {} : { "Content-Type": "application/json" }),
+            ...csrfHeaders(opt),
+            ...(opt.headers || {}),
+        },
         ...opt,
         body: opt.body ? (multipart ? opt.body : JSON.stringify(opt.body)) : undefined,
     });
@@ -401,7 +412,7 @@ const PAGES = {
                 d.kategori
                     .map(
                         (k) =>
-                            `<div class="krow"><span>${kn[k.k]} (${short(k.h).replace("Rp ", "Rp ")})</span><b>${k.n} ${k.k === "minuman" ? "Botol" : "Porsi"}</b></div>`,
+                            `<div class="krow"><span>${kn[k.k]} (${short(k.h).replace("Rp ", "Rp ")})</span><b>${k.n} ${k.k === "minuman" ? "Botol minuman" : "Porsi"}</b></div>`,
                     )
                     .join("") || '<p class="empty">Belum ada data</p>';
             $("#top").innerHTML = d.top
@@ -576,45 +587,60 @@ const PAGES = {
             const order = await api("api/orders.php?id=" + id);
             $("#detail-status").outerHTML = statusBadge(order.status);
             const rawProof = order.bukti_bayar || "";
-            const proof = rawProof
-                ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan"></a>`
-                : '<div class="owner-proof-empty">Belum ada bukti pembayaran</div>';
-            const receipt = `<div class="dbox"><b>Data pembayaran</b>
-                <div class="jd"><span>Nama pengirim</span><b>${esc(order.nama_pembayar || "-")}</b></div>
-                <div class="jd"><span>Nama pemesan</span><b>${esc(order.nama_pemesan || "-")}</b></div>
-                <div class="jd"><span>Nominal tagihan</span><b>${money(order.total)}</b></div>
-                <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div></div>`;
-            const validation = order.status === "menunggu_validasi";
-            const summary = `<div class="dbox">
-                <div class="row between"><div><small>${validation ? "VALIDASI PEMBAYARAN" : "DETAIL PESANAN"}</small><b class="owner-order-code">${esc(order.kode)}</b></div>${statusBadge(order.status)}</div>
-                <hr><div class="jd"><span>Dibuat</span><b>${esc(dateLabel(order.created_at, true))}</b></div>
-                <div class="jd"><span>Waktu status</span><b>${esc(dateLabel(order.status_updated_at, true))}</b></div>
-                <div class="jd"><span>Sumber pesanan</span><b>${order.sumber === "offline" ? "Offline (dicatat owner)" : "Online"}</b></div>
-                <div class="jd"><span>Nama penerima</span><b>${esc(order.nama_pemesan || "-")}</b></div>
-                <div class="jd"><span>Kontak penerima</span><b>${esc(order.telepon_penerima || order.phone || "-")}</b></div>
-                <div class="jd"><span>Alamat pengiriman</span><b>${esc(order.alamat_pengiriman || "-")}</b></div>
-                <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div>
-                <div class="jd"><span>Catatan pesanan</span><b>${esc(order.keterangan || "-")}</b></div>
-                <div class="jd owner-total"><span>Total pesanan</span><b>${money(order.total)}</b></div>
-            </div>`;
-            const paymentProof = `<div class="dbox"><b>Bukti transfer pelanggan</b>${proof}</div>${receipt}`;
-            const rejection = order.status === "ditolak" && order.alasan_penolakan
-                ? `<div class="dbox owner-rejection"><b>Alasan penolakan</b><p>${esc(order.alasan_penolakan)}</p></div>` : "";
+        const proof = rawProof
+            ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan" onerror="this.src='../assets/img/produk/NK-01.png'"></a>`
+            : '<div class="owner-proof-empty">Belum ada bukti pembayaran</div>';
+        const receipt = `<div class="dbox"><b>Data pembayaran</b>
+            <div class="jd"><span>Nama pengirim</span><b>${esc(order.nama_pembayar || "-")}</b></div>
+            <div class="jd"><span>Nama pemesan</span><b>${esc(order.nama_pemesan || "-")}</b></div>
+            <div class="jd"><span>Nominal tagihan</span><b>${money(order.total)}</b></div>
+            <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div></div>`;
+        const validation = order.status === "menunggu_validasi";
+        const summary = `<div class="dbox">
+            <div class="row between"><div><small>${validation ? "VALIDASI PEMBAYARAN" : "DETAIL PESANAN"}</small><b class="owner-order-code">${esc(order.kode)}</b></div>${statusBadge(order.status)}</div>
+            <hr><div class="jd"><span>Dibuat</span><b>${esc(dateLabel(order.created_at, true))}</b></div>
+            <div class="jd"><span>Waktu status</span><b>${esc(dateLabel(order.status_updated_at, true))}</b></div>
+            <div class="jd"><span>Sumber pesanan</span><b>${order.sumber === "offline" ? "Offline (dicatat owner)" : "Online"}</b></div>
+            <div class="jd"><span>Nama penerima</span><b>${esc(order.nama_pemesan || "-")}</b></div>
+            <div class="jd"><span>Kontak penerima</span><b>${esc(order.telepon_penerima || order.phone || "-")}</b></div>
+            <div class="jd"><span>Alamat pengiriman</span><b>${esc(order.alamat_pengiriman || "-")}</b></div>
+            <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div>
+            <div class="jd"><span>Catatan pesanan</span><b>${esc(order.keterangan || "-")}</b></div>
+            <div class="jd owner-total"><span>Total pesanan</span><b>${money(order.total)}</b></div>
+        </div>`;
+        const paymentProof = `<div class="dbox"><b>Bukti transfer pelanggan</b>${proof}</div>${receipt}`;
+        const rejection = order.status === "ditolak" && order.alasan_penolakan
+            ? `<div class="dbox owner-rejection"><b>Alasan penolakan</b><p>${esc(order.alasan_penolakan)}</p></div>` : "";
             const menuItems = Array.isArray(order.menu) ? order.menu : [];
             const menu = `<div class="dbox"><div class="row between"><b>Daftar menu</b><span class="tag">${menuItems.length} jenis</span></div>
-                ${order.status === "diproses" ? '<p class="owner-muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' : ""}
-                ${menuItems.map((item) => `<label class="owner-menu-row"><input type="checkbox" data-item-check="${Number(item.item_id)}" ${item.sudah_dicek ? "checked" : ""} ${order.status === "diproses" ? "" : "disabled"}>
-                    <span><b>${esc(item.nama)}</b><small>${Number(item.qty).toLocaleString("id-ID")} porsi · ${money(item.harga)} / porsi</small></span><strong>${money(item.subtotal)}</strong></label>`).join("") || '<p class="owner-muted">Daftar menu tidak tersedia.</p>'}
-            </div>`;
-            const photos = Array.isArray(order.foto_kiriman_list) ? order.foto_kiriman_list : (order.foto_kiriman ? [order.foto_kiriman] : []);
-            const dispatchPhotos = photos.length
-                ? `<div class="owner-dispatch-photos">${photos.map((photo) => `<a href="${esc(imageUrl(photo))}" target="_blank" rel="noopener"><img src="${esc(imageUrl(photo))}" alt="Foto makanan yang akan dikirim"></a>`).join("")}</div>`
-                : '<p class="owner-muted">Belum ada foto makanan yang diunggah.</p>';
-            const dispatch = ["diproses", "selesai"].includes(order.status)
-                ? `<div class="dbox"><b>Foto makanan siap kirim</b>${dispatchPhotos}
-                    ${order.status === "diproses" ? '<form id="dispatch-photo-form" class="owner-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="owner-secondary">Simpan foto</button><span id="dispatch-photo-error" class="owner-error"></span></form>' : ""}
-                </div>` : "";
-            container.innerHTML = summary + (validation ? paymentProof : rejection) + menu + dispatch;
+            ${order.status === "diproses" ? '<p class="owner-muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' : ""}
+            ${menuItems.map((item) => `<label class="owner-menu-row"><input type="checkbox" data-item-check="${Number(item.item_id)}" ${item.sudah_dicek ? "checked" : ""} disabled>
+                <span><b>${esc(item.nama)}</b><small>${Number(item.qty).toLocaleString("id-ID")} porsi · ${money(item.harga)} / porsi</small></span><strong>${money(item.subtotal)}</strong></label>`).join("") || '<p class="owner-muted">Daftar menu tidak tersedia.</p>'}
+        </div>`;
+
+        const menuNotices = Array.isArray(order.menu_notifications) ? order.menu_notifications : [];
+        const noticeLabels = {
+            menunggu_respons: 'Menunggu respons pelanggan',
+            menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+            menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+            dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+            selesai: 'Tindak lanjut selesai',
+        };
+        const menuNoticeSection = menuNotices.length
+            ? `<div class="dbox"><div class="row between"><b>Notifikasi perubahan menu</b><span class="tag">${menuNotices.length}</span></div>
+                ${menuNotices.map(notice => `<div class="jd"><span><b>${esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot || 'Menu')}</b></span><span>${esc(noticeLabels[notice.status_respons] || notice.status_respons || '')}</span></div>
+                ${notice.catatan_admin ? `<div class="jd"><span>Catatan</span><b>${esc(notice.catatan_admin)}</b></div>` : ''}`).join('')}
+            </div>`
+            : '';
+        const photos = Array.isArray(order.foto_kiriman_list) ? order.foto_kiriman_list : (order.foto_kiriman ? [order.foto_kiriman] : []);
+        const dispatchPhotos = photos.length
+            ? `<div class="owner-dispatch-photos">${photos.map((photo) => `<a href="${esc(imageUrl(photo))}" target="_blank" rel="noopener"><img src="${esc(imageUrl(photo))}" alt="Foto makanan yang akan dikirim" onerror="this.src='../assets/img/produk/NK-01.png'"></a>`).join("")}</div>`
+            : '<p class="owner-muted">Belum ada foto makanan yang diunggah.</p>';
+        const dispatch = ["diproses", "selesai"].includes(order.status)
+            ? `<div class="dbox"><b>Foto makanan siap kirim</b>${dispatchPhotos}
+                ${order.status === "diproses" ? '<form id="dispatch-photo-form" class="owner-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="owner-secondary">Simpan foto</button><span id="dispatch-photo-error" class="owner-error"></span></form>' : ""}
+            </div>` : "";
+        container.innerHTML = summary + paymentProof + (validation ? "" : rejection) + menu + menuNoticeSection + dispatch;
 
             const rejectionDialog = $("#reject-order-dialog");
             const rejectionForm = $("#reject-order-form");

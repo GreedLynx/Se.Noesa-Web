@@ -7,6 +7,11 @@ const start = source.indexOf('async function orderDetail() {');
 const end = source.indexOf('\nshell();', start);
 const uploadStart = source.indexOf('async function uploadDispatchPhoto(');
 const uploadEnd = source.indexOf('\nfunction toast(', uploadStart);
+// Helper CSRF didefinisikan sebelum api(); sertakan agar upload langsung punya token.
+const csrfHelpers = source.slice(
+    source.indexOf('// Token CSRF dari meta tag layout'),
+    source.indexOf('async function api('),
+);
 assert.notEqual(start, -1, 'orderDetail function exists');
 assert.notEqual(end, -1, 'orderDetail function boundary exists');
 assert.notEqual(uploadStart, -1, 'uploadDispatchPhoto function exists');
@@ -194,10 +199,15 @@ vm.runInContext(source.slice(start, end), context);
         FormData: class {
             append(...entry) { formEntries.push(entry); }
         },
+        // Meta tag CSRF seperti layout asli (D1).
+        document: {
+            querySelector: (selector) =>
+                selector === 'meta[name="csrf-token"]' ? { content: 'detail-test' } : null,
+        },
         fetch: async () => ({ text: async () => responseText, ok: true }),
     };
     vm.createContext(uploadContext);
-    vm.runInContext(source.slice(uploadStart, uploadEnd), uploadContext);
+    vm.runInContext(csrfHelpers + source.slice(uploadStart, uploadEnd), uploadContext);
     await uploadContext.uploadDispatchPhoto(42, { name: 'menu.jpg' });
     assert.deepEqual(formEntries.map(([name]) => name), ['action', 'id', 'foto_kiriman[]']);
     responseText = '<br /><b>Warning</b>: POST Content-Length exceeds post_max_size';

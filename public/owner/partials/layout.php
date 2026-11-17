@@ -15,11 +15,13 @@ function head(string $title, string $page, bool $auth = false)
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="../assets/css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
+    <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
 <body data-page="<?= $page ?>">
@@ -37,7 +39,7 @@ function topbar(string $title, bool $back = false)
                     <a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a>
                 <?php endif; ?>
                 <div>
-                    <small>Se.Noesa</small>
+                    <small>Owner</small>
                     <h1><?= $title ?></h1>
                 </div>
             </div>
@@ -80,7 +82,8 @@ function nav(string $on)
     $i = [
         'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
         'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
-        'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>']
+        'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>'],
+        'notifications' => ['Notifikasi', '<path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/>']
     ];
     ?>
         <nav class="nav">
@@ -116,6 +119,7 @@ function foot()
     <div class="toast" id="toast"></div>
     <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
+    <script src="../assets/js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
 </body>
 
 </html>

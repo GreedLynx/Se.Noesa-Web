@@ -22,8 +22,7 @@ try {
         created_at TIMESTAMPTZ NOT NULL,
         tgl_kirim TIMESTAMPTZ NOT NULL
     ) ON COMMIT DROP");
-    q('CREATE TEMP TABLE detail_pesanan (pesanan_id INT NOT NULL, produk_id INT NOT NULL, qty INT NOT NULL) ON COMMIT DROP');
-    q("CREATE TEMP TABLE penawaran_jadwal_ulang (pesanan_id INT PRIMARY KEY, status_tawaran VARCHAR(12), ditanggapi_at TIMESTAMPTZ) ON COMMIT DROP");
+    q('CREATE TEMP TABLE detail_pesanan (id INT PRIMARY KEY, pesanan_id INT NOT NULL, produk_id INT NOT NULL, qty INT NOT NULL) ON COMMIT DROP');
     $productId = (int) q('SELECT id FROM produk ORDER BY id LIMIT 1')->fetchColumn();
     $delivery = '2999-12-30 12:00:00+07';
     q("INSERT INTO pesanan (id, status, created_at, tgl_kirim) VALUES
@@ -31,23 +30,20 @@ try {
         (2, 'menunggu_pembayaran', now() - interval '59 minutes', ?),
         (3, 'menunggu_validasi', now() - interval '2 hours', ?)",
         [$delivery, $delivery, $delivery]);
-    q('INSERT INTO detail_pesanan (pesanan_id, produk_id, qty) VALUES (1, ?, 3), (2, ?, 4), (3, ?, 5)', [
+    q('INSERT INTO detail_pesanan (id, pesanan_id, produk_id, qty) VALUES (1, 1, ?, 3), (2, 2, ?, 4), (3, 3, ?, 5)', [
         $productId,
         $productId,
         $productId,
     ]);
-    q("INSERT INTO penawaran_jadwal_ulang (pesanan_id, status_tawaran) VALUES (1, 'menunggu')");
 
     $quotaBefore = daily_quota_snapshot('2999-12-30');
     $expiredCount = expire_unpaid_orders();
     $statuses = q('SELECT id, status FROM pesanan ORDER BY id')->fetchAll(PDO::FETCH_KEY_PAIR);
-    $offerStatus = q('SELECT status_tawaran FROM penawaran_jadwal_ulang WHERE pesanan_id = 1')->fetchColumn();
     $quotaAfter = daily_quota_snapshot('2999-12-30');
     if ($expiredCount !== 1
         || $statuses[1] !== 'dibatalkan'
         || $statuses[2] !== 'menunggu_pembayaran'
         || $statuses[3] !== 'menunggu_validasi'
-        || $offerStatus !== 'kedaluwarsa'
         || (int) $quotaBefore['items'][0]['terpakai'] !== 12
         || (int) $quotaAfter['items'][0]['terpakai'] !== 9) {
         throw new RuntimeException('Automatic expiration did not cancel only overdue unpaid orders.');
@@ -64,7 +60,7 @@ try {
         throw new RuntimeException('Cancelled orders must be excluded from daily quota usage.');
     }
 
-    echo "PASS: Only unpaid orders older than one hour are canceled; offers expire and canceled orders release quota.\n";
+    echo "PASS: Only unpaid orders older than one hour are canceled; canceled orders release quota.\n";
 } finally {
     $db->rollBack();
 }

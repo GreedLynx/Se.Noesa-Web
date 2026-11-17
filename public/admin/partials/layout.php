@@ -11,11 +11,13 @@ function admin_head(string $title, string $page): void
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | Se.Noesa Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/admin.css?v=<?= filemtime(__DIR__ . '/../assets/admin.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
+    <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES, 'UTF-8') ?>">
@@ -25,7 +27,7 @@ function admin_head(string $title, string $page): void
                 <span class="brand-mark">S</span>
                 <span>Se.Noesa<small>ADMIN PANEL</small></span>
             </a>
-            <div class="side-label">MENU UTAMA</div>
+            <div class="side-label"></div>
             <nav class="side-nav">
                 <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>">
                     <span class="nav-icon">&#9638;</span>Dashboard
@@ -43,6 +45,9 @@ function admin_head(string $title, string $page): void
                         </svg>
                     </span>Jadwal
                 </a>
+                <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#9993;</span>Notifikasi
+                </a>
             </nav>
             <div class="sidebar-bottom">
                 <div class="admin-profile">
@@ -55,9 +60,8 @@ function admin_head(string $title, string $page): void
         <main class="main-panel">
             <header class="topbar">
                 <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
-                <div class="top-copy">
-                    <small>Se.Noesa / Admin</small>
-                    <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
+                <div class="top-copy" style="display: flex; align-items: center; height: 100%;">
+                    <small style="font-size: 20px; font-weight: 600; color: var(--green-dark); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Admin</small>
                 </div>
                 <div class="top-actions">
                     <span class="today-label" id="today-label"></span>
@@ -101,6 +105,7 @@ function admin_foot(): void
                     </svg>
                     <span>Jadwal</span>
                 </a>
+                <a href="menu-notifications.php">&#9993;<span>Notifikasi</span></a>
                 <button data-logout>&#10140;<span>Keluar</span></button>
             </nav>
         </main>
@@ -122,6 +127,7 @@ function admin_foot(): void
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
+    <script src="../assets/js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
 </body>
 
 </html>

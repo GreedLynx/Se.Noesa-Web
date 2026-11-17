@@ -11,6 +11,9 @@ require __DIR__ . '/../app/daily-quota.php';
 
 if (($argv[1] ?? '') === '--role-check') {
     $_SESSION['user'] = ['id'=>1,'role'=>$argv[2]];
+    // Harness memakai sesi tiruan; token CSRF fixture agar pengecekan role tetap teruji.
+    $_SESSION['csrf_token'] = 'quota-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'quota-test-token';
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $source = file_get_contents(__DIR__ . '/../public/admin/api/' . $argv[3] . '.php');
     $source = preg_replace('/^require(?:_once)? __DIR__ .*;\R/m', '', $source);
@@ -31,6 +34,9 @@ function quota_test_json($data, int $status = 200): void
 function quota_api(string $endpoint, array $payload): QuotaApiResponse
 {
     $_SESSION['user'] = ['id' => 1, 'role' => 'admin'];
+    // Token CSRF fixture: validasi CSRF asli di bootstrap tetap dijalankan.
+    $_SESSION['csrf_token'] = 'quota-test-token';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = 'quota-test-token';
     $_POST = $payload;
     $_SERVER['REQUEST_METHOD'] = 'POST';
     $_SERVER['CONTENT_TYPE'] = 'multipart/form-data';

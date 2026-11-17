@@ -19,6 +19,7 @@ set_exception_handler(static function (Throwable $error): void {
 });
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
     // PHP mengosongkan $_POST dan $_FILES jika seluruh request melewati post_max_size.
     $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
     $postLimit = trim((string) ini_get('post_max_size'));

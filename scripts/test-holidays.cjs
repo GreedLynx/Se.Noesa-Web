@@ -19,6 +19,15 @@ $connection = new class {
 };
 function db() { return $GLOBALS['connection']; }
 function body() { return $GLOBALS['payload']; }
+// Stub CSRF: bootstrap tidak di-eval di harness ini, jadi helper tiruan
+// meniru kontrak token terikat sesi dari app/bootstrap.php (D1).
+$_SESSION['csrf_token'] = 'holidays-test-token';
+function csrf_token() { return 'test-token'; }
+function csrf_require() {
+    if (($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '')) !== 'test-token') {
+        json(['error' => 'Token CSRF tidak valid'], 419);
+    }
+}
 function require_role($role) {
     if ($role !== 'admin') throw new RuntimeException('Unexpected role');
 }
@@ -33,6 +42,7 @@ function json($data, $status = 200) {
         'queries' => $GLOBALS['queries'], 'db' => db()]);
     exit;
 }
+$_SERVER['HTTP_X_CSRF_TOKEN'] = 'test-token';
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $source = file_get_contents('public/admin/api/holidays.php');
 $source = preg_replace('/^require __DIR__ .*;\\R/m', '', $source);

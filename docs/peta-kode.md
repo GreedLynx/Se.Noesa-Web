@@ -50,6 +50,7 @@ mengelola periode PO.
 | Hierarki antrean Dashboard, alasan prioritas, dan penjelasan tinjauan/refund | `public/admin/dashboard.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
 | Filter/count batal Admin/Owner, foto kiriman bersyarat status | `public/admin/api/orders.php`, `public/owner/api/orders.php` |
 | Uji PostgreSQL terisolasi, migrasi, endpoint, batas waktu dan balapan | `scripts/test-order-cancellation.php`, `scripts/test-daily-quota.php` |
+| Uji concurrency pembuatan notifikasi dengan dua koneksi PostgreSQL independen | `scripts/test-menu-notification-concurrency.php` |
 | Uji metadata/tinjauan pertama, notifikasi, balapan tinjauan dan fixture job | `scripts/test-order-cancellation.php`, `scripts/test-payment-deadline.php` |
 | Uji tab/count/filter tinjauan dan tautan daftar Admin desktop/mobile | `scripts/test-admin-cancellation-list.cjs` |
 | Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |
@@ -128,3 +129,54 @@ Kuota mengikuti tanggal kirim Asia/Jakarta. Kuota efektif memakai override
 menonaktifkan produk. Save rentang menimpa overlap; reset kembali ke default.
 Helper bersama menjaga kesesuaian checkout, katalog, daftar produk admin, dan
 ringkasan kapasitas admin. Penolakan memulihkan ketersediaan melalui agregasi status.
+
+## Notifikasi perubahan menu (Stage 2–6)
+
+| Kebutuhan | File |
+|---|---|
+| Tabel notifikasi, opsi, target, snapshot, status respons | `database/migrations/021_menu_change_notifications.sql` |
+| Audit total pesanan dan tindak lanjut manual | `database/migrations/022_menu_change_confirmation_audit.sql` |
+| Audit closure dan penutupan otomatis | `database/migrations/023_menu_change_closure_audit.sql` |
+| Audit harga katalog saat konfirmasi penggantian | `database/migrations/024_menu_change_price_audit.sql` |
+| Kebijakan harga snapshot, ringkasan pembayaran, dan penyelesaian selisih | `app/menu-notifications.php` |
+| Lock tabel kanonik produk → kuota_harian → tanggal_libur_operasional | `app/daily-quota.php` |
+| Skema baseline dan dokumentasi database | `database/schema.sql`, `docs/database.md` |
+| Hitung target dan validasi sisa kuota/minimum porsi | `app/menu-notifications.php` |
+| API riwayat, preview, detail, pembuatan, persetujuan, dan tindak lanjut | `public/admin/api/menu-notifications.php` |
+| API pelanggan: riwayat, detail, tandai dibaca, kirim respons | `public/pelanggan/api/menu-notifications.php` |
+| Uji migrasi idempoten, FK, unique, target, kepemilikan, dan status | `scripts/test-menu-change-notifications.php` |
+| Uji kontrak UI Admin/Owner/pelanggan tanpa browser | `scripts/test-menu-notifications-ui.cjs` |
+| UI Admin: buat, preview, konfirmasi penggantian, selisih, tindak lanjut | `public/admin/menu-notifications.php` |
+| UI Owner: riwayat, pelanggan terdampak, respons (hanya baca) | `public/owner/menu-notifications.php` |
+| UI pelanggan: daftar, detail, pilih tindakan, riwayat respons | `public/pelanggan/menu-notifications.php` |
+| Tautan notifikasi pada detail pesanan pelanggan | `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
+| Komponen UI bersama Admin/Owner | `public/assets/js/menu-notifications.js`, `public/assets/css/menu-notifications.css` |
+| Komponen UI pelanggan dan indikator belum dibaca | `public/pelanggan/assets/menu-notifications.js`, `public/pelanggan/assets/menu-notifications.css` |
+| Navigasi halaman | `public/admin/partials/layout.php`, `public/owner/partials/layout.php`, `public/pelanggan/partials/layout.php` |
+
+Status pesanan aktif: `menunggu_pembayaran`, `menunggu_validasi`, `diproses`.
+Target selalu dihitung dari `detail_pesanan`; ID target dari browser tidak dipakai.
+Pesanan offline tetap ditautkan untuk tindak lanjut manual, tanpa notifikasi in-app.
+API tidak mengubah detail pesanan, status pembayaran, atau menjalankan
+penggantian/refund tanpa persetujuan. Aksi konfirmasi Admin mengubah detail dan
+total hanya setelah respons pelanggan; status pesanan/pembayaran tetap. Tagihan
+dan pengembalian manual tidak dilakukan oleh aplikasi. Harga penggantian dikunci
+saat pelanggan memilih; perbedaan harga katalog saat konfirmasi hanya diaudit
+pada `harga_katalog_saat_konfirmasi`/`perbedaan_harga_katalog`. Detail respons
+memuat `info_harga` dan `pembayaran` (status pembayaran, bukti, nominal,
+total lama/baru, dan status penyelesaian selisih) agar Admin dapat membedakan
+pelanggan yang sudah dan belum membayar tanpa status pembayaran baru.
+
+UI Admin memakai pola `admin_head`/`admin_foot`, sedangkan Owner memakai
+`head`/`topbar`/`nav`/`foot`. Keduanya memuat satu skrip bersama dengan mode
+`admin`/`owner`; Owner tidak menampilkan form pembuatan dan tidak dapat POST.
+Dialog detail menampilkan snapshot dan respons. Persetujuan memperbarui item
+pesanan serta total tanpa mengubah status pesanan/pembayaran. Tagihan/refund dan
+kontak pelanggan tetap dilakukan manual; Admin mencatat hasilnya.
+
+UI pelanggan memakai `customer_head`/`customer_foot` dan hanya menampilkan baris
+penerima milik `user_id` sesi dengan pesanan online. Detail riwayat pesanan
+menautkan ke notifikasi terkait. Membuka detail notifikasi menandai sebagai
+dibaca melalui POST terpisah. Pelanggan dapat memilih menu pengganti, menghubungi
+Admin, atau menunggu informasi selama status respons masih `menunggu_respons`
+dan pesanan aktif.

@@ -9,9 +9,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     "'": '&#39;'
 }[c]));
 
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+
 async function api(url, options = {}) {
     const headers = {...options.headers};
     if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (options.method && options.method.toUpperCase() !== 'GET') {
+        headers['X-CSRF-Token'] = csrfToken();
+    }
 
     const response = await fetch(url, {
         ...options,
@@ -42,6 +49,20 @@ function toast(message) {
 function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
         b.disabled = true;
+        const confirmed = await new Promise(resolve => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'customer-dialog';
+            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
+            const yes = dialog.querySelector('[data-yes]');
+            const no = dialog.querySelector('[data-cancel]');
+            const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
+            yes.onclick = () => done(true);
+            no.onclick = () => done(false);
+            dialog.onclick = (e) => { if (e.target === dialog) done(false); };
+            document.body.appendChild(dialog);
+            dialog.showModal();
+        });
+        if (!confirmed) { b.disabled = false; return; }
         try {
             await api('../api/auth.php?a=logout');
             location.href = '../login.php'
@@ -54,7 +75,7 @@ function wireLogout() {
 
 function imagePath(name) {
     const raw = String(name || '');
-    if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw)) return '../' + raw;
+    if (/^uploads\/(products|payment-methods)\//i.test(raw)) return '../' + raw;
 
     const file = raw.replace(/[^a-zA-Z0-9_.-]/g, '');
     return file ? '../assets/img/produk/' + file : '../assets/img/produk/NK-01.png'
@@ -172,12 +193,16 @@ async function loadCatalog(animate = false) {
             || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
     );
     schedule = d.schedule;
-    grid.innerHTML = catalog.length ? catalog.map((p, i) => '<article class="menu-card" data-product="' + Number(p.id)
-        + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-        + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-        + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi · Sisa ' + Number(p.sisa)
-        + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-        + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>').join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+    grid.innerHTML = catalog.length ? catalog.map((p, i) => {
+        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
+        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
+        return '<article class="menu-card" data-product="' + Number(p.id)
+            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
+            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
+            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
+            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
+    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 
     $$('[data-product]').forEach(card => card.onclick = e => {
         if (e.target.closest('[data-add]')) return;
@@ -202,14 +227,15 @@ function showProduct(product) {
     activeProduct = product;
     const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
     activeQty = Math.min(maximum, Math.max(1, minimum));
+    const sisaAfter = maximum - activeQty;
+    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span><span>Sisa Porsi<b>'
-        + maximum + '/' + Number(product.kuota) + '</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
-    const input = $('#quantity-value'), add = $('#add-to-cart');
+    const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
     function setQuantity(value, normalize = false) {
         if (value === '' && !normalize) {
             add.disabled = true;
@@ -230,6 +256,16 @@ function showProduct(product) {
         activeQty = quantity;
         input.value = quantity;
         $('#detail-qty').textContent = quantity + ' porsi';
+        const remaining = maximum - quantity;
+        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
+        if (sisaEl) {
+            if (shouldShow) {
+                sisaEl.textContent = remaining + ' porsi';
+                sisaEl.closest('span').style.display = '';
+            } else {
+                sisaEl.closest('span').style.display = 'none';
+            }
+        }
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -288,10 +324,28 @@ function openCart() {
     const lines = $('#cart-lines');
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
+        const min = Number(p?.min_pesan || 4);
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="'
-            + Number(id) + '" aria-label="Hapus">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi">&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah">+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
     }).join('');
+    $$('[data-dec]').forEach(b => b.onclick = () => {
+        const id = b.dataset.dec;
+        const p = productCache[id];
+        const min = Number(p?.min_pesan || 4);
+        if (cart[id] > min) cart[id] -= min;
+        else delete cart[id];
+        renderCart();
+        openCart()
+    });
+    $$('[data-inc]').forEach(b => b.onclick = () => {
+        const id = b.dataset.inc;
+        const p = productCache[id];
+        const max = Number(p?.sisa || 0);
+        if ((cart[id] || 0) + Number(p?.min_pesan || 4) <= max) cart[id] = (cart[id] || 0) + Number(p?.min_pesan || 4);
+        else toast('Kuota tidak mencukupi');
+        renderCart();
+        openCart()
+    });
     $$('[data-remove]').forEach(b => b.onclick = () => {
         delete cart[b.dataset.remove];
         renderCart();
@@ -440,7 +494,7 @@ async function loadHistory() {
 }
 
 function dateLabel(value, withTime = false) {
-    if (!value) return '-';
+    if (value === null || value === undefined) return '-';
     const d = new Date(value);
     return d.toLocaleString('id-ID', withTime ? {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
@@ -451,15 +505,34 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    const items = d.items.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
-        + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
+    // Handle case where items might be undefined (order exists but has no detail items,
+    // or API response structure differs from expected). This prevents
+    // "Cannot read properties of undefined (reading 'map')" error.
+    const itemsArray = Array.isArray(d.items) ? d.items : [];
+    const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
+        + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
+    const menuNoticeLabels = {
+        menunggu_respons: 'Menunggu responsmu',
+        menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+        menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+        dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+        selesai: 'Tindak lanjut selesai',
+    };
+    const menuNotices = Array.isArray(d.menu_notifications) ? d.menu_notifications : [];
+    const menuNoticeSection = menuNotices.length
+        ? '<section class="detail-section"><h3>Notifikasi perubahan menu</h3>' + menuNotices.map(notice =>
+            '<div class="detail-menu-line"><span><b>' + esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot)
+            + '</b><small>' + esc(menuNoticeLabels[notice.status_respons] || notice.status_respons || '')
+            + ' · ' + esc(notice.catatan_admin || '') + '</small></span><a class="customer-button secondary" href="menu-notifications.php?notice_id='
+            + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
+        ).join('') + '</section>'
+        : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
         + '" alt="Bukti pembayaran">' : '';
     const paymentData = await api('api/payment-methods.php');
     const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
-        const image = String(method.gambar || '').replace(/[^a-zA-Z0-9_./-]/g, '');
-        return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="../'
-            + esc(image) + '" alt="' + esc(method.nama) + '"></div></div>'
+        return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'
+            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
     const canUploadProof = d.can_upload_proof === true, hasProof = !!d.bukti_bayar;
     const proofForm = canUploadProof ? '<form class="proof-upload" id="proof-form" ' + (hasProof ? 'hidden': '') + '><label for="payer-name">Atas nama</label><input id="payer-name" name="nama_pembayar" type="text" maxlength="100" value="'
@@ -546,7 +619,8 @@ async function openHistoryDetail(id) {
         + '</p>' + statusProgress(d.status) + rejectionNotice + offerPanel + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
-        + money(d.total) + '</b></div>' 
+        + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
+        + menuNoticeSection
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 
@@ -627,3 +701,4 @@ async function openHistoryDetail(id) {
 const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
+
