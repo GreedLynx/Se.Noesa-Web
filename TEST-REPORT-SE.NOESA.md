@@ -197,3 +197,17 @@
 - **Lint:** `php -l` 3 file Admin OK; `node --check admin.js` OK; `git diff --check` bersih.
 - **Belum diuji:** render visual desktop/mobile dan klik navigasi (tidak ada browser automation).
 - **Kesimpulan:** LULUS secara statis; tidak ada perubahan fungsi Admin.
+
+## Verifikasi regresi terbatas (final)
+
+- PHP lint seluruh file aplikasi (app, config, public, scripts, database): **78 file diperiksa, 0 gagal**.
+- Node syntax check `.js` di `public/` dan `scripts/`: **7 file, 0 gagal**.
+- Node syntax check `.cjs` di `scripts/`: **10 file, 0 gagal**.
+- `git diff --check`: bersih.
+- Working tree: bersih sebelum checkpoint dokumentasi akhir.
+
+## TASK-22 & TASK-23
+
+- **TASK-22 (regression lintas role): BLOCKED** — dependency "semua task implementasi relevan selesai" belum terpenuhi (7 task BLOCKED menunggu keputusan, 1 PARTIAL). Yang dapat dijalankan hanyalah lint menyeluruh di atas; itu **bukan** pengganti regression matrix lintas role.
+- **TASK-23: BLOCKED** oleh TASK-22. Sesuai master prompt §10, dokumen `RELEASE-READINESS-SE.NOESA.md` tetap disusun dengan keputusan **NO-GO**.
+- Tidak ada klaim siap rilis.
