@@ -13,10 +13,20 @@
 | Uji Dashboard saat rekap hilang/kosong/berisi/tidak valid dan error API | `scripts/test-admin-dashboard.cjs` |
 
 Operasional selalu buka secara default. Kuota tersimpan tidak diubah saat
-rentang libur dibuat. Pesanan lama tidak berubah otomatis; penolakan manual
-dengan alasan dan tawaran jadwal ulang menjadi tahap fitur Admin berikutnya.
+rentang libur dibuat. Pesanan lama tidak berubah otomatis; Admin menangani
+pesanan terdampak satu per satu lewat tawaran jadwal pengganti di bawah.
 `jadwal_po` dipertahankan sebagai referensi pesanan; UI Jadwal tidak lagi
 mengelola periode PO.
+
+## Tawaran jadwal pengganti
+
+| Kebutuhan | File |
+|---|---|
+| Migrasi tabel tawaran satu baris per pesanan | `database/migrations/022_order_reschedule_offer.sql`, `database/schema.sql` |
+| Admin membuat/memperbarui tawaran dan menampilkan statusnya | `public/admin/api/orders.php`, `public/admin/order-detail.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
+| Pelanggan menerima/menolak tawaran dan melihat riwayatnya | `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
+| Validasi kuota tujuan saat tawaran diterima | `app/daily-quota.php`, `public/pelanggan/api/orders.php` |
+| Tutup tawaran unpaid saat tenggat pembayaran | `app/order-expiration.php`, `scripts/expire-unpaid-orders.php` |
 
 ## Pembatalan pesanan dan kedaluwarsa pembayaran
 
