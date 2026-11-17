@@ -1142,10 +1142,6 @@ body[data-page="payments"] .nav { max-width: 430px; }
   }
 }
 
-/* =========================================
-   DASHBOARD — CHART BAR & FLOATING TOOLTIP
-   ========================================= */
-
 /* 1. Wadah grafik menjadi acuan tooltip & menyembunyikan scrollbar */
 .chart-wrap {
   position: relative;

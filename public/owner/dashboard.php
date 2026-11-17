@@ -309,7 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>`).join('');
             }
 
-            // Top produk
             const top = document.getElementById('top');
             if (!data.top || data.top.length === 0) {
                 top.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0;">Belum ada data.</div>';
