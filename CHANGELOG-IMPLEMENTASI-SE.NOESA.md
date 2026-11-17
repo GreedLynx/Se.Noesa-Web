@@ -45,7 +45,7 @@
 - Tidak ada kode aplikasi yang diubah. Temuan dicatat: BUG-001 (view kuota), OBS-001..003.
 - Update `KEPUTUSAN-BISNIS-SE.NOESA.md` #1 dengan bukti teks refund di `customer.js:563`.
 
-### TASK-05 — (checkpoint ini)
+### TASK-05 — 626cb9f
 - `fix(TASK-05): enforce per-product minimum in cart and clarify admin validation`
 - Audit: sumber minimum konsisten di DB (`CHECK (min_pesan >= 4)`, default 4), `daily_quota_snapshot` (`GREATEST(4, min_pesan)`), `daily_quota_validate` (dipakai checkout & pesanan offline), form Admin (`min="4"`), dan API Admin (`>= 4`).
 - Bug ditemukan: tombol kurang di keranjang Pelanggan `cart[id] -= min` bisa menghasilkan jumlah di bawah minimum (mis. 6 − 4 = 2 untuk minimum 4), sehingga checkout ditolak backend setelah UI mengizinkan state invalid.
@@ -54,3 +54,11 @@
   - `public/admin/api/products.php`: pisahkan validasi harga dan minimum; pesan error spesifik “Minimum pemesanan minimal 4 porsi”.
 - Tidak mengubah angka/aturan minimum bisnis.
 - Migration: tidak ada.
+
+### TASK-06 — (checkpoint ini)
+- `test(TASK-06): verify admin product image upload validation`
+- Audit `public/admin/api/products.php` (validasi error upload, `is_uploaded_file`, ≤2 MB, MIME via `getimagesize`, nama file generated dari hex acak + ekstensi MIME, folder `public/uploads/products`, transaksi DB terpisah).
+- Uji fungsional 5 skenario gagal lewat server PHP lokal + router sementara (tanpa menyentuh DB/storage produksi):
+  - format tidak didukung → 422, ukuran > batas → 422, nama file traversal → 422, field wajib kosong → 422, minimum < 4 → 422.
+- Tidak ada perubahan kode aplikasi. Skenario upload valid tidak dijalankan karena akan menulis file dan database.
+- Temuan: OBS-004 — file yang sudah dipindahkan dapat menjadi orphan bila UPDATE/INSERT DB gagal (tidak ada cleanup); tidak diubah di task ini.

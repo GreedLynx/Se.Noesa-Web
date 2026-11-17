@@ -3,16 +3,16 @@
 - Last updated: 2026-11-17 21:45 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-05)
+- Current HEAD: (checkpoint TASK-06)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 5 |
+| DONE | 6 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 12 |
+| TODO | 11 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -23,8 +23,8 @@
 | TASK-02 | DONE | 2ba8f69 | lolos | Output Owner=Admin identik 11 skenario; kontrol mutasi Owner dihapus |
 | TASK-03 | BLOCKED | - | - | Menunggu keputusan #3, #4 |
 | TASK-04 | DONE | 2bf0153 | lolos (14 skenario terpetakan) | Audit + test matrix; tanpa perubahan status/timeout; BUG-001 dicatat |
-| TASK-05 | DONE | (checkpoint ini) | lolos (5/5 unit skenario) | Cart clamp ke minimum; pesan error Admin diperjelas |
-| TASK-06 | TODO | - | - | Upload foto produk |
+| TASK-05 | DONE | 626cb9f | lolos (5/5 unit skenario) | Cart clamp ke minimum; pesan error Admin diperjelas |
+| TASK-06 | DONE | (checkpoint ini) | lolos (5/5 skenario gagal) | Validasi upload diuji via HTTP; skenario valid tidak dijalankan (mutasi dilarang) |
 | TASK-07 | TODO | - | - | Concurrency kuota (dep TASK-02, 05) |
 | TASK-08 | BLOCKED | - | - | Menunggu keputusan #6 |
 | TASK-09 | BLOCKED | - | - | Menunggu keputusan #8, #9, #10 |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-06
-- Tujuan: Uji upload foto produk Admin (valid/invalid, ukuran, nama file, storage, tampil, rollback)
-- File yang akan disentuh: public/admin/api/products.php, public/uploads/products (audit); file progres
-- Risiko: Sedang — test mutasi/upload dilarang pada DB remote; gunakan analisis + test lokal yang tidak menyentuh storage produksi
-- Dependency: TASK-00 (selesai)
+- ID: TASK-07
+- Tujuan: Uji concurrency kuota saat checkout (lock, isolation, commit/rollback, oversold)
+- File yang akan disentuh: app/daily-quota.php, public/pelanggan/api/orders.php (audit); file progres
+- Risiko: Sedang — simulasi dua checkout bersamaan memerlukan mutasi DB, dilarang; gunakan audit statis + test lock read-only
+- Dependency: TASK-02 (selesai), TASK-05 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -75,6 +75,7 @@
 | OBS-001 | 6 pesanan `menunggu_pembayaran` tanpa bukti sudah lewat tenggat 1 jam. | - | OPEN | Operasional: penjadwal `scripts/expire-unpaid-orders.php` perlu dipastikan aktif. |
 | OBS-002 | 4 pesanan `ditolak` tanpa `alasan_penolakan` (data historis). | - | OPEN | Tidak di-backfill tanpa keputusan. |
 | OBS-003 | Teks “refund penuh ditangani Admin” di `customer.js:563` menyatakan kebijakan yang masih PENDING (#1). | - | OPEN | Tidak diubah; tunggu keputusan #1. |
+| OBS-004 | `admin/api/products.php` memindahkan fileUpload ke storage sebelum UPDATE/INSERT DB; bila DB gagal, file menjadi orphan (tidak ada cleanup). | - | OPEN | Tidak diubah di TASK-06; perlu cleanup try/catch serupa `upload_proof`. |
 
 ## Riwayat checkpoint
 | Waktu | Commit | Task | Hasil test | Catatan |
@@ -84,7 +85,8 @@
 | 2026-11-17 21:55 | 6be9681 | TASK-01 | lolos (14/14 keputusan) | Dokumentasi keputusan bisnis; semua PENDING |
 | 2026-11-17 22:15 | 2ba8f69 | TASK-02 | lolos (11 skenario identik) | Owner read-only frontend diperketat; tanpa perubahan API |
 | 2026-11-17 22:40 | 2bf0153 | TASK-04 | lolos (14 skenario, agregat DB) | Audit pembayaran; test matrix; BUG-001/OBS-001..003 dicatat |
-| 2026-11-17 23:00 | (checkpoint ini) | TASK-05 | lolos (5/5 skenario cart) | Clamp minimum di keranjang; pesan error Admin spesifik |
+| 2026-11-17 23:00 | 626cb9f | TASK-05 | lolos (5/5 skenario cart) | Clamp minimum di keranjang; pesan error Admin spesifik |
+| 2026-11-17 23:20 | (checkpoint ini) | TASK-06 | lolos (5/5 skenario upload gagal) | Validasi upload diuji via HTTP; tanpa perubahan kode |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

@@ -82,3 +82,17 @@
 - **Lint:** `node --check customer.js` OK; `php -l admin/api/products.php` OK; `git diff --check` bersih.
 - **Belum diuji:** klik sungguhan di browser, checkout dengan quantity hasil clamp (mutasi dilarang), form Admin disubmit (mutasi dilarang).
 - **Kesimpulan:** LULUS untuk acceptance criteria yang dapat diuji; aturan minimum tidak diubah.
+
+### TASK-06 — Upload foto produk Admin
+- **Jenis:** uji fungsional HTTP terhadap endpoint asli dengan router sementara (session admin + CSRF diset), hanya mengirim skenario **gagal** sehingga tidak ada penulisan file/DB.
+- **Hasil (5/5):**
+  - `fake.txt` (text/plain) → HTTP 422 `Format gambar harus JPG, PNG, atau WebP` ✅
+  - file 3 MB → HTTP 422 `Ukuran gambar melewati batas upload_max_filesize PHP (2M).` ✅
+  - nama file `../../traversal.jpg` dengan konten bukan gambar → HTTP 422 format ditolak ✅ (nama file tidak dipakai untuk path; path dibuat dari hex acak + ekstensi MIME)
+  - field wajib kosong → HTTP 422 `Semua kolom wajib diisi` ✅
+  - `min_pesan=2` → HTTP 422 `Minimum pemesanan minimal 4 porsi` ✅
+- **Verifikasi impacts:** `git status` bersih, tidak ada file baru di `public/uploads/products/` (hanya 14 file baseline + `.gitkeep`), server uji dimatikan.
+- **Audit statis:** validasi MIME/ukuran di backend ✅; path traversal dicegah oleh nama file generated ✅; empty state/fallback gambar ada di customer/admin/owner ✅; pengecekan `is_writable` dan kegagalan `move_uploaded_file` ditangani ✅.
+- **Belum dijalankan:** upload valid (JPG/PNG/WebP ≤2 MB) → akan menulis file dan UPDATE/INSERT DB, dilarang; kegagalan storage/permission sungguhan; render browser.
+- **Temuan:** OBS-004 (file orphan bila DB gagal setelah file dipindahkan) — dicatat, tidak diubah.
+- **Kesimpulan:** LULUS untuk skenario yang diizinkan; tidak ada klaim upload valid.
