@@ -446,7 +446,7 @@ async function loadHistory() {
 }
 
 function dateLabel(value, withTime = false) {
-    if (!value) return '-';
+    if (value === null || value === undefined) return '-';
     const d = new Date(value);
     return d.toLocaleString('id-ID', withTime ? {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
@@ -461,8 +461,8 @@ async function openHistoryDetail(id) {
     // or API response structure differs from expected). This prevents
     // "Cannot read properties of undefined (reading 'map')" error.
     const itemsArray = Array.isArray(d.items) ? d.items : [];
-    const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
-        + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
+    const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
+        + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
     const menuNoticeLabels = {
         menunggu_respons: 'Menunggu responsmu',
         menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
@@ -561,7 +561,7 @@ async function openHistoryDetail(id) {
         + '</p>' + statusProgress(d.status) + rejectionNotice + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
-        + money(d.total) + '</b></div>' 
+        + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
         + menuNoticeSection
         + proofSection 
         + deliveryPhotoSection 
