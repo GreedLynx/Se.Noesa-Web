@@ -54,7 +54,7 @@ mengelola periode PO.
 | Uji metadata/tinjauan pertama, notifikasi, balapan tinjauan dan fixture job | `scripts/test-order-cancellation.php`, `scripts/test-payment-deadline.php` |
 | Uji tab/count/filter tinjauan dan tautan daftar Admin desktop/mobile | `scripts/test-admin-cancellation-list.cjs` |
 | Uji izin tombol/form dan pesan refund pelanggan | `scripts/test-order-cancellation-ui.cjs` |
-| Aturan dan urutan aktivasi job setiap menit | `docs/aturan-bisnis.md`, `README.md` |
+| Aturan dan urutan aktivasi job setiap menit | `docs/01-spesifikasi/aturan-bisnis.md`, `README.md` |
 
 Manual menerima menunggu_pembayaran/menunggu_validasi/diproses sampai akhir H-2
 WIB; refund penuh ditangani Admin di luar aplikasi. Kontak WhatsApp menyusul.
@@ -140,7 +140,7 @@ ringkasan kapasitas admin. Penolakan memulihkan ketersediaan melalui agregasi st
 | Audit harga katalog saat konfirmasi penggantian | `database/migrations/024_menu_change_price_audit.sql` |
 | Kebijakan harga snapshot, ringkasan pembayaran, dan penyelesaian selisih | `app/menu-notifications.php` |
 | Lock tabel kanonik produk → kuota_harian → tanggal_libur_operasional | `app/daily-quota.php` |
-| Skema baseline dan dokumentasi database | `database/schema.sql`, `docs/database.md` |
+| Skema baseline dan dokumentasi database | `database/schema.sql`, `docs/01-spesifikasi/database.md` |
 | Hitung target dan validasi sisa kuota/minimum porsi | `app/menu-notifications.php` |
 | API riwayat, preview, detail, pembuatan, persetujuan, dan tindak lanjut | `public/admin/api/menu-notifications.php` |
 | API pelanggan: riwayat, detail, tandai dibaca, kirim respons | `public/pelanggan/api/menu-notifications.php` |

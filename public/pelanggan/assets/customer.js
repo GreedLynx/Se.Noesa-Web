@@ -129,14 +129,24 @@ function catalogPage() {
     $$('[data-close-detail]').forEach(b => b.onclick = () => $('#detail-dialog').close());
 
     const detailDialog = $('#detail-dialog'),
-        detailContent = $('#detail-content');
+        detailContent = $('#detail-content'),
+        cartDialog = $('#cart-dialog'),
+        checkoutDialog = $('#checkout-dialog');
     detailContent.addEventListener('click', e => {
         if (e.target.closest('.quantity-control')) e.stopPropagation()
     });
+    // Pola yang sama dengan detail/history dialog: klik backdrop menutup,
+    // klik di dalam konten tidak menutup. Escape/fokus tetap ditangani native <dialog>.
     detailDialog.addEventListener('click', e => {
         if (e.target === detailDialog) detailDialog.close()
     });
-    $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
+    cartDialog.addEventListener('click', e => {
+        if (e.target === cartDialog) cartDialog.close()
+    });
+    checkoutDialog.addEventListener('click', e => {
+        if (e.target === checkoutDialog) checkoutDialog.close()
+    });
+    $$('[data-close-checkout]').forEach(b => b.onclick = () => checkoutDialog.close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
     $('#catalog-delivery-date').onchange = () => refreshCatalog();
@@ -175,6 +185,21 @@ async function loadCatalog(animate = false) {
     $('#delivery-hint').textContent = catalogClosed
         ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
         : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    const fullHint = $('#quota-full-hint');
+    if (fullHint) {
+        const full = Array.isArray(d.habis) ? d.habis : [];
+        if (full.length && !catalogClosed) {
+            const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+            });
+            fullHint.textContent = 'Kuota penuh untuk tanggal ' + label + ': '
+                + full.map(p => p.nama).join(', ') + '. Pilih tanggal atau menu lain.';
+            fullHint.hidden = false;
+        } else {
+            fullHint.textContent = '';
+            fullHint.hidden = true;
+        }
+    }
     $('#checkout-button').disabled = catalogClosed;
 
     const previous = productCache;
@@ -232,7 +257,7 @@ function showProduct(product) {
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
+        + minimum + ' porsi</b></span><span>Jumlah dipesan<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -332,8 +357,14 @@ function openCart() {
         const id = b.dataset.dec;
         const p = productCache[id];
         const min = Number(p?.min_pesan || 4);
-        if (cart[id] > min) cart[id] -= min;
-        else delete cart[id];
+        if (cart[id] > min) {
+            // Jangan pernah menurunkan jumlah ke bawah minimum produk.
+            // Jika hasil pengurangan lebih kecil dari minimum, clamp ke minimum.
+            if (cart[id] - min < min) toast('Minimum pesanan ' + (p?.nama || 'produk ini') + ' adalah ' + min + ' porsi');
+            cart[id] = Math.max(min, cart[id] - min);
+        } else {
+            delete cart[id];
+        }
         renderCart();
         openCart()
     });

@@ -27,6 +27,7 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <span class="date-eyebrow">RENCANAKAN PESANANMU</span>
         <h2 class="date-panel-title" id="delivery-title"><span class="delivery-title-desktop">Mau dikirim kapan?</span><span class="delivery-title-mobile">Tanggal pengiriman</span></h2>
         <p class="date-panel-hint" id="delivery-hint">Pilih tanggal untuk melihat menu yang tersedia.<br>Pengiriman paling awal 7 hari dari hari ini.</p>
+        <p class="date-panel-hint" id="quota-full-hint" role="status" hidden></p>
     </div>
     <div class="date-field">
         <label for="catalog-delivery-date"></label>

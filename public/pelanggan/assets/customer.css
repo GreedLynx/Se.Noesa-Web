@@ -222,6 +222,40 @@ a {
     font-size:17px
 }
 
+/* Tombol tambah pesanan pada halaman riwayat dipindah ke kanan bawah (CUS-17). */
+body[data-page="history"] .history-link {
+    position:fixed;
+    right:max(20px, env(safe-area-inset-right));
+    bottom:calc(26px + env(safe-area-inset-bottom));
+    z-index:20;
+    border-radius:99px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18)
+}
+
+body[data-page="history"] .customer-content {
+    padding-bottom:calc(96px + env(safe-area-inset-bottom))
+}
+
+@media(max-width:700px) {
+    body[data-page="history"] .history-link {
+        right:max(14px, env(safe-area-inset-right));
+        bottom:calc(74px + env(safe-area-inset-bottom));
+        width:54px;
+        height:54px;
+        padding:0;
+        gap:0;
+        justify-content:center;
+        font-size:0;
+        border-radius:50%;
+        background:var(--green);
+        border-color:var(--green);
+        color:#fff
+    }
+    body[data-page="history"] .history-link span {
+        font-size:22px
+    }
+}
+
 .catalog-toolbar {
     display:flex;
     justify-content:space-between;
@@ -1866,6 +1900,15 @@ a {
 .catalog-policy::before {
     content:'Info pemesanan: ';
     font-weight:700
+}
+
+.catalog-policy ul {
+    margin:4px 0 0;
+    padding-left:18px
+}
+
+.catalog-policy li + li {
+    margin-top:4px
 }
 
 @media(max-width:700px) {

@@ -348,13 +348,24 @@ async function dashboard() {
         ).join("");
     const priority = $("#priority-list");
     priority.innerHTML = d.priority.length
-        ? d.priority.map((o) =>
-            '<a class="priority-item" href="order-detail.php?id=' + Number(o.id) +
-            '"><div class="priority-main"><b>' + esc(o.kode) + " · " + esc(o.nama_pemesan) +
-            '</b><span class="tag warning">Menunggu validasi</span></div><p>' +
-            esc(o.keterangan || o.pax + " porsi") + " · Kirim " + dateLabel(o.tgl_kirim) +
-            "</p><strong>" + money(o.total) + "</strong></a>"
-        ).join("")
+        ? d.priority
+                .map(
+                    (o) =>
+                        '<a class="priority-item" href="order-detail.php?id=' +
+                        Number(o.id) +
+                        '"><div class="priority-main"><b>' +
+                        esc(o.kode) +
+                        " · " +
+                        esc(o.nama_pemesan) +
+                        '</b><span class="tag warning">Menunggu validasi</span></div><p>' +
+                        esc(o.keterangan || o.pax + " porsi") +
+                        " · Kirim " +
+                        dateLabel(o.tgl_kirim) +
+                        "</p><strong>" +
+                        money(o.total) +
+                        "</strong></a>",
+                )
+                .join("")
         : '<div class="empty-state">Tidak ada pesanan yang menunggu validasi.</div>';
     $("#activity-list").innerHTML = d.recent.length
         ? d.recent.map((o) =>
@@ -396,13 +407,13 @@ async function loadOrders() {
     const rows = d.items
         .map(
             (o) =>
-                "<tr><td><b>" +
+                '<tr><td><small class="order-code">' +
                 esc(o.kode) +
-                "</b>" +
+                "</small>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                 "<small>" +
                 (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
-                "</small></td><td><b>" +
+                '</small></td><td><b class="order-user">' +
                 esc(o.nama_pemesan) +
                 "</b><small>" +
                 esc(o.keterangan || "") +
@@ -426,14 +437,14 @@ async function loadOrders() {
                 (o) =>
                     '<a class="mobile-order" href="order-detail.php?id=' +
                     Number(o.id) +
-                    '"><span class="row-between"><b>' +
+                    '"><span class="row-between"><small class="order-code">' +
                     esc(o.kode) +
-                    "</b>" +
+                    "</small>" +
                     (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                     badge(o.status) +
-                    "</span><b>" +
+                    '</span><strong class="mobile-order-user">' +
                     esc(o.nama_pemesan) +
-                    "</b><small>" +
+                    "</strong><small>" +
                     esc(o.keterangan || "") +
                     " · " +
                     (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
@@ -821,14 +832,13 @@ function productsPage() {
             }
             if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
             const savedCode = f.elements.kode.value.trim().toUpperCase();
-            productCategory = "";
-            $("#product-search").value = "";
-            $$("#product-filters button").forEach((x) =>
-                x.classList.toggle("active", x.dataset.category === ""),
-            );
-            const loadedProducts = await loadProducts();
+            // Pertahankan filter kategori/pencarian yang sedang aktif setelah simpan.
+            await loadProducts();
+            // Verifikasi terhadap seluruh produk, bukan daftar yang sedang difilter,
+            // agar produk yang tersimpan di luar filter tidak dianggap gagal.
+            const allProducts = await api("api/products.php");
             if (
-                !loadedProducts.some(
+                !allProducts.items.some(
                     (p) => String(p.kode).trim().toUpperCase() === savedCode,
                 )
             )

@@ -4,7 +4,7 @@ Tanggal: 16 November 2026
 
 ## Ruang lingkup
 
-Verifikasi menutup temuan **S13** pada `docs/audit-2026-11-13.md`: alur
+Verifikasi menutup temuan **S13** pada `docs/03-audit/audit-2026-11-13.md`: alur
 notifikasi perubahan menu dari Admin ke pelanggan, persetujuan penggantian,
 selisih harga, tindak lanjut manual, kepemilikan data, dan tampilan detail
 pesanan pelanggan.

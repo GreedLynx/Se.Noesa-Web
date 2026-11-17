@@ -56,8 +56,8 @@ bertentangan.
 
 ### What to implement
 
-1. Baca berurutan `docs/peta-kode.md`, `docs/aturan-bisnis.md`, `docs/api.md`,
-   `docs/database.md`, lalu `.opencode/revisi.md` bila tersedia.
+1. Baca berurutan `docs/00-panduan/peta-kode.md`, `docs/01-spesifikasi/aturan-bisnis.md`, `docs/01-spesifikasi/api.md`,
+   `docs/01-spesifikasi/database.md`, lalu `.opencode/revisi.md` bila tersedia.
 2. Gunakan bagian “Lanjutan Plan 2: Tanggal pengiriman dan kuota produk” hanya
    sebagai sumber keputusan bisnis; jangan mengubah atau memasukkan
    `.opencode/docs/` ke commit.
@@ -90,7 +90,7 @@ bertentangan.
 - [ ] Tim menyetujui penggunaan kolom default yang sudah ada dan materialisasi
       rentang menjadi baris tanggal.
 - [ ] Tidak ada keputusan aktif di `.opencode/revisi.md` yang bertentangan.
-- [ ] Semua field respons memiliki arti tunggal yang tertulis di `docs/api.md`.
+- [ ] Semua field respons memiliki arti tunggal yang tertulis di `docs/01-spesifikasi/api.md`.
 - [ ] Nomor migrasi ditentukan kembali dari daftar file saat implementasi dimulai.
 
 ### Anti-pattern guards
@@ -137,7 +137,7 @@ sama dengan checkout.
 - Salin pola CHECK bernama dari
   `database/migrations/014_numeric_check_constraints.sql`.
 - Salin aturan FULL JOIN yang mempertahankan transaksi tanpa konfigurasi dari
-  `docs/database.md` bagian “Plan 1 — sumber kuota aktif”.
+  `docs/01-spesifikasi/database.md` bagian “Plan 1 — sumber kuota aktif”.
 
 ### Verification checklist
 
@@ -379,14 +379,14 @@ ditemukan dan mencegah implementasi berikutnya kembali memakai aturan no-fallbac
 
 ### What to implement
 
-1. `docs/aturan-bisnis.md`: jadikan default+override sebagai aturan aktif;
+1. `docs/01-spesifikasi/aturan-bisnis.md`: jadikan default+override sebagai aturan aktif;
    jelaskan inklusivitas, overlap terbaru, nilai `0`, penghapusan, pesanan lama,
    dan batas dapur efektif.
-2. `docs/api.md`: dokumentasikan field produk default/effective, kontrak POST
+2. `docs/01-spesifikasi/api.md`: dokumentasikan field produk default/effective, kontrak POST
    produk, save/reset rentang, response count, error 422, dan GET override.
-3. `docs/database.md`: dokumentasikan sumber default, override exact-date,
+3. `docs/01-spesifikasi/database.md`: dokumentasikan sumber default, override exact-date,
    migrasi data produk lama, VIEW, constraint, lock, dan rumus efektif.
-4. `docs/peta-kode.md`: petakan seluruh file yang berubah dan test terkait.
+4. `docs/00-panduan/peta-kode.md`: petakan seluruh file yang berubah dan test terkait.
 5. Perbaiki bagian legacy yang bertentangan; jangan membiarkan dua bagian sama-sama
    disebut kontrak aktif.
 6. README hanya diubah bila cara menjalankan migrasi/test berubah; jangan menambah
@@ -394,12 +394,12 @@ ditemukan dan mencegah implementasi berikutnya kembali memakai aturan no-fallbac
 
 ### Documentation references
 
-- Ganti pernyataan no-fallback pada `docs/aturan-bisnis.md` bagian Plan 1.
-- Ganti kontrak aktif pada `docs/api.md` bagian Plan 1 dan tandai bagian lama
+- Ganti pernyataan no-fallback pada `docs/01-spesifikasi/aturan-bisnis.md` bagian Plan 1.
+- Ganti kontrak aktif pada `docs/01-spesifikasi/api.md` bagian Plan 1 dan tandai bagian lama
   sebagai riwayat secara konsisten.
-- Perbarui `docs/database.md` bagian sumber kuota aktif, bukan hanya menambah
+- Perbarui `docs/01-spesifikasi/database.md` bagian sumber kuota aktif, bukan hanya menambah
   paragraf baru yang bertentangan.
-- Ikuti format tabel file di `docs/peta-kode.md`.
+- Ikuti format tabel file di `docs/00-panduan/peta-kode.md`.
 
 ### Verification checklist
 
