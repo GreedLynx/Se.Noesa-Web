@@ -127,7 +127,7 @@
 - CUS-22 (alignment panah 4 menu dashboard) **tidak ditemukan** di kode Pelanggan saat ini (tidak ada elemen panah pada menu dashboard); tidak ada perubahan spekulatif.
 - Migration: tidak ada.
 
-### TASK-20 — PARTIAL — (checkpoint ini)
+### TASK-20 — PARTIAL — 671e1da
 - `fix(TASK-20): show quota date and tidy owner dashboard icons`
 - `public/assets/js/app.js`: ringkasan kuota pada halaman produk Owner kini diawali tanggal yang sedang difilter (`Tanggal 30 Nov 2026 · Kapasitas dapur …`) — OWN-20.
 - `public/owner/order-detail.php`: panah tombol kembali disamakan dengan topbar (`‹`) — OWN-17.
@@ -135,3 +135,11 @@
 - Verifikasi: dialog logout Owner sudah memakai `confirmDialog` terpusat — OWN-18.
 - **Tidak diubah:** metrik “Rata-rata Pesanan”/“Botol minuman” (OWN-09/11 menunggu keputusan #13); white-space/responsivitas detail (OWN-02/03/13/15) dan pemilihan tanggal tren (OWN-04) memerlukan QA visual/desain.
 - Status PARTIAL: sebagian acceptance criteria masih bergantung pada keputusan #13 dan uji browser. Migration: tidak ada.
+
+### TASK-21 — (checkpoint ini)
+- `fix(TASK-21): tidy admin UI hierarchy, icons and mobile nav state`
+- `public/admin/assets/admin.js`: kode pesanan menjadi sekunder (`order-code`) dan username menjadi utama (`order-user` / `mobile-order-user`) pada tabel dan kartu mobile (ADM-17).
+- `public/admin/assets/admin.css`: gaya hierarki username, state aktif mobile nav, `.side-nav i:empty` disembunyikan agar tidak ada strip kosong pada menu Pesanan (ADM-18), `.search span` flex untuk ikon SVG.
+- `public/admin/partials/layout.php`: hapus avatar duplikat di topbar (ADM-25); semua ikon navigasi sidebar/mobile, tombol keluar, dan menu-toggle diseragamkan ke SVG `stroke-width=2`, `20x20` (ADM-20); tambah kelas `active` pada nav mobile sesuai halaman (ADM-21).
+- `public/admin/orders.php` & `products.php`: ikon search box diganti SVG konsisten (ADM-23).
+- Migration: tidak ada.

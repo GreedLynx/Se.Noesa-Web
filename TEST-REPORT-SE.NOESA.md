@@ -184,3 +184,16 @@
 - **Lint:** `node --check app.js` OK; `php -l owner/dashboard.php` OK; `php -l owner/order-detail.php` OK; `git diff --check` bersih.
 - **Belum dipenuhi / belum diuji:** metrik OWN-09/11 menunggu keputusan #13; white-space OWN-02/03/13/15 dan filter tanggal tren OWN-04 perlu QA visual; tidak ada browser automation.
 - **Kesimpulan:** PARTIAL. Tidak ada klaim DONE untuk bagian yang menunggu keputusan/visual QA.
+
+### TASK-21 — UI Admin
+- **Jenis:** verifikasi statis + lint.
+- **Hasil:**
+  - Tidak ada lagi `.top-avatar` di layout Admin (ADM-25).
+  - Nav mobile Memiliki `class="active"` sesuai `$page` untuk 5 entri (ADM-21).
+  - Semua ikon sidebar/mobile/keluar/menu-toggle memakai SVG `stroke-width=2`, `20x20` (ADM-20); hanya satu glyph hamburger tersisa sebelum dikonversi, lalu dikonversi juga ⇒ 0 glyph tersisa.
+  - Ikon search di `orders.php` dan `products.php` memakai SVG yang sama (ADM-23).
+  - `.side-nav i:empty { display:none }` mencegah strip badge kosong (ADM-18).
+  - Template baris order desktop/mobile memakai `order-user`/`mobile-order-user` untuk username dan `order-code` untuk kode (ADM-17).
+- **Lint:** `php -l` 3 file Admin OK; `node --check admin.js` OK; `git diff --check` bersih.
+- **Belum diuji:** render visual desktop/mobile dan klik navigasi (tidak ada browser automation).
+- **Kesimpulan:** LULUS secara statis; tidak ada perubahan fungsi Admin.

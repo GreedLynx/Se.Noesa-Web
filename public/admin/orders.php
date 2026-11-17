@@ -78,7 +78,10 @@ admin_head('Daftar Pesanan', 'orders');
         </div>
         <label class="search">
             <span>
-                &#9906;
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16 16l5 5"/>
+                </svg>
             </span>
             <input
                 id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">

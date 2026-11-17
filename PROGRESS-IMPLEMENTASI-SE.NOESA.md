@@ -3,16 +3,16 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-20)
+- Current HEAD: (checkpoint TASK-21)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 13 |
+| DONE | 14 |
 | PARTIAL | 1 |
 | BLOCKED | 7 |
-| TODO | 3 |
+| TODO | 2 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -38,17 +38,16 @@
 | TASK-17 | DONE | 6eec3ea | lolos (lint + label check) | “ISI KERANJANG”, “Jumlah dipesan”, policy jadi list dekat tanggal |
 | TASK-18 | DONE | 8123bd3 | lolos (4/4 regression logout) | Tombol pesan jadi FAB kanan bawah; CUS-22 tidak ada di kode |
 | TASK-19 | BLOCKED | - | - | Menunggu keputusan #14 |
-| TASK-20 | PARTIAL | (checkpoint ini) | lolos (1/1 unit tanggal) | OWN-20/17/10 selesai; OWN-09/11 metrik & OWN-02/03 visual menunggu #13/QA |
-| TASK-21 | TODO | - | - | UI Admin |
+| TASK-20 | PARTIAL | 671e1da | lolos (1/1 unit tanggal) | OWN-20/17/10 selesai; OWN-09/11 metrik & OWN-02/03 visual menunggu #13/QA |
+| TASK-21 | DONE | (checkpoint ini) | lolos (lint + cek statis) | Username lebih menonjol, nav aktif, ikon SVG seragam, profil ganda hilang |
 | TASK-22 | TODO | - | - | Regression lintas role (dep semua task) |
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-21
-- Tujuan: Penyempurnaan UI Admin (hierarki username, strip menu, ikon konsisten, state nav mobile, search icon, profil ganda)
-- File yang akan disentuh: public/admin/assets/admin.css, public/admin/assets/admin.js, public/admin/partials/layout.php, public/admin/orders.php (audit); file progres
-- Risiko: Rendah — perubahan visual saja, jangan mengubah fungsi Admin
-- Dependency: TASK-00 (selesai)
+- ID: TASK-22
+- Tujuan: Regression test lintas role
+- Status: BLOCKED — dependency "semua task implementasi relevan selesai" belum terpenuhi (7 task BLOCKED, 1 PARTIAL). Akan dicatat sebagai regression verification terbatas dalam laporan akhir.
+- Dependency: TASK-03, 08, 09, 10, 13, 15, 19 (BLOCKED) dan TASK-20 (PARTIAL)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -96,7 +95,8 @@
 | 2026-11-18 01:00 | 28f4d37 | TASK-16 | lolos (3/3 unit dialog) | Backdrop close cart & checkout; Escape/fokus native dipertahankan |
 | 2026-11-18 01:15 | 6eec3ea | TASK-17 | lolos (lint + label) | Label keranjang & policy checkout dirapikan |
 | 2026-11-18 01:30 | 8123bd3 | TASK-18 | lolos (4/4 logout) | FAB pesan kanan bawah + safe area; CUS-22 tidak ditemukan |
-| 2026-11-18 01:50 | (checkpoint ini) | TASK-20 | PARTIAL | OWN-20/17/10 dikerjakan; metrik & whitespace menunggu #13/QA |
+| 2026-11-18 01:50 | 671e1da | TASK-20 | PARTIAL | OWN-20/17/10 dikerjakan; metrik & whitespace menunggu #13/QA |
+| 2026-11-18 02:10 | (checkpoint ini) | TASK-21 | lolos (lint + statis) | Hierarki username, nav aktif, ikon SVG, avatar ganda hilang |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

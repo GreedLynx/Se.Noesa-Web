@@ -425,13 +425,13 @@ async function loadOrders() {
     const rows = d.items
         .map(
             (o) =>
-                "<tr><td><b>" +
+                '<tr><td><small class="order-code">' +
                 esc(o.kode) +
-                "</b>" +
+                "</small>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                 "<small>" +
                 (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
-                "</small></td><td><b>" +
+                '</small></td><td><b class="order-user">' +
                 esc(o.nama_pemesan) +
                 "</b><small>" +
                 esc(o.keterangan || "") +
@@ -455,14 +455,14 @@ async function loadOrders() {
                 (o) =>
                     '<a class="mobile-order" href="order-detail.php?id=' +
                     Number(o.id) +
-                    '"><span class="row-between"><b>' +
+                    '"><span class="row-between"><small class="order-code">' +
                     esc(o.kode) +
-                    "</b>" +
+                    "</small>" +
                     (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                     badge(o.status) +
-                    "</span><b>" +
+                    '</span><strong class="mobile-order-user">' +
                     esc(o.nama_pemesan) +
-                    "</b><small>" +
+                    "</strong><small>" +
                     esc(o.keterangan || "") +
                     " · " +
                     (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
