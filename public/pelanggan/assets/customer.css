@@ -1868,6 +1868,15 @@ a {
     font-weight:700
 }
 
+.catalog-policy ul {
+    margin:4px 0 0;
+    padding-left:18px
+}
+
+.catalog-policy li + li {
+    margin-top:4px
+}
+
 @media(max-width:700px) {
     .catalog-policy {
         margin-bottom:11px;

@@ -161,3 +161,10 @@
 - **Lint:** `node --check customer.js` OK.
 - **Belum diuji:** klik mouse/ Escape sungguhan di browser, fokus keyboard, dan scroll body (tidak ada browser automation); `scroll lock` tidak ditemukan di kode sehingga tidak ada state yang perlu dipulihkan.
 - **Kesimpulan:** LULUS untuk perilaku backdrop yang dapat diuji secara unit. Tidak ada klaim test browser.
+
+### TASK-17 — Label keranjang Pelanggan
+- **Jenis:** verifikasi statis label + lint.
+- **Hasil:** `index.php:56` memuat “ISI KERANJANG” dan tidak ada lagi “RINGKASAN KERANJANG”; `customer.js:260` memuat “Jumlah dipesan” dan “Sisa Porsi” (dua makna berbeda, keduanya dipertahankan); `layout.php:199-202` memuat 2 item `<li>` pada `.catalog-policy` tepat setelah input tanggal kirim.
+- **Lint:** `php -l index.php` OK, `php -l partials/layout.php` OK, `node --check customer.js` OK, `git diff --check` bersih.
+- **Belum diuji:** tampilan visual desktop/mobile (tidak ada browser automation).
+- **Kesimpulan:** LULUS secara statis; tidak ada perubahan pada logika kuota/keranjang.

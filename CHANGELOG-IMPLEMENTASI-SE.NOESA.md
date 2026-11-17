@@ -106,8 +106,16 @@
 - Backend checkout sudah menolak produk habis lewat `daily_quota_validate()` ⇒ tidak ada perubahan pada endpoint checkout.
 - Migration: tidak ada.
 
-### TASK-16 — (checkpoint ini)
+### TASK-16 — 28f4d37
 - `fix(TASK-16): add backdrop close to customer cart and checkout dialogs`
 - Audit: detail dialog dan history dialog sudah memiliki pola `click` dengan `e.target === dialog`; cart dan checkout belum.
 - Perbaikan `public/pelanggan/assets/customer.js`: pasang handler backdrop close pada `#cart-dialog` dan `#checkout-dialog` mengikuti pola yang sama; klik di dalam konten tidak menutup dialog; Escape/fokus tetap memakai perilaku native `<dialog>`; tidak ada scroll-lock JS yang perlu dipulihkan.
+- Migration: tidak ada.
+
+### TASK-17 — (checkpoint ini)
+- `fix(TASK-17): tidy customer cart labels and checkout policy list`
+- `public/pelanggan/index.php`: “RINGKASAN KERANJANG” → “ISI KERANJANG” (CUS-20).
+- `public/pelanggan/assets/customer.js`: label “Jumlah” → “Jumlah dipesan”; “Sisa Porsi” tetap dipertahankan karena memang informasi kuota yang berbeda makna (CUS-18).
+- `public/pelanggan/partials/layout.php`: `catalog-policy` dari paragraf tunggal menjadi daftar 2 poin, tetap berada tepat setelah pemilihan tanggal kirim (CUS-21).
+- `public/pelanggan/assets/customer.css`: tambah gaya list pada `.catalog-policy`.
 - Migration: tidak ada.

@@ -3,16 +3,16 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-16)
+- Current HEAD: (checkpoint TASK-17)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 11 |
+| DONE | 12 |
 | PARTIAL | 0 |
 | BLOCKED | 8 |
-| TODO | 5 |
+| TODO | 4 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -34,8 +34,8 @@
 | TASK-13 | BLOCKED | 055d350 | audit selesai | Tidak ada kolom `aktif`/snapshot; butuh DECISION-NEW-01 + migration |
 | TASK-14 | DONE | ae9a58b | lolos (API 5 skenario + UI 3 skenario) | Info kuota penuh per tanggal & kategori; checkout tetap ditolak backend |
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
-| TASK-16 | DONE | (checkpoint ini) | lolos (3/3 unit dialog) | Backdrop close ditambah ke cart & checkout; konten tidak ikut tertutup |
-| TASK-17 | TODO | - | - | Label keranjang (dep TASK-05) |
+| TASK-16 | DONE | 28f4d37 | lolos (3/3 unit dialog) | Backdrop close ditambah ke cart & checkout; konten tidak ikut tertutup |
+| TASK-17 | DONE | (checkpoint ini) | lolos (lint + label check) | “ISI KERANJANG”, “Jumlah dipesan”, policy jadi list dekat tanggal |
 | TASK-18 | TODO | - | - | Navigasi/dashboard Pelanggan |
 | TASK-19 | BLOCKED | - | - | Menunggu keputusan #14 |
 | TASK-20 | TODO | - | - | Dashboard Owner (sebagian dep #13) |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-17
-- Tujuan: Rapikan label dan kontrol keranjang Pelanggan sesuai revisi CUS-18/20/21
-- File yang akan disentuh: public/pelanggan/index.php, public/pelanggan/assets/customer.js (audit); file progres
-- Risiko: Rendah — jangan tertukar antara “Jumlah” dan “Sisa Porsi”
-- Dependency: TASK-05 (selesai)
+- ID: TASK-18
+- Tujuan: Rapikan navigasi dan dashboard Pelanggan (tombol tambah kanan bawah, panah seragam, regression logout)
+- File yang akan disentuh: public/pelanggan/riwayat.php, public/pelanggan/assets/customer.css, public/pelanggan/assets/customer.js (audit); file progres
+- Risiko: Rendah — jangan menutupi konten pada mobile; logout tetap berkonfirmasi
+- Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -93,7 +93,8 @@
 | 2026-11-18 00:10 | e824f49 | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
 | 2026-11-18 00:25 | 055d350 | TASK-13 | BLOCKED (audit) | Tidak ada `aktif`/snapshot; DECISION-NEW-01 dicatat |
 | 2026-11-18 00:45 | ae9a58b | TASK-14 | lolos (8 skenario) | Info kuota penuh per tanggal; filter kategori ikut diterapkan |
-| 2026-11-18 01:00 | (checkpoint ini) | TASK-16 | lolos (3/3 unit dialog) | Backdrop close cart & checkout; Escape/fokus native dipertahankan |
+| 2026-11-18 01:00 | 28f4d37 | TASK-16 | lolos (3/3 unit dialog) | Backdrop close cart & checkout; Escape/fokus native dipertahankan |
+| 2026-11-18 01:15 | (checkpoint ini) | TASK-17 | lolos (lint + label) | Label keranjang & policy checkout dirapikan |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

@@ -195,7 +195,12 @@ function customer_foot(): void
                     Tanggal kirim
                     <input id="checkout-date" name="tgl_kirim" type="date" required>
                 </label>
-                <div class="catalog-policy" style="margin-top:10px">Info pemesanan: Pastikan tanggal dan jumlah porsi sesuai kebutuhan acara sebelum mengirimkan pesanan.</div>
+                <div class="catalog-policy" style="margin-top:10px">
+                    <ul>
+                        <li>Pastikan tanggal kirim dan jumlah porsi sesuai kebutuhan acara.</li>
+                        <li>Kuota menu mengikuti tanggal pengiriman yang dipilih.</li>
+                    </ul>
+                </div>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
