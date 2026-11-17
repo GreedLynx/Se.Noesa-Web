@@ -38,9 +38,12 @@ admin_head('Daftar Pesanan', 'orders');
                 Menunggu pembayaran
                 <b id="payment-count">0</b>
             </button>
-            <button data-tab="validasi">
-                Menunggu validasi
-                <b id="pending-count">0</b>
+                <button data-tab="validasi">
+                    Menunggu verifikasi
+                <b
+                    id="pending-count">
+                    0
+                </b>
             </button>
             <button data-tab="proses">
                 Proses

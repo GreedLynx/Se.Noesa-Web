@@ -38,8 +38,9 @@ function topbar(string $title, bool $back = false)
                 <?php if ($back): ?>
                     <a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a>
                 <?php endif; ?>
-                <div style="display: flex; align-items: center; height: 100%;">
-                    <small style="font-size: 20px; font-weight: 600; color: var(--gd, #3b513e); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Owner</small>
+                <div>
+                    <small>Owner</small>
+                    <h1><?= $title ?></h1>
                 </div>
             </div>
             <div class="row">

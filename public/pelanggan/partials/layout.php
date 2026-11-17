@@ -84,7 +84,7 @@ function customer_head(string $title, string $page): array
                 </nav>
             <?php endif; ?>
             <?php if (in_array($page, ['catalog', 'history', 'notifications'], true)): ?>
-                <div class="customer-bottom-user" aria-label="<?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?>">
+                <div class="customer-bottom-user" aria-label="<?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?>" hidden>
                     <?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></div>
             <?php endif; ?>
         </aside>
@@ -100,9 +100,7 @@ function customer_head(string $title, string $page): array
                         </svg>
                         <b class="customer-notif-count" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
                     </a>
-                    <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
-                    <button class="logout-text" type="button" data-logout>Keluar</button>
                 </div>
             </header>
             <div class="customer-content">
@@ -196,13 +194,14 @@ function customer_foot(): void
                     Tanggal kirim
                     <input id="checkout-date" name="tgl_kirim" type="date" required>
                 </label>
+                <div class="catalog-policy" style="margin-top:10px">Info pemesanan: Pastikan tanggal dan jumlah porsi sesuai kebutuhan acara sebelum mengirimkan pesanan.</div>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
                     <small class="field-hint">Maksimal 120 karakter.</small>
                 </label>
                 <p id="schedule-note" class="schedule-note"></p>
-                <p class="field-hint">Batas maksimal pembayaran: 1 jam sejak pesanan dibuat. Jika belum dibayar, pesanan dibatalkan otomatis dan kuota produk dikembalikan.</p>
+                <p class="field-hint">Batas maksimal pembayaran: 1 jam sejak pesanan dibuat. Jika belum dibayar, pesanan dibatalkan otomatis.</p>
                 <p id="checkout-error" class="form-error" role="alert"></p>
                 <button id="submit-order" class="customer-button primary" type="submit">Kirim pesanan</button>
             </form>

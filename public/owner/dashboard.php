@@ -21,7 +21,7 @@ topbar('Dashboard');
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
     <p class="ok">✓ Pesanan Lunas</p>
     <div class="stats">
-        <div><small>TIKET RATA-RATA</small><b id="tiket">-</b></div>
+        <div><small>RATA-RATA PESANAN</small><b id="tiket">-</b></div>
         <div><small id="l2">KUANTITAS PAX</small><b id="items">-</b></div>
         <div><small>STATUS LUNAS</small><b>100% Lunas</b></div>
     </div>
@@ -30,24 +30,10 @@ topbar('Dashboard');
 <section class="card rise">
     <div class="row between dashboard-header" style="align-items: center; margin-bottom: 10px;">
         <h3>Tren Pesanan</h3>
-        
-        <!-- 2 Tombol Tanggal -->
-        <div class="date-filter-pills">
-            <button type="button" class="date-pill-btn" id="btn-start">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span id="lbl-start">-</span>
-            </button>
-            <span style="color: var(--muted); font-size: 12px;">s/d</span>
-            <button type="button" class="date-pill-btn" id="btn-end">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span id="lbl-end">-</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="chart-wrap" id="chart-wrap">
-        <div class="chart-container" id="bars">
-            <div style="width:100%; text-align:center; color:var(--muted); font-size:12px; padding:20px;">Memuat grafik...</div>
+        <div class="seg" id="period">
+            <button data-p="today" class="on">Hari</button>
+            <button data-p="week">Minggu</button>
+            <button data-p="month">Bulan</button>
         </div>
         <div class="chart-tip" id="chart-tip"></div>
     </div>

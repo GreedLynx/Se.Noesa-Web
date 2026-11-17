@@ -133,7 +133,7 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
 function badge(status) {
     const labels = {
         menunggu_pembayaran: "Menunggu pembayaran",
-        menunggu_validasi: "Menunggu validasi",
+        menunggu_validasi: "Menunggu verifikasi",
         diproses: "Sedang diproses",
         selesai: "Selesai",
         ditolak: "Ditolak",
@@ -316,7 +316,7 @@ async function dashboard() {
             ? cancellations.items.map(order => '<a class="cancellation-alert" href="order-detail.php?id=' + Number(order.id) +
                 '"><span><b>' + esc(order.kode) + ' · ' + esc(order.nama_pemesan) + '</b><small>' +
                 esc(cancellationSourceLabel(order.cancellation_source)) + ' · ' + esc(cancellationTime(order.cancelled_at)) +
-                '</small></span><p>' + esc(cancellationAttention(order)) + '</p><span class="cancellation-open">Buka detail pesanan &rarr;</span></a>').join("")
+                '</small></span><p>' + esc(cancellationAttention(order)) + '</p><span class="cancellation-open">Lihat detail pesanan &rarr;</span></a>').join("")
             : '<div class="empty-state">Tidak ada pembatalan yang belum ditinjau.</div>';
     }
     for (const [name, value] of Object.entries({
@@ -389,35 +389,61 @@ async function loadOrders() {
     $("#cancelled-count").textContent = d.counts.cancelled;
     $("#cancellation-unreviewed-count").textContent = d.counts.cancellation_unreviewed;
     $("#orders-capacity").textContent =
-        (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") + " / " +
-        (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") + " porsi";
-
-    // TAMPILAN DESKTOP: Nama Pemesan Besar, Kode Pesanan Kecil
-    const rows = d.items.map((o) =>
-        "<tr><td><b>" + esc(o.nama_pemesan) + "</b>" +
-        (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
-        "<small>" + esc(o.kode) + "</small>" +
-        "</td><td>" +
-        "<b>" + (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) + "</b>" +
-        "<small>" + esc(o.keterangan || "") + "</small>" +
-        "</td><td>" + Number(o.pax || 0).toLocaleString("id-ID") +
-        " porsi</td><td><b>" + money(o.total) + "</b></td><td>" +
-        badge(o.status) + cancellationSummary(o) +
-        '</td><td><a class="button small secondary" href="order-detail.php?id=' + Number(o.id) + '">Lihat detail</a></td></tr>'
-    ).join("");
-    $("#order-rows").innerHTML = rows || '<tr><td colspan="6" class="empty-state">Tidak ada pesanan untuk filter ini.</td></tr>';
-    
-    // TAMPILAN MOBILE: Nama Pemesan Besar, ID Pesanan Kecil
-    $("#mobile-orders").innerHTML = d.items.map((o) =>
-        '<a class="mobile-order" href="order-detail.php?id=' + Number(o.id) +
-        '"><span class="row-between"><b>' + esc(o.nama_pemesan) + "</b>" +
-        (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
-        badge(o.status) + "</span><small>ID: " + esc(o.kode) + " · " +
-        esc(o.keterangan || "") + " · " +
-        (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
-        '</small>' + cancellationSummary(o) + '<span class="row-between"><small>' +
-        Number(o.pax || 0) + " porsi</small><strong>" + money(o.total) + "</strong></span></a>"
-    ).join("") || '<div class="empty-state">Tidak ada pesanan.</div>';
+        (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
+        " / " +
+        (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") +
+        " porsi";
+    const rows = d.items
+        .map(
+            (o) =>
+                "<tr><td><b>" +
+                esc(o.kode) +
+                "</b>" +
+                (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
+                "<small>" +
+                (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
+                "</small></td><td><b>" +
+                esc(o.nama_pemesan) +
+                "</b><small>" +
+                esc(o.keterangan || "") +
+                "</small></td><td>" +
+                Number(o.pax || 0).toLocaleString("id-ID") +
+                " porsi</td><td><b>" +
+                money(o.total) +
+                "</b></td><td>" +
+                badge(o.status) + cancellationSummary(o) +
+                '</td><td><a class="button small secondary" href="order-detail.php?id=' +
+                Number(o.id) +
+                '">Lihat detail</a></td></tr>',
+        )
+        .join("");
+    $("#order-rows").innerHTML =
+        rows ||
+        '<tr><td colspan="6" class="empty-state">Tidak ada pesanan untuk filter ini.</td></tr>';
+    $("#mobile-orders").innerHTML =
+        d.items
+            .map(
+                (o) =>
+                    '<a class="mobile-order" href="order-detail.php?id=' +
+                    Number(o.id) +
+                    '"><span class="row-between"><b>' +
+                    esc(o.kode) +
+                    "</b>" +
+                    (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
+                    badge(o.status) +
+                    "</span><b>" +
+                    esc(o.nama_pemesan) +
+                    "</b><small>" +
+                    esc(o.keterangan || "") +
+                    " · " +
+                    (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
+                    '</small>' + cancellationSummary(o) + '<span class="row-between"><small>' +
+                    Number(o.pax || 0) +
+                    " porsi</small><strong>" +
+                    money(o.total) +
+                    "</strong></span></a>",
+            )
+            .join("") || '<div class="empty-state">Tidak ada pesanan.</div>';
 }
 
 function ordersPage() {
@@ -1032,9 +1058,9 @@ async function orderDetail() {
             }
             if (action === "validate") {
                 const confirmed = await confirmDialog(
-                    "Validasi Pembayaran",
-                    "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
-                    "Ya, Validasi",
+                    "Verifikasi Pembayaran",
+                    "Verifikasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
+                    "Ya, Verifikasi",
                     "primary"
                 );
                 if (!confirmed) return;
@@ -1079,14 +1105,25 @@ async function orderDetail() {
                             checked: box.checked,
                         },
                     });
+                    syncCompleteButton();
                 } catch (e) {
                     box.checked = !box.checked;
                     toast(e.message);
                 } finally {
                     box.disabled = false;
+                    syncCompleteButton();
                 }
             }),
     );
+
+    function syncCompleteButton() {
+        const completeBtn = $$("[data-order-action]").find(b => b.dataset.orderAction === "complete");
+        if (!completeBtn) return;
+        const boxes = $$("[data-item-check]");
+        const allChecked = boxes.length > 0 && boxes.every(b => b.checked);
+        completeBtn.disabled = !allChecked;
+        completeBtn.style.opacity = allChecked ? "1" : "0.5";
+    }
     const upload = $("#dispatch-photo-form");
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();
