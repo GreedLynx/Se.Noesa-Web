@@ -408,13 +408,19 @@ function statusProgress(status) {
         + '">' + s + '</span>').join('') + '</div>'
 }
 
-let historyStatus = '', historyTimer;
+let historyStatus = '', historyTimer, paymentExpiryTimer = null;
 function historyPage() {
     wireLogout();
     const dialog = $('#history-dialog');
-    $$('[data-close-history]').forEach(b => b.onclick = () => dialog.close());
+    $$('[data-close-history]').forEach(b => b.onclick = () => {
+        clearTimeout(paymentExpiryTimer);
+        dialog.close();
+    });
     dialog.addEventListener('click', e => {
-        if (e.target === dialog) dialog.close()
+        if (e.target === dialog) {
+            clearTimeout(paymentExpiryTimer);
+            dialog.close();
+        }
     });
     $$('#history-tabs button').forEach(b => b.onclick = () => {
         $$('#history-tabs button').forEach(x => x.classList.toggle('active', x === b));
@@ -457,9 +463,6 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    // Handle case where items might be undefined (order exists but has no detail items,
-    // or API response structure differs from expected). This prevents
-    // "Cannot read properties of undefined (reading 'map')" error.
     const itemsArray = Array.isArray(d.items) ? d.items : [];
     const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
@@ -493,11 +496,34 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
-    const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
-        + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
-            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
+
+    const expiredAdminContact = `
+        <div class="payment-expired-notice">
+            <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan segera hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            <p class="admin-wa-text">Nomor WA Admin: 08123456789</p>
+        </div>
+    `;
+
+    const isPaymentExpiredWithoutProof = !hasProof && (
+        (d.status === 'menunggu_pembayaran' && !canUploadProof) ||
+        d.status === 'dibatalkan'
+    );
+
+    const proofSection = canUploadProof
+        ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>'
+            + (hasProof
+                ? '<div class="proof-display-row">' + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>'
+                : proof)
+            + (d.status === 'menunggu_pembayaran'
+                ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>'
+                : '')
+            + proofForm + '</section>'
+        : (proof
+            ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>'
+            : (isPaymentExpiredWithoutProof
+                ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + expiredAdminContact + '</section>'
+                : ''));
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
         ? d.foto_kiriman_list
@@ -569,6 +595,21 @@ async function openHistoryDetail(id) {
         + '</div>';
         
     $('#history-dialog').showModal();
+
+    // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
+    clearTimeout(paymentExpiryTimer);
+    if (d.status === 'menunggu_pembayaran' && canUploadProof && d.payment_expires_at) {
+        const remainingMs = new Date(d.payment_expires_at).getTime() - Date.now();
+        if (remainingMs > 0) {
+            paymentExpiryTimer = setTimeout(() => {
+                if ($('#history-dialog')?.open) {
+                    openHistoryDetail(id);
+                    loadHistory();
+                }
+            }, remainingMs + 500);
+        }
+    }
+    // -----------------------------------------------
     
     // --- EVENT LISTENER UNTUK TOMBOL BATAL ---
     const cancelBtn = $('#cancel-order-btn');
