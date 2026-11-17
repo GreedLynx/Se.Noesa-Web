@@ -176,3 +176,11 @@
 - **Belum diuji:** tampilan/browser sungguhan, jangkauan jari dan overlap konten pada berbagai viewport (tidak ada browser automation).
 - **CUS-22:** tidak ada elemen panah pada menu dashboard Pelanggan di kode saat ini ⇒ tidak diubah dan dicatat.
 - **Kesimpulan:** LULUS untuk regressi logout + perubahan CSS yang dapat diverifikasi statis. Tidak ada klaim test visual.
+
+### TASK-20 — Dashboard & detail Owner (PARTIAL)
+- **Jenis:** unit test potongan kode + lint + verifikasi statis.
+- **Hasil (`node test_owner_quota_date.js`):** dengan tanggal → “Tanggal 30 Nov 2026 · Kapasitas dapur 440 porsi …”; tanpa tanggal → tetap “Kapasitas dapur 440 porsi …” tanpa prefiks tanggal. PASS.
+- **Verifikasi statis:** 2 ikon dekoratif dihapus dari dashboard Owner; tombol kembali memakai `‹` sama seperti topbar; logout Owner memanggil `confirmDialog` (bukan native confirm). Owner tetap read-only (perubahan TASK-02 tidak diubah).
+- **Lint:** `node --check app.js` OK; `php -l owner/dashboard.php` OK; `php -l owner/order-detail.php` OK; `git diff --check` bersih.
+- **Belum dipenuhi / belum diuji:** metrik OWN-09/11 menunggu keputusan #13; white-space OWN-02/03/13/15 dan filter tanggal tren OWN-04 perlu QA visual; tidak ada browser automation.
+- **Kesimpulan:** PARTIAL. Tidak ada klaim DONE untuk bagian yang menunggu keputusan/visual QA.

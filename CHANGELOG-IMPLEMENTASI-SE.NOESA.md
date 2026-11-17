@@ -120,9 +120,18 @@
 - `public/pelanggan/assets/customer.css`: tambah gaya list pada `.catalog-policy`.
 - Migration: tidak ada.
 
-### TASK-18 — (checkpoint ini)
+### TASK-18 — 8123bd3
 - `fix(TASK-18): move customer add-order action to bottom-right FAB`
 - `public/pelanggan/assets/customer.css`: tautan “Pesan menu” pada halaman riwayat (`body[data-page="history"]`) kini `position: fixed` di kanan bawah; pada mobile menjadi tombol bundar 54 px di atas navigasi bawah dengan `env(safe-area-inset-*)`; `.customer-content` diberi tambahan padding bawah agar tidak tertutup.
 - Regression logout: dialog konfirmasi Pelanggan tidak diubah dan diuji ulang (4 skenario: Ya, Batal, backdrop, klik konten).
 - CUS-22 (alignment panah 4 menu dashboard) **tidak ditemukan** di kode Pelanggan saat ini (tidak ada elemen panah pada menu dashboard); tidak ada perubahan spekulatif.
 - Migration: tidak ada.
+
+### TASK-20 — PARTIAL — (checkpoint ini)
+- `fix(TASK-20): show quota date and tidy owner dashboard icons`
+- `public/assets/js/app.js`: ringkasan kuota pada halaman produk Owner kini diawali tanggal yang sedang difilter (`Tanggal 30 Nov 2026 · Kapasitas dapur …`) — OWN-20.
+- `public/owner/order-detail.php`: panah tombol kembali disamakan dengan topbar (`‹`) — OWN-17.
+- `public/owner/dashboard.php`: hapus 2 ikon dekoratif (`<span class="ic">`) pada kartu “Pesanan Masuk” dan “Rincian Kategori” — OWN-10.
+- Verifikasi: dialog logout Owner sudah memakai `confirmDialog` terpusat — OWN-18.
+- **Tidak diubah:** metrik “Rata-rata Pesanan”/“Botol minuman” (OWN-09/11 menunggu keputusan #13); white-space/responsivitas detail (OWN-02/03/13/15) dan pemilihan tanggal tren (OWN-04) memerlukan QA visual/desain.
+- Status PARTIAL: sebagian acceptance criteria masih bergantung pada keputusan #13 dan uji browser. Migration: tidak ada.

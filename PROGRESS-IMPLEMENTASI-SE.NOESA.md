@@ -3,15 +3,15 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-18)
+- Current HEAD: (checkpoint TASK-20)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
 | DONE | 13 |
-| PARTIAL | 0 |
-| BLOCKED | 8 |
+| PARTIAL | 1 |
+| BLOCKED | 7 |
 | TODO | 3 |
 | FAILED | 0 |
 
@@ -36,19 +36,19 @@
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
 | TASK-16 | DONE | 28f4d37 | lolos (3/3 unit dialog) | Backdrop close ditambah ke cart & checkout; konten tidak ikut tertutup |
 | TASK-17 | DONE | 6eec3ea | lolos (lint + label check) | “ISI KERANJANG”, “Jumlah dipesan”, policy jadi list dekat tanggal |
-| TASK-18 | DONE | (checkpoint ini) | lolos (4/4 regression logout) | Tombol pesan jadi FAB kanan bawah; CUS-22 tidak ada di kode |
+| TASK-18 | DONE | 8123bd3 | lolos (4/4 regression logout) | Tombol pesan jadi FAB kanan bawah; CUS-22 tidak ada di kode |
 | TASK-19 | BLOCKED | - | - | Menunggu keputusan #14 |
-| TASK-20 | TODO | - | - | Dashboard Owner (sebagian dep #13) |
+| TASK-20 | PARTIAL | (checkpoint ini) | lolos (1/1 unit tanggal) | OWN-20/17/10 selesai; OWN-09/11 metrik & OWN-02/03 visual menunggu #13/QA |
 | TASK-21 | TODO | - | - | UI Admin |
 | TASK-22 | TODO | - | - | Regression lintas role (dep semua task) |
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-20
-- Tujuan: Penyempurnaan dashboard dan detail Owner (tanpa mengubah metrik yang menunggu keputusan #13)
-- File yang akan disentuh: public/owner/*.php, public/assets/js/app.js, public/assets/css/app.css (audit); file progres
-- Risiko: Sedang — Owner tetap read-only; metrik “Rata-rata Pesanan”/“Botol minuman” tidak diubah sebelum #13
-- Dependency: TASK-02 (selesai); #13 untuk bagian metrik (tertunda)
+- ID: TASK-21
+- Tujuan: Penyempurnaan UI Admin (hierarki username, strip menu, ikon konsisten, state nav mobile, search icon, profil ganda)
+- File yang akan disentuh: public/admin/assets/admin.css, public/admin/assets/admin.js, public/admin/partials/layout.php, public/admin/orders.php (audit); file progres
+- Risiko: Rendah — perubahan visual saja, jangan mengubah fungsi Admin
+- Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -95,7 +95,8 @@
 | 2026-11-18 00:45 | ae9a58b | TASK-14 | lolos (8 skenario) | Info kuota penuh per tanggal; filter kategori ikut diterapkan |
 | 2026-11-18 01:00 | 28f4d37 | TASK-16 | lolos (3/3 unit dialog) | Backdrop close cart & checkout; Escape/fokus native dipertahankan |
 | 2026-11-18 01:15 | 6eec3ea | TASK-17 | lolos (lint + label) | Label keranjang & policy checkout dirapikan |
-| 2026-11-18 01:30 | (checkpoint ini) | TASK-18 | lolos (4/4 logout) | FAB pesan kanan bawah + safe area; CUS-22 tidak ditemukan |
+| 2026-11-18 01:30 | 8123bd3 | TASK-18 | lolos (4/4 logout) | FAB pesan kanan bawah + safe area; CUS-22 tidak ditemukan |
+| 2026-11-18 01:50 | (checkpoint ini) | TASK-20 | PARTIAL | OWN-20/17/10 dikerjakan; metrik & whitespace menunggu #13/QA |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

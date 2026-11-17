@@ -34,7 +34,6 @@ topbar('Dashboard');
 <section class="card rise">
     <div class="row between">
         <h3>Pesanan Masuk</h3>
-        <span class="ic">▤</span>
     </div>
     <div class="num" id="orders">0 Pesanan</div>
     <div class="row between meta"><span id="tot">Total Hari Ini</span><b>100% Lunas</b></div>
@@ -42,7 +41,6 @@ topbar('Dashboard');
 <section class="card rise">
     <div class="row between">
         <h3>Rincian Kategori</h3>
-        <span class="ic">◔</span>
     </div>
     <div id="kat"></div>
 </section>

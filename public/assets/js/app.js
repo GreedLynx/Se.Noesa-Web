@@ -775,7 +775,14 @@ const PAGES = {
                 `api/products.php?kategori=${k}&q=${encodeURIComponent($("#q").value)}`,
             );
             $("#cs").textContent = d.count.semua;
-            if ($('#quota-summary'))$('#quota-summary').textContent='Kapasitas dapur '+d.maxKitchen+' porsi Â· Terpakai '+d.kitchenUsed+' porsi Â· Sisa '+d.kitchenRemaining+' porsi';
+            if ($('#quota-summary')) {
+                const quotaDate = $('#quota-date')?.value || '';
+                const quotaLabel = quotaDate ? new Date(quotaDate + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+                }) : '';
+                $('#quota-summary').textContent = (quotaLabel ? 'Tanggal ' + quotaLabel + ' Â· ' : '')
+                    + 'Kapasitas dapur ' + d.maxKitchen + ' porsi Â· Terpakai ' + d.kitchenUsed + ' porsi Â· Sisa ' + d.kitchenRemaining + ' porsi';
+            }
             $("#ck").textContent = d.count.kritis;
             $("#plist").innerHTML =
                 d.items
