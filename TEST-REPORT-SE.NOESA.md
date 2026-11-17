@@ -132,3 +132,12 @@
 - **Lint:** `node --check public/admin/assets/admin.js` OK; `git diff --check` bersih.
 - **Belum diuji:** klik sungguhan di browser desktop/mobile (tidak ada browser automation).
 - **Kesimpulan:** LULUS untuk audit + perbaikan yang dapat diverifikasi statis. Tidak ada klaim test interaksi browser.
+
+### TASK-13 — Produk dinonaktifkan pada histori (BLOCKED)
+- **Jenis:** audit skema + query read-only `information_schema`.
+- **Hasil:**
+  - Kolom `produk.aktif`: **tidak ada**. Kolom snapshot di `detail_pesanan`: **tidak ada** (0 baris).
+  - FK aktual: `detail_pesanan.produk_id REFERENCES produk(id)` (tanpa `ON DELETE`), sehingga produk yang sudah dipesan tidak dapat dihapus ⇒ baris histori aman.
+  - Query detail Admin/Owner (`admin/api/orders.php:229-234`) dan Pelanggan (`pelanggan/api/orders.php:305-308`) memakai `JOIN produk` dan menampilkan `produk.nama` saat ini.
+- **Konsekuensi:** tidak ada data yang bisa dipakai untuk menampilkan “keterangan produk dinonaktifkan” tanpa perubahan skema/keputusan bisnis.
+- **Status:** BLOCKED — `DECISION-NEW-01` menunggu persetujuan. Tidak ada kode/migration yang diubah.

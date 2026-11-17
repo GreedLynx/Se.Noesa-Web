@@ -82,7 +82,7 @@
 - Tidak ada nilai status database, action name, atau istilah final yang diubah (keputusan #12 masih PENDING).
 - Migration: tidak ada.
 
-### TASK-12 — (checkpoint ini)
+### TASK-12 — e824f49
 - `fix(TASK-12): preserve admin product filters after save`
 - Audit seluruh aksi Admin: libur, produk, kuota harian, status pesanan, dan unggah foto kiriman.
 - Temuan: sebagian besar aksi sudah memperbarui komponen secara lokal (`loadHolidays`, `loadProducts`, `loadKuotaHarian`, `refreshProducts`) dengan `toast` sukses/gagal; `api()` memakai `cache: "no-store"`.
@@ -90,3 +90,10 @@
 - Perbaikan `public/admin/assets/admin.js`: filter kategori/pencarian dipertahankan; verifikasi produk tersimpan dilakukan terhadap daftar produk tanpa filter, bukan daftar terfilter.
 - Reload penuh pada detail pesanan dan unggah foto kiriman tetap dipertahankan karena memang perlu menyegarkan status/button; tidak ada state lama yang dibiarkan.
 - Migration: tidak ada.
+
+### TASK-13 — BLOCKED (dokumentasi audit)
+- `docs(TASK-13): record blocked product snapshot decision`
+- Audit: `produk` tidak memiliki kolom `aktif`; `detail_pesanan` tidak memiliki kolom snapshot nama/detail (verifikasi `information_schema`: 0 kolom). FK `detail_pesanan.produk_id → produk.id` mencegah penghapusan produk yang sudah dipesan.
+- Konsekuensi: baris histori tidak hilang, tetapi detail pesanan menampilkan `produk.nama` saat ini, sehingga penggantian nama produk mengubah tampilan pesanan lama.
+- Implementasi keterangan “produk dinonaktifkan” memerlukan definisi bisnis + migration (kolom `aktif` dan/atau snapshot). Tidak ada keputusan yang tersedia ⇒ task ditandai BLOCKED, kode tidak diubah.
+- Tambah `DECISION-NEW-01` pada `KEPUTUSAN-BISNIS-SE.NOESA.md` (keputusan baru yang ditemukan saat implementasi, bukan bagian dari 14 keputusan awal).

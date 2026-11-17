@@ -3,7 +3,7 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-12)
+- Current HEAD: (checkpoint TASK-13)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
@@ -11,8 +11,8 @@
 |---|---:|
 | DONE | 9 |
 | PARTIAL | 0 |
-| BLOCKED | 7 |
-| TODO | 8 |
+| BLOCKED | 8 |
+| TODO | 7 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -30,8 +30,8 @@
 | TASK-09 | BLOCKED | - | - | Menunggu keputusan #8, #9, #10 |
 | TASK-10 | BLOCKED | - | - | Menunggu keputusan #11 |
 | TASK-11 | DONE | 1371442 | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
-| TASK-12 | DONE | (checkpoint ini) | lolos (lint + audit alur) | Filter produk dipertahankan setelah simpan; feedback sukses/gagal ada |
-| TASK-13 | TODO | - | - | Produk nonaktif di histori |
+| TASK-12 | DONE | e824f49 | lolos (lint + audit alur) | Filter produk dipertahankan setelah simpan; feedback sukses/gagal ada |
+| TASK-13 | BLOCKED | - | audit selesai | Tidak ada kolom `aktif`/snapshot; butuh DECISION-NEW-01 + migration |
 | TASK-14 | TODO | - | - | Kuota penuh Pelanggan (dep TASK-07) |
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
 | TASK-16 | TODO | - | - | Dialog Pelanggan |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-13
-- Tujuan: Pastikan keterangan produk dinonaktifkan tampil pada pesanan lama tanpa menghapus snapshot historis
-- File yang akan disentuh: public/admin/api/orders.php, detail_pesanan/produk (audit); file progres
-- Risiko: Sedang — jangan mengubah detail historis atau menghapus data; jangan mengubah kuota
-- Dependency: TASK-00 (selesai)
+- ID: TASK-14
+- Tujuan: Tampilkan informasi kuota penuh untuk Pelanggan per tanggal pengiriman dan cegah checkout produk habis
+- File yang akan disentuh: public/pelanggan/api/catalog.php, public/pelanggan/assets/customer.js (audit); file progres
+- Risiko: Sedang — pesan harus mengikuti tanggal yang dipilih dan tidak menyesatkan
+- Dependency: TASK-07 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -67,6 +67,7 @@
 | #12 | Istilah/status final pembayaran | TASK-04, 11, 15, 20 | PENDING |
 | #13 | Definisi metrik Owner | TASK-20 | PENDING |
 | #14 | Aset branding final | TASK-19 | PENDING |
+| NEW-01 | Penonaktifkan produk & snapshot histori (ditemukan saat TASK-13) | TASK-13 | PENDING |
 
 ## Bug/regresi yang ditemukan
 | ID | Gejala | Commit terkait | Status | Tindakan |
@@ -89,7 +90,8 @@
 | 2026-11-17 23:20 | d76a988 | TASK-06 | lolos (5/5 skenario upload gagal) | Validasi upload diuji via HTTP; tanpa perubahan kode |
 | 2026-11-17 23:45 | 7a2572c | TASK-07 | lolos (44 PASS TEMP-table) | Audit lock kanonik; BUG-001 dikoreksi sebagai false alarm |
 | 2026-11-17 23:58 | 1371442 | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
-| 2026-11-18 00:10 | (checkpoint ini) | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
+| 2026-11-18 00:10 | e824f49 | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
+| 2026-11-18 00:25 | (checkpoint ini) | TASK-13 | BLOCKED (audit) | Tidak ada `aktif`/snapshot; DECISION-NEW-01 dicatat |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

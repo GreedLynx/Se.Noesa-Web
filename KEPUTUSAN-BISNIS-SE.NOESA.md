@@ -134,3 +134,16 @@
 - **Status:** PENDING
 - **Dampak:** Teks brand, token warna, logo, background, test visual.
 - **Task terdampak:** TASK-19 (BLOCKED).
+
+---
+
+## Keputusan tambahan yang ditemukan saat implementasi
+
+### DECISION-NEW-01 — Penonaktifkan produk & snapshot histori (TASK-13)
+- **Pertanyaan:** Apakah aplikasi perlu kemampuan menonaktifkan produk (bukan menghapus)? Jika ya, bagaimana perilaku pesanan lama: menampilkan nama produk saat pesanan dibuat (snapshot) atau nama produk saat ini, dan apakah perlu keterangan “produk dinonaktifkan” pada detail pesanan?
+- **Konteks temuan:** TABEL `produk` **tidak memiliki kolom `aktif`** dan `detail_pesanan` **tidak memiliki kolom snapshot nama/detail** (verifikasi `information_schema` pada 2026-11-18: 0 kolom). FK `detail_pesanan.produk_id → produk.id` mencegah penghapusan produk yang sudah dipesan, sehingga baris histori tidak hilang. Namun detail pesanan Admin/Owner/Pelanggan mengambil `produk.nama` saat ini lewat `JOIN produk`, sehingga penggantian nama produk akan mengubah tampilan pesanan lama.
+- **Opsi:** (a) tambah kolom `aktif` + snapshot nama di `detail_pesanan` lewat migration, (b) cukup keterangan berbasis data yang ada, (c) tidak diimplementasikan.
+- **Keputusan final:** _(kosong — menunggu pemilik)_
+- **Status:** PENDING
+- **Dampak:** Migration aman + backfill snapshot, API detail, UI Admin/Owner/Pelanggan, test histori.
+- **Task terdampak:** TASK-13 (BLOCKED).
