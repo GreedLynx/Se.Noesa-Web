@@ -119,3 +119,16 @@
 - **Lint:** 3 file JS lolos `node --check`; `php -l owner/orders.php` OK; `git diff --check` bersih.
 - **Belum diuji:** render browser desktop/mobile; perubahan istilah status final (menunggu keputusan #12).
 - **Kesimpulan:** LULUS. Tidak ada nilai status database yang diubah.
+
+### TASK-12 — Auto-refresh Admin
+- **Jenis:** audit statis alur aksi + lint.
+- **Hasil audit:**
+  - Libur: `loadHolidays()` dipanggil ulang setelah simpan/hapus + toast ✅
+  - Produk: `loadProducts()` / `refreshProducts()` setelah simpan/hapus + toast ✅
+  - Kuota harian: `loadKuotaHarian()` + `refreshProducts()` setelah simpan/reset/hapus + toast ✅
+  - Status pesanan & unggah foto kiriman: reload halaman setelah toast sukses ✅
+  - `api()` memakai `cache: "no-store"` → tidak ada data stale ✅
+- **Perbaikan:** filter kategori/pencarian produk tidak lagi di-reset setelah simpan; verifikasi keberadaan produk memakai query tanpa filter.
+- **Lint:** `node --check public/admin/assets/admin.js` OK; `git diff --check` bersih.
+- **Belum diuji:** klik sungguhan di browser desktop/mobile (tidak ada browser automation).
+- **Kesimpulan:** LULUS untuk audit + perbaikan yang dapat diverifikasi statis. Tidak ada klaim test interaksi browser.

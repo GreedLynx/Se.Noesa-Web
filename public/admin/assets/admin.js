@@ -846,14 +846,13 @@ function productsPage() {
             }
             if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
             const savedCode = f.elements.kode.value.trim().toUpperCase();
-            productCategory = "";
-            $("#product-search").value = "";
-            $$("#product-filters button").forEach((x) =>
-                x.classList.toggle("active", x.dataset.category === ""),
-            );
-            const loadedProducts = await loadProducts();
+            // Pertahankan filter kategori/pencarian yang sedang aktif setelah simpan.
+            await loadProducts();
+            // Verifikasi terhadap seluruh produk, bukan daftar yang sedang difilter,
+            // agar produk yang tersimpan di luar filter tidak dianggap gagal.
+            const allProducts = await api("api/products.php");
             if (
-                !loadedProducts.some(
+                !allProducts.items.some(
                     (p) => String(p.kode).trim().toUpperCase() === savedCode,
                 )
             )

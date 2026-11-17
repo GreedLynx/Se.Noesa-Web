@@ -71,7 +71,7 @@
 - Tidak ada perubahan kode (tidak ada race condition yang terbukti).
 - Koreksi: BUG-001 dari TASK-04 dinyatakan false alarm karena migration 016 sudah memperbaiki definisi view.
 
-### TASK-11 — (checkpoint ini)
+### TASK-11 — 1371442
 - `fix(TASK-11): align order status labels and verify status filters`
 - Audit 6 nilai status DB (`menunggu_pembayaran`, `menunggu_validasi`, `diproses`, `selesai`, `ditolak`, `dibatalkan`) dan semua tab filter API/UI.
 - Perbaikan label UI yang masih memakai “Menunggu validasi” menjadi “Menunggu verifikasi” (selaras dengan perubahan ADM-19 yang sudah berlaku):
@@ -80,4 +80,13 @@
   - `public/admin/assets/admin.js` (badge antrean prioritas & empty state)
   - `public/assets/js/menu-notifications.js` (label status notifikasi)
 - Tidak ada nilai status database, action name, atau istilah final yang diubah (keputusan #12 masih PENDING).
+- Migration: tidak ada.
+
+### TASK-12 — (checkpoint ini)
+- `fix(TASK-12): preserve admin product filters after save`
+- Audit seluruh aksi Admin: libur, produk, kuota harian, status pesanan, dan unggah foto kiriman.
+- Temuan: sebagian besar aksi sudah memperbarui komponen secara lokal (`loadHolidays`, `loadProducts`, `loadKuotaHarian`, `refreshProducts`) dengan `toast` sukses/gagal; `api()` memakai `cache: "no-store"`.
+- Bug ditemukan: setelah.simpan produk, kode menghapus filter kategori dan nilai pencarian sehingga pengguna kehilangan konteks (IMG-ADM-04 / ADM-28).
+- Perbaikan `public/admin/assets/admin.js`: filter kategori/pencarian dipertahankan; verifikasi produk tersimpan dilakukan terhadap daftar produk tanpa filter, bukan daftar terfilter.
+- Reload penuh pada detail pesanan dan unggah foto kiriman tetap dipertahankan karena memang perlu menyegarkan status/button; tidak ada state lama yang dibiarkan.
 - Migration: tidak ada.

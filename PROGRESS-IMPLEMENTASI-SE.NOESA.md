@@ -1,18 +1,18 @@
 # Progress Implementasi Se.Noesa
 
-- Last updated: 2026-11-17 21:45 WIB
+- Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-11)
+- Current HEAD: (checkpoint TASK-12)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 8 |
+| DONE | 9 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 9 |
+| TODO | 8 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -29,8 +29,8 @@
 | TASK-08 | BLOCKED | - | - | Menunggu keputusan #6 |
 | TASK-09 | BLOCKED | - | - | Menunggu keputusan #8, #9, #10 |
 | TASK-10 | BLOCKED | - | - | Menunggu keputusan #11 |
-| TASK-11 | DONE | (checkpoint ini) | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
-| TASK-12 | TODO | - | - | Auto-refresh Admin |
+| TASK-11 | DONE | 1371442 | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
+| TASK-12 | DONE | (checkpoint ini) | lolos (lint + audit alur) | Filter produk dipertahankan setelah simpan; feedback sukses/gagal ada |
 | TASK-13 | TODO | - | - | Produk nonaktif di histori |
 | TASK-14 | TODO | - | - | Kuota penuh Pelanggan (dep TASK-07) |
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
@@ -44,10 +44,10 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-12
-- Tujuan: Konsistensi auto-refresh setelah aksi Admin
-- File yang akan disentuh: public/admin/assets/admin.js, public/admin/api/*.php (audit); file progres
-- Risiko: Sedang — hindari reload berlebihan tetapi jangan mempertahankan data stale; pertahankan filter/periode
+- ID: TASK-13
+- Tujuan: Pastikan keterangan produk dinonaktifkan tampil pada pesanan lama tanpa menghapus snapshot historis
+- File yang akan disentuh: public/admin/api/orders.php, detail_pesanan/produk (audit); file progres
+- Risiko: Sedang — jangan mengubah detail historis atau menghapus data; jangan mengubah kuota
 - Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
@@ -88,7 +88,8 @@
 | 2026-11-17 23:00 | 626cb9f | TASK-05 | lolos (5/5 skenario cart) | Clamp minimum di keranjang; pesan error Admin spesifik |
 | 2026-11-17 23:20 | d76a988 | TASK-06 | lolos (5/5 skenario upload gagal) | Validasi upload diuji via HTTP; tanpa perubahan kode |
 | 2026-11-17 23:45 | 7a2572c | TASK-07 | lolos (44 PASS TEMP-table) | Audit lock kanonik; BUG-001 dikoreksi sebagai false alarm |
-| 2026-11-17 23:58 | (checkpoint ini) | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
+| 2026-11-17 23:58 | 1371442 | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
+| 2026-11-18 00:10 | (checkpoint ini) | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).
