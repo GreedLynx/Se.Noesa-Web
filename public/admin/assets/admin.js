@@ -136,7 +136,7 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
 function badge(status) {
     const labels = {
         menunggu_pembayaran: "Menunggu pembayaran",
-        menunggu_validasi: "Menunggu validasi",
+        menunggu_validasi: "Menunggu verifikasi",
         diproses: "Sedang diproses",
         selesai: "Selesai",
         ditolak: "Ditolak",
@@ -320,7 +320,7 @@ async function dashboard() {
             ? cancellations.items.map(order => '<a class="cancellation-alert" href="order-detail.php?id=' + Number(order.id) +
                 '"><span><b>' + esc(order.kode) + ' · ' + esc(order.nama_pemesan) + '</b><small>' +
                 esc(cancellationSourceLabel(order.cancellation_source)) + ' · ' + esc(cancellationTime(order.cancelled_at)) +
-                '</small></span><p>' + esc(cancellationAttention(order)) + '</p><span class="cancellation-open">Buka detail pesanan &rarr;</span></a>').join("")
+                '</small></span><p>' + esc(cancellationAttention(order)) + '</p><span class="cancellation-open">Lihat detail pesanan &rarr;</span></a>').join("")
             : '<div class="empty-state">Tidak ada pembatalan yang belum ditinjau.</div>';
     }
     for (const [name, value] of Object.entries({
@@ -430,7 +430,7 @@ async function loadOrders() {
                 "</b>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                 "<small>" +
-                (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
+                (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
                 "</small></td><td><b>" +
                 esc(o.nama_pemesan) +
                 "</b><small>" +
@@ -465,7 +465,7 @@ async function loadOrders() {
                     "</b><small>" +
                     esc(o.keterangan || "") +
                     " · " +
-                    (o.status_updated_at ? "Status sejak " + dateLabel(o.status_updated_at, true) : "Dibuat " + dateLabel(o.created_at, true)) +
+                    (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
                     '</small>' + cancellationSummary(o) + '<span class="row-between"><small>' +
                     Number(o.pax || 0) +
                     " porsi</small><strong>" +
@@ -1094,9 +1094,9 @@ async function orderDetail() {
             }
             if (action === "validate") {
                 const confirmed = await confirmDialog(
-                    "Validasi Pembayaran",
-                    "Validasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
-                    "Ya, Validasi",
+                    "Verifikasi Pembayaran",
+                    "Verifikasi pembayaran pesanan ini? Status akan berubah menjadi Diproses.",
+                    "Ya, Verifikasi",
                     "primary"
                 );
                 if (!confirmed) return;
@@ -1141,14 +1141,25 @@ async function orderDetail() {
                             checked: box.checked,
                         },
                     });
+                    syncCompleteButton();
                 } catch (e) {
                     box.checked = !box.checked;
                     toast(e.message);
                 } finally {
                     box.disabled = false;
+                    syncCompleteButton();
                 }
             }),
     );
+
+    function syncCompleteButton() {
+        const completeBtn = $$("[data-order-action]").find(b => b.dataset.orderAction === "complete");
+        if (!completeBtn) return;
+        const boxes = $$("[data-item-check]");
+        const allChecked = boxes.length > 0 && boxes.every(b => b.checked);
+        completeBtn.disabled = !allChecked;
+        completeBtn.style.opacity = allChecked ? "1" : "0.5";
+    }
     const upload = $("#dispatch-photo-form");
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();

@@ -39,7 +39,7 @@ function topbar(string $title, bool $back = false)
                     <a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a>
                 <?php endif; ?>
                 <div>
-                    <small>Se.Noesa</small>
+                    <small>Owner</small>
                     <h1><?= $title ?></h1>
                 </div>
             </div>

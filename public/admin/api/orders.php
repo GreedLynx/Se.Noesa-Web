@@ -10,6 +10,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
 require_once __DIR__ . '/../../../app/offline-orders.php';
+require_once __DIR__ . '/../../../app/menu-notifications.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
@@ -238,6 +239,10 @@ if (isset($_GET['id'])) {
     if (!$order['foto_kiriman_list'] && !empty($order['foto_kiriman'])) {
         $order['foto_kiriman_list'] = [$order['foto_kiriman']];
     }
+    $order['menu_notifications'] = menu_notice_order_notifications(
+        (int) $order['id'],
+        (int) ($order['user_id'] ?? 0)
+    );
     json(cancellation_metadata($order));
 }
 $tab = $_GET['tab'] ?? 'validasi';

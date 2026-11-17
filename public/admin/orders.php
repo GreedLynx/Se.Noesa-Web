@@ -44,8 +44,8 @@ admin_head('Daftar Pesanan', 'orders');
                     0
                 </b>
             </button>
-            <button data-tab="validasi">
-                Menunggu validasi
+                <button data-tab="validasi">
+                    Menunggu verifikasi
                 <b
                     id="pending-count">
                     0

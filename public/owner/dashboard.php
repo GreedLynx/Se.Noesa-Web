@@ -15,7 +15,7 @@ topbar('Dashboard');
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
     <p class="ok">✓ Pesanan Lunas</p>
     <div class="stats">
-        <div><small>TIKET RATA-RATA</small><b id="tiket">-</b></div>
+        <div><small>RATA-RATA PESANAN</small><b id="tiket">-</b></div>
         <div><small id="l2">KUANTITAS PAX</small><b id="items">-</b></div>
         <div><small>STATUS LUNAS</small><b>100% Lunas</b></div>
     </div>
@@ -24,7 +24,7 @@ topbar('Dashboard');
     <div class="row between">
         <h3>Tren Pesanan</h3>
         <div class="seg" id="period">
-            <button data-p="today" class="on">Hari ini</button>
+            <button data-p="today" class="on">Hari</button>
             <button data-p="week">Minggu</button>
             <button data-p="month">Bulan</button>
         </div>

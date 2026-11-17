@@ -15,7 +15,7 @@ try {
 $category = $_GET['kategori'] ?? '';
 $query = trim($_GET['q'] ?? '');
 $items = array_values(array_filter($snapshot['items'], static function ($product) use ($category, $query) {
-    return (int) $product['kuota_harian'] > 0
+    return (int) $product['sisa'] > 0
         && (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
         && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
 }));

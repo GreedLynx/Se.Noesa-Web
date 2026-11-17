@@ -27,7 +27,7 @@ function admin_head(string $title, string $page): void
                 <span class="brand-mark">S</span>
                 <span>Se.Noesa<small>ADMIN PANEL</small></span>
             </a>
-            <div class="side-label">MENU UTAMA</div>
+            <div class="side-label"></div>
             <nav class="side-nav">
                 <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>">
                     <span class="nav-icon">&#9638;</span>Dashboard
