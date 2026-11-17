@@ -1934,3 +1934,15 @@ body[data-page="history"] .customer-content {
     color:#666;
     text-decoration:line-through;
 }
+
+/* =========================================
+   TAMBAHAN: Tombol Filter Dibatalkan Warna Merah
+   ========================================= */
+.history-tabs button[data-status="dibatalkan"].active {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+}
+.history-tabs button[data-status="dibatalkan"]:hover {
+    border-color: var(--red);
+}

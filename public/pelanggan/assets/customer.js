@@ -695,3 +695,4 @@ async function openHistoryDetail(id) {
 const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
+

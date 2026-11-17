@@ -59,7 +59,7 @@ function admin_head(string $title, string $page): void
         </aside>
         <main class="main-panel">
             <header class="topbar">
-                <button class="menu-toggle" aria-label="Buka menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+                <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
                 <div class="top-copy">
                     <small>Se.Noesa / Admin</small>
                     <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
