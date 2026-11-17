@@ -1946,3 +1946,37 @@ body[data-page="history"] .customer-content {
 .history-tabs button[data-status="dibatalkan"]:hover {
     border-color: var(--red);
 }
+
+/* =========================================
+   TAMBAHAN: Pemberitahuan Tenggat Pembayaran Habis & WA Admin
+   ========================================= */
+.payment-expired-notice {
+    background: #fff8eb;
+    border: 1px solid #f0d7a8;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--brown);
+}
+
+.payment-expired-notice b {
+    color: var(--red);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.payment-expired-notice p {
+    margin: 4px 0;
+}
+
+.payment-expired-notice .admin-wa-text {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px dashed var(--green);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--green-dark);
+}

@@ -486,13 +486,19 @@ function statusProgress(status) {
         + '">' + s + '</span>').join('') + '</div>'
 }
 
-let historyStatus = '', historyTimer;
+let historyStatus = '', historyTimer, paymentExpiryTimer = null;
 function historyPage() {
     wireLogout();
     const dialog = $('#history-dialog');
-    $$('[data-close-history]').forEach(b => b.onclick = () => dialog.close());
+    $$('[data-close-history]').forEach(b => b.onclick = () => {
+        clearTimeout(paymentExpiryTimer);
+        dialog.close();
+    });
     dialog.addEventListener('click', e => {
-        if (e.target === dialog) dialog.close()
+        if (e.target === dialog) {
+            clearTimeout(paymentExpiryTimer);
+            dialog.close();
+        }
     });
     $$('#history-tabs button').forEach(b => b.onclick = () => {
         $$('#history-tabs button').forEach(x => x.classList.toggle('active', x === b));
@@ -518,7 +524,8 @@ async function loadHistory() {
                 : '') + '<div class="history-products">' + (first.gambar ? '<img src="'
             + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
-            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
+            + '</small></span></div>' + (o.reschedule_pending ? '<p class="history-rejection-reason">Menunggu konfirmasi jadwal</p>' : '')
+            + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
     }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
@@ -535,9 +542,6 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    // Handle case where items might be undefined (order exists but has no detail items,
-    // or API response structure differs from expected). This prevents
-    // "Cannot read properties of undefined (reading 'map')" error.
     const itemsArray = Array.isArray(d.items) ? d.items : [];
     const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
@@ -570,11 +574,34 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
-    const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
-        + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
-            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
+
+    const expiredAdminContact = `
+        <div class="payment-expired-notice">
+            <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan segera hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            <p class="admin-wa-text">Nomor WA Admin: 08123456789</p>
+        </div>
+    `;
+
+    const isPaymentExpiredWithoutProof = !hasProof && (
+        (d.status === 'menunggu_pembayaran' && !canUploadProof) ||
+        d.status === 'dibatalkan'
+    );
+
+    const proofSection = canUploadProof
+        ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>'
+            + (hasProof
+                ? '<div class="proof-display-row">' + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>'
+                : proof)
+            + (d.status === 'menunggu_pembayaran'
+                ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>'
+                : '')
+            + proofForm + '</section>'
+        : (proof
+            ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>'
+            : (isPaymentExpiredWithoutProof
+                ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + expiredAdminContact + '</section>'
+                : ''));
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
         ? d.foto_kiriman_list
@@ -592,7 +619,18 @@ async function openHistoryDetail(id) {
         : '';
 
     const refundNotice = 'Jika sudah mentransfer, refund penuh ditangani Admin di luar aplikasi. Hubungi Admin untuk mengurus refund.';
-    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
+    const offer = d.reschedule_offer;
+    const offerPending = d.can_respond_reschedule === true;
+    const offerPanel = offer ? '<section class="detail-section reschedule-offer" role="status"><h3>'
+        + (offer.status_tawaran === 'menunggu' ? 'Tawaran jadwal pengganti' : 'Riwayat tawaran jadwal')
+        + '</h3><p><b>Alasan:</b> ' + esc(offer.alasan) + '</p><div class="detail-schedule"><span>Tanggal sebelumnya<b>'
+        + dateLabel(offer.tanggal_asal) + '</b></span><span>Tanggal usulan<b>' + dateLabel(offer.tanggal_usulan)
+        + '</b></span></div>' + (offer.status_tawaran === 'menunggu'
+            ? '<p>Tanggapi sebelum ' + dateLabel(offer.berlaku_sampai, true) + ' WIB. Untuk pesanan yang menunggu pembayaran, tenggat pembayaran satu jam tetap berlaku.</p>'
+                + '<button type="button" class="customer-button primary" id="accept-reschedule">Terima jadwal</button> '
+                + '<button type="button" class="customer-button danger" id="reject-reschedule">Tolak jadwal</button><p class="form-error" id="reschedule-error" role="alert"></p>'
+            : '<p>Status tawaran: ' + esc(offer.status_tawaran) + '</p>') + '</section>' : '';
+    const isStatusCancellable = !offerPending && ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
     const cancelLimitDate = d.cancel_before ? new Date(new Date(d.cancel_before).getTime() - 1) : null;
     const cancelLimitLabel = cancelLimitDate ? cancelLimitDate.toLocaleDateString('id-ID', {
         day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
@@ -635,7 +673,7 @@ async function openHistoryDetail(id) {
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
-        + '</p>' + statusProgress(d.status) + rejectionNotice + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
+        + '</p>' + statusProgress(d.status) + rejectionNotice + offerPanel + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
@@ -646,6 +684,45 @@ async function openHistoryDetail(id) {
         + '</div>';
         
     $('#history-dialog').showModal();
+
+    // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
+    clearTimeout(paymentExpiryTimer);
+    if (d.status === 'menunggu_pembayaran' && canUploadProof && d.payment_expires_at) {
+        const remainingMs = new Date(d.payment_expires_at).getTime() - Date.now();
+        if (remainingMs > 0) {
+            paymentExpiryTimer = setTimeout(() => {
+                if ($('#history-dialog')?.open) {
+                    openHistoryDetail(id);
+                    loadHistory();
+                }
+            }, remainingMs + 500);
+        }
+    }
+    // -----------------------------------------------
+    for (const decision of ['accept', 'reject']) {
+        const button = $('#'+ decision + '-reschedule');
+        if (!button) continue;
+        button.onclick = async () => {
+            const accepted = decision === 'accept';
+            if (!confirm(accepted
+                ? 'Terima jadwal pengiriman pengganti ini? Ketersediaan akan diperiksa ulang.'
+                : 'Tolak jadwal ini dan batalkan pesanan? ' + (hasProof ? refundNotice : ''))) return;
+            button.disabled = true;
+            try {
+                await api('api/orders.php', { method: 'POST', body: {
+                    action: 'respond_reschedule', id: d.id, decision,
+                    offer_version: offer.dibuat_at
+                }});
+                toast(accepted ? 'Jadwal pengiriman diperbarui' : 'Pesanan dibatalkan');
+                await openHistoryDetail(id);
+                loadHistory();
+            } catch (err) {
+                const error = $('#reschedule-error');
+                if (error) error.textContent = err.message;
+                button.disabled = false;
+            }
+        };
+    }
     
     // --- EVENT LISTENER UNTUK TOMBOL BATAL ---
     const cancelBtn = $('#cancel-order-btn');
@@ -696,3 +773,104 @@ const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
+/* ==========================================================================
+   FITUR CEK KETERSEDIAAN MENU DI CHECKOUT
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", function () {
+    const checkoutForm = $('#checkout-form');
+    const checkoutDateInput = checkoutForm?.elements?.tgl_kirim || document.getElementById('checkout-date');
+    if (!checkoutDateInput) return;
+
+    const scheduleNote = document.getElementById('schedule-note');
+    if (scheduleNote) scheduleNote.style.display = 'none';
+
+    let alertBox = document.getElementById('checkout-quota-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'checkout-quota-alert';
+        alertBox.style.cssText = 'display:none; margin:10px 0 15px; padding:12px 14px; border-radius:12px; font-size:12px; line-height:1.5; border:1px solid transparent;';
+        const dateLabel = checkoutDateInput.closest('label') || checkoutDateInput;
+        dateLabel.parentNode.insertBefore(alertBox, dateLabel.nextSibling);
+    }
+
+    async function cekKetersediaanMenu(selectedDate) {
+        const cartIds = Object.keys(cart).filter(id => Number(cart[id]) > 0);
+        if (!selectedDate) return;
+
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#f7f8f7';
+        alertBox.style.borderColor = '#e4ece5';
+        alertBox.style.color = '#666';
+        alertBox.innerHTML = '⏳ Memeriksa ketersediaan menu...';
+
+        try {
+            const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(selectedDate));
+
+            if (d.tanggal_libur) {
+                alertBox.style.background = '#fff3cd';
+                alertBox.style.borderColor = '#ffeeba';
+                alertBox.style.color = '#856404';
+                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>Se.Noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                return;
+            }
+
+            if (cartIds.length === 0) {
+                alertBox.style.background = '#e0f2fe';
+                alertBox.style.borderColor = '#bae6fd';
+                alertBox.style.color = '#0369a1';
+                alertBox.innerHTML = '<b>ℹ️ Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
+                return;
+            }
+
+            const items = Array.isArray(d.items) ? d.items : [];
+            let hasError = false;
+            let listHtml = '<div style="font-weight:600; margin-bottom:6px; color:#333;">Status Menu di Keranjang:</div>';
+            listHtml += '<ul style="margin:0; padding:0; list-style:none; display:grid; gap:6px;">';
+
+            for (const id of cartIds) {
+                const qty = Number(cart[id]);
+                const produk = items.find(p => String(p.id) === String(id));
+                const fallbackName = productCache[id]?.nama || 'Menu #' + id;
+
+                if (!produk) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
+                    continue;
+                }
+
+                const sisa = Number(produk.sisa ?? produk.kuota ?? 0);
+                if (sisa <= 0) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
+                } else if (qty > sisa) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
+                } else {
+                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span>✅</span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
+                }
+            }
+            listHtml += '</ul>';
+
+            alertBox.style.background = hasError ? '#fff5f5' : '#f0fdf4';
+            alertBox.style.borderColor = hasError ? '#feb2b2' : '#bbf7d0';
+            alertBox.style.color = hasError ? '#c53030' : '#276749';
+            alertBox.innerHTML = listHtml;
+        } catch (error) {
+            alertBox.style.background = '#fef2f2';
+            alertBox.style.borderColor = '#fecaca';
+            alertBox.style.color = '#991b1b';
+            alertBox.innerHTML = `❌ Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
+        }
+    }
+
+    checkoutDateInput.addEventListener('change', () => cekKetersediaanMenu(checkoutDateInput.value));
+
+    const checkoutDialog = document.getElementById('checkout-dialog');
+    if (checkoutDialog) {
+        new MutationObserver(() => {
+            if (checkoutDialog.hasAttribute('open') && checkoutDateInput.value) {
+                cekKetersediaanMenu(checkoutDateInput.value);
+            }
+        }).observe(checkoutDialog, { attributes: true, attributeFilter: ['open'] });
+    }
+});

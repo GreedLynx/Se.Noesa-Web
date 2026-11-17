@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS
   pemberitahuan_perubahan_menu,
   pesanan_foto_kiriman,
   detail_pesanan,
+  penawaran_jadwal_ulang,
   pesanan,
   jadwal_po,
   produk,
@@ -104,6 +105,25 @@ CREATE TABLE pesanan (
   tgl_kirim TIMESTAMPTZ,
   status_updated_at TIMESTAMPTZ DEFAULT now(),
   created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- DDL: satu tawaran jadwal pengganti per pesanan; status pesanan tetap sampai pelanggan menjawab.
+CREATE TABLE penawaran_jadwal_ulang (
+  id SERIAL PRIMARY KEY,
+  pesanan_id INT NOT NULL UNIQUE REFERENCES pesanan(id) ON DELETE CASCADE,
+  status_asal VARCHAR(24) NOT NULL
+    CHECK (status_asal IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')),
+  tanggal_asal DATE NOT NULL,
+  alasan VARCHAR(500) NOT NULL
+    CHECK (CHAR_LENGTH(BTRIM(alasan)) BETWEEN 1 AND 500),
+  tanggal_usulan DATE NOT NULL,
+  status_tawaran VARCHAR(12) NOT NULL DEFAULT 'menunggu'
+    CHECK (status_tawaran IN ('menunggu', 'diterima', 'ditolak', 'kedaluwarsa')),
+  dibuat_oleh INT REFERENCES users(id) ON DELETE SET NULL,
+  dibuat_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  berlaku_sampai TIMESTAMPTZ NOT NULL,
+  ditanggapi_at TIMESTAMPTZ,
+  CHECK (berlaku_sampai > dibuat_at)
 );
 
 -- DDL: tabel baris item yang menghubungkan pesanan dengan produk.

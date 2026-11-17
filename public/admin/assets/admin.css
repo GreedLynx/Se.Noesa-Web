@@ -900,6 +900,33 @@ td small {
   font-size: 12px;
   white-space: pre-wrap;
 }
+.reschedule-tag {
+  display: inline-flex;
+  margin: 6px 0 0 6px;
+}
+.reschedule-detail {
+  grid-column: 1 / -1;
+  border-color: #d5dfd2;
+  background: #fbfdf9;
+}
+.reschedule-reason {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--green-pale);
+}
+.reschedule-reason p,
+.reschedule-warning {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+.reschedule-warning {
+  padding: 12px;
+  border: 1px solid #e5c783;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: var(--brown);
+}
 .reject-order-dialog {
   width: min(460px, calc(100% - 28px));
 }

@@ -262,3 +262,20 @@ Tidak ada penghapusan pesanan, detail, bukti, maupun foto. Refund manual di luar
 aplikasi; tidak ada tabel status refund baru. Inventaris/dry-run job read-only;
 lihat urutan aktivasi di README. Migrasi 021 sudah diterapkan; job kedaluwarsa
 tetap memerlukan aktivasi terpisah sesuai urutan di README.
+
+## Migrasi 022: tawaran jadwal pengganti
+
+`022_order_reschedule_offer.sql` membuat `penawaran_jadwal_ulang`, satu baris per
+pesanan dengan status asal, snapshot tanggal asal, alasan Admin, tanggal usulan,
+status tawaran, Admin pembuat, waktu pembuatan, batas berlaku, dan waktu jawaban.
+FK pesanan memakai ON DELETE CASCADE; akun Admin memakai ON DELETE SET NULL.
+Status pesanan tidak ditambah. Tawaran yang menunggu tidak mengubah pesanan atau
+memesan kuota tanggal tujuan. Saat diterima, endpoint membaca rincian menu dari
+database dan memakai helper/lock kuota yang sama dengan checkout sebelum
+memindahkan tanggal. Job tenggat satu jam membatalkan unpaid dan sekaligus
+menandai tawarannya kedaluwarsa.
+
+Admin dapat memperbarui tawaran selama belum dijawab; `dibuat_at` diperbarui
+sebagai token versi agar pelanggan tidak dapat mengirim jawaban dari halaman
+tawaran lama. Penolakan pelanggan mengalihkan pesanan ke `dibatalkan` dengan
+metadata sumber pelanggan yang sudah tersedia pada migrasi 021.
