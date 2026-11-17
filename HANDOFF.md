@@ -1,15 +1,9 @@
 # Handoff Se.Noesa-Web
 
 ## Kondisi saat ini
-<<<<<<< HEAD
-- PR #45 sudah menggabungkan branch `feature/pembatalan-pesanan` ke `dev` pada commit `62e3a23`.
-- Branch aktif `feature/penolakan-reschedule` dibuat dari `dev` lokal yang sudah di-fast-forward ke `origin/dev` (`62e3a23`).
-- Implementasi penolakan dan tawaran jadwal ulang selesai pada branch ini. Perubahan belum di-commit atau di-push; migrasi 022 belum diterapkan ke database.
-=======
 - Branch `feature/full-stack`, HEAD sebelum Tahap 4A: `c54b4a9` (hardening notifikasi perubahan menu: closure audit, advisory lock MNOT, guard Owner read-only, `LIMIT 2` dashboard).
 - Tahap 4A (data integrity & payment safety: D2, D3, C6) sudah diimplementasi dan seluruh pengujian lulus; perubahan belum di-commit.
 - Tidak ada perubahan `.env`; database produksi tidak disentuh. Semua pengujian memakai PostgreSQL uji terisolasi `127.0.0.1:55432` (`SENOESA_TEST_PGPORT`).
->>>>>>> b5df332373313def0a2b82cae5473d007bbd7f51
 
 ## Fitur yang sudah masuk
 - Rentang libur operasional dapat ditambah, diedit, dan dihapus; checkout tanggal libur diblokir tanpa mengubah pesanan lama.
