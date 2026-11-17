@@ -3,23 +3,23 @@
 - Last updated: 2026-11-17 21:45 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: fd5b539247663dce09eea8f48e8d8e5c297147ca
+- Current HEAD: (checkpoint TASK-01)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 1 |
+| DONE | 2 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 16 |
+| TODO | 15 |
 | FAILED | 0 |
 
 ## Riwayat Task
 | Task ID | Status | Commit | Test | Catatan |
 |---|---|---|---|---|
-| TASK-00 | DONE | fd5b539 | lolos | 89 ID unik; ringkasan dikoreksi 38/18/22 → 47/22/20; tanpa perubahan kode |
-| TASK-01 | TODO | - | - | Dokumentasi 14 keputusan bisnis |
+| TASK-00 | DONE | 9b7f8f5 | lolos | 89 ID unik; ringkasan dikoreksi 38/18/22 → 47/22/20; tanpa perubahan kode |
+| TASK-01 | DONE | (checkpoint ini) | lolos | 14 keputusan PENDING, tidak ada asumsi agent |
 | TASK-02 | TODO | - | - | Owner/Admin sync |
 | TASK-03 | BLOCKED | - | - | Menunggu keputusan #3, #4 |
 | TASK-04 | TODO | - | - | Audit/test pembayaran E2E |
@@ -44,10 +44,10 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-01
-- Tujuan: Buat `KEPUTUSAN-BISNIS-SE.NOESA.md` berisi 14 keputusan tanpa mengisi asumsi agent
-- File yang akan disentuh: KEPUTUSAN-BISNIS-SE.NOESA.md, file progres
-- Risiko: Rendah — dokumentasi saja; task terkait tetap BLOCKED
+- ID: TASK-02
+- Tujuan: Verifikasi sinkronisasi data Owner dan Admin (query, filter, pagination, detail, read-only)
+- File yang akan disentuh: public/owner/api/orders.php, public/admin/api/orders.php (audit); file progres
+- Risiko: Sedang — jangan memberi Owner akses mutasi; perubahan hanya jika ada perbedaan nyata
 - Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
@@ -77,7 +77,8 @@
 | Waktu | Commit | Task | Hasil test | Catatan |
 |---|---|---|---|---|
 | 2026-11-17 21:25 | f7ff4d3 | baseline | git status clean | Organisasi docs ke folder docs/ (diizinkan user) |
-| 2026-11-17 21:45 | fd5b539 | TASK-00 | lolos (hitung ulang 89 ID) | Koreksi ringkasan audit; tanpa perubahan kode aplikasi |
+| 2026-11-17 21:45 | 9b7f8f5 | TASK-00 | lolos (hitung ulang 89 ID) | Koreksi ringkasan audit; tanpa perubahan kode aplikasi |
+| 2026-11-17 21:55 | (checkpoint ini) | TASK-01 | lolos (14/14 keputusan) | Dokumentasi keputusan bisnis; semua PENDING |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

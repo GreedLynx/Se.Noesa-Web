@@ -28,3 +28,9 @@
   - Ringkasan bagian 9 sebelum koreksi: 38/18/22 → tidak cocok dengan daftar (47/22/20).
 - **Verifikasi ulang setelah perbaikan:** angka klaim bagian 9 = angka enumerasi = 47/22/20; total 89 unik; `git diff --check` tanpa error (hanya warning konversi LF→CRLF).
 - **Kesimpulan:** LULUS. Acceptance criteria TASK-00 terpenuhi; tidak ada kode aplikasi yang berubah.
+
+### TASK-01 — Keputusan bisnis
+- **Jenis:** verifikasi dokumen.
+- **Perintah:** `node check_decisions.js` (script di temp) mem-parse heading, kolom, dan status.
+- **Hasil aktual:** 14 heading `#1`–`#14` berurutan; 14 `Keputusan final` semuanya masih template kosong; 14 status `PENDING`; 14 konteks, 14 opsi, 14 dampak, 14 task terdampak.
+- **Kesimpulan:** LULUS. Tidak ada keputusan yang dijawab oleh agent. Tidak ada test aplikasi yang relevan untuk task dokumentasi ini.
