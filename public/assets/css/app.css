@@ -1141,3 +1141,123 @@ body[data-page="payments"] .nav { max-width: 430px; }
     font-size: 11px;
   }
 }
+
+/* =========================================
+   DASHBOARD — CHART BAR & FLOATING TOOLTIP
+   ========================================= */
+
+/* 1. Wadah grafik menjadi acuan tooltip & menyembunyikan scrollbar */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 220px;
+  padding-top: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none; /* Sembunyikan scrollbar di Firefox */
+  -ms-overflow-style: none; /* Sembunyikan scrollbar di IE/Edge */
+}
+
+/* Sembunyikan scrollbar di Chrome/Safari/Opera */
+.chart-container::-webkit-scrollbar {
+  display: none; 
+}
+
+.chart-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 36px;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+.bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+}
+
+/* 2. Diagram Batang (Default Abu-abu, Bentuk Kapsul) */
+.chart-bar {
+  width: 80%;
+  max-width: 32px;
+  background: #e5eae5; /* Warna default sebelum di-hover */
+  border-radius: 99px; /* Membuat ujung sepenuhnya membulat */
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.25, 1);
+  position: relative;
+}
+
+/* 3. Warna saat di-hover / di-klik (Hijau) - Berlaku untuk SEMUA bar, termasuk yang 0 */
+.chart-col:hover .chart-bar,
+.chart-col.active .chart-bar {
+  background: linear-gradient(180deg, var(--green) 0%, #6a856e 100%);
+  box-shadow: 0 4px 10px #516b5520;
+  transform: scaleX(1.05);
+}
+
+/* 4. Tooltip Melayang (Tanggal & Pemasukan) */
+.chart-tip {
+  position: absolute;
+  z-index: 20;
+  background: var(--gd, #2d3a33);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none; /* Agar kursor tembus dan tidak mengganggu hover */
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.chart-tip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chart-tip small {
+  color: #b8cbb9; /* Warna teks tanggal lebih redup */
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Panah penunjuk di bawah tooltip */
+.chart-tip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: calc(var(--arrow-x, 50%) - 5px); 
+  border-width: 5px 5px 0;
+  border-style: solid;
+  border-color: var(--gd, #2d3a33) transparent transparent transparent;
+}
+
+/* Label Tanggal di bawah batang */
+.chart-label {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+  white-space: nowrap;
+}
