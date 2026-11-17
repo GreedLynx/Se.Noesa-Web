@@ -455,13 +455,19 @@ function statusProgress(status) {
         + '">' + s + '</span>').join('') + '</div>'
 }
 
-let historyStatus = '', historyTimer;
+let historyStatus = '', historyTimer, paymentExpiryTimer = null;
 function historyPage() {
     wireLogout();
     const dialog = $('#history-dialog');
-    $$('[data-close-history]').forEach(b => b.onclick = () => dialog.close());
+    $$('[data-close-history]').forEach(b => b.onclick = () => {
+        clearTimeout(paymentExpiryTimer);
+        dialog.close();
+    });
     dialog.addEventListener('click', e => {
-        if (e.target === dialog) dialog.close()
+        if (e.target === dialog) {
+            clearTimeout(paymentExpiryTimer);
+            dialog.close();
+        }
     });
     $$('#history-tabs button').forEach(b => b.onclick = () => {
         $$('#history-tabs button').forEach(x => x.classList.toggle('active', x === b));
@@ -505,9 +511,6 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    // Handle case where items might be undefined (order exists but has no detail items,
-    // or API response structure differs from expected). This prevents
-    // "Cannot read properties of undefined (reading 'map')" error.
     const itemsArray = Array.isArray(d.items) ? d.items : [];
     const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
@@ -540,11 +543,34 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
-    const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
-        + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
-            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
+
+    const expiredAdminContact = `
+        <div class="payment-expired-notice">
+            <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan segera hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            <p class="admin-wa-text">Nomor WA Admin: 08123456789</p>
+        </div>
+    `;
+
+    const isPaymentExpiredWithoutProof = !hasProof && (
+        (d.status === 'menunggu_pembayaran' && !canUploadProof) ||
+        d.status === 'dibatalkan'
+    );
+
+    const proofSection = canUploadProof
+        ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>'
+            + (hasProof
+                ? '<div class="proof-display-row">' + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>'
+                : proof)
+            + (d.status === 'menunggu_pembayaran'
+                ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>'
+                : '')
+            + proofForm + '</section>'
+        : (proof
+            ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>'
+            : (isPaymentExpiredWithoutProof
+                ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + expiredAdminContact + '</section>'
+                : ''));
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
         ? d.foto_kiriman_list
@@ -628,6 +654,20 @@ async function openHistoryDetail(id) {
         
     $('#history-dialog').showModal();
 
+    // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
+    clearTimeout(paymentExpiryTimer);
+    if (d.status === 'menunggu_pembayaran' && canUploadProof && d.payment_expires_at) {
+        const remainingMs = new Date(d.payment_expires_at).getTime() - Date.now();
+        if (remainingMs > 0) {
+            paymentExpiryTimer = setTimeout(() => {
+                if ($('#history-dialog')?.open) {
+                    openHistoryDetail(id);
+                    loadHistory();
+                }
+            }, remainingMs + 500);
+        }
+    }
+    // -----------------------------------------------
     for (const decision of ['accept', 'reject']) {
         const button = $('#'+ decision + '-reschedule');
         if (!button) continue;
@@ -702,3 +742,104 @@ const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
+/* ==========================================================================
+   FITUR CEK KETERSEDIAAN MENU DI CHECKOUT
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", function () {
+    const checkoutForm = $('#checkout-form');
+    const checkoutDateInput = checkoutForm?.elements?.tgl_kirim || document.getElementById('checkout-date');
+    if (!checkoutDateInput) return;
+
+    const scheduleNote = document.getElementById('schedule-note');
+    if (scheduleNote) scheduleNote.style.display = 'none';
+
+    let alertBox = document.getElementById('checkout-quota-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'checkout-quota-alert';
+        alertBox.style.cssText = 'display:none; margin:10px 0 15px; padding:12px 14px; border-radius:12px; font-size:12px; line-height:1.5; border:1px solid transparent;';
+        const dateLabel = checkoutDateInput.closest('label') || checkoutDateInput;
+        dateLabel.parentNode.insertBefore(alertBox, dateLabel.nextSibling);
+    }
+
+    async function cekKetersediaanMenu(selectedDate) {
+        const cartIds = Object.keys(cart).filter(id => Number(cart[id]) > 0);
+        if (!selectedDate) return;
+
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#f7f8f7';
+        alertBox.style.borderColor = '#e4ece5';
+        alertBox.style.color = '#666';
+        alertBox.innerHTML = '⏳ Memeriksa ketersediaan menu...';
+
+        try {
+            const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(selectedDate));
+
+            if (d.tanggal_libur) {
+                alertBox.style.background = '#fff3cd';
+                alertBox.style.borderColor = '#ffeeba';
+                alertBox.style.color = '#856404';
+                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>Se.Noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                return;
+            }
+
+            if (cartIds.length === 0) {
+                alertBox.style.background = '#e0f2fe';
+                alertBox.style.borderColor = '#bae6fd';
+                alertBox.style.color = '#0369a1';
+                alertBox.innerHTML = '<b>ℹ️ Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
+                return;
+            }
+
+            const items = Array.isArray(d.items) ? d.items : [];
+            let hasError = false;
+            let listHtml = '<div style="font-weight:600; margin-bottom:6px; color:#333;">Status Menu di Keranjang:</div>';
+            listHtml += '<ul style="margin:0; padding:0; list-style:none; display:grid; gap:6px;">';
+
+            for (const id of cartIds) {
+                const qty = Number(cart[id]);
+                const produk = items.find(p => String(p.id) === String(id));
+                const fallbackName = productCache[id]?.nama || 'Menu #' + id;
+
+                if (!produk) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
+                    continue;
+                }
+
+                const sisa = Number(produk.sisa ?? produk.kuota ?? 0);
+                if (sisa <= 0) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
+                } else if (qty > sisa) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
+                } else {
+                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span>✅</span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
+                }
+            }
+            listHtml += '</ul>';
+
+            alertBox.style.background = hasError ? '#fff5f5' : '#f0fdf4';
+            alertBox.style.borderColor = hasError ? '#feb2b2' : '#bbf7d0';
+            alertBox.style.color = hasError ? '#c53030' : '#276749';
+            alertBox.innerHTML = listHtml;
+        } catch (error) {
+            alertBox.style.background = '#fef2f2';
+            alertBox.style.borderColor = '#fecaca';
+            alertBox.style.color = '#991b1b';
+            alertBox.innerHTML = `❌ Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
+        }
+    }
+
+    checkoutDateInput.addEventListener('change', () => cekKetersediaanMenu(checkoutDateInput.value));
+
+    const checkoutDialog = document.getElementById('checkout-dialog');
+    if (checkoutDialog) {
+        new MutationObserver(() => {
+            if (checkoutDialog.hasAttribute('open') && checkoutDateInput.value) {
+                cekKetersediaanMenu(checkoutDateInput.value);
+            }
+        }).observe(checkoutDialog, { attributes: true, attributeFilter: ['open'] });
+    }
+});

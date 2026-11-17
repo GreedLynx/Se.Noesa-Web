@@ -51,7 +51,7 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
 </div>
 <dialog id="cart-dialog" class="customer-dialog cart-dialog" aria-labelledby="cart-title">
     <button class="dialog-close" data-close-cart aria-label="Tutup">&times;</button>
-    <p class="eyebrow">ISI KERANJANG</p>
+    <p class="eyebrow">ISI KERANJANG</p> <!-- TEKS SUDAH DIUBAH -->
     <h2 id="cart-title">Menu pilihan</h2>
     <div id="cart-lines"></div>
     <div class="cart-total-row"><span>Total sementara</span><b id="cart-dialog-total">Rp 0</b></div>
