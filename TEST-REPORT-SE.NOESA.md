@@ -66,3 +66,19 @@
 - **Belum dijalankan (dan alasannya):** semua skenario mutasi (checkout, upload/ganti bukti, verifikasi, penolakan, pembatalan, expire) karena dilarang menulis ke DB remote; render browser tidak diuji karena tidak ada browser automation dan dilarang memakai data pelanggan nyata untuk mutasi.
 - **Temuan:** BUG-001 (latent), OBS-001, OBS-002, OBS-003 — tercatat di `PROGRESS-IMPLEMENTASI-SE.NOESA.md` dan matrix. Tidak ada perbaikan kode yang dilakukan di task ini.
 - **Kesimpulan:** LULUS sebagai audit + test matrix. Tidak ada klaim fungsional browser/mutasi.
+
+### TASK-05 — Minimum pemesanan
+- **Jenis:** unit test terhadap handler nyata yang diekstrak dari `customer.js` + query DB read-only + lint.
+- **Test handler keranjang (`node test_min_cart.js`, script di temp):** 5/5 PASS
+  - min 4, cart 6 → 4 (toast minimum) ✅
+  - min 4, cart 5 → 4 (toast minimum) ✅
+  - min 4, cart 4 → item dihapus ✅
+  - min 4, cart 9 → 5 ✅
+  - min 6, cart 7 → 6 (toast minimum) ✅
+  - Semua hasil akhir `>= min_pesan`.
+- **Konsistensi sumber nilai (read-only):**
+  - constraint DB: `CHECK ((min_pesan >= 4))`; nilai aktual produk min 4–10 (11 produk).
+  - snapshot kuota: nilai minimum unik 4 dan 10 ⇒ frontend menerima nilai yang sama dengan backend.
+- **Lint:** `node --check customer.js` OK; `php -l admin/api/products.php` OK; `git diff --check` bersih.
+- **Belum diuji:** klik sungguhan di browser, checkout dengan quantity hasil clamp (mutasi dilarang), form Admin disubmit (mutasi dilarang).
+- **Kesimpulan:** LULUS untuk acceptance criteria yang dapat diuji; aturan minimum tidak diubah.

@@ -37,10 +37,20 @@
   - `public/assets/js/app.js`: pasang blok offline hanya bila kontrol tersedia; jangan render form unggah foto kirim dan jangan pasang handler aksi pada Owner; jaga `actions` null-safe.
 - Tidak ada perubahan pada endpoint API, skema, atau migration.
 
-### TASK-04 — (checkpoint ini)
+### TASK-04 — 2bf0153
 - `audit(TASK-04): map payment flow and record test matrix`
 - Buat `docs/TEST-MATRIX-PEMBAYARAN.md` berisi 14 skenario sukses/gagal beserta bukti kode dan bukti agregat DB read-only.
 - Verifikasi: status awal `menunggu_pembayaran`, tenggat 1 jam, upload/ganti bukti terikat `id` + `user_id`, verifikasi/penolakan Admin bersyarat, alasan penolakan tampil ke Pelanggan, kuota dilepas hanya untuk `ditolak`/`dibatalkan`.
 - Tidak mengubah status, istilah, timeout, atau kebijakan refund (keputusan #1 dan #12 masih PENDING).
 - Tidak ada kode aplikasi yang diubah. Temuan dicatat: BUG-001 (view kuota), OBS-001..003.
 - Update `KEPUTUSAN-BISNIS-SE.NOESA.md` #1 dengan bukti teks refund di `customer.js:563`.
+
+### TASK-05 — (checkpoint ini)
+- `fix(TASK-05): enforce per-product minimum in cart and clarify admin validation`
+- Audit: sumber minimum konsisten di DB (`CHECK (min_pesan >= 4)`, default 4), `daily_quota_snapshot` (`GREATEST(4, min_pesan)`), `daily_quota_validate` (dipakai checkout & pesanan offline), form Admin (`min="4"`), dan API Admin (`>= 4`).
+- Bug ditemukan: tombol kurang di keranjang Pelanggan `cart[id] -= min` bisa menghasilkan jumlah di bawah minimum (mis. 6 − 4 = 2 untuk minimum 4), sehingga checkout ditolak backend setelah UI mengizinkan state invalid.
+- Perbaikan:
+  - `public/pelanggan/assets/customer.js`: clamp hasil pengurangan ke `min`, tampilkan pesan “Minimum pesanan … adalah N porsi” bila clamp terjadi; hapus item hanya bila jumlah sudah sama dengan minimum.
+  - `public/admin/api/products.php`: pisahkan validasi harga dan minimum; pesan error spesifik “Minimum pemesanan minimal 4 porsi”.
+- Tidak mengubah angka/aturan minimum bisnis.
+- Migration: tidak ada.

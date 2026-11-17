@@ -332,8 +332,14 @@ function openCart() {
         const id = b.dataset.dec;
         const p = productCache[id];
         const min = Number(p?.min_pesan || 4);
-        if (cart[id] > min) cart[id] -= min;
-        else delete cart[id];
+        if (cart[id] > min) {
+            // Jangan pernah menurunkan jumlah ke bawah minimum produk.
+            // Jika hasil pengurangan lebih kecil dari minimum, clamp ke minimum.
+            if (cart[id] - min < min) toast('Minimum pesanan ' + (p?.nama || 'produk ini') + ' adalah ' + min + ' porsi');
+            cart[id] = Math.max(min, cart[id] - min);
+        } else {
+            delete cart[id];
+        }
         renderCart();
         openCart()
     });
