@@ -9,9 +9,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     "'": '&#39;'
 }[c]));
 
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+
 async function api(url, options = {}) {
     const headers = {...options.headers};
     if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    if (options.method && options.method.toUpperCase() !== 'GET') {
+        headers['X-CSRF-Token'] = csrfToken();
+    }
 
     const response = await fetch(url, {
         ...options,
@@ -42,6 +49,20 @@ function toast(message) {
 function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
         b.disabled = true;
+        const confirmed = await new Promise(resolve => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'customer-dialog';
+            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
+            const yes = dialog.querySelector('[data-yes]');
+            const no = dialog.querySelector('[data-cancel]');
+            const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
+            yes.onclick = () => done(true);
+            no.onclick = () => done(false);
+            dialog.onclick = (e) => { if (e.target === dialog) done(false); };
+            document.body.appendChild(dialog);
+            dialog.showModal();
+        });
+        if (!confirmed) { b.disabled = false; return; }
         try {
             await api('../api/auth.php?a=logout');
             location.href = '../login.php'
@@ -54,14 +75,14 @@ function wireLogout() {
 
 function imagePath(name) {
     const raw = String(name || '');
-    if (/^uploads\/products\/[a-f0-9]+\.(jpg|png|webp)$/i.test(raw)) return '../' + raw;
+    if (/^uploads\/(products|payment-methods)\//i.test(raw)) return '../' + raw;
 
     const file = raw.replace(/[^a-zA-Z0-9_.-]/g, '');
     return file ? '../assets/img/produk/' + file : '../assets/img/produk/NK-01.png'
 }
 
 let catalog = [], productCache = {
-}, category = '', schedule = null, cart = {
+}, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
     wireLogout();
@@ -124,7 +145,10 @@ function catalogPage() {
         $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
         try {
             await loadCatalog();
-            $('#schedule-note').textContent = 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.'
+            $('#schedule-note').textContent = catalogClosed
+                ? 'Tanggal ini libur. Pesanan untuk tanggal tersebut tidak dapat dikirim.'
+                : 'Sisa kapasitas mengikuti tanggal ' + e.target.value + '. Kuota diperiksa kembali saat pesanan dikirim.';
+            $('#submit-order').disabled = catalogClosed;
         } catch (err) {
             $('#checkout-error').textContent = err.message
         }
@@ -147,6 +171,11 @@ async function loadCatalog(animate = false) {
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
+    catalogClosed = Boolean(d.tanggal_libur);
+    $('#delivery-hint').textContent = catalogClosed
+        ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
+        : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    $('#checkout-button').disabled = catalogClosed;
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -164,12 +193,16 @@ async function loadCatalog(animate = false) {
             || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
     );
     schedule = d.schedule;
-    grid.innerHTML = catalog.length ? catalog.map((p, i) => '<article class="menu-card" data-product="' + Number(p.id)
-        + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-        + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-        + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi · Sisa ' + Number(p.sisa)
-        + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-        + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>').join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+    grid.innerHTML = catalog.length ? catalog.map((p, i) => {
+        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
+        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
+        return '<article class="menu-card" data-product="' + Number(p.id)
+            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
+            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
+            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
+            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
+    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 
     $$('[data-product]').forEach(card => card.onclick = e => {
         if (e.target.closest('[data-add]')) return;
@@ -194,14 +227,15 @@ function showProduct(product) {
     activeProduct = product;
     const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
     activeQty = Math.min(maximum, Math.max(1, minimum));
+    const sisaAfter = maximum - activeQty;
+    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span><span>Sisa Porsi<b>'
-        + maximum + '/' + Number(product.kuota) + '</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
-    const input = $('#quantity-value'), add = $('#add-to-cart');
+    const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
     function setQuantity(value, normalize = false) {
         if (value === '' && !normalize) {
             add.disabled = true;
@@ -222,6 +256,16 @@ function showProduct(product) {
         activeQty = quantity;
         input.value = quantity;
         $('#detail-qty').textContent = quantity + ' porsi';
+        const remaining = maximum - quantity;
+        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
+        if (sisaEl) {
+            if (shouldShow) {
+                sisaEl.textContent = remaining + ' porsi';
+                sisaEl.closest('span').style.display = '';
+            } else {
+                sisaEl.closest('span').style.display = 'none';
+            }
+        }
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -273,13 +317,35 @@ function renderCart() {
 }
 
 function openCart() {
+    if (catalogClosed) {
+        toast('Tanggal pengiriman ini libur. Silakan pilih tanggal lain.');
+        return;
+    }
     const lines = $('#cart-lines');
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
+        const min = Number(p?.min_pesan || 4);
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="'
-            + Number(id) + '" aria-label="Hapus">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi">&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah">+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
     }).join('');
+    $$('[data-dec]').forEach(b => b.onclick = () => {
+        const id = b.dataset.dec;
+        const p = productCache[id];
+        const min = Number(p?.min_pesan || 4);
+        if (cart[id] > min) cart[id] -= min;
+        else delete cart[id];
+        renderCart();
+        openCart()
+    });
+    $$('[data-inc]').forEach(b => b.onclick = () => {
+        const id = b.dataset.inc;
+        const p = productCache[id];
+        const max = Number(p?.sisa || 0);
+        if ((cart[id] || 0) + Number(p?.min_pesan || 4) <= max) cart[id] = (cart[id] || 0) + Number(p?.min_pesan || 4);
+        else toast('Kuota tidak mencukupi');
+        renderCart();
+        openCart()
+    });
     $$('[data-remove]').forEach(b => b.onclick = () => {
         delete cart[b.dataset.remove];
         renderCart();
@@ -325,8 +391,11 @@ async function openCheckout() {
     form.elements.tgl_kirim.min = $('#catalog-delivery-date').min;
     form.elements.tgl_kirim.removeAttribute('max');
     form.elements.tgl_kirim.value = $('#catalog-delivery-date').value;
-    $('#schedule-note').textContent = 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
+    $('#schedule-note').textContent = catalogClosed
+        ? 'Tanggal ini libur. Pesanan untuk tanggal tersebut tidak dapat dikirim.'
+        : 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
     $('#checkout-error').textContent = '';
+    $('#submit-order').disabled = catalogClosed;
     $('#checkout-dialog').showModal()
 }
 
@@ -334,6 +403,10 @@ async function submitOrder(e) {
     e.preventDefault();
     const form = e.currentTarget,
         button = $('#submit-order');
+    if (catalogClosed) {
+        $('#checkout-error').textContent = 'Tanggal pengiriman ini libur. Silakan pilih tanggal lain.';
+        return;
+    }
     button.disabled = true;
     $('#checkout-error').textContent = '';
     try {
@@ -420,7 +493,7 @@ async function loadHistory() {
 }
 
 function dateLabel(value, withTime = false) {
-    if (!value) return '-';
+    if (value === null || value === undefined) return '-';
     const d = new Date(value);
     return d.toLocaleString('id-ID', withTime ? {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
@@ -431,17 +504,36 @@ function dateLabel(value, withTime = false) {
 
 async function openHistoryDetail(id) {
     const d = await api('api/orders.php?id=' + id);
-    const items = d.items.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama) + '</b><small>' + Number(i.qty)
-        + ' porsi × ' + money(i.harga) + '</small></span><strong>' + money(i.subtotal) + '</strong></div>').join('');
+    // Handle case where items might be undefined (order exists but has no detail items,
+    // or API response structure differs from expected). This prevents
+    // "Cannot read properties of undefined (reading 'map')" error.
+    const itemsArray = Array.isArray(d.items) ? d.items : [];
+    const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
+        + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
+    const menuNoticeLabels = {
+        menunggu_respons: 'Menunggu responsmu',
+        menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+        menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+        dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+        selesai: 'Tindak lanjut selesai',
+    };
+    const menuNotices = Array.isArray(d.menu_notifications) ? d.menu_notifications : [];
+    const menuNoticeSection = menuNotices.length
+        ? '<section class="detail-section"><h3>Notifikasi perubahan menu</h3>' + menuNotices.map(notice =>
+            '<div class="detail-menu-line"><span><b>' + esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot)
+            + '</b><small>' + esc(menuNoticeLabels[notice.status_respons] || notice.status_respons || '')
+            + ' · ' + esc(notice.catatan_admin || '') + '</small></span><a class="customer-button secondary" href="menu-notifications.php?notice_id='
+            + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
+        ).join('') + '</section>'
+        : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
         + '" alt="Bukti pembayaran">' : '';
     const paymentData = await api('api/payment-methods.php');
     const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
-        const image = String(method.gambar || '').replace(/[^a-zA-Z0-9_./-]/g, '');
-        return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="../'
-            + esc(image) + '" alt="' + esc(method.nama) + '"></div></div>'
+        return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'
+            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
-    const canUploadProof = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status), hasProof = !!d.bukti_bayar;
+    const canUploadProof = d.can_upload_proof === true, hasProof = !!d.bukti_bayar;
     const proofForm = canUploadProof ? '<form class="proof-upload" id="proof-form" ' + (hasProof ? 'hidden': '') + '><label for="payer-name">Atas nama</label><input id="payer-name" name="nama_pembayar" type="text" maxlength="100" value="'
         + esc(d.nama_pembayar || d.nama_pemesan || '') + '" placeholder="Nama yang membayar" required><label for="proof-file">'
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
@@ -449,10 +541,9 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
     const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
         + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Batas maksimal pembayaran 1 jam sejak pesanan dibuat, sampai ' +
-            dateLabel(new Date(new Date(d.created_at).getTime() + 60 * 60 * 1000).toISOString(), true) +
-            '. Jika belum dibayar, pesanan dibatalkan otomatis dan kuota dikembalikan.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>': '');
+        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
+        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
+            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
         ? d.foto_kiriman_list
@@ -469,53 +560,43 @@ async function openHistoryDetail(id) {
         }).join('') + '</div></section>'
         : '';
 
-    // --- LOGIKA PEMBATALAN (H-2) YANG SUDAH DIPERBAIKI ---
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const delivery = new Date(d.tgl_kirim);
-    delivery.setHours(0,0,0,0);
-    
-    const daysUntilDelivery = Math.round((delivery - today) / (1000 * 60 * 60 * 24));
-    
-    // Tanggal batas akhir pembatalan adalah H-2 dari tanggal kirim
-    const cancelLimitDate = new Date(delivery);
-    cancelLimitDate.setDate(cancelLimitDate.getDate() - 2);
-    
-    // Sisa hari untuk membatalkan dihitung dari hari ini sampai tanggal batas akhir (H-2)
-    const daysLeftToCancel = Math.round((cancelLimitDate - today) / (1000 * 60 * 60 * 24));
-    
-    const cancelLimitLabel = cancelLimitDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status);
+    const refundNotice = 'Jika sudah mentransfer, refund penuh ditangani Admin di luar aplikasi. Hubungi Admin untuk mengurus refund.';
+    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
+    const cancelLimitDate = d.cancel_before ? new Date(new Date(d.cancel_before).getTime() - 1) : null;
+    const cancelLimitLabel = cancelLimitDate ? cancelLimitDate.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+    }) : 'belum tersedia';
+    const jakartaCalendar = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' });
+    const daysLeftToCancel = cancelLimitDate ? Math.max(0, Math.round((Date.parse(jakartaCalendar.format(cancelLimitDate))
+        - Date.parse(jakartaCalendar.format(new Date()))) / 86400000)) : 0;
     let cancelSection = '';
-
     if (isStatusCancellable) {
-        if (daysUntilDelivery >= 2) {
-            // Jika masih H-2 atau lebih
+        if (d.can_cancel === true) {
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
                     <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
                     <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
                         <b>Syarat Pembatalan:</b><br>
                         Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
-                        Batas akhir pembatalan: <b>${cancelLimitLabel}</b>.<br>
-                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.
+                        Batas akhir pembatalan: <b>${cancelLimitLabel}, akhir hari WIB</b>.<br>
+                        Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.<br>
+                        ${refundNotice}
                     </div>
                 </div>
             `;
         } else {
-            // Jika sudah melewati batas H-2
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line);">
                     <div style="background:#fdf2f2; border:1px solid #f5c6c6; padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--red); text-align:center;">
                         <b>Batas Waktu Pembatalan Terlewati</b><br>
-                        Pesanan tidak dapat dibatalkan karena sudah melewati batas maksimal H-2 (${cancelLimitLabel}) sebelum tanggal pengiriman.
+                        Pesanan tidak dapat dibatalkan karena batas H-2 sudah terlewati atau tanggal pengiriman belum tersedia.
                     </div>
                 </div>
             `;
         }
+    } else if (d.status === 'dibatalkan' && hasProof) {
+        cancelSection = '<section class="detail-section"><h3>Refund</h3><p>' + refundNotice + '</p></section>';
     }
-    // ----------------------------------------------------
 
     const rejectionNotice = d.status === 'ditolak' && d.alasan_penolakan
         ? '<section class="rejection-notice" role="alert"><b>Pesanan ditolak</b><p>Alasan: ' + esc(d.alasan_penolakan) + '</p></section>'
@@ -526,7 +607,8 @@ async function openHistoryDetail(id) {
         + '</p>' + statusProgress(d.status) + rejectionNotice + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
-        + money(d.total) + '</b></div>' 
+        + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
+        + menuNoticeSection
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 
@@ -538,7 +620,7 @@ async function openHistoryDetail(id) {
     const cancelBtn = $('#cancel-order-btn');
     if (cancelBtn) {
         cancelBtn.onclick = async () => {
-            if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dikembalikan.')) return;
+            if (!confirm('Batalkan pesanan ini? Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
             
             cancelBtn.disabled = true;
             cancelBtn.textContent = 'Membatalkan...';
@@ -582,3 +664,4 @@ async function openHistoryDetail(id) {
 const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
+

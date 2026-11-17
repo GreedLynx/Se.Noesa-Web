@@ -16,10 +16,13 @@ try {
         id INT PRIMARY KEY,
         status VARCHAR(24) NOT NULL CHECK (status IN ('menunggu_pembayaran', 'menunggu_validasi', 'dibatalkan')),
         status_updated_at TIMESTAMPTZ,
+        sumber_pembatalan VARCHAR(12),
+        status_sebelum_batal VARCHAR(24),
+        bukti_bayar TEXT,
         created_at TIMESTAMPTZ NOT NULL,
         tgl_kirim TIMESTAMPTZ NOT NULL
     ) ON COMMIT DROP");
-    q('CREATE TEMP TABLE detail_pesanan (pesanan_id INT NOT NULL, produk_id INT NOT NULL, qty INT NOT NULL) ON COMMIT DROP');
+    q('CREATE TEMP TABLE detail_pesanan (id INT PRIMARY KEY, pesanan_id INT NOT NULL, produk_id INT NOT NULL, qty INT NOT NULL) ON COMMIT DROP');
     $productId = (int) q('SELECT id FROM produk ORDER BY id LIMIT 1')->fetchColumn();
     $delivery = '2999-12-30 12:00:00+07';
     q("INSERT INTO pesanan (id, status, created_at, tgl_kirim) VALUES
@@ -27,7 +30,7 @@ try {
         (2, 'menunggu_pembayaran', now() - interval '59 minutes', ?),
         (3, 'menunggu_validasi', now() - interval '2 hours', ?)",
         [$delivery, $delivery, $delivery]);
-    q('INSERT INTO detail_pesanan (pesanan_id, produk_id, qty) VALUES (1, ?, 3), (2, ?, 4), (3, ?, 5)', [
+    q('INSERT INTO detail_pesanan (id, pesanan_id, produk_id, qty) VALUES (1, 1, ?, 3), (2, 2, ?, 4), (3, 3, ?, 5)', [
         $productId,
         $productId,
         $productId,
@@ -52,7 +55,7 @@ try {
     $checkoutLayout = file_get_contents(__DIR__ . '/../public/pelanggan/partials/layout.php');
     if (!str_contains($quotaSource, "p.status NOT IN ('ditolak', 'dibatalkan')")
         || !str_contains($migration, "p.status NOT IN ('ditolak', 'dibatalkan')")
-        || !str_contains($customerJs, 'Batas maksimal pembayaran 1 jam')
+        || !str_contains($customerJs, 'd.payment_expires_at')
         || !str_contains($checkoutLayout, 'Batas maksimal pembayaran: 1 jam')) {
         throw new RuntimeException('Cancelled orders must be excluded from daily quota usage.');
     }

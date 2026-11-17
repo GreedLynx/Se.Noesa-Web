@@ -19,6 +19,7 @@ set_exception_handler(static function (Throwable $error): void {
 });
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
     // PHP mengosongkan $_POST dan $_FILES jika seluruh request melewati post_max_size.
     $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
     $postLimit = trim((string) ini_get('post_max_size'));
@@ -148,7 +149,7 @@ try {
     json(['error' => $e->getMessage()], 422);
 }
 $all = $snapshot['items'];
-$critical = static fn($product) => (int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2;
+$critical = static fn($product) => !$snapshot['tanggal_libur'] && ((int) $product['kuota'] === 0 || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2);
 $query = trim($_GET['q'] ?? '');
 $items = array_values(array_filter($all, static function ($product) use ($category, $query, $critical) {
     return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
@@ -156,4 +157,4 @@ $items = array_values(array_filter($all, static function ($product) use ($catego
         && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
 }));
 $count = ['semua' => count($all), 'kritis' => count(array_filter($all, $critical))];
-json(['items' => $items, 'count' => $count, 'tanggal' => $date]);
+json(['items' => $items, 'count' => $count, 'tanggal' => $date, 'tanggal_libur' => $snapshot['tanggal_libur']]);

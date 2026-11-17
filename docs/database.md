@@ -1,5 +1,8 @@
 # Database
 
+Foto bukti pesanan tersimpan melalui path `pesanan.foto_kiriman`. Penyelesaian
+pesanan mempertahankan path dan file foto; perbaikan tampilannya tidak mengubah skema.
+
 ## Sumber kuota aktif
 
 Skema awal `database/schema.sql` dilanjutkan seluruh migrasi melalui
@@ -15,7 +18,36 @@ per file; nama file tercatat di schema_migrations.
   ON CONFLICT per request. Save terbaru menimpa overlap. Reset menghapus override
   terpilih dan kembali ke default, bukan histori override lama.
 - Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
-  selain ditolak pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
+  selain ditolak/dibatalkan pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
+
+## Tanggal libur operasional
+
+Migrasi `019_operational_holidays.sql` membuat tabel `tanggal_libur_operasional`
+dengan rentang `tanggal_mulai` dan `tanggal_selesai` inklusif. `daily_quota_snapshot`
+menerapkan overlay kuota efektif 0 untuk seluruh produk dan kapasitas dapur
+tanpa mengubah `produk.kuota_harian` atau `kuota_harian.kuota`; nilai aslinya
+kembali berlaku saat rentang libur dihapus. Checkout dan perubahan rentang
+libur memakai lock tabel yang sama agar checkout tidak lolos saat penutupan
+sedang disimpan. Pesanan lama tidak diubah oleh migrasi atau pencatatan libur.
+`jadwal_po` tetap dipertahankan sebagai FK `pesanan.jadwal_id`, bukan sumber
+aturan tanggal operasional di UI.
+
+Edit tanggal libur memperbarui rentang berdasarkan ID dalam transaksi dengan
+lock tabel yang sama seperti tambah/hapus dan checkout. Tidak memerlukan
+perubahan skema; tanggal yang keluar dari rentang kembali memakai kuota asal
+kecuali masih tercakup rentang libur lain.
+
+## Rekap produksi harian
+
+Migrasi `020_daily_production_report.sql` membuat VIEW
+`v_rekap_produksi_harian`, yang mengelompokkan jumlah porsi per menu, pesanan,
+dan tanggal kirim Asia/Jakarta. Pesanan `ditolak` dan `dibatalkan` dikecualikan.
+Dashboard Admin memfilter VIEW tersebut menurut tanggal pilihan, lalu memakai
+id pesanan untuk tautan ke detail dan checklist yang sudah ada.
+
+VIEW ini harus tersedia di database aplikasi sebelum rekap digunakan. Ledger
+memakai nama file lengkap: migrasi lain bernomor 020 tidak menggantikan
+`020_daily_production_report.sql`.
 
 ## Migrasi 015 dan VIEW
 
@@ -45,8 +77,15 @@ override di `kuota_harian`; override tanggal yang sudah tersimpan tetap berlaku.
 Migrasi 018 mengizinkan status `dibatalkan`, membuat indeks pesanan yang belum
 dibayar, dan mengecualikan pesanan `ditolak`/`dibatalkan` dari VIEW kuota.
 `app/order-expiration.php` membatalkan pesanan `menunggu_pembayaran` setelah
-satu jam berdasarkan `created_at`; jadwalkan `scripts/expire-unpaid-orders.php`
-setiap menit agar pembatalan berjalan tanpa pelanggan membuka aplikasi.
+satu jam berdasarkan `created_at`, hanya bila tidak ada bukti; jadwalkan
+`scripts/expire-unpaid-orders.php --apply` setiap menit setelah inventaris/dry-run.
+Katalog dan riwayat tidak memicu perubahan status. Helper memakai UPDATE
+bersyarat atomik; CLI mempertahankan guard kegagalan dan mode read-only.
+
+Dua migrasi bernomor 016 memiliki nama file berbeda dan tetap dipertahankan
+untuk kompatibilitas ledger instalasi kedua branch. Runner mengurutkan nama
+file lengkap; migrasi 018 mengulang constraint/VIEW yang setara dengan
+016_order_cancellation tanpa menghapus data atau mengubah tipe kolom.
 
 ## Pesanan offline Admin
 
@@ -62,15 +101,130 @@ Migrasi 020 menambahkan `pesanan.alasan_penolakan` (maksimal 500 karakter).
 Penolakan pembayaran oleh Admin mewajibkan alasan; detail API pelanggan dan
 riwayat menampilkan alasan tersebut untuk pesanan berstatus `ditolak`.
 
+## Pemberitahuan perubahan menu
+
+Migrasi 021 menambahkan tiga tabel tanpa mengubah `pesanan`, `detail_pesanan`,
+status pesanan, status pembayaran, atau mekanisme kuota:
+
+- `pemberitahuan_perubahan_menu` menyimpan produk sumber, snapshot kode/nama
+  produk, catatan Admin, pembuat, dan waktu pembuatan.
+- `pemberitahuan_perubahan_menu_opsi` menyimpan opsi yang tersedia untuk satu
+  pemberitahuan (`menu_pengganti`, `hubungi_admin`, atau `tunggu_informasi`).
+- `pemberitahuan_perubahan_menu_pesanan` menghubungkan pemberitahuan dengan satu
+  `detail_pesanan`, menyimpan status respons, snapshot menu/kuantitas/harga lama
+  dan pengganti, serta audit konfirmasi dan penyelesaian selisih harga.
+
+Satu detail pesanan hanya dapat ditautkan satu kali pada pemberitahuan yang sama.
+Relasi pemberitahuan, opsi, dan detail memakai `ON DELETE RESTRICT`; menghapus
+pesanan/detail yang menjadi target tidak menghapus riwayat pemberitahuan.
+Referensi produk lama/pengganti dapat menjadi NULL bila produk dihapus, tetapi
+snapshot kode, nama, dan harga tetap tersimpan. Perubahan kuota atau penonaktifan
+produk tidak menghapus tabel-tabel ini.
+
+`status_respons` dan `status_penyelesaian_selisih` hanya mencatat alur pemberitahuan
+dan penyelesaian selisih; keduanya bukan status pesanan maupun pembayaran.
+`selisih_total` menyimpan selisih bertanda: positif untuk tagihan pelanggan dan
+negatif untuk pengembalian. Status penyelesaian dapat menandai tindak lanjut
+manual tanpa memindahkan dana atau mengubah status pembayaran.
+
+Target pemberitahuan mengacu ke detail pesanan, sehingga kepemilikan pelanggan
+harus selalu ditentukan melalui `detail_pesanan.pesanan_id` dan
+`pesanan.user_id` pada query/API pelanggan. Pesanan offline tetap dapat ditautkan
+untuk tindak lanjut manual karena target menggunakan detail pesanan dan tidak
+mewajibkan `pesanan.user_id`.
+
+Status pesanan aktif untuk pemilihan target adalah `menunggu_pembayaran`,
+`menunggu_validasi`, dan `diproses`, mengikuti status yang masih dapat
+ditindaklanjuti dalam alur pesanan saat ini. Status terminal tetap tersimpan
+sebagai riwayat, tetapi tidak menjadi target pemberitahuan baru. Migrasi tidak
+membuat pemberitahuan historis dan tidak menjalankan penggantian, pembatalan,
+atau perubahan status otomatis.
+
+Migrasi 022 menambahkan snapshot total pesanan sebelum/sesudah persetujuan serta
+audit Admin dan catatan untuk tindak lanjut manual. Persetujuan memperbarui detail
+menu dan total pesanan secara transaksional; status pesanan/pembayaran tidak
+diubah. Selisih bertanda dicatat sebagai menunggu tagihan atau pengembalian.
+Penyelesaian tersebut tetap manual dan tidak memindahkan uang.
+
+Migrasi 023 menambahkan audit penutupan respons (`jenis_penutupan`,
+`alasan_penutupan`, `ditutup_oleh`, `ditutup_at`) sehingga penolakan penggantian
+serta penutupan otomatis oleh pembatalan/kedaluwarsa pesanan terekam tanpa
+menghapus riwayat.
+
+Migrasi 024 menambahkan audit harga katalog pada konfirmasi penggantian:
+`harga_katalog_saat_konfirmasi` (harga produk pengganti pada tabel `produk`
+saat Admin menyetujui) dan `perbedaan_harga_katalog` (selisih harga katalog
+terhadap snapshot pelanggan, bertanda). Keduanya hanya audit: total pesanan
+tetap memakai harga snapshot yang dikunci saat pelanggan memilih
+(`MENU_NOTICE_PRICE_POLICY = 'snapshot_saat_pelanggan_memilih'`), dan
+pembayaran tidak diubah. CHECK idempoten memastikan kedua kolom selalu
+terisi bersama dan harga katalog tidak negatif.
+
+Locking: urutan lock tabel kanonik `produk` → `kuota_harian` →
+`tanggal_libur_operasional` (SHARE ROW EXCLUSIVE) dibungkus
+`daily_quota_lock_tables()` dan dipakai checkout pelanggan, pesanan offline,
+respons penggantian pelanggan, serta konfirmasi/penolakan Admin. Urutan sama
+pada semua pemanggil mencegah deadlock; pengecekan kuota dan tanggal libur
+berlangsung dalam satu transaksi dengan penyimpanan pesanan.
+
+Runner `scripts/migrate.php` mengurutkan nama file migrasi lengkap, merekam nama
+file di `schema_migrations`, dan menjalankan setiap file dalam transaksi.
+Migrasi 021 menggunakan `CREATE TABLE IF NOT EXISTS` dan `CREATE INDEX IF NOT
+EXISTS`; migrasi 022 menambahkan kolom secara idempoten. Pemanggilan ulang
+melalui runner melewati file yang sudah tercatat. Definisi akhir tabel dan
+indeks juga ada pada `database/schema.sql` untuk instalasi baru. File skema
+tersebut menghapus tabel saat inisialisasi; jangan jalankan pada database yang
+sudah berisi data.
+
 ## Penguncian
 
 Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
 commit. Save/reset/delete override memakai transaksi dan lock tabel kuota_harian.
 Update produk memperoleh ROW EXCLUSIVE implisit, menunggu lock checkout SHARE ROW
-EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout.
+EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout. Urutan
+kanonik kini juga mencakup `tanggal_libur_operasional` dan dibungkus
+`daily_quota_lock_tables()` (`app/daily-quota.php`); checkout pelanggan, pesanan
+offline, respons penggantian pelanggan, dan konfirmasi Admin memakai helper yang
+sama agar urutan lock konsisten dan bebas deadlock.
 
 Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
 minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
+
+## Migrasi 021: metadata dan tinjauan pembatalan Admin
+
+`021_cancellation_admin_review.sql` menambahkan empat kolom nullable pada `pesanan`:
+
+- `sumber_pembatalan VARCHAR(12)`: CHECK hanya `pelanggan` atau `otomatis`.
+- `status_sebelum_batal VARCHAR(24)`: CHECK hanya tiga status asal pembatalan.
+- `pembatalan_ditinjau_at TIMESTAMPTZ`: waktu tinjauan pertama.
+- `pembatalan_ditinjau_oleh INT REFERENCES users(id) ON DELETE SET NULL`:
+  Admin peninjau pertama. Penghapusan akun mempertahankan waktu tinjauan.
+
+Migrasi tidak mengisi sumber/status asal yang tidak diketahui pada data lama.
+Pembatalan lama tetap belum ditinjau sampai Admin menandainya. Sumber/status asal
+pembatalan baru disimpan bersama perubahan status dalam satu UPDATE: pelanggan
+berasal dari endpoint pemilik pesanan, otomatis berasal dari job kedaluwarsa.
+Tenggat H-2/satu jam dan ketentuan bukti pembayaran tetap berlaku.
+
+VIEW `v_pembatalan_pesanan` memuat satu baris per status batal, metadata tinjauan,
+nama peninjau dari LEFT JOIN users, dan dua flag pemeriksaan pembayaran/produksi.
+Keberadaan bukti bukan kepastian uang diterima; VIEW tidak mengklaim refund selesai.
+`idx_pesanan_pembatalan_belum_ditinjau` adalah indeks parsial berdasarkan
+`status_updated_at DESC, id DESC` untuk status batal yang belum ditinjau.
+
+POST tinjauan Admin memakai `SELECT ... FOR UPDATE` dan UPDATE bersyarat
+`pembatalan_ditinjau_at IS NULL`. Pembatalan ditinjau bersama untuk seluruh Admin;
+dua request bersamaan/ulang mempertahankan peninjau dan waktu pertama. UPDATE
+tinjauan tidak menyentuh `status_updated_at`, sehingga waktu pembatalan tetap utuh.
+Riwayat tetap dapat dibaca setelah tinjauan dan tidak ada kolom status refund baru.
+UI detail menampilkan metadata pembatalan dalam grid ringkasan terpisah dari
+header, tanpa menggandakan badge status pesanan.
+
+Pemberitahuan Dashboard memfilter VIEW dengan `reviewed_at IS NULL` tanpa batas
+umur atau filter tanggal kirim. Terapkan migrasi 021 sebelum kode yang membaca
+kolom/VIEW ini. Penerapan terarah 021 pada database aplikasi sudah diverifikasi;
+47 pesanan tidak berubah dan 15 pesanan batal terbaca pada VIEW. Pengujian mutasi
+tetap dijalankan hanya di PostgreSQL terisolasi.
 
 ## Migrasi dan kompatibilitas lain
 
@@ -85,4 +239,26 @@ minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
   untuk menyimpan banyak foto. Kolom pesanan.foto_kiriman tetap dipertahankan
   sebagai kompatibilitas foto lama dan di-backfill oleh migrasi 016.
 - Status penolakan ditolak; produk.status_aktif belum ada.
-- jadwal_po, pembayaran, kalender dan konfigurasi rahasia tidak diubah.
+- jadwal_po, kalender dan konfigurasi rahasia tidak diubah.
+
+## Migrasi 016: pembatalan
+
+Pemulihan tampilan kartu pembatalan pelanggan tidak mengubah skema atau kontrak waktu.
+
+`016_order_cancellation.sql` menambahkan `dibatalkan` ke `pesanan_status_check`
+tanpa mengubah lima status lama. VIEW `v_kuota_harian` diganti dengan kolom/tipe
+tetap, mengecualikan `ditolak` dan `dibatalkan`, sama dengan helper checkout.
+Migrasi 006/015 tidak diubah. Tidak ada kolom, tabel, indeks, atau counter baru.
+Skema awal juga menerima status batal; tetap jalankan seluruh migrasi sesudahnya.
+
+`created_at` TIMESTAMPTZ menjadi dasar tenggat satu jam. Batas H-2 memakai tanggal
+pengiriman/hari sekarang pada Asia/Jakarta, bebas dari zona sesi database.
+Cancel/upload pembayaran dan upload galeri mengunci baris pesanan sebelum menulis.
+Cancel/upload pembayaran memakai UPDATE bersyarat dan memeriksa
+waktu aktual database setelah lock. Job memakai UPDATE bersyarat atomik yang
+mengecek ulang status/bukti setelah menunggu lock. Urutan lock checkout tidak diubah.
+
+Tidak ada penghapusan pesanan, detail, bukti, maupun foto. Refund manual di luar
+aplikasi; tidak ada tabel status refund baru. Inventaris/dry-run job read-only;
+lihat urutan aktivasi di README. Migrasi 021 sudah diterapkan; job kedaluwarsa
+tetap memerlukan aktivasi terpisah sesuai urutan di README.

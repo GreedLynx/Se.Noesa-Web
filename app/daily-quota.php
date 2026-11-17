@@ -12,6 +12,11 @@ function daily_quota_snapshot($date, bool $report = false): array
         throw new DomainException('Tanggal kuota tidak valid. Gunakan YYYY-MM-DD.');
     }
 
+    $isHoliday = (bool) q('SELECT CASE WHEN EXISTS(
+        SELECT 1 FROM tanggal_libur_operasional
+        WHERE tanggal_mulai <= ? AND tanggal_selesai >= ?
+    ) THEN 1 ELSE 0 END', [$date, $date])->fetchColumn();
+
     $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, GREATEST(4, pr.min_pesan) AS min_pesan, pr.kuota_harian AS kuota_default';
     if ($report) {
         // LEFT JOIN menjaga semua produk tetap tampil, termasuk yang belum memiliki konfigurasi kuota.
@@ -25,7 +30,7 @@ function daily_quota_snapshot($date, bool $report = false): array
             [$date]
         )->fetchAll();
     } else {
-        // LEFT JOIN mengambil kuota; SUM menghitung pesanan yang belum ditolak atau dibatalkan.
+        // Pesanan ditolak atau dibatalkan tidak lagi menahan kuota.
         $items = q(
             "SELECT $fields, COALESCE(k.kuota, pr.kuota_harian) AS kuota_harian,
                 COALESCE(k.kuota, pr.kuota_harian) AS kuota, COALESCE(used.qty, 0) AS terpakai,
@@ -44,6 +49,15 @@ function daily_quota_snapshot($date, bool $report = false): array
         )->fetchAll();
     }
 
+    if ($isHoliday) {
+        foreach ($items as &$item) {
+            $item['kuota'] = 0;
+            $item['kuota_harian'] = 0;
+            $item['sisa'] = 0;
+        }
+        unset($item);
+    }
+
     $capacity = 0;
     $used = 0;
     foreach ($items as $item) {
@@ -56,6 +70,7 @@ function daily_quota_snapshot($date, bool $report = false): array
 
     return [
         'tanggal' => $date,
+        'tanggal_libur' => $isHoliday,
         'items' => $items,
         'maxKitchen' => $maximum,
         'kitchenUsed' => $used,
@@ -65,6 +80,10 @@ function daily_quota_snapshot($date, bool $report = false): array
 
 function daily_quota_validate(array $snapshot, array $quantities): array
 {
+    if (!empty($snapshot['tanggal_libur'])) {
+        throw new DomainException('Tanggal pengiriman ini merupakan hari libur. Silakan pilih tanggal lain.');
+    }
+
     $products = array_column($snapshot['items'], null, 'id');
     $lines = [];
     foreach ($quantities as $id => $qty) {
@@ -106,6 +125,21 @@ function daily_quota_range($startDate, $endDate): array
         throw new DomainException('Rentang harus berurutan dan maksimal 366 tanggal inklusif.');
     }
     return [$startDate, $endDate];
+}
+
+/**
+ * Lock global urut untuk transaksi yang membaca kuota dan tanggal operasional.
+ *
+ * Urutan produk -> kuota_harian -> tanggal_libur_operasional dipakai bersama
+ * oleh checkout, pesanan offline, respons pelanggan, dan konfirmasi penggantian
+ * agar tidak ada deadlock serta pengecekan libur selalu dalam transaksi yang
+ * sama dengan pengecekan kuota.
+ */
+function daily_quota_lock_tables(): void
+{
+    q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
+    q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+    q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
 }
 
 // Pemanggil memegang transaksi dan lock kuota sampai seluruh rentang tersimpan.
