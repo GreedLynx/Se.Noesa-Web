@@ -168,3 +168,11 @@
 - **Lint:** `php -l index.php` OK, `php -l partials/layout.php` OK, `node --check customer.js` OK, `git diff --check` bersih.
 - **Belum diuji:** tampilan visual desktop/mobile (tidak ada browser automation).
 - **Kesimpulan:** LULUS secara statis; tidak ada perubahan pada logika kuota/keranjang.
+
+### TASK-18 — Navigasi/dashboard Pelanggan
+- **Jenis:** unit test regression logout + verifikasi statis CSS.
+- **Regression logout (`node test_logout_dialog.js`, 4/4 PASS):** dialog tampil; “Ya, Keluar” memanggil logout dan mengarahkan ke `../login.php`; “Batal”, klik backdrop, dan klik konten tidak memicu logout; dialog ditutup dan dihapus pada semua jalur.
+- **CSS:** aturan FAB untuk `body[data-page="history"] .history-link` memakai `position: fixed`, `right/bottom` dengan `env(safe-area-inset-*)`, ukuran 54 px di mobile, dan padding tambahan pada `.customer-content`.
+- **Belum diuji:** tampilan/browser sungguhan, jangkauan jari dan overlap konten pada berbagai viewport (tidak ada browser automation).
+- **CUS-22:** tidak ada elemen panah pada menu dashboard Pelanggan di kode saat ini ⇒ tidak diubah dan dicatat.
+- **Kesimpulan:** LULUS untuk regressi logout + perubahan CSS yang dapat diverifikasi statis. Tidak ada klaim test visual.
