@@ -94,3 +94,26 @@ tetap pulih otomatis ketika tanggal libur dihapus.
   aksi upload/validasi/penyelesaian tetap tidak tersedia pada status terminal ini.
 - Tinjauan tidak menambah pemakaian kuota dan tidak mengembalikan pesanan ke rekap
   produksi. Informasi diperbarui ketika halaman dimuat ulang; belum push realtime.
+
+## Tawaran jadwal pengganti
+
+- Admin dapat menawarkan satu tanggal pengganti hanya untuk pesanan online yang
+  tanggal awalnya ditutup, berstatus menunggu pembayaran, menunggu validasi, atau
+  diproses. Pesanan offline tidak dapat ditawarkan melalui alur pelanggan.
+- Untuk status menunggu validasi, bukti harus tersedia; mengirim tawaran berarti
+  Admin menyatakan pembayaran valid. Pembayaran yang tidak valid tetap ditolak
+  memakai alasan penolakan pembayaran tanpa tawaran jadwal.
+- Tawaran menyimpan snapshot tanggal awal dan status pesanan. Status/pengiriman
+  lama tetap berlaku sampai pelanggan menerima. Tidak ada reservasi kuota tujuan.
+- Tanggal tujuan diperiksa saat ditawarkan dan diperiksa ulang secara atomik saat
+  diterima. Jam pengiriman lama dipertahankan. Jika asal menunggu validasi,
+  penerimaan menjadikan status diproses.
+- Tawaran menunggu validasi/diproses berlaku 24 jam. Tawaran menunggu pembayaran
+  berakhir pada tenggat pembayaran asli satu jam sejak pesanan dibuat. Jawaban
+  untuk tawaran yang diganti memakai versi lama ditolak.
+- Pelanggan dapat menerima atau menolak melalui detail riwayat. Penolakan
+  membatalkan pesanan dan mencatat metadata pelanggan; refund penuh untuk
+  pembayaran yang diterima tetap ditangani Admin di luar aplikasi.
+- Aksi validasi, penolakan pembayaran, checklist, upload foto kiriman,
+  penyelesaian, upload bukti, dan pembatalan umum diblokir selama tawaran aktif.
+  Job CLI tetap membatalkan unpaid tepat waktu dan menutup tawarannya.

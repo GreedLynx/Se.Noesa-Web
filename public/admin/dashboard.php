@@ -117,7 +117,7 @@ admin_head('Dashboard', 'dashboard');
                     BUTUH TINDAKAN
                 </p>
                 <h2>
-                    Antrean prioritas
+                    Pesanan menunggu verifikasi
                 </h2>
             </div>
             <a href="orders.php">
