@@ -3,16 +3,16 @@
 - Last updated: 2026-11-18 00:10 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-13)
+- Current HEAD: (checkpoint TASK-14)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 9 |
+| DONE | 10 |
 | PARTIAL | 0 |
 | BLOCKED | 8 |
-| TODO | 7 |
+| TODO | 6 |
 | FAILED | 0 |
 
 ## Riwayat Task
@@ -31,8 +31,8 @@
 | TASK-10 | BLOCKED | - | - | Menunggu keputusan #11 |
 | TASK-11 | DONE | 1371442 | lolos (9 filter, 0 mismatch) | Label “Menunggu verifikasi” diseragamkan; nilai status DB tidak diubah |
 | TASK-12 | DONE | e824f49 | lolos (lint + audit alur) | Filter produk dipertahankan setelah simpan; feedback sukses/gagal ada |
-| TASK-13 | BLOCKED | - | audit selesai | Tidak ada kolom `aktif`/snapshot; butuh DECISION-NEW-01 + migration |
-| TASK-14 | TODO | - | - | Kuota penuh Pelanggan (dep TASK-07) |
+| TASK-13 | BLOCKED | 055d350 | audit selesai | Tidak ada kolom `aktif`/snapshot; butuh DECISION-NEW-01 + migration |
+| TASK-14 | DONE | (checkpoint ini) | lolos (API 5 skenario + UI 3 skenario) | Info kuota penuh per tanggal & kategori; checkout tetap ditolak backend |
 | TASK-15 | BLOCKED | - | - | Menunggu keputusan #5, #12 |
 | TASK-16 | TODO | - | - | Dialog Pelanggan |
 | TASK-17 | TODO | - | - | Label keranjang (dep TASK-05) |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-14
-- Tujuan: Tampilkan informasi kuota penuh untuk Pelanggan per tanggal pengiriman dan cegah checkout produk habis
-- File yang akan disentuh: public/pelanggan/api/catalog.php, public/pelanggan/assets/customer.js (audit); file progres
-- Risiko: Sedang — pesan harus mengikuti tanggal yang dipilih dan tidak menyesatkan
-- Dependency: TASK-07 (selesai)
+- ID: TASK-16
+- Tujuan: Tambahkan backdrop close pada cart dialog dan checkout dialog Pelanggan tanpa menutup saat klik konten
+- File yang akan disentuh: public/pelanggan/assets/customer.js, public/pelanggan/index.php/partials (audit); file progres
+- Risiko: Rendah — jangan mengubah perilaku Escape/fokus/scroll lock yang sudah ada
+- Dependency: TASK-00 (selesai)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -91,7 +91,8 @@
 | 2026-11-17 23:45 | 7a2572c | TASK-07 | lolos (44 PASS TEMP-table) | Audit lock kanonik; BUG-001 dikoreksi sebagai false alarm |
 | 2026-11-17 23:58 | 1371442 | TASK-11 | lolos (9 filter, 0 mismatch) | Label status diseragamkan; DB status tidak diubah |
 | 2026-11-18 00:10 | e824f49 | TASK-12 | lolos (lint + audit) | Filter produk dipertahankan setelah simpan |
-| 2026-11-18 00:25 | (checkpoint ini) | TASK-13 | BLOCKED (audit) | Tidak ada `aktif`/snapshot; DECISION-NEW-01 dicatat |
+| 2026-11-18 00:25 | 055d350 | TASK-13 | BLOCKED (audit) | Tidak ada `aktif`/snapshot; DECISION-NEW-01 dicatat |
+| 2026-11-18 00:45 | (checkpoint ini) | TASK-14 | lolos (8 skenario) | Info kuota penuh per tanggal; filter kategori ikut diterapkan |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

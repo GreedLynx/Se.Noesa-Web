@@ -141,3 +141,16 @@
   - Query detail Admin/Owner (`admin/api/orders.php:229-234`) dan Pelanggan (`pelanggan/api/orders.php:305-308`) memakai `JOIN produk` dan menampilkan `produk.nama` saat ini.
 - **Konsekuensi:** tidak ada data yang bisa dipakai untuk menampilkan “keterangan produk dinonaktifkan” tanpa perubahan skema/keputusan bisnis.
 - **Status:** BLOCKED — `DECISION-NEW-01` menunggu persetujuan. Tidak ada kode/migration yang diubah.
+
+### TASK-14 — Informasi kuota penuh Pelanggan
+- **Jenis:** test API read-only + unit test potongan kode UI nyata + lint.
+- **API `catalog.php` (5 skenario):**
+  - 2026-11-30: `items=9`, `habis=2` (Salad Buah, Matcha Latte) ✅
+  - 2026-11-30 + `kategori=minuman`: `habis` tetap 2 dan sesuai kategori ✅
+  - 2026-11-25 (libur): `items=0`, `habis=11`, UI menyembunyikan pesan kuota penuh ✅
+  - 2026-11-24 / 2026-12-01: `habis=0`, pesan disembunyikan ✅
+- **UI (`node test_full_hint.js`, 3/3 PASS):** ada menu penuh → pesan tampil dengan tanggal “30 Nov 2026”; tidak ada menu penuh → tersembunyi; hari libur → tersembunyi.
+- **Pencegahan checkout:** produk dengan `sisa=0` tidak masuk `items` katalog dan ditolak `daily_quota_validate()` di backend (audit TASK-07); tidak ada perubahan pada endpoint checkout.
+- **Lint:** `php -l catalog.php` OK, `php -l index.php` OK, `node --check customer.js` OK.
+- **Belum diuji:** render browser dan perubahan tanggal secara interaktif (tidak ada browser automation).
+- **Kesimpulan:** LULUS untuk API + unit UI; pesan mengikuti tanggal dan filter.

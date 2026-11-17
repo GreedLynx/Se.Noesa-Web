@@ -14,16 +14,31 @@ try {
 
 $category = $_GET['kategori'] ?? '';
 $query = trim($_GET['q'] ?? '');
-$items = array_values(array_filter($snapshot['items'], static function ($product) use ($category, $query) {
-    return (int) $product['sisa'] > 0
-        && (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
+$matchesView = static function (array $product) use ($category, $query): bool {
+    return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
         && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
+};
+$items = array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView) {
+    return (int) $product['sisa'] > 0 && $matchesView($product);
 }));
+// Menu dengan sisa kuota 0 tetap diinformasikan agar Pelanggan memahami
+// produk mana yang penuh pada tanggal pengiriman yang dipilih (IMG-CUS-01).
+$habis = array_map(static function (array $product): array {
+    return [
+        'id' => (int) $product['id'],
+        'nama' => $product['nama'],
+        'kode' => $product['kode'],
+        'sisa' => (int) $product['sisa'],
+    ];
+}, array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView) {
+    return (int) $product['sisa'] <= 0 && $matchesView($product);
+})));
 // SELECT memilih satu jadwal PO aktif yang tanggal bukanya paling awal.
 $schedule = q('SELECT id, tgl_buka, tgl_tutup, nama FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1')->fetch();
 
 json([
     'items' => $items,
+    'habis' => $habis,
     'schedule' => $schedule,
     'tanggal' => $snapshot['tanggal'],
     'tanggal_libur' => $snapshot['tanggal_libur'],

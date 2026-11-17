@@ -91,9 +91,17 @@
 - Reload penuh pada detail pesanan dan unggah foto kiriman tetap dipertahankan karena memang perlu menyegarkan status/button; tidak ada state lama yang dibiarkan.
 - Migration: tidak ada.
 
-### TASK-13 — BLOCKED (dokumentasi audit)
+### TASK-13 — BLOCKED (dokumentasi audit) — 055d350
 - `docs(TASK-13): record blocked product snapshot decision`
 - Audit: `produk` tidak memiliki kolom `aktif`; `detail_pesanan` tidak memiliki kolom snapshot nama/detail (verifikasi `information_schema`: 0 kolom). FK `detail_pesanan.produk_id → produk.id` mencegah penghapusan produk yang sudah dipesan.
 - Konsekuensi: baris histori tidak hilang, tetapi detail pesanan menampilkan `produk.nama` saat ini, sehingga penggantian nama produk mengubah tampilan pesanan lama.
 - Implementasi keterangan “produk dinonaktifkan” memerlukan definisi bisnis + migration (kolom `aktif` dan/atau snapshot). Tidak ada keputusan yang tersedia ⇒ task ditandai BLOCKED, kode tidak diubah.
 - Tambah `DECISION-NEW-01` pada `KEPUTUSAN-BISNIS-SE.NOESA.md` (keputusan baru yang ditemukan saat implementasi, bukan bagian dari 14 keputusan awal).
+
+### TASK-14 — (checkpoint ini)
+- `feat(TASK-14): inform customers about full quota per delivery date`
+- `public/pelanggan/api/catalog.php`: ekspos `habis` (produk dengan `sisa <= 0`) yang tetap mengikuti filter kategori/pencarian aktif; `items` tetap hanya berisi produk tersedia.
+- `public/pelanggan/index.php`: tambah elemen `#quota-full-hint` di panel tanggal.
+- `public/pelanggan/assets/customer.js`: render pesan “Kuota penuh untuk tanggal …: <nama produk>” pada `loadCatalog()`, sehingga otomatis diperbarui saat tanggal, kategori, atau pencarian berubah. Pesan disembunyikan pada hari libur agar tidak menimpa pesan libur.
+- Backend checkout sudah menolak produk habis lewat `daily_quota_validate()` ⇒ tidak ada perubahan pada endpoint checkout.
+- Migration: tidak ada.

@@ -175,6 +175,21 @@ async function loadCatalog(animate = false) {
     $('#delivery-hint').textContent = catalogClosed
         ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
         : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    const fullHint = $('#quota-full-hint');
+    if (fullHint) {
+        const full = Array.isArray(d.habis) ? d.habis : [];
+        if (full.length && !catalogClosed) {
+            const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+            });
+            fullHint.textContent = 'Kuota penuh untuk tanggal ' + label + ': '
+                + full.map(p => p.nama).join(', ') + '. Pilih tanggal atau menu lain.';
+            fullHint.hidden = false;
+        } else {
+            fullHint.textContent = '';
+            fullHint.hidden = true;
+        }
+    }
     $('#checkout-button').disabled = catalogClosed;
 
     const previous = productCache;
