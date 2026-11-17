@@ -24,7 +24,7 @@ function head(string $title, string $page, bool $auth = false)
     <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
-<body data-page="<?= $page ?>">
+<body data-page="<?= $page ?>" data-role="owner">
     <main class="app<?= $auth ? ' auth' : '' ?>">
 <?php
 }

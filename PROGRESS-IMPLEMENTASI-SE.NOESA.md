@@ -3,24 +3,24 @@
 - Last updated: 2026-11-17 21:45 WIB
 - Current branch: feature/full-stack
 - Baseline commit: f7ff4d37a0b99a58c929733ae9964445d56f5183
-- Current HEAD: (checkpoint TASK-01)
+- Current HEAD: (checkpoint TASK-02)
 - Overall status: IN_PROGRESS
 
 ## Ringkasan
 | Status | Jumlah |
 |---|---:|
-| DONE | 2 |
+| DONE | 3 |
 | PARTIAL | 0 |
 | BLOCKED | 7 |
-| TODO | 15 |
+| TODO | 14 |
 | FAILED | 0 |
 
 ## Riwayat Task
 | Task ID | Status | Commit | Test | Catatan |
 |---|---|---|---|---|
 | TASK-00 | DONE | 9b7f8f5 | lolos | 89 ID unik; ringkasan dikoreksi 38/18/22 → 47/22/20; tanpa perubahan kode |
-| TASK-01 | DONE | (checkpoint ini) | lolos | 14 keputusan PENDING, tidak ada asumsi agent |
-| TASK-02 | TODO | - | - | Owner/Admin sync |
+| TASK-01 | DONE | 6be9681 | lolos | 14 keputusan PENDING, tidak ada asumsi agent |
+| TASK-02 | DONE | (checkpoint ini) | lolos | Output Owner=Admin identik 11 skenario; kontrol mutasi Owner dihapus |
 | TASK-03 | BLOCKED | - | - | Menunggu keputusan #3, #4 |
 | TASK-04 | TODO | - | - | Audit/test pembayaran E2E |
 | TASK-05 | TODO | - | - | Minimum pemesanan |
@@ -44,11 +44,11 @@
 | TASK-23 | TODO | - | - | Release readiness (dep TASK-22) |
 
 ## Task aktif
-- ID: TASK-02
-- Tujuan: Verifikasi sinkronisasi data Owner dan Admin (query, filter, pagination, detail, read-only)
-- File yang akan disentuh: public/owner/api/orders.php, public/admin/api/orders.php (audit); file progres
-- Risiko: Sedang — jangan memberi Owner akses mutasi; perubahan hanya jika ada perbedaan nyata
-- Dependency: TASK-00 (selesai)
+- ID: TASK-04
+- Tujuan: Audit dan uji alur pembayaran end-to-end tanpa mengubah kebijakan status/timeout
+- File yang akan disentuh: public/pelanggan/api/orders.php, app/daily-quota.php, frontend pembayaran (audit); file progres
+- Risiko: Sedang — DB remote bersifat read-only untuk agent; test mutasi tidak dapat dijalankan
+- Dependency: TASK-00 (selesai); TASK-01 keputusan #12 hanya jika mengubah istilah status (tidak dilakukan)
 
 ## Keputusan bisnis tertunda
 | Decision ID | Pertanyaan | Task terdampak | Status |
@@ -78,7 +78,8 @@
 |---|---|---|---|---|
 | 2026-11-17 21:25 | f7ff4d3 | baseline | git status clean | Organisasi docs ke folder docs/ (diizinkan user) |
 | 2026-11-17 21:45 | 9b7f8f5 | TASK-00 | lolos (hitung ulang 89 ID) | Koreksi ringkasan audit; tanpa perubahan kode aplikasi |
-| 2026-11-17 21:55 | (checkpoint ini) | TASK-01 | lolos (14/14 keputusan) | Dokumentasi keputusan bisnis; semua PENDING |
+| 2026-11-17 21:55 | 6be9681 | TASK-01 | lolos (14/14 keputusan) | Dokumentasi keputusan bisnis; semua PENDING |
+| 2026-11-17 22:15 | (checkpoint ini) | TASK-02 | lolos (11 skenario identik) | Owner read-only frontend diperketat; tanpa perubahan API |
 
 ## Catatan lingkungan / keterbatasan
 - `AGENTS.md`, `PRD.md`, `DESIGN.md` **tidak ditemukan** di repository (dicatat sesuai instruksi §1).

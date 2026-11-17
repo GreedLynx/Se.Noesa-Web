@@ -34,3 +34,19 @@
 - **Perintah:** `node check_decisions.js` (script di temp) mem-parse heading, kolom, dan status.
 - **Hasil aktual:** 14 heading `#1`–`#14` berurutan; 14 `Keputusan final` semuanya masih template kosong; 14 status `PENDING`; 14 konteks, 14 opsi, 14 dampak, 14 task terdampak.
 - **Kesimpulan:** LULUS. Tidak ada keputusan yang dijawab oleh agent. Tidak ada test aplikasi yang relevan untuk task dokumentasi ini.
+
+### TASK-02 — Sinkronisasi Owner/Admin
+- **Jenis:** test API read-only (parse output endpoint via harness CLI, tanpa server HTTP) + verifikasi statis frontend + lint.
+- **Test 1 —Authorization (POST):**
+  - `role=owner, POST` → `{"error":"Unauthorized"}` ✅
+  - `role=customer, POST` → `{"error":"Unauthorized"}` ✅
+  - `role=owner, GET` → payload JSON berisi `items`, `counts`, `capacity` ✅
+  - Catatan: warning pada harness (session sudah aktif) berasal dari script test, bukan aplikasi; POST ditolak sebelum query DB.
+- **Test 2 — Kesetaraan data Owner vs Admin (output byte-identik):**
+  - `tab=semua` ✅, `tab=validasi` ✅, `tab=dibatalkan` ✅, `tab=ditolak` ✅, `tab=selesai` ✅, `tab=pembayaran` ✅, `tab=proses` ✅, `tab=semua&q=SN-` ✅, `tab=semua&q=__tidakada__` ✅, `id=27` ✅, `id=999999` ✅ → 11/11 identik.
+  - Data kosong dan detail tidak ditemukan juga identik (bukan hanya data terisi).
+- **Test 3 — Pagination:** tidak diimplementasikan di kedua endpoint; seluruh baris dikembalikan. Skenario "banyak halaman" tidak relevan ⇒ dicatat, bukan diklaim lulus.
+- **Test 4 — Frontend:** tidak ada lagi selector mutasi (`new-offline-order`, `offline-order-dialog`, `detail-actions`, `reject-order-dialog`, `data-order-action`, `dispatch-photo-form`) pada halaman Owner (verifikasi `Select-String` → 0 kecocokan).
+- **Lint:** `node --check public/assets/js/app.js` OK; `php -l` untuk 5 file terkait OK; `git diff --check` bersih.
+- **Belum diuji:** interaksi browser desktop/mobile (tidak ada browser automation), klik tombol secara nyata, dan mutasi DB (dilarang oleh batasan lingkungan).
+- **Kesimpulan:** LULUS untuk acceptance criteria yang dapat diuji di lingkungan ini. Tidak ada data pelanggan yang dicantumkan dalam laporan ini.
