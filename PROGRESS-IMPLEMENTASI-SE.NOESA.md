@@ -110,3 +110,15 @@
 - `.env` mengarah ke **Supabase remote** (`aws-0-ap-southeast-1.pooler.supabase.com`) dan dapat dijangkau.
 - Sesuai larangan "jangan menyentuh production", interaksi DB dibatasi **read-only (`SELECT`)**. Tidak ada migration, INSERT/UPDATE/DELETE, atau test yang mengubah data. Test yang memerlukan mutasi ditandai **belum dijalankan** dengan alasan ini.
 - Tidak ada browser automation (Playwright/Cypress) yang terkonfigurasi; test UI dilakukan lewat analisis kode + `node --check` + PHP lint, dan dicatat sebagai terbatas.
+
+## Sesi review post-implementasi (2026-11-18)
+
+- **Sifat:** REVIEW ONLY — tidak ada perubahan source code, database, migration, status task, atau keputusan bisnis.
+- **Kondisi awal terverifikasi:** branch `feature/full-stack`, HEAD `43da86d` (sesuai checkpoint terakhir), working tree bersih, lokal ahead 18 / behind 20 terhadap `origin/feature/full-stack`. Tidak ada pull/merge/rebase/reset/push.
+- **Dokumen dibaca:** `PROGRESS`, `CHANGELOG`, `TEST-REPORT`, `RELEASE-READINESS`, `KEPUTUSAN-BISNIS`, `TASKS-IMPLEMENTASI`. `AGENTS.md`, `PRD.md`, `DESIGN.md` tetap tidak ditemukan.
+- **Dokumen baru:**
+  - `REVIEW-KEPUTUSAN-BISNIS-SE.NOESA.md` — review 15 keputusan PENDING (14 + DECISION-NEW-01), lengkap dengan opsi, dampak DB/backend/frontend/operasional, dan rekomendasi **bukan keputusan**.
+  - `REVIEW-BLOCKED-TASKS-SE.NOESA.md` — analisis 9 task BLOCKED + lampiran audit lanjutan TASK-20 (metrik, konsistensi angka, query mahal, QA visual, prosedur DB isolat).
+  - `TEST-PLAN-RELEASE-SE.NOESA.md` — 8 paket pengujian yang belum dijalankan, masing-masing memuat prasyarat, langkah, hasil diharapkan, risiko, dan bukti.
+- **Status task tidak berubah:** 14 DONE, 1 PARTIAL, 9 BLOCKED, 0 FAILED. Release tetap **NO-GO**.
+- **HEAD setelah review:** tidak berubah (`43da86d`) sampai checkpoint dokumentasi review dibuat.
