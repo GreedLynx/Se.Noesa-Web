@@ -619,3 +619,104 @@ const page = document.body.dataset.page;
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
+/* ==========================================================================
+   FITUR CEK KETERSEDIAAN MENU DI CHECKOUT
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", function () {
+    const checkoutForm = $('#checkout-form');
+    const checkoutDateInput = checkoutForm?.elements?.tgl_kirim || document.getElementById('checkout-date');
+    if (!checkoutDateInput) return;
+
+    const scheduleNote = document.getElementById('schedule-note');
+    if (scheduleNote) scheduleNote.style.display = 'none';
+
+    let alertBox = document.getElementById('checkout-quota-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'checkout-quota-alert';
+        alertBox.style.cssText = 'display:none; margin:10px 0 15px; padding:12px 14px; border-radius:12px; font-size:12px; line-height:1.5; border:1px solid transparent;';
+        const dateLabel = checkoutDateInput.closest('label') || checkoutDateInput;
+        dateLabel.parentNode.insertBefore(alertBox, dateLabel.nextSibling);
+    }
+
+    async function cekKetersediaanMenu(selectedDate) {
+        const cartIds = Object.keys(cart).filter(id => Number(cart[id]) > 0);
+        if (!selectedDate) return;
+
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#f7f8f7';
+        alertBox.style.borderColor = '#e4ece5';
+        alertBox.style.color = '#666';
+        alertBox.innerHTML = '⏳ Memeriksa ketersediaan menu...';
+
+        try {
+            const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(selectedDate));
+
+            if (d.tanggal_libur) {
+                alertBox.style.background = '#fff3cd';
+                alertBox.style.borderColor = '#ffeeba';
+                alertBox.style.color = '#856404';
+                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>Se.Noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                return;
+            }
+
+            if (cartIds.length === 0) {
+                alertBox.style.background = '#e0f2fe';
+                alertBox.style.borderColor = '#bae6fd';
+                alertBox.style.color = '#0369a1';
+                alertBox.innerHTML = '<b>ℹ️ Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
+                return;
+            }
+
+            const items = Array.isArray(d.items) ? d.items : [];
+            let hasError = false;
+            let listHtml = '<div style="font-weight:600; margin-bottom:6px; color:#333;">Status Menu di Keranjang:</div>';
+            listHtml += '<ul style="margin:0; padding:0; list-style:none; display:grid; gap:6px;">';
+
+            for (const id of cartIds) {
+                const qty = Number(cart[id]);
+                const produk = items.find(p => String(p.id) === String(id));
+                const fallbackName = productCache[id]?.nama || 'Menu #' + id;
+
+                if (!produk) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
+                    continue;
+                }
+
+                const sisa = Number(produk.sisa ?? produk.kuota ?? 0);
+                if (sisa <= 0) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
+                } else if (qty > sisa) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
+                } else {
+                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span>✅</span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
+                }
+            }
+            listHtml += '</ul>';
+
+            alertBox.style.background = hasError ? '#fff5f5' : '#f0fdf4';
+            alertBox.style.borderColor = hasError ? '#feb2b2' : '#bbf7d0';
+            alertBox.style.color = hasError ? '#c53030' : '#276749';
+            alertBox.innerHTML = listHtml;
+        } catch (error) {
+            alertBox.style.background = '#fef2f2';
+            alertBox.style.borderColor = '#fecaca';
+            alertBox.style.color = '#991b1b';
+            alertBox.innerHTML = `❌ Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
+        }
+    }
+
+    checkoutDateInput.addEventListener('change', () => cekKetersediaanMenu(checkoutDateInput.value));
+
+    const checkoutDialog = document.getElementById('checkout-dialog');
+    if (checkoutDialog) {
+        new MutationObserver(() => {
+            if (checkoutDialog.hasAttribute('open') && checkoutDateInput.value) {
+                cekKetersediaanMenu(checkoutDateInput.value);
+            }
+        }).observe(checkoutDialog, { attributes: true, attributeFilter: ['open'] });
+    }
+});
