@@ -224,27 +224,35 @@ async function loadCatalog(animate = false) {
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
         const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
         const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
+        const available = p.available !== false && state !== 'full' && state !== 'closed';
         const stockLabel = state === 'nearly_full' ? ' · Sisa ' + pSisa + ' porsi'
-            : state === 'full' ? ' · Habis' : '';
-        return '<article class="menu-card stock-' + esc(state) + '" data-product="' + Number(p.id)
+            : !available ? (pSisa <= 0 ? ' · Habis' : ' · Stok di bawah minimum') : '';
+        return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
+            + '" data-product="' + Number(p.id) + '" data-available="' + available + '" aria-disabled="' + !available
             + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
             + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
             + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + stockLabel
             + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
+            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></article>';
     }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 
+    const canOpen = product => product && product.available !== false
+        && product.stok_status !== 'full' && product.stok_status !== 'closed';
     $$('[data-product]').forEach(card => card.onclick = e => {
         if (e.target.closest('[data-add]')) return;
+        if (card.dataset.available === 'false') return;
         showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
+        if (b.disabled) return;
+        const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
+        if (canOpen(product)) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
+        const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
+        if (canOpen(product)) showProduct(product)
     });
     renderCart();
     if (animate) requestAnimationFrame(() => {

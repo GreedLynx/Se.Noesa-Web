@@ -108,8 +108,9 @@
                 if (state) {
                     button.classList.add('date-' + state.status);
                     button.title = state.status === 'closed' ? 'Tanggal libur'
-                        : state.status === 'full' ? 'Kuota penuh'
-                        : `Sisa ${state.sisa} porsi`;
+                        : state.status === 'full'
+                            ? (Number(state.menu_tersedia) === 0 ? 'Tidak ada menu yang memenuhi minimum' : 'Kuota penuh')
+                            : `Sisa ${state.sisa} porsi`;
                 }
                 button.disabled = !selectable(value);
             });
@@ -159,7 +160,7 @@
             const first = dialog.querySelector('.date-first-button');
             const firstDay = input.min && today < input.min ? input.min : today;
             first.textContent = firstDay === today ? 'Ke hari ini' : 'Tanggal terawal';
-            first.disabled = !isAvailable(firstDay, input.min, input.max);
+            first.disabled = !selectable(firstDay);
             first.onclick = () => select(firstDay);
             paintAvailability();
             ensureAvailability();

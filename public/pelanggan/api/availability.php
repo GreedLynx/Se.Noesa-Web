@@ -32,12 +32,13 @@ for ($day = new DateTimeImmutable($start, $zone), $last = new DateTimeImmutable(
     } catch (DomainException $e) {
         continue;
     }
+    $holiday = !empty($snapshot['tanggal_libur']);
     $availableItems = 0;
     foreach ($snapshot['items'] as $item) {
-        if ((int) $item['sisa'] > 0) $availableItems++;
+        if (daily_product_available($item, $holiday)) $availableItems++;
     }
     $remaining = (int) $snapshot['dailyRemaining'];
-    $status = $snapshot['tanggal_libur'] ? 'closed'
+    $status = $holiday ? 'closed'
         : ($remaining <= 0 || $availableItems === 0 ? 'full'
         : ($remaining <= intdiv(SENOESA_DAILY_PACKAGE_LIMIT, 5) ? 'nearly_full' : 'available'));
 

@@ -7,6 +7,25 @@ const SENOESA_DAILY_PACKAGE_LIMIT = 50;
 const SENOESA_MIN_PACKAGE_QTY = 10;
 const SENOESA_MAX_ORDER_QTY = 50;
 
+/** Minimum efektif untuk satu produk pada snapshot kuota. */
+function daily_product_min_qty(array $product): int
+{
+    return max(SENOESA_MIN_PACKAGE_QTY, (int) ($product['min_pesan'] ?? 0));
+}
+
+/**
+ * Satu-satunya aturan ketersediaan produk: sisa stok harus mencapai minimum
+ * efektif. Dipakai katalog, availability, dan validasi agar tidak ada logika
+ * ganda di frontend/API.
+ */
+function daily_product_available(array $product, bool $holiday = false): bool
+{
+    if ($holiday) {
+        return false;
+    }
+    return (int) ($product['sisa'] ?? 0) >= daily_product_min_qty($product);
+}
+
 /**
  * Klaim SQL untuk pesanan yang masih memakai kapasitas.
  * Menunggu pembayaran hanya menahan kuota selama tenggat 1 jam masih aktif;

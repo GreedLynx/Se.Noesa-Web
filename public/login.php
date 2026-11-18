@@ -11,7 +11,7 @@ head('Login', 'login', true);
     <div class="drift"></div>
     <div class="hello rise">
         <h2>Hello!</h2>
-        <p>Welcome to Se.Noesa</p>
+        <p>Welcome to se.noesa</p>
     </div>
 </section>
 <section class="sheet">
