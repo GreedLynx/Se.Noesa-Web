@@ -19,7 +19,11 @@
         try {
             const d = await api('api/late-payments.php?eligible=1');
             select.innerHTML = (d.items || []).length
-                ? d.items.map(o => `<option value="${Number(o.id)}">${esc(o.kode)} — ${esc(o.nama_pemesan)} · ${money(o.total)} · ${fmt(o.created_at)}</option>`).join('')
+                ? d.items.map(o => {
+                    const label = `${o.kode} — ${o.nama_pemesan}`;
+                    const detail = `${o.kode} — ${o.nama_pemesan} · ${money(o.total)} · ${fmt(o.created_at)}`;
+                    return `<option value="${Number(o.id)}" title="${esc(detail)}">${esc(label)}</option>`;
+                }).join('')
                 : '<option value="">Tidak ada pesanan dibatalkan yang belum dicatat</option>';
         } catch (e) { toast(e.message); }
     }
