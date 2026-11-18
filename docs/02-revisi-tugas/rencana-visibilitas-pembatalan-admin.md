@@ -46,8 +46,8 @@ dan penghitungan yang sudah ada agar informasi pembatalan konsisten.
 
 ### Temuan saat perencanaan
 
-- `docs/peta-kode.md`, `docs/aturan-bisnis.md`, `docs/api.md`, dan
-  `docs/database.md` menjadi sumber aturan. `.opencode/revisi.md` tidak ditemukan.
+- `docs/00-panduan/peta-kode.md`, `docs/01-spesifikasi/aturan-bisnis.md`, `docs/01-spesifikasi/api.md`, dan
+  `docs/01-spesifikasi/database.md` menjadi sumber aturan. `.opencode/revisi.md` tidak ditemukan.
 - `public/admin/api/orders.php`: filter `tab=dibatalkan` dan `tab=semua` sudah
   mencakup status batal; respons daftar memiliki `counts.cancelled`.
 - `public/admin/orders.php`: tab yang terlihat berhenti pada Ditolak; belum ada
@@ -253,8 +253,8 @@ uji daftar khusus bila dibutuhkan. Gunakan database PostgreSQL uji terisolasi
 untuk migrasi, batas waktu, dan transaksi bersamaan; jangan menguji mutasi pada
 database aplikasi yang dipakai pengguna.
 
-**Dokumentasi:** perbarui `docs/api.md`, `docs/database.md`, `docs/peta-kode.md`,
-dan `docs/aturan-bisnis.md` bersama perubahan kode. Catat nomor migrasi yang benar
+**Dokumentasi:** perbarui `docs/01-spesifikasi/api.md`, `docs/01-spesifikasi/database.md`, `docs/00-panduan/peta-kode.md`,
+dan `docs/01-spesifikasi/aturan-bisnis.md` bersama perubahan kode. Catat nomor migrasi yang benar
 serta urutan penerapan migrasi sebelum kode yang membaca kolom/VIEW baru.
 
 **Review:** setelah perubahan checkout/pembayaran/kuota/hak akses, delegasikan

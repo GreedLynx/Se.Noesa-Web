@@ -17,7 +17,7 @@ const context = {
     document: { addEventListener(type, callback) { assert.equal(type, 'click'); listener = callback; } },
     $: () => search,
     $$: () => [detailLink],
-    orderTab: 'dibatalkan', cancellationReview: 'unreviewed',
+    orderTab: 'dibatalkan', cancellationReview: 'unreviewed', filterCancellationSource: 'pelanggan',
 };
 context.location.replace = url => { replaced = url; };
 vm.createContext(context);
@@ -28,12 +28,14 @@ const current = new URL(context.location.href);
 assert.equal(current.searchParams.get('q'), search.value);
 assert.equal(current.searchParams.get('tgl_kirim'), '2030-11-20');
 assert.equal(current.searchParams.get('review'), 'unreviewed');
+assert.equal(current.searchParams.get('source'), 'pelanggan');
 const detail = new URL(detailLink.href, current);
 assert.equal(detail.searchParams.get('id'), '42');
 assert.equal(detail.searchParams.get('return_to'), 'orders.php' + current.search);
 context.orderTab = 'selesai';
 context.syncOrderUrl();
 assert.equal(new URL(context.location.href).searchParams.has('review'), false);
+assert.equal(new URL(context.location.href).searchParams.has('source'), false);
 context.location.href = 'https://example.test/demo/admin/dashboard.php?tgl_kirim=2030-11-20';
 assert.equal(new URL(context.orderDetailUrl(7), current).searchParams.get('return_to'), 'dashboard.php?tgl_kirim=2030-11-20');
 
@@ -72,6 +74,8 @@ const markup = fs.readFileSync('public/admin/order-detail.php', 'utf8');
 const validation = markup.slice(markup.indexOf('$backUrl ='), markup.indexOf('?>'));
 const cases = [
     ['', 'orders.php'],
+    ['orders.php?tab=dibatalkan&source=pelanggan', 'orders.php?tab=dibatalkan&source=pelanggan'],
+    ['orders.php?tab=dibatalkan&source=invalid', 'orders.php'],
     [null, 'orders.php'],
     ['orders.php?tgl_kirim=2030-11-20%00', 'orders.php'],
     [['orders.php'], 'orders.php'],

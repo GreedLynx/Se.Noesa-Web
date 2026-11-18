@@ -75,7 +75,7 @@ vm.runInContext(source.slice(source.indexOf('async function dashboard()'), sourc
     assert.match(element('#cancellation-list').innerHTML, /&lt;BATAL&gt;/);
     assert.match(element('#cancellation-list').innerHTML, /Dibatalkan oleh pelanggan/);
     assert.match(element('#cancellation-list').innerHTML, /hentikan persiapan/i);
-    assert.match(element('#cancellation-list').innerHTML, /Buka detail pesanan/);
+    assert.match(element('#cancellation-list').innerHTML, /Lihat detail pesanan/);
     assert.equal(context.cancellationSourceLabel('otomatis'), 'Otomatis · 1 jam tanpa bukti bayar');
     assert.equal(context.cancellationSourceLabel(null), 'Sumber belum tercatat (data lama)');
 
@@ -89,7 +89,13 @@ vm.runInContext(source.slice(source.indexOf('async function dashboard()'), sourc
         } }),
     };
     vm.createContext(apiContext);
-    vm.runInContext(source.slice(source.indexOf('async function api('), source.indexOf('\nasync function uploadDispatchPhoto(')), apiContext);
+    vm.runInContext(
+      source.slice(
+        source.indexOf("// Token CSRF dari meta tag layout"),
+        source.indexOf("\nasync function uploadDispatchPhoto("),
+      ),
+      apiContext,
+    );
     apiResponse = { error: 'Rekap gagal dimuat' };
     await assert.rejects(() => apiContext.api('api/dashboard.php'), /Rekap gagal dimuat/);
     apiResponse = new SyntaxError('Invalid JSON');

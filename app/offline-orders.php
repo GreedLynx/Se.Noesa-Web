@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/daily-quota.php';
+
 function create_offline_order(array $request): array
 {
     $name = trim((string) ($request['nama_pemesan'] ?? ''));
@@ -58,8 +60,9 @@ function create_offline_order(array $request): array
     }
 
     try {
-        q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
-        q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        // Urutan lock kanonik yang sama dengan checkout; tanggal libur ikut
+        // diserialisasi agar pesanan offline tidak melewati penutupan operasional.
+        daily_quota_lock_tables();
         q('SELECT id FROM kuota_harian WHERE tanggal = ? ORDER BY produk_id FOR UPDATE', [$date])->fetchAll();
 
         $snapshot = daily_quota_snapshot($date);

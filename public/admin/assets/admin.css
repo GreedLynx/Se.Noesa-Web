@@ -109,6 +109,12 @@ button {
   font-size: 19px;
   width: 22px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.signout svg {
+  vertical-align: middle;
 }
 .side-nav i {
   font-style: normal;
@@ -118,6 +124,34 @@ button {
   color: var(--green-dark);
   font-size: 10px;
   padding: 2px 7px;
+}
+/* Badge kosong jangan meninggalkan strip pada menu Pesanan (ADM-18). */
+.side-nav i:empty {
+  display: none;
+}
+/* Username lebih menonjol daripada kode pesanan (ADM-17). */
+td b.order-user {
+  font-size: 14px;
+}
+td small.order-code {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.mobile-order > strong.mobile-order-user {
+  font-size: 15px;
+  color: var(--green-dark);
+}
+.mobile-order small.order-code {
+  font-size: 10px;
+  color: var(--muted);
+}
+.mobile-nav a.active {
+  color: var(--green-dark);
+  font-weight: 700;
+}
+.mobile-nav a.active span {
+  font-weight: 700;
 }
 .sidebar-bottom {
   margin-top: auto;
@@ -779,6 +813,8 @@ button {
 }
 .search span {
   font-size: 20px;
+  display: inline-flex;
+  align-items: center;
 }
 .search input {
   width: 100%;
@@ -863,6 +899,33 @@ td small {
   color: var(--brown);
   font-size: 12px;
   white-space: pre-wrap;
+}
+.reschedule-tag {
+  display: inline-flex;
+  margin: 6px 0 0 6px;
+}
+.reschedule-detail {
+  grid-column: 1 / -1;
+  border-color: #d5dfd2;
+  background: #fbfdf9;
+}
+.reschedule-reason {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--green-pale);
+}
+.reschedule-reason p,
+.reschedule-warning {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+.reschedule-warning {
+  padding: 12px;
+  border: 1px solid #e5c783;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: var(--brown);
 }
 .reject-order-dialog {
   width: min(460px, calc(100% - 28px));

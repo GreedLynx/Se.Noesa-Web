@@ -33,12 +33,12 @@
   - `scripts/test-payment-deadline.php` hanya dijalankan lewat harness `scripts/test-order-cancellation.php` (mode `--existing`); mode standalone menyambung ke DB konfigurasi aplikasi dan tidak boleh dipakai.
 
 ## Rujukan implementasi utama
-- Aturan dan indeks file fitur: `docs/peta-kode.md` (kalender libur, rekap produksi, pembatalan, tinjauan Admin).
+- Aturan dan indeks file fitur: `docs/00-panduan/peta-kode.md` (kalender libur, rekap produksi, pembatalan, tinjauan Admin).
 - Kalender libur: `public/admin/schedules.php`, `public/admin/api/holidays.php`, `app/daily-quota.php`; migrasi `019_operational_holidays.sql`.
 - Rekap produksi: `public/admin/dashboard.php`, `public/admin/api/dashboard.php`, `public/admin/assets/admin.js`; VIEW pada `020_daily_production_report.sql`.
 - Pembatalan pelanggan dan job kedaluwarsa: `public/pelanggan/api/orders.php`, `app/order-cancellation.php`, `app/order-expiration.php`, `scripts/expire-unpaid-orders.php`; migrasi terkait `016_order_cancellation.sql` dan `018_payment_deadline.sql`.
 - Tinjauan pembatalan Admin: `public/admin/orders.php`, `public/admin/order-detail.php`, `public/admin/api/orders.php`, `public/admin/api/dashboard.php`; migrasi `021_cancellation_admin_review.sql`.
-- Detail skema dan kontrak endpoint: `docs/database.md` dan `docs/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
+- Detail skema dan kontrak endpoint: `docs/01-spesifikasi/database.md` dan `docs/01-spesifikasi/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
 
 ## Pekerjaan berikutnya
 - Klarifikasi pengguna: pembatalan/penolakan oleh Admin mencakup status `Menunggu pembayaran`, `Menunggu Validasi`, dan `Diproses`, dilakukan manual per pesanan.
@@ -101,3 +101,9 @@
 - Lulus: empat sumber Dashboard dan tanggal, Back/Forward tanpa loop, mobile 390px dan klik selama debounce, review POST/reload dengan daftar diperbarui, simpan offline dan kembali ke filter, detail gagal, klik tab terpisah tanpa JS, dan fallback asal eksternal. Lima suite regresi Node, syntax PHP/JS, dan git diff HEAD --check lulus.
 - Uji awal Chrome di sandbox tidak menghasilkan hasil. Percobaan di luar sandbox yang diizinkan berhasil. Login dan mutasi database aplikasi belum diuji.
 - Perbandingan dengan referensi lokal origin/dev 329b4f0 menemukan navbar v1 83b76ca dan filter source yang sudah masuk. Saat integrasi, pertahankan navbar, persist filter source di URL dan validasi PHP, lalu uji ulang hasil integrasi. Working tree dan staging pengguna tetap dipertahankan. Belum commit, merge, push, atau ubah Notion.
+
+## Resolusi konflik merge dev ke navigasi Admin
+- Empat konflik dari dev 329b4f0 ditandai selesai di indeks. Catatan dari HANDOFF.md dan bagian API yang khusus navigasi dipindah ke lokasi dokumentasi baru.
+- Bootstrap mempertahankan redaksi argumen stack trace dan pengamanan sesi/CSRF dari dev. admin.js mempertahankan tampilan dev dan seluruh tautan asal. Filter sumber pembatalan disimpan di URL serta divalidasi di order-detail.php bersama filter tinjauan.
+- Uji navigasi, Dashboard, filter daftar, urutan pesanan, kuota UI, notifikasi UI, dan sintaks PHP/JS lulus. Uji Detail Pesanan gagal pada tawaran jadwal ulang karena JavaScript Admin untuk fitur tersebut sudah tidak ada pada sisi dev. Reviewer mengonfirmasi temuan. Dashboard fixture diperbarui untuk teks dev dan fixture kuota untuk DOMContentLoaded.
+- Pengguna menetapkan cakupan hanya resolusi konflik. Pemulihan JavaScript tawaran jadwal ulang ditunda. Merge belum di-commit atau dipush. Belum menguji browser atau database aplikasi setelah resolusi.

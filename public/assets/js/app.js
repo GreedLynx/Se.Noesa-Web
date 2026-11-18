@@ -13,12 +13,23 @@ const productImage = (value) => {
 };
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
+// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.content || "";
+const csrfHeaders = (opt = {}) =>
+    opt.method && opt.method.toUpperCase() !== "GET"
+        ? { "X-CSRF-Token": csrfToken() }
+        : {};
 async function api(url, opt = {}) {
     if (!opt.method && $('#quota-date') && /^api\/(products|orders)\.php/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
     const multipart = opt.body instanceof FormData;
     const r = await fetch(url, {
-        headers: multipart ? {} : { "Content-Type": "application/json" },
+        headers: {
+            ...(multipart ? {} : { "Content-Type": "application/json" }),
+            ...csrfHeaders(opt),
+            ...(opt.headers || {}),
+        },
         ...opt,
         body: opt.body ? (multipart ? opt.body : JSON.stringify(opt.body)) : undefined,
     });
@@ -192,7 +203,7 @@ const PAGES = {
             er.textContent = "";
             er.classList.remove("on");
             b.disabled = true;
-            b.textContent = "Memproses…";
+            b.textContent = "Memprosesâ€¦";
             try {
                 const d = await api(f.dataset.api, {
                     method: "POST",
@@ -301,7 +312,7 @@ const PAGES = {
             clearError(resetError);
             const saveButton = resetForm.querySelector('button[type="submit"]');
             saveButton.disabled = true;
-            saveButton.textContent = "Menyimpan…";
+            saveButton.textContent = "Menyimpanâ€¦";
             try {
                 const result = await api("api/password-reset.php", {
                     method: "POST",
@@ -372,7 +383,7 @@ const PAGES = {
             $("#tiket").textContent = short(d.tiket);
             $("#items").textContent = d.items.toLocaleString("id-ID") + " Item";
             $("#growth").textContent =
-                (d.growth >= 0 ? "↗ +" : "↘ ") + d.growth + "%";
+                (d.growth >= 0 ? "â†— +" : "â†˜ ") + d.growth + "%";
             $("#orders").textContent = d.orders + " Pesanan";
             const max = Math.max(...d.chart.map((c) => Number(c.v)), 1),
                 hi = d.selected ? d.chart.findIndex((c) => c.k === d.selected) : p === "month" ? new Date().getMonth() : d.chart.length - 1;
@@ -401,13 +412,13 @@ const PAGES = {
                 d.kategori
                     .map(
                         (k) =>
-                            `<div class="krow"><span>${kn[k.k]} (${short(k.h).replace("Rp ", "Rp ")})</span><b>${k.n} ${k.k === "minuman" ? "Botol" : "Porsi"}</b></div>`,
+                            `<div class="krow"><span>${kn[k.k]} (${short(k.h).replace("Rp ", "Rp ")})</span><b>${k.n} ${k.k === "minuman" ? "Botol minuman" : "Porsi"}</b></div>`,
                     )
                     .join("") || '<p class="empty">Belum ada data</p>';
             $("#top").innerHTML = d.top
                 .map(
                     (t, i) =>
-                        `<div class="prod rise" style="--i:${i}"><span class="rk">${i + 1}</span><img src="${productImage(t.gambar)}" alt=""><div><b>${t.nama}</b>${t.n} Terjual • ${rp(t.harga)}<span class="om"><span>Kontribusi Omzet</span><strong>${rp(t.om)}</strong></span></div></div>`,
+                        `<div class="prod rise" style="--i:${i}"><span class="rk">${i + 1}</span><img src="${productImage(t.gambar)}" alt=""><div><b>${t.nama}</b>${t.n} Terjual â€¢ ${rp(t.harga)}<span class="om"><span>Kontribusi Omzet</span><strong>${rp(t.om)}</strong></span></div></div>`,
                 )
                 .join("");
         }
@@ -440,7 +451,7 @@ const PAGES = {
         };
         const labels = {
             menunggu_pembayaran: "Menunggu pembayaran",
-            menunggu_validasi: "Menunggu validasi",
+            menunggu_validasi: "Menunggu verifikasi",
             diproses: "Sedang diproses",
             selesai: "Selesai",
             ditolak: "Ditolak",
@@ -458,11 +469,11 @@ const PAGES = {
                 $("#rejected-count").textContent = d.counts.rejected;
                 const capacity = d.capacity || { kapasitas: 0, pakai: 0 };
                 $("#orders-capacity").textContent =
-                    `${Number(capacity.pakai).toLocaleString("id-ID")} / ${Number(capacity.kapasitas).toLocaleString("id-ID")} porsi · sisa ${Math.max(0, capacity.kapasitas - capacity.pakai).toLocaleString("id-ID")} porsi`;
+                    `${Number(capacity.pakai).toLocaleString("id-ID")} / ${Number(capacity.kapasitas).toLocaleString("id-ID")} porsi Â· sisa ${Math.max(0, capacity.kapasitas - capacity.pakai).toLocaleString("id-ID")} porsi`;
                 list.innerHTML = d.items.map((order, index) =>
                     `<a class="ord owner-order" style="--i:${index}" href="order-detail.php?id=${Number(order.id)}">
                         <div class="h"><span>${esc(order.kode)}${order.sumber === "offline" ? ' <i class="owner-source">Offline</i>' : ""}</span>${statusBadge(order.status)}</div>
-                        <div class="b"><div><b>${esc(order.nama_pemesan)}</b><small>${esc(order.keterangan || "Tanpa catatan")} · Kirim ${esc(dateLabel(order.tgl_kirim))}</small></div><strong>${money(order.total)}</strong></div>
+                        <div class="b"><div><b>${esc(order.nama_pemesan)}</b><small>${esc(order.keterangan || "Tanpa catatan")} Â· Kirim ${esc(dateLabel(order.tgl_kirim))}</small></div><strong>${money(order.total)}</strong></div>
                         <div class="owner-order-meta"><span>${order.status_updated_at ? "Status sejak " + esc(dateLabel(order.status_updated_at, true)) : "Dibuat " + esc(dateLabel(order.created_at, true))}</span><span>Lihat detail &rarr;</span></div>
                     </a>`
                 ).join("") || '<p class="empty">Tidak ada pesanan untuk filter ini.</p>';
@@ -482,73 +493,79 @@ const PAGES = {
             timer = setTimeout(load, 250);
         };
 
+        // Owner bersifat read-only. Blok pesanan offline hanya dipasang bila
+        // kontrol mutasi memang tersedia di halaman (Admin), bukan di Owner.
         const dialog = $("#offline-order-dialog");
         const form = $("#offline-order-form");
         const dateInput = $("#offline-delivery-date");
         const menuList = $("#offline-menu-list");
-        const updateTotal = () => {
-            const total = $$("[data-offline-qty]", menuList).reduce((sum, input) =>
-                sum + (Number(input.value) || 0) * Number(input.dataset.price), 0);
-            $("#offline-order-total").textContent = money(total);
-        };
-        const loadOfflineProducts = async () => {
-            menuList.textContent = "Memuat menu dan kuota...";
-            $("#offline-menu-capacity").textContent = "";
-            try {
-                const data = await api("api/products.php?tgl_kirim=" + encodeURIComponent(dateInput.value));
-                offlineProducts = data.items;
-                $("#offline-menu-capacity").textContent = `Sisa dapur ${Number(data.kitchenRemaining).toLocaleString("id-ID")} porsi`;
-                menuList.innerHTML = offlineProducts.length ? offlineProducts.map((product) =>
-                    `<label class="owner-menu-item"><span><b>${esc(product.nama)}</b><small>${money(product.harga)} · sisa ${Number(product.sisa).toLocaleString("id-ID")} · minimal ${Number(product.min_pesan)} porsi</small></span>
-                    <input type="number" min="0" max="${Number(product.sisa)}" value="0" data-offline-qty data-product-id="${Number(product.id)}" data-price="${Number(product.harga)}" aria-label="Jumlah ${esc(product.nama)}"${Number(product.sisa) <= 0 ? " disabled" : ""}></label>`
-                ).join("") : '<p class="owner-muted">Belum ada menu yang tersedia.</p>';
-                updateTotal();
-            } catch (error) {
-                menuList.textContent = error.message;
-            }
-        };
-        $("#new-offline-order").onclick = () => {
-            form.reset();
-            const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-            dateInput.min = today;
-            dateInput.value = today;
-            form.elements.waktu_kirim.value = "12:00";
-            $("#offline-order-error").textContent = "";
-            dialog.showModal();
-            loadOfflineProducts();
-        };
-        $$("[data-close-offline-order]").forEach((button) => button.onclick = () => dialog.close());
-        dateInput.onchange = loadOfflineProducts;
-        menuList.oninput = updateTotal;
-        form.onsubmit = async (event) => {
-            event.preventDefault();
-            const items = $$("[data-offline-qty]", menuList)
-                .map((input) => ({ id: Number(input.dataset.productId), qty: Number(input.value) || 0 }))
-                .filter((item) => item.qty > 0);
-            if (!items.length) {
-                $("#offline-order-error").textContent = "Pilih jumlah untuk setidaknya satu menu.";
-                return;
-            }
-            const button = $("#save-offline-order");
-            button.disabled = true;
-            $("#offline-order-error").textContent = "";
-            try {
-                const values = Object.fromEntries(new FormData(form));
-                const result = await api("api/orders.php", {
-                    method: "POST",
-                    body: { ...values, action: "create_offline", items },
-                });
-                location.href = "order-detail.php?id=" + Number(result.id);
-            } catch (error) {
-                $("#offline-order-error").textContent = error.message;
-                button.disabled = false;
-            }
-        };
+        const hasOfflineControls = Boolean(dialog && form && $("#new-offline-order") && dateInput && menuList);
+        if (hasOfflineControls) {
+            const updateTotal = () => {
+                const total = $$("[data-offline-qty]", menuList).reduce((sum, input) =>
+                    sum + (Number(input.value) || 0) * Number(input.dataset.price), 0);
+                $("#offline-order-total").textContent = money(total);
+            };
+            const loadOfflineProducts = async () => {
+                menuList.textContent = "Memuat menu dan kuota...";
+                $("#offline-menu-capacity").textContent = "";
+                try {
+                    const data = await api("api/products.php?tgl_kirim=" + encodeURIComponent(dateInput.value));
+                    offlineProducts = data.items;
+                    $("#offline-menu-capacity").textContent = `Sisa dapur ${Number(data.kitchenRemaining).toLocaleString("id-ID")} porsi`;
+                    menuList.innerHTML = offlineProducts.length ? offlineProducts.map((product) =>
+                        `<label class="owner-menu-item"><span><b>${esc(product.nama)}</b><small>${money(product.harga)} Â· sisa ${Number(product.sisa).toLocaleString("id-ID")} Â· minimal ${Number(product.min_pesan)} porsi</small></span>
+                        <input type="number" min="0" max="${Number(product.sisa)}" value="0" data-offline-qty data-product-id="${Number(product.id)}" data-price="${Number(product.harga)}" aria-label="Jumlah ${esc(product.nama)}"${Number(product.sisa) <= 0 ? " disabled" : ""}></label>`
+                    ).join("") : '<p class="owner-muted">Belum ada menu yang tersedia.</p>';
+                    updateTotal();
+                } catch (error) {
+                    menuList.textContent = error.message;
+                }
+            };
+            $("#new-offline-order").onclick = () => {
+                form.reset();
+                const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+                dateInput.min = today;
+                dateInput.value = today;
+                form.elements.waktu_kirim.value = "12:00";
+                $("#offline-order-error").textContent = "";
+                dialog.showModal();
+                loadOfflineProducts();
+            };
+            $$("[data-close-offline-order]").forEach((button) => button.onclick = () => dialog.close());
+            dateInput.onchange = loadOfflineProducts;
+            menuList.oninput = updateTotal;
+            form.onsubmit = async (event) => {
+                event.preventDefault();
+                const items = $$("[data-offline-qty]", menuList)
+                    .map((input) => ({ id: Number(input.dataset.productId), qty: Number(input.value) || 0 }))
+                    .filter((item) => item.qty > 0);
+                if (!items.length) {
+                    $("#offline-order-error").textContent = "Pilih jumlah untuk setidaknya satu menu.";
+                    return;
+                }
+                const button = $("#save-offline-order");
+                button.disabled = true;
+                $("#offline-order-error").textContent = "";
+                try {
+                    const values = Object.fromEntries(new FormData(form));
+                    const result = await api("api/orders.php", {
+                        method: "POST",
+                        body: { ...values, action: "create_offline", items },
+                    });
+                    location.href = "order-detail.php?id=" + Number(result.id);
+                } catch (error) {
+                    $("#offline-order-error").textContent = error.message;
+                    button.disabled = false;
+                }
+            };
+        }
         load();
     },
     async detail() {
         const container = $("#order-detail");
         const id = Number(container.dataset.id);
+        const readOnly = document.body.dataset.role === "owner";
         const actions = $("#detail-actions");
         const money = (value) => rp(Number(value) || 0);
         const dateLabel = (value, withTime = false) => {
@@ -559,7 +576,7 @@ const PAGES = {
         };
         const labels = {
             menunggu_pembayaran: "Menunggu pembayaran",
-            menunggu_validasi: "Menunggu validasi",
+            menunggu_validasi: "Menunggu verifikasi",
             diproses: "Sedang diproses",
             selesai: "Selesai",
             ditolak: "Ditolak",
@@ -576,45 +593,60 @@ const PAGES = {
             const order = await api("api/orders.php?id=" + id);
             $("#detail-status").outerHTML = statusBadge(order.status);
             const rawProof = order.bukti_bayar || "";
-            const proof = rawProof
-                ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan"></a>`
-                : '<div class="owner-proof-empty">Belum ada bukti pembayaran</div>';
-            const receipt = `<div class="dbox"><b>Data pembayaran</b>
-                <div class="jd"><span>Nama pengirim</span><b>${esc(order.nama_pembayar || "-")}</b></div>
-                <div class="jd"><span>Nama pemesan</span><b>${esc(order.nama_pemesan || "-")}</b></div>
-                <div class="jd"><span>Nominal tagihan</span><b>${money(order.total)}</b></div>
-                <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div></div>`;
-            const validation = order.status === "menunggu_validasi";
-            const summary = `<div class="dbox">
-                <div class="row between"><div><small>${validation ? "VALIDASI PEMBAYARAN" : "DETAIL PESANAN"}</small><b class="owner-order-code">${esc(order.kode)}</b></div>${statusBadge(order.status)}</div>
-                <hr><div class="jd"><span>Dibuat</span><b>${esc(dateLabel(order.created_at, true))}</b></div>
-                <div class="jd"><span>Waktu status</span><b>${esc(dateLabel(order.status_updated_at, true))}</b></div>
-                <div class="jd"><span>Sumber pesanan</span><b>${order.sumber === "offline" ? "Offline (dicatat owner)" : "Online"}</b></div>
-                <div class="jd"><span>Nama penerima</span><b>${esc(order.nama_pemesan || "-")}</b></div>
-                <div class="jd"><span>Kontak penerima</span><b>${esc(order.telepon_penerima || order.phone || "-")}</b></div>
-                <div class="jd"><span>Alamat pengiriman</span><b>${esc(order.alamat_pengiriman || "-")}</b></div>
-                <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div>
-                <div class="jd"><span>Catatan pesanan</span><b>${esc(order.keterangan || "-")}</b></div>
-                <div class="jd owner-total"><span>Total pesanan</span><b>${money(order.total)}</b></div>
-            </div>`;
-            const paymentProof = `<div class="dbox"><b>Bukti transfer pelanggan</b>${proof}</div>${receipt}`;
-            const rejection = order.status === "ditolak" && order.alasan_penolakan
-                ? `<div class="dbox owner-rejection"><b>Alasan penolakan</b><p>${esc(order.alasan_penolakan)}</p></div>` : "";
+        const proof = rawProof
+            ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan" onerror="this.src='../assets/img/produk/NK-01.png'"></a>`
+            : '<div class="owner-proof-empty">Belum ada bukti pembayaran</div>';
+        const receipt = `<div class="dbox"><b>Data pembayaran</b>
+            <div class="jd"><span>Nama pengirim</span><b>${esc(order.nama_pembayar || "-")}</b></div>
+            <div class="jd"><span>Nama pemesan</span><b>${esc(order.nama_pemesan || "-")}</b></div>
+            <div class="jd"><span>Nominal tagihan</span><b>${money(order.total)}</b></div>
+            <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div></div>`;
+        const validation = order.status === "menunggu_validasi";
+        const summary = `<div class="dbox">
+            <div class="row between"><div><small>${validation ? "VALIDASI PEMBAYARAN" : "DETAIL PESANAN"}</small><b class="owner-order-code">${esc(order.kode)}</b></div>${statusBadge(order.status)}</div>
+            <hr><div class="jd"><span>Dibuat</span><b>${esc(dateLabel(order.created_at, true))}</b></div>
+            <div class="jd"><span>Waktu status</span><b>${esc(dateLabel(order.status_updated_at, true))}</b></div>
+            <div class="jd"><span>Sumber pesanan</span><b>${order.sumber === "offline" ? "Offline (dicatat owner)" : "Online"}</b></div>
+            <div class="jd"><span>Nama penerima</span><b>${esc(order.nama_pemesan || "-")}</b></div>
+            <div class="jd"><span>Kontak penerima</span><b>${esc(order.telepon_penerima || order.phone || "-")}</b></div>
+            <div class="jd"><span>Alamat pengiriman</span><b>${esc(order.alamat_pengiriman || "-")}</b></div>
+            <div class="jd"><span>Jadwal pengiriman</span><b>${esc(dateLabel(order.tgl_kirim, true))}</b></div>
+            <div class="jd"><span>Catatan pesanan</span><b>${esc(order.keterangan || "-")}</b></div>
+            <div class="jd owner-total"><span>Total pesanan</span><b>${money(order.total)}</b></div>
+        </div>`;
+        const paymentProof = `<div class="dbox"><b>Bukti transfer pelanggan</b>${proof}</div>${receipt}`;
+        const rejection = order.status === "ditolak" && order.alasan_penolakan
+            ? `<div class="dbox owner-rejection"><b>Alasan penolakan</b><p>${esc(order.alasan_penolakan)}</p></div>` : "";
             const menuItems = Array.isArray(order.menu) ? order.menu : [];
             const menu = `<div class="dbox"><div class="row between"><b>Daftar menu</b><span class="tag">${menuItems.length} jenis</span></div>
-                ${order.status === "diproses" ? '<p class="owner-muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' : ""}
-                ${menuItems.map((item) => `<label class="owner-menu-row"><input type="checkbox" data-item-check="${Number(item.item_id)}" ${item.sudah_dicek ? "checked" : ""} ${order.status === "diproses" ? "" : "disabled"}>
-                    <span><b>${esc(item.nama)}</b><small>${Number(item.qty).toLocaleString("id-ID")} porsi · ${money(item.harga)} / porsi</small></span><strong>${money(item.subtotal)}</strong></label>`).join("") || '<p class="owner-muted">Daftar menu tidak tersedia.</p>'}
-            </div>`;
-            const photos = Array.isArray(order.foto_kiriman_list) ? order.foto_kiriman_list : (order.foto_kiriman ? [order.foto_kiriman] : []);
-            const dispatchPhotos = photos.length
-                ? `<div class="owner-dispatch-photos">${photos.map((photo) => `<a href="${esc(imageUrl(photo))}" target="_blank" rel="noopener"><img src="${esc(imageUrl(photo))}" alt="Foto makanan yang akan dikirim"></a>`).join("")}</div>`
-                : '<p class="owner-muted">Belum ada foto makanan yang diunggah.</p>';
-            const dispatch = ["diproses", "selesai"].includes(order.status)
-                ? `<div class="dbox"><b>Foto makanan siap kirim</b>${dispatchPhotos}
-                    ${order.status === "diproses" ? '<form id="dispatch-photo-form" class="owner-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="owner-secondary">Simpan foto</button><span id="dispatch-photo-error" class="owner-error"></span></form>' : ""}
-                </div>` : "";
-            container.innerHTML = summary + (validation ? paymentProof : rejection) + menu + dispatch;
+            ${order.status === "diproses" ? '<p class="owner-muted">Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.</p>' : ""}
+            ${menuItems.map((item) => `<label class="owner-menu-row"><input type="checkbox" data-item-check="${Number(item.item_id)}" ${item.sudah_dicek ? "checked" : ""} disabled>
+                <span><b>${esc(item.nama)}</b><small>${Number(item.qty).toLocaleString("id-ID")} porsi Â· ${money(item.harga)} / porsi</small></span><strong>${money(item.subtotal)}</strong></label>`).join("") || '<p class="owner-muted">Daftar menu tidak tersedia.</p>'}
+        </div>`;
+
+        const menuNotices = Array.isArray(order.menu_notifications) ? order.menu_notifications : [];
+        const noticeLabels = {
+            menunggu_respons: 'Menunggu respons pelanggan',
+            menunggu_konfirmasi: 'Menunggu konfirmasi Admin',
+            menunggu_tindak_lanjut: 'Menunggu tindak lanjut Admin',
+            dikonfirmasi: 'Perubahan dikonfirmasi Admin',
+            selesai: 'Tindak lanjut selesai',
+        };
+        const menuNoticeSection = menuNotices.length
+            ? `<div class="dbox"><div class="row between"><b>Notifikasi perubahan menu</b><span class="tag">${menuNotices.length}</span></div>
+                ${menuNotices.map(notice => `<div class="jd"><span><b>${esc(notice.nama_produk_snapshot || notice.nama_produk_lama_snapshot || 'Menu')}</b></span><span>${esc(noticeLabels[notice.status_respons] || notice.status_respons || '')}</span></div>
+                ${notice.catatan_admin ? `<div class="jd"><span>Catatan</span><b>${esc(notice.catatan_admin)}</b></div>` : ''}`).join('')}
+            </div>`
+            : '';
+        const photos = Array.isArray(order.foto_kiriman_list) ? order.foto_kiriman_list : (order.foto_kiriman ? [order.foto_kiriman] : []);
+        const dispatchPhotos = photos.length
+            ? `<div class="owner-dispatch-photos">${photos.map((photo) => `<a href="${esc(imageUrl(photo))}" target="_blank" rel="noopener"><img src="${esc(imageUrl(photo))}" alt="Foto makanan yang akan dikirim" onerror="this.src='../assets/img/produk/NK-01.png'"></a>`).join("")}</div>`
+            : '<p class="owner-muted">Belum ada foto makanan yang diunggah.</p>';
+        const dispatch = ["diproses", "selesai"].includes(order.status)
+            ? `<div class="dbox"><b>Foto makanan siap kirim</b>${dispatchPhotos}
+                ${order.status === "diproses" && !readOnly ? '<form id="dispatch-photo-form" class="owner-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="owner-secondary">Simpan foto</button><span id="dispatch-photo-error" class="owner-error"></span></form>' : ""}
+            </div>` : "";
+        container.innerHTML = summary + paymentProof + (validation ? "" : rejection) + menu + menuNoticeSection + dispatch;
 
             const rejectionDialog = $("#reject-order-dialog");
             const rejectionForm = $("#reject-order-form");
@@ -625,8 +657,8 @@ const PAGES = {
                 menunggu_validasi: ["reject", "validate"],
                 diproses: ["complete"],
             }[order.status] || [];
-            actions.hidden = !availableActions.length;
-            $$("[data-order-action]").forEach((button) => {
+            if (actions) actions.hidden = !availableActions.length || readOnly;
+            if (!readOnly) $$("[data-order-action]").forEach((button) => {
                 const action = button.dataset.orderAction;
                 button.hidden = !availableActions.includes(action);
                 button.onclick = async () => {
@@ -743,7 +775,14 @@ const PAGES = {
                 `api/products.php?kategori=${k}&q=${encodeURIComponent($("#q").value)}`,
             );
             $("#cs").textContent = d.count.semua;
-            if ($('#quota-summary'))$('#quota-summary').textContent='Kapasitas dapur '+d.maxKitchen+' porsi · Terpakai '+d.kitchenUsed+' porsi · Sisa '+d.kitchenRemaining+' porsi';
+            if ($('#quota-summary')) {
+                const quotaDate = $('#quota-date')?.value || '';
+                const quotaLabel = quotaDate ? new Date(quotaDate + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+                }) : '';
+                $('#quota-summary').textContent = (quotaLabel ? 'Tanggal ' + quotaLabel + ' Â· ' : '')
+                    + 'Kapasitas dapur ' + d.maxKitchen + ' porsi Â· Terpakai ' + d.kitchenUsed + ' porsi Â· Sisa ' + d.kitchenRemaining + ' porsi';
+            }
             $("#ck").textContent = d.count.kritis;
             $("#plist").innerHTML =
                 d.items
@@ -751,7 +790,7 @@ const PAGES = {
                         const pct = p.kuota>0?(p.sisa / p.kuota) * 100:0;
                         const img = p.gambar ? `<img src="../${p.gambar}" alt="${p.nama}" onerror="this.src='../assets/img/produk/NK-01.png'">` : '<img src="../assets/img/produk/NK-01.png" alt="placeholder">';
                         const unavailable = d.tanggal_libur ? "libur" : p.sisa <= 0 ? "habis" : "";
-                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · ${p.sisa}/${p.kuota} porsi${unavailable ? " · " + unavailable : ""}</small><div class="meter${!d.tanggal_libur && pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
+                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} Â· ${p.sisa}/${p.kuota} porsi${unavailable ? " Â· " + unavailable : ""}</small><div class="meter${!d.tanggal_libur && pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
                     })
                     .join("") || '<p class="empty">Produk tidak ditemukan</p>';
             requestAnimationFrame(() =>

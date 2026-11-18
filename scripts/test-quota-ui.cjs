@@ -8,7 +8,7 @@ const fs = require("node:fs"),
     ["public/assets/js/app.js", "opt"],
   ]) {
     const source = fs.readFileSync(file, "utf8");
-    const start = source.indexOf("async function api("),
+    const start = source.indexOf("// Token CSRF dari meta tag layout"),
       end = source.indexOf("\nfunction toast(", start);
     let requested;
     const context = {
@@ -18,6 +18,11 @@ const fs = require("node:fs"),
       page: "products",
       appPrefix: "../",
       $: () => ({ value: "2030-01-11" }),
+      // Meta tag CSRF seperti layout asli (D1).
+      document: {
+        querySelector: (selector) =>
+          selector === 'meta[name="csrf-token"]' ? { content: "quota-ui-test" } : null,
+      },
       fetch: async (url) => {
         requested = url;
         return { status: 200, ok: true, json: async () => ({}) };
@@ -152,6 +157,7 @@ const fs = require("node:fs"),
     setTimeout: () => {},
     document: {
       body: { dataset: { page: "test" }, classList: { toggle() {} } },
+      addEventListener() {},
       querySelector: (s) => (elements[s] ??= element()),
       querySelectorAll: () => [],
     },

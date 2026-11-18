@@ -42,9 +42,21 @@ vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail(')
         if (status === 'dibatalkan') assert.match(html, /<h3>Refund<\/h3>/);
         if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat pembayaran telah berakhir/);
     }
+    detail = { id: 2, kode: 'RESCHEDULE', items: [], status: 'diproses', can_cancel: true,
+        can_upload_proof: false, reschedule_offer: { status_tawaran: 'menunggu', alasan: 'Tanggal lama ditutup',
+            tanggal_asal: '2030-11-20', tanggal_usulan: '2030-11-22', berlaku_sampai: '2030-11-19T12:00:00+07:00', dibuat_at: '2030-11-18T12:00:00+07:00' },
+        can_respond_reschedule: true };
+    await context.openHistoryDetail(2);
+    const offerHtml = elements['#history-detail'].innerHTML;
+    assert.match(offerHtml, /Tawaran jadwal pengganti/);
+    assert.match(offerHtml, /Tanggal lama ditutup/);
+    assert.match(offerHtml, /id="accept-reschedule"/);
+    assert.match(offerHtml, /id="reject-reschedule"/);
+    assert.doesNotMatch(offerHtml, /id="cancel-order-btn"/);
+    assert.doesNotMatch(offerHtml, /id="proof-form"/);
     detail = { id: 1, items: [], status: 'selesai', can_cancel: false, can_upload_proof: false,
         foto_kiriman_list: ['uploads/dispatch/one.jpg', 'uploads/dispatch/two.jpg', 'uploads/dispatch/three.jpg'] };
     await context.openHistoryDetail(1);
     assert.equal((elements['#history-detail'].innerHTML.match(/class="uploaded-proof"/g) || []).length, 3);
-    console.log('PASS: Enam skenario detail mengikuti izin server, tenggat upload, dan konfirmasi refund penuh');
+    console.log('PASS: Detail mengikuti izin server, tenggat upload, konfirmasi refund, dan respons tawaran jadwal');
 })().catch(error => { console.error(error); process.exitCode = 1; });

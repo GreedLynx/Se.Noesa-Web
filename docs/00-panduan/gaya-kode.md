@@ -63,7 +63,7 @@ perubahan bila berbeda, kecuali aturan keamanan dan bisnis di bawah.
 ## Dokumentasi dan commit
 
 - Perubahan endpoint, basis data, atau lokasi kode harus memperbarui
-  `docs/api.md`, `docs/database.md`, atau `docs/peta-kode.md` yang relevan.
+  `docs/01-spesifikasi/api.md`, `docs/01-spesifikasi/database.md`, atau `docs/00-panduan/peta-kode.md` yang relevan.
 - Gunakan Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, atau
   `chore:`.
 - Jangan memasukkan `.env`, kredensial, atau unggahan pengguna ke commit.

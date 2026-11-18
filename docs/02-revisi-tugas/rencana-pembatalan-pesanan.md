@@ -55,8 +55,8 @@ keadaan saat rencana ditulis adalah catatan sebelum implementasi.
 **How this serves the primary goal:** memastikan aturan baru memakai alur nyata
 dan tidak menduplikasi endpoint yang sudah ada.
 
-Sudah dibaca: `docs/peta-kode.md`, `docs/aturan-bisnis.md`, `docs/api.md`,
-`docs/database.md`, endpoint pelanggan/Admin, helper kuota, skema dan migrasi.
+Sudah dibaca: `docs/00-panduan/peta-kode.md`, `docs/01-spesifikasi/aturan-bisnis.md`, `docs/01-spesifikasi/api.md`,
+`docs/01-spesifikasi/database.md`, endpoint pelanggan/Admin, helper kuota, skema dan migrasi.
 `.opencode/revisi.md` tidak tersedia pada pemeriksaan sesi ini.
 
 Temuan:
@@ -205,8 +205,8 @@ dan laporan tidak memperlakukan pesanan batal sebagai transaksi berhasil.
   batal jika definisi total adalah semua pesanan; dokumentasikan definisinya.
 - UI pelanggan sudah punya label batal. Catat handoff penyelarasan tombol H-2,
   status/filter Admin/Owner dan deadline; backend menjadi sumber kebenaran.
-- Perbarui `docs/api.md`, `docs/database.md`, `docs/peta-kode.md`,
-  `docs/aturan-bisnis.md` dan README pada commit implementasi yang sama.
+- Perbarui `docs/01-spesifikasi/api.md`, `docs/01-spesifikasi/database.md`, `docs/00-panduan/peta-kode.md`,
+  `docs/01-spesifikasi/aturan-bisnis.md` dan README pada commit implementasi yang sama.
 
 Rujukan: API dashboard/orders Admin/Owner, customer.js cancel_order/status.
 Verifikasi: pendapatan tetap, pesanan batal terakses pemilik/Admin,

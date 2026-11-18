@@ -9,6 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   json(['error' => 'Metode request tidak didukung'], 405);
 }
 
+// Alur reset password tetap public (tanpa sesi user), tetapi token CSRF dari
+// halaman forgot-password tetap diwajibkan agar form tidak bisa dipicu lintas situs.
+csrf_require();
+
 $request = body();
 $action = $request['action'] ?? '';
 

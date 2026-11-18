@@ -10,7 +10,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
         && in_array($parts['path'] ?? '', ['dashboard.php', 'orders.php'], true)) {
         $filters = [];
         $valid = true;
-        $allowed = $parts['path'] === 'orders.php' ? ['tgl_kirim', 'tab', 'review', 'q'] : ['tgl_kirim'];
+        $allowed = $parts['path'] === 'orders.php' ? ['tgl_kirim', 'tab', 'review', 'source', 'q'] : ['tgl_kirim'];
         foreach (explode('&', $parts['query'] ?? '') as $pair) {
             if ($pair === '') continue;
             [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
@@ -22,6 +22,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
             }
             if ($key === 'tab' && !in_array($value, ['semua', 'pembayaran', 'validasi', 'proses', 'selesai', 'ditolak', 'dibatalkan'], true)) $valid = false;
             if ($key === 'review' && !in_array($value, ['unreviewed', 'reviewed'], true)) $valid = false;
+            if ($key === 'source' && !in_array($value, ['pelanggan', 'otomatis', 'lainnya'], true)) $valid = false;
             if ($key === 'tgl_kirim') {
                 $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
                 if (!$date || $date->format('Y-m-d') !== $value) $valid = false;
@@ -29,7 +30,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
             $filters[$key] = $value;
         }
         if ($valid) {
-            if (($filters['tab'] ?? '') !== 'dibatalkan') unset($filters['review']);
+            if (($filters['tab'] ?? '') !== 'dibatalkan') unset($filters['review'], $filters['source']);
             $backUrl = $parts['path'] . ($filters ? '?' . http_build_query($filters, '', '&', PHP_QUERY_RFC3986) : '');
         }
     }
@@ -50,6 +51,9 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
     </article>
 </div>
 <div class="detail-actions" id="detail-actions" hidden>
+    <button class="button secondary" data-order-action="offer_reschedule">
+        Tawarkan jadwal pengganti
+    </button>
     <button class="button primary" data-order-action="review_cancellation">
         Sudah ditinjau
     </button>
@@ -85,6 +89,31 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
         <div class="dialog-actions">
             <button type="button" class="button secondary" data-cancel-rejection>Batal</button>
             <button type="submit" class="button danger-outline">Tolak pembayaran</button>
+        </div>
+    </form>
+</dialog>
+<dialog id="reschedule-order-dialog" class="product-dialog reject-order-dialog" aria-labelledby="reschedule-order-title">
+    <form id="reschedule-order-form">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">JADWAL PENGGANTI</p>
+                <h2 id="reschedule-order-title">Tawarkan tanggal baru</h2>
+            </div>
+            <button type="button" class="icon-close" data-cancel-reschedule aria-label="Tutup">&times;</button>
+        </div>
+        <p class="muted">Kuota tanggal baru akan diperiksa kembali ketika pelanggan menerima tawaran.</p>
+        <p id="reschedule-payment-note" class="muted" hidden>Mengirim tawaran ini menyatakan pembayaran sudah valid. Jika pelanggan menerima, pesanan langsung berstatus Diproses.</p>
+        <label for="reschedule-date">Tanggal pengiriman baru
+            <input id="reschedule-date" name="tanggal_usulan" type="date" required>
+        </label>
+        <label for="reschedule-reason">Alasan perubahan jadwal
+            <textarea id="reschedule-reason" name="alasan" rows="4" maxlength="500" required
+                placeholder="Contoh: Operasional pada tanggal sebelumnya ditutup."></textarea>
+        </label>
+        <p id="reschedule-order-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+            <button type="button" class="button secondary" data-cancel-reschedule>Batal</button>
+            <button type="submit" class="button primary">Kirim tawaran</button>
         </div>
     </form>
 </dialog>

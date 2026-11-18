@@ -7,6 +7,11 @@ const start = source.indexOf('async function orderDetail() {');
 const end = source.indexOf('\nshell();', start);
 const uploadStart = source.indexOf('async function uploadDispatchPhoto(');
 const uploadEnd = source.indexOf('\nfunction toast(', uploadStart);
+// Helper CSRF didefinisikan sebelum api(); sertakan agar upload langsung punya token.
+const csrfHelpers = source.slice(
+    source.indexOf('// Token CSRF dari meta tag layout'),
+    source.indexOf('async function api('),
+);
 assert.notEqual(start, -1, 'orderDetail function exists');
 assert.notEqual(end, -1, 'orderDetail function boundary exists');
 assert.notEqual(uploadStart, -1, 'uploadDispatchPhoto function exists');
@@ -21,7 +26,7 @@ const uploadedPhotos = [];
 const postedActions = [];
 const timers = [];
 let reviewFails = false, confirmed = true, confirmation = '', reloaded = 0;
-const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false }));
+const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation', 'offer_reschedule'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false }));
 const orderResponse = {
     id: 42,
     kode: 'ORD-42',
@@ -175,16 +180,34 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(rejectedDetail, /&lt;script&gt;/);
     assert.doesNotMatch(rejectedDetail, /<script>/);
 
+    orderResponse.status = 'diproses';
+    orderResponse.menu = [{ nama: 'Menu uji', qty: 2, harga: 10, subtotal: 20, item_id: 1, sudah_dicek: false }];
+    orderResponse.reschedule_offer = { status_tawaran: 'menunggu', status_asal: 'diproses', tanggal_asal: '2030-11-20',
+        tanggal_usulan: '2030-11-22', alasan: 'Tanggal lama ditutup', dibuat_at: '2030-11-18T10:00:00+07:00', berlaku_sampai: '2030-11-19T10:00:00+07:00' };
+    orderResponse.can_offer_reschedule = true;
+    await context.orderDetail();
+    const pendingOfferDetail = elements.get('#order-detail').innerHTML;
+    assert.match(pendingOfferDetail, /Jeda produksi/);
+    assert.match(pendingOfferDetail, /data-item-check="1"[^>]*disabled/);
+    assert.doesNotMatch(pendingOfferDetail, /id="dispatch-photo-form"/);
+    assert.equal(actionButtons.find(button => button.dataset.orderAction === 'complete').hidden, true);
+    assert.equal(actionButtons.find(button => button.dataset.orderAction === 'offer_reschedule').hidden, false);
+
     const formEntries = [];
     let responseText = '<br /><b>Warning</b>: POST Content-Length exceeded {"ok":true}';
     const uploadContext = {
         FormData: class {
             append(...entry) { formEntries.push(entry); }
         },
+        // Meta tag CSRF seperti layout asli (D1).
+        document: {
+            querySelector: (selector) =>
+                selector === 'meta[name="csrf-token"]' ? { content: 'detail-test' } : null,
+        },
         fetch: async () => ({ text: async () => responseText, ok: true }),
     };
     vm.createContext(uploadContext);
-    vm.runInContext(source.slice(uploadStart, uploadEnd), uploadContext);
+    vm.runInContext(csrfHelpers + source.slice(uploadStart, uploadEnd), uploadContext);
     await uploadContext.uploadDispatchPhoto(42, { name: 'menu.jpg' });
     assert.deepEqual(formEntries.map(([name]) => name), ['action', 'id', 'foto_kiriman[]']);
     responseText = '<br /><b>Warning</b>: POST Content-Length exceeds post_max_size';

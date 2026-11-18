@@ -13,6 +13,7 @@ function valid_holiday_date($value): bool
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require();
     $request = body();
     $action = $request['action'] ?? 'save';
     $db = db();

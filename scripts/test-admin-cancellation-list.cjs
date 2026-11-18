@@ -39,7 +39,11 @@ vm.runInContext('api = globalThis.testApi;', context);
 
 (async () => {
     context.ordersPage();
+    node('#cancellation-source').value = 'pelanggan';
+    node('#cancellation-source').onchange();
+    assert.equal(new URL(context.location.href).searchParams.get('source'), 'pelanggan');
     await context.loadOrders();
+    assert.match(requested, /source=pelanggan/);
     assert.match(requested, /tab=dibatalkan/);
     assert.match(requested, /review=unreviewed/);
     assert.equal(node('#cancellation-review-filter').hidden, false);
@@ -62,6 +66,7 @@ vm.runInContext('api = globalThis.testApi;', context);
     await context.loadOrders();
     assert.match(requested, /tab=selesai/);
     assert.doesNotMatch(requested, /review=/);
+    assert.equal(new URL(context.location.href).searchParams.has('source'), false);
     assert.equal(node('#cancellation-review-filter').hidden, true);
 
     context.location.search = '?tab=invalid&review=invalid';
