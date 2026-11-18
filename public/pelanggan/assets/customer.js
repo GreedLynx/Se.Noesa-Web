@@ -83,23 +83,226 @@ function imagePath(name) {
 
 let catalog = [], productCache = {
 }, category = '', schedule = null, catalogClosed = false, cart = {
-}, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
+}, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [], detailOpener = null;
+function dateLabelShort(value) {
+    const d = new Date(value + 'T00:00:00+07:00');
+    return new Intl.DateTimeFormat('id-ID', {
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+    }).format(d);
+}
+
+/* ---------- Kalender jadwal pengiriman ---------- */
+const CAL = {min: '', holidays: [], month: null, selected: '', cache: {}, ticket: 0};
+
+// Tanggal ISO ('YYYY-MM-DD') diubah ke Date lokal khusus aritmetika kalender.
+const isoOf = value => {
+    const [y, m, d] = String(value || '').split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+};
+const isoDate = d => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+const monthIndex = d => d.getFullYear() * 12 + d.getMonth();
+
+function shortDate(value) {
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+    }).format(new Date(value + 'T00:00:00+07:00'));
+}
+
+function isHolidayDate(value) {
+    return CAL.holidays.some(r => value >= r.mulai && value <= r.selesai);
+}
+
+function calendarInit() {
+    const input = $('#catalog-delivery-date'), cfg = window.customerCalendar || {};
+    CAL.min = input?.min || cfg.minDate || input?.value || '';
+    CAL.holidays = Array.isArray(cfg.holidays) ? cfg.holidays.filter(r => r && r.mulai && r.selesai) : [];
+}
+
+function slotBadgeClass(kind) {
+    const tone = {
+        ok: 'bg-primary-fixed text-on-primary-fixed',
+        full: 'bg-error-container text-on-error-container',
+        checking: 'bg-surface-container text-on-surface-variant'
+    }[kind] || 'bg-surface-container text-on-surface-variant';
+    return 'px-2 py-0.5 rounded-full font-semibold shrink-0 ' + tone;
+}
+
+function syncCalendarSelection() {
+    const short = $('#calendar-selected-label'), sub = $('#calendar-confirm-sub');
+    if (short) short.textContent = CAL.selected ? shortDate(CAL.selected) : '—';
+    if (sub) sub.textContent = CAL.selected ? dateLabelShort(CAL.selected) : 'Pilih tanggal pada kalender';
+}
+
+function syncCalendarNav() {
+    const prev = $('#calendar-prev'), next = $('#calendar-next');
+    if (!prev || !next || !CAL.month || !CAL.min) return;
+    const first = isoOf(CAL.min);
+    prev.disabled = monthIndex(CAL.month) <= monthIndex(first);
+    // Libur operasional hanya dikirim untuk ~5 bulan ke depan; batasi navigasi sejauh itu.
+    next.disabled = monthIndex(CAL.month) >= monthIndex(first) + 5;
+}
+
+function renderCalendar() {
+    const grid = $('#calendar-days');
+    if (!grid || !CAL.month) return;
+    $('#calendar-month-label').textContent = new Intl.DateTimeFormat('id-ID', {
+        month: 'long', year: 'numeric'
+    }).format(CAL.month);
+
+    const year = CAL.month.getFullYear(), month = CAL.month.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Senin = kolom pertama
+    const cells = [];
+
+    for (let i = 0; i < firstWeekday; i++) cells.push('<span class="w-full max-w-[2.25rem] aspect-square"></span>');
+    for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(year, month, day);
+        const iso = isoDate(date);
+        const holiday = isHolidayDate(iso);
+        const tooEarly = iso < CAL.min;
+        const selected = iso === CAL.selected;
+
+        if (selected) {
+            cells.push('<button type="button" data-day="' + iso + '" aria-current="date" aria-label="'
+                + esc(dateLabelShort(iso)) + ' (dipilih)" class="relative w-full max-w-[2.25rem] aspect-square rounded-full bg-primary text-on-primary font-headline-sm text-headline-sm flex items-center justify-center shadow-md ring-2 ring-primary-fixed/60 active:scale-95 transition-all">'
+                + day + '<span class="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span></button>');
+        } else if (holiday || tooEarly) {
+            const reason = holiday ? 'Hari libur operasional' : 'Minimal pemesanan H-7';
+            cells.push('<span role="img" aria-label="' + day + ' ' + reason + '" title="' + reason
+                + '" class="w-full max-w-[2.25rem] aspect-square rounded-full flex items-center justify-center font-body-sm text-body-sm text-outline-variant/50 '
+                + (holiday ? 'line-through' : '') + '">' + day + '</span>');
+        } else {
+            cells.push('<button type="button" data-day="' + iso + '" aria-label="' + esc(dateLabelShort(iso))
+                + '" class="w-full max-w-[2.25rem] aspect-square rounded-full flex items-center justify-center font-body-md text-body-md '
+                + (date.getDay() === 0 ? 'text-tertiary' : 'text-primary')
+                + ' hover:bg-surface-container active:scale-95 transition-all">' + day + '</button>');
+        }
+    }
+
+    grid.innerHTML = cells.join('');
+    $$('[data-day]', grid).forEach(btn => btn.onclick = () => selectCalendarDate(btn.dataset.day));
+    syncCalendarNav();
+    syncCalendarSelection();
+}
+
+function shiftCalendarMonth(step) {
+    if (!CAL.month) return;
+    const base = isoOf(CAL.min || CAL.selected);
+    const target = new Date(CAL.month.getFullYear(), CAL.month.getMonth() + step, 1);
+    if (monthIndex(target) < monthIndex(base) || monthIndex(target) > monthIndex(base) + 5) return;
+    CAL.month = target;
+    renderCalendar();
+}
+
+function applySlotState(iso, info) {
+    const badge = $('#calendar-slot-badge'), confirm = $('#calendar-confirm');
+    if (!badge || !confirm) return;
+    const closed = Boolean(info.closed) || isHolidayDate(iso);
+    const full = !closed && Number(info.remaining) <= 0;
+    const kind = closed || full ? 'full' : 'ok';
+    badge.className = slotBadgeClass(kind);
+    badge.textContent = closed ? 'Libur' : (full ? 'Kuota Penuh' : 'Sisa ' + Number(info.remaining) + ' Slot');
+    confirm.disabled = closed || full;
+}
+
+async function updateCalendarAvailability() {
+    const badge = $('#calendar-slot-badge'), confirm = $('#calendar-confirm');
+    const iso = CAL.selected;
+    if (!badge || !confirm || !iso) return;
+
+    const cached = CAL.cache[iso];
+    if (cached) {
+        applySlotState(iso, cached);
+        return;
+    }
+
+    badge.className = slotBadgeClass('checking');
+    badge.textContent = 'Memeriksa…';
+    confirm.disabled = true;
+    const ticket = ++CAL.ticket;
+
+    let info;
+    try {
+        const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(iso));
+        info = {
+            closed: Boolean(d.tanggal_libur),
+            remaining: Number(d.kitchenRemaining) || 0
+        };
+        CAL.cache[iso] = info;
+    } catch (err) {
+        if (ticket !== CAL.ticket || iso !== CAL.selected) return;
+        badge.className = slotBadgeClass('checking');
+        badge.textContent = 'Kuota tidak diketahui';
+        confirm.disabled = false;
+        return;
+    }
+    if (ticket !== CAL.ticket || iso !== CAL.selected) return;
+    applySlotState(iso, info);
+}
+
+function selectCalendarDate(iso) {
+    if (!iso || (CAL.min && iso < CAL.min) || isHolidayDate(iso)) return;
+    const base = isoOf(iso);
+    CAL.selected = iso;
+    CAL.month = new Date(base.getFullYear(), base.getMonth(), 1);
+    renderCalendar();
+    updateCalendarAvailability();
+}
+
+function openDateModal() {
+    calendarInit();
+    const input = $('#catalog-delivery-date');
+    const current = input.value && input.value >= CAL.min ? input.value : CAL.min;
+    CAL.selected = current;
+    const base = isoOf(current);
+    CAL.month = new Date(base.getFullYear(), base.getMonth(), 1);
+
+    const root = $('#date-sheet-root');
+    if (!root) return;
+    root.classList.remove('hidden');
+    root.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('calendar-open');
+    renderCalendar();
+    updateCalendarAvailability();
+    $('#date-sheet')?.focus();
+}
+
+function closeDateModal() {
+    const root = $('#date-sheet-root');
+    if (!root) return;
+    root.classList.add('hidden');
+    root.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('calendar-open');
+    $('#open-date-picker')?.focus();
+}
+
+function confirmDeliveryDate() {
+    const confirm = $('#calendar-confirm');
+    if (!CAL.selected || confirm?.disabled) return;
+    const input = $('#catalog-delivery-date');
+    input.value = CAL.selected;
+    $('#selected-date-text').textContent = dateLabelShort(CAL.selected);
+    closeDateModal();
+    refreshCatalog(true);
+}
+
 function catalogPage() {
     const search = $('#catalog-search'),
-        filters = $$('.customer-category-rail [data-category]');
+        filters = $$('.category-chip');
     const syncFilters = () => filters.forEach(x => {
         const active = x.dataset.category === category;
-        x.classList.toggle('active', active);
-        x.setAttribute('aria-pressed', active);
+        x.classList.toggle('bg-primary', active);
+        x.classList.toggle('text-on-primary', active);
+        x.classList.toggle('bg-surface-container', !active);
+        x.classList.toggle('text-on-surface-variant', !active);
+        x.setAttribute('aria-pressed', String(active));
     });
 
     syncFilters();
     filters.forEach(b => b.onclick = () => {
         if (category === b.dataset.category) return;
-
         category = b.dataset.category;
         syncFilters();
-        $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
         refreshCatalog(true);
     });
 
@@ -113,19 +316,19 @@ function catalogPage() {
         openCheckout()
     };
     $$('[data-close-cart]').forEach(b => b.onclick = () => $('#cart-dialog').close());
-    $$('[data-close-detail]').forEach(b => b.onclick = () => $('#detail-dialog').close());
+    $$('[data-close-detail]').forEach(b => b.onclick = closeDetail);
 
-    const detailDialog = $('#detail-dialog'),
+    const detailDialog = $('#detail-sheet-root'),
         detailContent = $('#detail-content'),
         cartDialog = $('#cart-dialog'),
         checkoutDialog = $('#checkout-dialog');
     detailContent.addEventListener('click', e => {
-        if (e.target.closest('.quantity-control')) e.stopPropagation()
+        if (e.target.closest('.sheet-qty')) e.stopPropagation()
     });
-    // Pola yang sama dengan detail/history dialog: klik backdrop menutup,
-    // klik di dalam konten tidak menutup. Escape/fokus tetap ditangani native <dialog>.
-    detailDialog.addEventListener('click', e => {
-        if (e.target === detailDialog) detailDialog.close()
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (detailDialog && !detailDialog.classList.contains('hidden')) closeDetail();
+        if (!$('#date-sheet-root').classList.contains('hidden')) closeDateModal();
     });
     cartDialog.addEventListener('click', e => {
         if (e.target === cartDialog) cartDialog.close()
@@ -136,7 +339,16 @@ function catalogPage() {
     $$('[data-close-checkout]').forEach(b => b.onclick = () => checkoutDialog.close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
-    $('#catalog-delivery-date').onchange = () => refreshCatalog();
+    $('#catalog-delivery-date').onchange = () => {
+        $('#selected-date-text').textContent = dateLabelShort($('#catalog-delivery-date').value);
+        refreshCatalog();
+    };
+    $('#open-date-picker').onclick = openDateModal;
+    $('#close-date-sheet').onclick = closeDateModal;
+    $('[data-close-date-sheet]').onclick = closeDateModal;
+    $('#calendar-prev').onclick = () => shiftCalendarMonth(-1);
+    $('#calendar-next').onclick = () => shiftCalendarMonth(1);
+    $('#calendar-confirm').onclick = confirmDeliveryDate;
     $('#checkout-form').elements.tgl_kirim.onchange = async e => {
         $('#catalog-delivery-date').value = e.target.value;
         $('#catalog-delivery-date').dispatchEvent(new Event('input', { bubbles: true }));
@@ -151,31 +363,54 @@ function catalogPage() {
         }
     };
 
+    const selected = $('#catalog-delivery-date').value;
+    $('#selected-date-text').textContent = dateLabelShort(selected);
     refreshCatalog();
 }
 async function refreshCatalog(animate = false) {
     try {
         await loadCatalog(animate);
     } catch (err) {
-        const grid = $('#menu-grid');
-        grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
+        const grid = $('#menu-container');
+        grid.innerHTML = '<div class="text-center py-8 text-body-sm text-error">' + esc(err.message)
+            + ' <button type="button" class="px-3 py-1.5 rounded-full bg-surface-container text-primary font-label-md" data-retry-catalog>Coba lagi</button></div>';
         $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
     }
 }
+
+function updateChefSpotlight(items) {
+    if (!Array.isArray(items) || !items.length) return;
+    const featured = items.find(p => p.kategori === 'makanan') || items[0];
+    const name = $('#chef-name'), price = $('#chef-price'), image = $('#chef-image'), badge = $('#chef-badge'), order = $('#chef-order');
+    if (name) name.textContent = featured.nama;
+    if (price) price.textContent = money(featured.harga);
+    if (image) image.src = imagePath(featured.gambar);
+    if (badge) badge.textContent = 'Sisa ' + Number(featured.sisa) + ' porsi';
+    if (order) order.onclick = () => showProduct(featured);
+}
+
 async function loadCatalog(animate = false) {
-    const grid = $('#menu-grid');
+    const grid = $('#menu-container');
     grid.classList.remove('category-transition');
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
     catalogClosed = Boolean(d.tanggal_libur);
+    // Simpan sisa kapasitas tanggal ini agar kalender tidak perlu permintaan ulang.
+    if (d.tanggal) CAL.cache[d.tanggal] = {
+        closed: Boolean(d.tanggal_libur),
+        remaining: Number(d.kitchenRemaining) || 0
+    };
     $('#delivery-hint').textContent = catalogClosed
         ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
         : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
     const fullHint = $('#quota-full-hint');
     if (fullHint) {
         const full = Array.isArray(d.habis) ? d.habis : [];
-        if (full.length && !catalogClosed) {
+        if (catalogClosed) {
+            fullHint.textContent = 'Tanggal ini termasuk hari libur operasional. Pilih tanggal pengiriman lain.';
+            fullHint.hidden = false;
+        } else if (full.length) {
             const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
             });
@@ -187,7 +422,8 @@ async function loadCatalog(animate = false) {
             fullHint.hidden = true;
         }
     }
-    $('#checkout-button').disabled = catalogClosed;
+    const checkoutButton = $('#checkout-button');
+    if (checkoutButton) checkoutButton.disabled = catalogClosed;
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -205,104 +441,182 @@ async function loadCatalog(animate = false) {
             || (p.nama + ' ' + p.kode).toLowerCase().includes($('#catalog-search').value.trim().toLowerCase()))
     );
     schedule = d.schedule;
+    const count = $('#menu-count');
+    if (count) count.textContent = catalog.length + ' Pilihan';
+    updateChefSpotlight(d.items);
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
-        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
-        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
-        return '<article class="menu-card" data-product="' + Number(p.id)
-            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
-            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
-    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+        const sisa = Number(p.sisa);
+        return '<button type="button" class="catalog-card w-full text-left bg-surface-container-lowest rounded-2xl p-3 shadow-[0_2px_12px_rgba(30,43,34,0.04)] flex gap-3.5 items-center transition-all hover:shadow-[0_4px_16px_rgba(30,43,34,0.08)]" data-product="' + Number(p.id) + '" style="--i:' + i + '">'
+            + '<div class="relative w-20 h-20 shrink-0"><div class="w-20 h-20 rounded-full overflow-hidden bg-surface-container p-0.5 shadow-sm">'
+            + '<img class="w-full h-full object-cover rounded-full" src="' + esc(imagePath(p.gambar)) + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'">'
+            + '</div></div><div class="flex flex-col flex-1 min-w-0 justify-center">'
+            + '<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm w-fit">' + esc(p.kategori) + '</span>'
+            + '<h3 class="font-headline-sm text-headline-sm text-on-surface truncate font-bold mt-1">' + esc(p.nama) + '</h3>'
+            + '<p class="text-body-sm text-on-surface-variant mt-0.5">Min. ' + Number(p.min_pesan) + ' porsi · Sisa ' + sisa + ' porsi</p>'
+            + '<div class="flex items-center justify-between mt-2"><span class="font-headline-sm text-headline-sm text-primary font-bold">' + money(p.harga) + '</span>'
+            + '<span class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span></span></div>'
+            + '</div></button>';
+    }).join('') : '<div class="text-body-sm text-on-surface-variant py-8 text-center">Menu tidak ditemukan atau stoknya habis.</div>';
 
-    $$('[data-product]').forEach(card => card.onclick = e => {
-        if (e.target.closest('[data-add]')) return;
+    $$('[data-product]', grid).forEach(card => card.onclick = () =>
         showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
-    });
-    $$('[data-add]').forEach(b => b.onclick = e => {
-        e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
-    });
-    $$('[data-open-product]').forEach(image => image.onclick = e => {
-        e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
-    });
+    );
     renderCart();
     if (animate) requestAnimationFrame(() => {
         grid.classList.add('category-transition');
         setTimeout(() => grid.classList.remove('category-transition'), 750)
     })
 }
+function closeDetail() {
+    const panel = $('#detail-sheet-root');
+    if (panel) {
+        panel.classList.add('hidden');
+        panel.setAttribute('aria-hidden', 'true');
+    }
+    document.body.classList.remove('sheet-open');
+    if (detailOpener && typeof detailOpener.focus === 'function') detailOpener.focus();
+    detailOpener = null;
+}
+
 function showProduct(product) {
     if (!product) return;
+    detailOpener = document.activeElement;
     activeProduct = product;
     const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
     activeQty = Math.min(maximum, Math.max(1, minimum));
-    const sisaAfter = maximum - activeQty;
-    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
-    $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
-        + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
-        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah dipesan<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
-        + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
-        + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
-    const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
-    function setQuantity(value, normalize = false) {
-        if (value === '' && !normalize) {
-            add.disabled = true;
-            return
-        }
+    const kuota = Number(product.kuota) || maximum;
+    const spicy = /sambal|pedas|balado/i.test(product.nama);
+    const soldOut = maximum <= 0;
+    const tagText = soldOut ? 'Stok habis' : (spicy ? 'Pedas Sedang' : 'Tersedia');
+    const tagIcon = soldOut ? 'block' : (spicy ? 'local_fire_department' : 'check_circle');
+    const jadwal = $('#catalog-delivery-date')?.value;
+    const jadwalLabel = jadwal
+        ? new Intl.DateTimeFormat('id-ID', {day: '2-digit', month: 'short', timeZone: 'Asia/Jakarta'})
+            .format(new Date(jadwal + 'T00:00:00+07:00'))
+        : '-';
+    const stat = (icon, label, value) =>
+        '<div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-surface-container/70 border border-outline-variant/30 shrink-0">'
+        + '<span class="material-symbols-outlined text-primary text-[16px]">' + icon + '</span>'
+        + '<div class="flex flex-col"><span class="text-[9px] text-on-surface-variant uppercase tracking-wider font-semibold">' + label + '</span>'
+        + '<span class="text-[11px] font-bold text-on-surface leading-tight">' + value + '</span></div></div>';
 
+    $('#detail-content').innerHTML = `
+        <div class="relative overflow-hidden rounded-t-3xl bg-primary text-on-primary pt-3.5 pb-5 px-5">
+            <div class="w-full flex justify-center items-center pb-2"><div class="w-10 h-1 bg-white/40 rounded-full"></div></div>
+            <div class="flex items-center justify-between relative z-10 mb-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">${esc(product.kategori)}</span>
+                    <span class="bg-secondary-container text-on-secondary-fixed text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">${tagIcon}</span>
+                        ${tagText}
+                    </span>
+                </div>
+                <button type="button" aria-label="Tutup" data-close-detail class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md flex items-center justify-center transition-colors active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+            <div class="flex items-center justify-between gap-3 relative z-10">
+                <div class="flex-1 pr-1">
+                    <h2 class="font-headline-sm text-[20px] font-extrabold text-white tracking-tight leading-snug">${esc(product.nama)}</h2>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-[19px] font-extrabold text-secondary-fixed">${money(product.harga)}</span>
+                        <span class="text-[11px] text-white/80 font-medium">/ porsi</span>
+                    </div>
+                </div>
+                <div class="relative shrink-0">
+                    <div class="w-24 h-24 rounded-full p-1 bg-white/30 backdrop-blur-sm shadow-xl">
+                        <img src="${esc(imagePath(product.gambar))}" alt="${esc(product.nama)}" onerror="this.src='../assets/img/produk/NK-01.png'" class="w-full h-full object-cover object-center rounded-full shadow-inner ring-2 ring-white/60">
+                    </div>
+                    <span class="absolute -bottom-1.5 -right-1 bg-surface-container-lowest text-primary text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-0.5 border border-primary/10">
+                        <span class="material-symbols-outlined text-[11px] text-secondary">pie_chart</span> Sisa ${maximum}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="px-5 pt-3.5 pb-4 flex flex-col gap-3.5 bg-surface-container-lowest">
+            <p class="text-[12px] text-on-surface-variant leading-relaxed">Menu pilihan Se.Noesa, dibuat segar setiap hari untuk menemani acara dan waktu makan Anda.</p>
+            <div class="flex items-center gap-2 overflow-x-auto pb-0.5">
+                ${stat('inventory_2', 'Min. Pesan', minimum + ' Porsi')}
+                ${stat('pie_chart', 'Sisa Stok', maximum + ' / ' + kuota)}
+                ${stat('event', 'Jadwal Kirim', jadwalLabel)}
+            </div>
+            <div class="flex items-center justify-between gap-3 pt-1">
+                <div class="sheet-qty flex items-center bg-surface-container rounded-2xl p-1 gap-1 border border-outline-variant/30 shadow-inner">
+                    <button type="button" id="btn-minus" data-qty="minus" aria-label="Kurangi porsi" class="w-9 h-9 rounded-xl flex items-center justify-center bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-colors active:scale-90 shadow-sm">
+                        <span class="material-symbols-outlined text-[17px]">remove</span>
+                    </button>
+                    <div class="flex items-center justify-center min-w-[32px] px-1"><span id="portion-count" class="text-[16px] text-primary font-extrabold">${activeQty}</span></div>
+                    <button type="button" id="btn-plus" data-qty="plus" aria-label="Tambah porsi" class="w-9 h-9 rounded-xl flex items-center justify-center bg-primary text-on-primary hover:bg-primary-container transition-colors active:scale-90 shadow-sm">
+                        <span class="material-symbols-outlined text-[17px]">add</span>
+                    </button>
+                </div>
+                <button type="button" id="add-to-cart" class="flex-1 h-11 bg-primary hover:bg-primary-container active:scale-[0.98] text-on-primary rounded-2xl flex items-center justify-between px-4 shadow-lg shadow-primary/20 transition-all">
+                    <div class="flex flex-col text-left">
+                        <span class="text-[10px] text-on-primary-container leading-none font-medium">Total <span id="sheet-total-qty">${activeQty}</span> Porsi</span>
+                        <span class="text-[14px] text-on-primary font-extrabold tracking-wide leading-tight" id="sheet-total-price">${money(activeQty * Number(product.harga))}</span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-white/20 px-2.5 py-1 rounded-xl">
+                        <span class="text-[12px] font-bold tracking-wide">Pesan</span>
+                        <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </div>
+                </button>
+            </div>
+        </div>`;
+
+    $$('[data-close-detail]', $('#detail-content')).forEach(b => b.onclick = closeDetail);
+    const add = $('#add-to-cart'), qtyText = $('#portion-count');
+    function setQuantity(value, normalize = false) {
         let quantity = Number(value);
-        if (!Number.isFinite(quantity)) {
-            add.disabled = true;
-            return
-        }
+        if (!Number.isFinite(quantity)) { add.disabled = true; return; }
         quantity = Math.floor(quantity);
         if (normalize) quantity = Math.max(minimum, Math.min(maximum, quantity));
-        if (quantity < minimum || quantity > maximum) {
-            add.disabled = true;
-            return
-        }
+        if (quantity < minimum || quantity > maximum) { add.disabled = true; return; }
         activeQty = quantity;
-        input.value = quantity;
-        $('#detail-qty').textContent = quantity + ' porsi';
-        const remaining = maximum - quantity;
-        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
-        if (sisaEl) {
-            if (shouldShow) {
-                sisaEl.textContent = remaining + ' porsi';
-                sisaEl.closest('span').style.display = '';
-            } else {
-                sisaEl.closest('span').style.display = 'none';
-            }
-        }
-        add.textContent = 'Pesan Sekarang';
-        add.disabled = false
+        if (qtyText) qtyText.textContent = quantity;
+        const totalQty = $('#sheet-total-qty'), totalPrice = $('#sheet-total-price');
+        if (totalQty) totalQty.textContent = quantity;
+        if (totalPrice) totalPrice.textContent = money(quantity * Number(product.harga));
+        add.disabled = false;
     }
-    input.addEventListener('input', () => setQuantity(input.value));
-    input.addEventListener('change', () => setQuantity(input.value, true));
-    input.addEventListener('blur', () => setQuantity(input.value, true));
     $$('[data-qty]').forEach(b => b.onclick = e => {
         e.preventDefault();
         e.stopPropagation();
-        setQuantity(activeQty + (b.dataset.qty === 'plus' ? 1: -1), true)
+        const step = b.dataset.qty === 'plus' ? 1 : -1;
+        if (step < 0 && activeQty <= minimum) {
+            toast('Minimal pesan ' + minimum + ' porsi');
+            return;
+        }
+        if (step > 0 && activeQty >= maximum) {
+            toast('Sisa stok untuk tanggal ini ' + maximum + ' porsi');
+            return;
+        }
+        setQuantity(activeQty + step, true)
     });
-    input.addEventListener('click', e => e.stopPropagation());
     if (maximum < minimum) {
-        input.disabled = true;
         add.disabled = true;
-        add.textContent = 'Stok kurang dari minimal pesanan'
+        add.innerHTML = '<span class="text-[12px] font-bold">Stok kurang dari minimal pesanan</span>';
     }
     add.onclick = () => {
         if (add.disabled) return;
-        cart[product.id] = (cart[product.id] || 0) + activeQty;
-        $('#detail-dialog').close();
+        const existing = Number(cart[product.id] || 0);
+        if (existing + activeQty > maximum) {
+            toast('Sisa stok ' + product.nama + ' tinggal ' + maximum + ' porsi');
+            return;
+        }
+        cart[product.id] = existing + activeQty;
+        closeDetail();
         renderCart();
         toast(product.nama + ' ditambahkan ke keranjang')
     };
-    $('#detail-dialog').showModal()
+    const panel = $('#detail-sheet-root');
+    panel.classList.remove('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('sheet-open');
+    const sheet = $('#detail-sheet');
+    if (sheet) {
+        sheet.scrollTop = 0;
+        sheet.focus();
+    }
 }
 
 function cartTotals() {
@@ -319,18 +633,30 @@ function cartTotals() {
 
 function renderCart() {
     const {count, total} = cartTotals(),
-        bar = $('#cart-bar');
-    bar.hidden = count === 0;
-    document.body.classList.toggle('has-cart', count > 0);
-    $('#cart-count').textContent = count;
-    $('#cart-total').textContent = money(total);
-    $('#cart-summary').textContent = count + ' porsi dari ' + Object.keys(cart).length + ' menu';
-    $('#cart-dialog-total').textContent = money(total)
+        bar = $('#floating-cart-bar'),
+        badge = $('#nav-cart-count');
+    if (bar) bar.classList.toggle('hidden', count === 0);
+    if (badge) {
+        badge.textContent = count;
+        badge.classList.toggle('hidden', count === 0);
+    }
+    const price = $('#cart-total-price'), items = $('#cart-total-items');
+    if (price) price.textContent = money(total);
+    if (items) items.textContent = Object.keys(cart).filter(id => Number(cart[id]) > 0).length
+        + ' Menu Dipilih (' + count + ' Porsi)';
+    const dialogTotal = $('#cart-dialog-total');
+    if (dialogTotal) dialogTotal.textContent = money(total)
 }
 
 function openCart() {
     if (catalogClosed) {
         toast('Tanggal pengiriman ini libur. Silakan pilih tanggal lain.');
+        return;
+    }
+    if (!Object.keys(cart).length) {
+        const dialog = $('#cart-dialog');
+        if (dialog && dialog.open) dialog.close();
+        else toast('Keranjang masih kosong. Pilih menu terlebih dahulu.');
         return;
     }
     const lines = $('#cart-lines');
@@ -409,6 +735,7 @@ async function openCheckout() {
     form.elements.tgl_kirim.min = $('#catalog-delivery-date').min;
     form.elements.tgl_kirim.removeAttribute('max');
     form.elements.tgl_kirim.value = $('#catalog-delivery-date').value;
+    form.elements.tgl_kirim.dispatchEvent(new Event('input', {bubbles: true}));
     $('#schedule-note').textContent = catalogClosed
         ? 'Tanggal ini libur. Pesanan untuk tanggal tersebut tidak dapat dikirim.'
         : 'Kuota mengikuti tanggal pengiriman yang dipilih. Pemesanan minimal 7 hari sebelumnya.';
@@ -487,7 +814,14 @@ function historyPage() {
         }
     });
     $$('#history-tabs button').forEach(b => b.onclick = () => {
-        $$('#history-tabs button').forEach(x => x.classList.toggle('active', x === b));
+        $$('#history-tabs button').forEach(x => {
+            const active = x === b;
+            x.classList.toggle('active', active);
+            x.classList.toggle('bg-primary', active);
+            x.classList.toggle('text-on-primary', active);
+            x.classList.toggle('bg-surface-container', !active);
+            x.classList.toggle('text-on-surface-variant', !active);
+        });
         historyStatus = b.dataset.status;
         loadHistory()
     });
@@ -506,19 +840,21 @@ async function loadHistory() {
     }
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
-        return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
-            + esc(o.kode) + '</b><p class="history-date">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + dateLabel(o.tgl_kirim)
-            + '</p><p class="history-date">' + (o.status_updated_at ? 'Status sejak ' + dateLabel(o.status_updated_at, true)
-                : 'Waktu perubahan status belum tercatat') + '</p></div><span class="status-label ' + esc(o.status) + '">'
-            + esc(statusLabels[o.status] || o.status) + '</span></div>' +
-            (o.status === 'ditolak' && o.alasan_penolakan
-                ? '<p class="history-rejection-reason"><b>Alasan penolakan:</b> ' + esc(o.alasan_penolakan) + '</p>'
-                : '') + '<div class="history-products">' + (first.gambar ? '<img src="'
-            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
-            + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
-            + '</small></span></div>' + (o.reschedule_pending ? '<p class="history-rejection-reason">Menunggu konfirmasi jadwal</p>' : '')
-            + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
-    }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
+        return '<button type="button" class="history-card w-full text-left bg-surface-container-lowest rounded-2xl p-4 shadow-[0_2px_12px_rgba(30,43,34,0.04)] hover:shadow-[0_4px_16px_rgba(30,43,34,0.08)] transition-all" data-order="' + Number(o.id) + '" style="--i:' + i + '">'
+            + '<div class="flex items-start justify-between gap-3"><div class="min-w-0"><span class="font-headline-sm text-headline-sm text-primary font-bold">' + esc(o.kode) + '</span>'
+            + '<p class="text-body-sm text-on-surface-variant mt-1">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + dateLabel(o.tgl_kirim) + '</p>'
+            + '<p class="text-body-sm text-on-surface-variant">' + (o.status_updated_at ? 'Status sejak ' + dateLabel(o.status_updated_at, true) : 'Waktu perubahan status belum tercatat') + '</p></div>'
+            + '<span class="status-label ' + esc(o.status) + ' px-2.5 py-1 rounded-full font-label-sm text-label-sm shrink-0">'
+            + esc(statusLabels[o.status] || o.status) + '</span></div>'
+            + (o.status === 'ditolak' && o.alasan_penolakan ? '<p class="text-body-sm text-error mt-2"><b>Alasan penolakan:</b> ' + esc(o.alasan_penolakan) + '</p>' : '')
+            + '<div class="flex items-center gap-3 border-t border-surface-container mt-3 pt-3">' + (first.gambar ? '<img class="w-11 h-11 rounded-xl object-cover bg-surface-container" src="'
+            + esc(imagePath(first.gambar)) + '" alt="">' : '<span class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">&#9634;</span>')
+            + '<span class="min-w-0"><b class="block font-label-md text-label-md text-on-surface truncate">' + esc(first.nama || 'Pesanan Se.Noesa')
+            + '</b><small class="text-body-sm text-on-surface-variant">' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '') + '</small></span></div>'
+            + (o.reschedule_pending ? '<p class="text-body-sm text-secondary mt-2">Menunggu konfirmasi jadwal</p>' : '')
+            + '<div class="flex items-center justify-between border-t border-surface-container mt-3 pt-3"><span><small class="block font-label-sm text-label-sm text-on-surface-variant">TOTAL</small><strong class="font-headline-sm text-headline-sm text-primary">' + money(o.total) + '</strong></span>'
+            + '<span class="font-label-md text-label-md text-primary flex items-center gap-1">Detail <span class="material-symbols-outlined text-[16px]">arrow_forward</span></span></div></button>'
+    }).join(''): '<div class="text-body-sm text-on-surface-variant py-8 text-center">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
 
@@ -763,6 +1099,14 @@ async function openHistoryDetail(id) {
 
 const page = document.body.dataset.page;
 wireLogout();
+const navCart = $('#nav-cart');
+if (navCart) navCart.onclick = () => {
+    if (!Object.keys(cart).length && page !== 'catalog') {
+        location.href = 'index.php';
+        return;
+    }
+    openCart();
+};
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
@@ -782,7 +1126,7 @@ document.addEventListener("DOMContentLoaded", function () {
         alertBox = document.createElement('div');
         alertBox.id = 'checkout-quota-alert';
         alertBox.style.cssText = 'display:none; margin:10px 0 15px; padding:12px 14px; border-radius:12px; font-size:12px; line-height:1.5; border:1px solid transparent;';
-        const dateLabel = checkoutDateInput.closest('label') || checkoutDateInput;
+        const dateLabel = checkoutDateInput.closest('.date-field') || checkoutDateInput.closest('label') || checkoutDateInput;
         dateLabel.parentNode.insertBefore(alertBox, dateLabel.nextSibling);
     }
 
