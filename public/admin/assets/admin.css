@@ -811,6 +811,15 @@ td small.order-code {
   min-width: 230px;
   color: var(--brown);
 }
+.late-form { display:grid; gap:10px; max-width:640px; }
+.late-form label { display:grid; gap:5px; font-size:12px; font-weight:600; }
+.late-form input, .late-form select, .late-form textarea { width:100%; }
+.late-list { overflow:auto; }
+.late-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.late-grid > div { display:grid; gap:3px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; }
+.late-grid b { font-size:10px; color:var(--muted); }
+.late-actions { display:flex; gap:8px; margin:12px 0; }
+
 .search span {
   font-size: 20px;
   display: inline-flex;

@@ -203,7 +203,7 @@ const PAGES = {
             er.textContent = "";
             er.classList.remove("on");
             b.disabled = true;
-            b.textContent = "Memprosesâ€¦";
+            b.textContent = "Memproses¦";
             try {
                 const d = await api(f.dataset.api, {
                     method: "POST",

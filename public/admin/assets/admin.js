@@ -870,11 +870,7 @@ async function orderDetail() {
     const o = await api("api/orders.php?id=" + id);
     $("#detail-status").outerHTML = badge(o.status);
     const raw = o.bukti_bayar || "",
-        proofUrl = raw
-            ? /^https?:\/\//.test(raw) || raw.startsWith("/")
-                ? raw
-                : "../" + raw.replace(/^\.\//, "")
-            : "";
+        proofUrl = raw ? "api/proof.php?order=" + Number(id) : "";
     const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
     const proof = raw
         ? '<a class="proof-image" href="' +

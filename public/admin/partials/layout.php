@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../../app/bootstrap.php';
 
 function admin_head(string $title, string $page): void
 {
+    $GLOBALS['admin_page'] = $page;
     $u = require_role('admin', false);
 ?>
 <!doctype html>
@@ -34,6 +35,9 @@ function admin_head(string $title, string $page): void
                 </a>
                 <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>Pesanan <i id="pending-badge"></i>
+                </a>
+                <a href="late-payments.php" class="<?= $page === 'late-payments' ? 'active' : '' ?>">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7h18v10H3z"/><path d="M3 7l9 6 9-6"/></svg></span>Pembayaran Terlambat
                 </a>
                 <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></span>Produk &amp; Kuota
@@ -97,6 +101,7 @@ function admin_foot(): void
             <nav class="mobile-nav">
                 <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></a>
                 <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Pesanan</span></a>
+                <a href="late-payments.php" class="<?= ($GLOBALS['admin_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7h18v10H3z"/><path d="M3 7l9 6 9-6"/></svg><span>Terlambat</span></a>
                 <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg><span>Produk</span></a>
                 <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
@@ -126,6 +131,9 @@ function admin_foot(): void
 
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
+    <?php if (($GLOBALS['admin_page'] ?? '') === 'late-payments'): ?>
+    <script src="assets/late-payments.js?v=<?= filemtime(__DIR__ . '/../assets/late-payments.js') ?>"></script>
+    <?php endif; ?>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
     <script src="../assets/js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
 </body>

@@ -25,6 +25,10 @@ return [
         'pass' => $env['DB_PASSWORD'] ?? '',
         'sslmode' => $env['DB_SSLMODE'] ?? 'require',
     ],
+    'contact' => [
+        // Nomor resmi Admin. Kosong berarti belum tersedia; UI tidak boleh mengarang nomor.
+        'admin_whatsapp' => trim((string) ($env['ADMIN_WHATSAPP'] ?? '')),
+    ],
     'mail' => [
         'host' => $env['SMTP_HOST'] ?? '',
         'port' => (int)($env['SMTP_PORT'] ?? 587),

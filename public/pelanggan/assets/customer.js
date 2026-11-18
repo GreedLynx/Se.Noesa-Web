@@ -587,7 +587,7 @@ async function openHistoryDetail(id) {
             + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
         ).join('') + '</section>'
         : '';
-    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
+    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="api/proof.php?order=' + Number(d.id)
         + '" alt="Bukti pembayaran">' : '';
     const paymentData = await api('api/payment-methods.php');
     const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
@@ -601,11 +601,15 @@ async function openHistoryDetail(id) {
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
 
+    const adminWhatsapp = (window.snoesaContact && window.snoesaContact.adminWhatsapp || '').trim();
+    const contactLine = adminWhatsapp
+        ? `<p class="admin-wa-text">Nomor WA Admin: ${esc(adminWhatsapp)}</p>`
+        : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
     const expiredAdminContact = `
         <div class="payment-expired-notice">
             <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
-            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan segera hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
-            <p class="admin-wa-text">Nomor WA Admin: 08123456789</p>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            ${contactLine}
         </div>
     `;
 

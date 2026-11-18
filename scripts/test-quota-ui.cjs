@@ -148,6 +148,7 @@ const fs = require("node:fs"),
       hidden: false,
       textContent: "",
       classList: { remove() {}, add() {}, toggle() {} },
+      dataset: {},
       querySelectorAll: () => [],
     };
   }
@@ -159,7 +160,9 @@ const fs = require("node:fs"),
       body: { dataset: { page: "test" }, classList: { toggle() {} } },
       querySelector: (s) => (elements[s] ??= element()),
       querySelectorAll: () => [],
+      addEventListener() {},
     },
+    window: { snoesaContact: { adminWhatsapp: "" } },
     requestAnimationFrame: (fn) => fn(),
   };
   vm.createContext(context);
