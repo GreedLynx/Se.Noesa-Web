@@ -59,3 +59,51 @@
 - Log yang dibagikan memuat kredensial DB dalam trace argumen PDO. Rotasi password database dan pembaruan secret di konfigurasi/deployment diperlukan; kredensial tidak disimpan di repo/HANDOFF.
 - Lingkungan sesi ini tidak menyediakan variabel koneksi PostgreSQL uji dan tidak ada utilitas `psql`/`pg_isready`; verifikasi DB terisolasi dan migrasi 022 tetap belum bisa dijalankan. Jangan menerapkan migrasi ke DB aplikasi sebagai pengganti.
 - Syntax PHP endpoint tetap valid (`php -l`); `git diff --check` bersih.
+
+## Pembacaan Notion (18 November 2026)
+- Tujuan sesi: membaca Task Management dan halaman pendukung; tidak mengimplementasikan revisi.
+- Dibaca: Task Management, seluruh 20 baris Tasks Tracker, rincian REVISI GEDE-GEDEAN, REVISI PAK UNGGUL#2/#3, REVISI MITRAA, Laporan Milestone 2, Manajemen Projek, Project Overview, Scope Statement, Model Kebutuhan (Use Case), serta Notulen & Catatan Evaluasi. Halaman Teknis: Web & Basis Data kosong.
+- Tracker: 15 DONE, 4 DOING (Unggul#2, Unggul#3, Mitra, Laporan Milestone 2), 1 REVIEW (Revisi Gede-gedean). Status Notion belum diverifikasi terhadap implementasi.
+- Unggul#2: tren pesanan Owner dengan pemilihan tanggal masih terbuka. Unggul#3: seluruh tujuh item terbuka: informasi kuota penuh, sudah bayar belum unggah bukti, WA Admin, libur saat ada pesanan, keterangan penolakan pembayaran pelanggan, tombol kembali Admin mengikuti riwayat, catatan pesanan Owner tidak sinkron.
+- Mitra: nama se.noesa huruf kecil, warna, logo, background, dan tampilan foto siap kirim masih terbuka. Foto siap kirim dicentang di revisi besar tetapi belum dicentang di revisi mitra; perlu cek aplikasi sebelum menyimpulkan selesai.
+- Notulen historis menyebut katering/minimal 10 sebagai contoh; aturan AGENTS.md tetap PO makanan biasa dan minimal 4 porsi per varian. Tidak ada keputusan bisnis baru dari sesi baca ini.
+- Sumber utama: https://app.notion.com/p/f9a22397840283ccba2301273e1a3f99 dan https://app.notion.com/p/772223978402827d95f881b935f8fcca .
+- Berikutnya: gunakan konteks ini untuk tugas yang diminta pengguna; pembacaan bukan izin mengerjakan seluruh backlog. Tidak mengubah Notion/kode aplikasi/database atau membaca .env. Lampiran PDF dan embed Drive/Figma tidak dibuka; tidak ada percobaan gagal.
+
+## Plan navigasi kembali Admin (18 November 2026)
+- Permintaan terbaru: buat plan dahulu untuk item Unggul#3 tombol kembali mengikuti halaman asal. Teman pengguna sedang mengerjakan navbar tiap role dan bug; Unggul#2 dikerjakan terpisah.
+- Plan selesai: docs/rencana-navigasi-kembali-admin.md (Phase 0 discovery, Phase 1 konteks/filter, Phase 2 kembali berdasarkan asal, Phase 3 verifikasi/dokumentasi).
+- Discovery read-only main + reader: tombol detail dan fallback error statis orders.php; empat sumber Dashboard, dua tautan daftar desktop/mobile, redirect sukses offline. Filter tab/review/source/q belum disinkronkan lengkap dengan URL. Reload detail setelah aksi harus mempertahankan asal.
+- Rancangan diusulkan: return_to eksplisit pada tautan detail, validasi hanya Dashboard/Daftar Pesanan Admin pada origin/direktori instalasi yang sama, fallback orders.php; history.replaceState untuk filter; href server-side aman tanpa JS dan location.replace pada klik biasa agar tidak loop. Native Back/Forward browser tetap normal; tidak membuat stack global dan tidak memakai history.back secara buta.
+- Batas: tidak mengubah navbar/layout/CSS/API/DB/role lain, tanpa library baru. admin.js berpotensi bentrok dengan perbaikan teman; cocokkan diff sebelum implementasi. Belum implementasi atau uji browser/aplikasi.
+- Branch saat discovery feature/penolakan-reschedule ahead 7; HANDOFF sudah berubah dari tugas baca Notion. Plan dibuat tanpa mengganti branch; ketika implementasi siapkan feature/navigasi-kembali-admin dari dev dan cocokkan prasyarat, jangan membawa fitur lain diam-diam.
+- .opencode/revisi.md tidak ditemukan saat dibaca. Tidak membaca .env, tidak mengubah Notion, tidak menjalankan migrasi, tidak commit/push/merge. Langkah selanjutnya adalah meninjau rancangan bersama pengguna sebelum implementasi.
+
+## Implementasi navigasi kembali Admin (18 November 2026, status terbaru)
+- Tujuan: pengguna meminta langkah 2 dan 3 sekaligus, beserta progress. Keduanya selesai pada feature/navigasi-kembali-admin, dibuat dari dev 62e3a23. Catatan branch/fitur sebelumnya di atas merupakan riwayat sesi terdahulu, bukan isi branch fitur ini.
+- public/admin/assets/admin.js: orderDetailUrl untuk empat sumber Dashboard, dua daftar desktop/mobile, dan redirect offline; syncOrderUrl menyimpan tab/review/q dan mempertahankan tanggal, memulihkan pencarian, serta memperbarui href sebelum debounce. bindOrderBack memakai location.replace hanya untuk klik biasa; modifier/target tab baru tetap native. Error detail memakai tujuan tervalidasi yang sama.
+- public/admin/order-detail.php: validasi return_to relatif hanya dashboard.php/orders.php, whitelist query dan validasi nilai, tolak duplikat/array/tujuan asing/control character, fallback orders.php. Href server-side tetap berfungsi tanpa JS. Guard Admin dan mutasi tidak diubah.
+- Dev belum memiliki filter source; jangan membawa fitur branch reschedule diam-diam. Saat source terintegrasi, persistensi JS/allowlist PHP/tests perlu diperbarui bersama. Navbar/layout/CSS tidak disentuh.
+- Docs api/database/peta dan progress di docs/rencana-navigasi-kembali-admin.md diperbarui. scripts/test-admin-back-navigation.cjs baru; fixture dashboard dan cancellation-list disesuaikan dengan API browser.
+- Lulus: test-admin-back-navigation.cjs, test-admin-dashboard.cjs, test-admin-order-detail.cjs, test-admin-cancellation-list.cjs, test-quota-ui.cjs, node --check admin.js, php -l order-detail.php, git diff --check. Tes PHP validator diekstrak tanpa bootstrap/DB.
+- Belum: browser login desktop/mobile, native Back/Forward nyata, reload mutasi nyata dan offline end-to-end. Phase 3 masih sebagian. Tidak membaca .env, mengubah DB/Notion, atau commit/push/merge.
+- Percobaan gagal: switch branch awal ditolak sandbox; setelah eskalasi tertahan perubahan HANDOFF. Catatan diamankan ke TEMP lalu dikembalikan sesudah switch. Uji awal gagal karena fixture VM belum menyediakan helper/History dan ekstraksi handler CRLF; disesuaikan, kemudian seluruh uji terarah lulus.
+- Berikutnya: selesaikan verifikasi browser Phase 3, cocokkan perubahan admin.js dengan pekerjaan teman, dan rangkum sebelum commit. Jangan mencentang Notion sebagai selesai tanpa verifikasi dan instruksi pembaruan.
+
+## Diagnosis koneksi Supabase
+- Error pelanggan terjadi pada lookup DNS saat PDO dibuat, sebelum query dan autentikasi. DNS Windows dan PHP CLI berhasil saat diperiksa ulang. Tes TCP 5432 gagal di sandbox dan berhasil di luar sandbox. Login database dan runtime Laragon belum diverifikasi.
+- `app/bootstrap.php` mengaktifkan `zend.exception_ignore_args` agar kredensial tidak tampil sebagai argumen dalam stack trace. Dokumentasi API, database, dan peta kode diperbarui. PHP lint dan simulasi kegagalan koneksi tanpa kredensial nyata dijalankan. Percobaan CLI pertama memakai direktori sesi Laragon yang tidak writable di sandbox, lalu memakai TEMP.
+- Password asli tampil di error yang dilaporkan. Rotasi password Supabase dan perbarui secret di lingkungan aplikasi tanpa menyalinnya ke repo. `.env` tidak dibaca atau diubah. Perubahan lokal ada di working tree branch navigasi dan belum di-commit.
+- Simulasi PDO akhir lulus tanpa warning setelah mengatur path sesi CLI ke workspace melalui ini_set dan menghapus sesi uji. Opsi -d dengan path TEMP Windows sempat gagal diparse karena nama pendek mengandung tilde.
+
+## Verifikasi browser navigasi kembali Admin
+- Langkah 4 lulus pada feature/navigasi-kembali-admin. Chrome headless memakai PHP dan aset asli, sesi Admin fixture, dan API mock pada subdirektori /demo/admin/.
+- Lulus: empat sumber Dashboard dan tanggal, Back/Forward tanpa loop, mobile 390px dan klik selama debounce, review POST/reload dengan daftar diperbarui, simpan offline dan kembali ke filter, detail gagal, klik tab terpisah tanpa JS, dan fallback asal eksternal. Lima suite regresi Node, syntax PHP/JS, dan git diff HEAD --check lulus.
+- Uji awal Chrome di sandbox tidak menghasilkan hasil. Percobaan di luar sandbox yang diizinkan berhasil. Login dan mutasi database aplikasi belum diuji.
+- Perbandingan dengan referensi lokal origin/dev 329b4f0 menemukan navbar v1 83b76ca dan filter source yang sudah masuk. Saat integrasi, pertahankan navbar, persist filter source di URL dan validasi PHP, lalu uji ulang hasil integrasi. Working tree dan staging pengguna tetap dipertahankan. Belum commit, merge, push, atau ubah Notion.
+
+## Resolusi konflik merge dev ke navigasi Admin
+- Empat konflik dari dev 329b4f0 ditandai selesai di indeks. Catatan dari HANDOFF.md dan bagian API yang khusus navigasi dipindah ke lokasi dokumentasi baru.
+- Bootstrap mempertahankan redaksi argumen stack trace dan pengamanan sesi/CSRF dari dev. admin.js mempertahankan tampilan dev dan seluruh tautan asal. Filter sumber pembatalan disimpan di URL serta divalidasi di order-detail.php bersama filter tinjauan.
+- Uji navigasi, Dashboard, filter daftar, urutan pesanan, kuota UI, notifikasi UI, dan sintaks PHP/JS lulus. Uji Detail Pesanan gagal pada tawaran jadwal ulang karena JavaScript Admin untuk fitur tersebut sudah tidak ada pada sisi dev. Reviewer mengonfirmasi temuan. Dashboard fixture diperbarui untuk teks dev dan fixture kuota untuk DOMContentLoaded.
+- Pengguna menetapkan cakupan hanya resolusi konflik. Pemulihan JavaScript tawaran jadwal ulang ditunda. Merge belum di-commit atau dipush. Belum menguji browser atau database aplikasi setelah resolusi.

@@ -1,10 +1,44 @@
 <?php
 require __DIR__ . '/partials/layout.php';
 admin_head('Detail Pesanan', 'order-detail');
+$backUrl = 'orders.php';
+$returnTo = $_GET['return_to'] ?? '';
+// Hanya nama halaman relatif; origin dan direktori selalu mengikuti halaman Admin ini.
+if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
+    $parts = parse_url($returnTo);
+    if ($parts !== false && count(array_diff(array_keys($parts), ['path', 'query'])) === 0
+        && in_array($parts['path'] ?? '', ['dashboard.php', 'orders.php'], true)) {
+        $filters = [];
+        $valid = true;
+        $allowed = $parts['path'] === 'orders.php' ? ['tgl_kirim', 'tab', 'review', 'source', 'q'] : ['tgl_kirim'];
+        foreach (explode('&', $parts['query'] ?? '') as $pair) {
+            if ($pair === '') continue;
+            [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+            $key = urldecode($key);
+            $value = urldecode($value);
+            if (!in_array($key, $allowed, true) || array_key_exists($key, $filters) || preg_match('/[\x00-\x1f\x7f]/', $value)) {
+                $valid = false;
+                break;
+            }
+            if ($key === 'tab' && !in_array($value, ['semua', 'pembayaran', 'validasi', 'proses', 'selesai', 'ditolak', 'dibatalkan'], true)) $valid = false;
+            if ($key === 'review' && !in_array($value, ['unreviewed', 'reviewed'], true)) $valid = false;
+            if ($key === 'source' && !in_array($value, ['pelanggan', 'otomatis', 'lainnya'], true)) $valid = false;
+            if ($key === 'tgl_kirim') {
+                $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+                if (!$date || $date->format('Y-m-d') !== $value) $valid = false;
+            }
+            $filters[$key] = $value;
+        }
+        if ($valid) {
+            if (($filters['tab'] ?? '') !== 'dibatalkan') unset($filters['review'], $filters['source']);
+            $backUrl = $parts['path'] . ($filters ? '?' . http_build_query($filters, '', '&', PHP_QUERY_RFC3986) : '');
+        }
+    }
+}
 ?>
 <div class="detail-heading">
-    <a class="back-link" href="orders.php">
-        &larr; Kembali ke pesanan
+    <a class="back-link" id="order-back" data-order-back href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') ?>">
+        &larr; Kembali <?= str_starts_with($backUrl, 'dashboard.php') ? 'ke Dashboard' : 'ke daftar pesanan' ?>
     </a>
     <span
         class="status-badge" id="detail-status">

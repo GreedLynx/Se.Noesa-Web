@@ -157,6 +157,7 @@ const fs = require("node:fs"),
     setTimeout: () => {},
     document: {
       body: { dataset: { page: "test" }, classList: { toggle() {} } },
+      addEventListener() {},
       querySelector: (s) => (elements[s] ??= element()),
       querySelectorAll: () => [],
     },

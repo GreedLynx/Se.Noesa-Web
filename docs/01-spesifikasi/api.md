@@ -1,5 +1,21 @@
 # API
 
+Bootstrap menyembunyikan argumen fungsi dari stack trace PHP untuk melindungi kredensial. Format respons endpoint tetap sama.
+
+## Query navigasi UI Admin
+
+`admin/order-detail.php?id=...&return_to=...` menerima tujuan kembali opsional.
+Nilainya hanya nama relatif `dashboard.php` atau `orders.php`, dengan query
+`tgl_kirim`; khusus daftar juga `tab`, `review`, `source`, dan `q`. Query di-encode
+sebagai satu nilai `return_to`. URL absolut, direktori lain, parameter asing,
+duplikat/array, tanggal tidak valid, dan tujuan bersarang kembali ke `orders.php`.
+`review` dan `source` hanya dipertahankan untuk tab `dibatalkan`.
+
+Daftar menyimpan tab/tinjauan/sumber/pencarian ke URL tanpa menambah entri history;
+tanggal yang sudah dipilih dipertahankan. Tombol kembali memakai href tervalidasi
+server; klik biasa mengganti entri detail, sedangkan tab baru tetap native.
+Parameter ini bukan parameter API JSON atau POST; kontrak endpoint tidak berubah.
+
 Detail pesanan Admin tetap menampilkan `foto_kiriman` setelah status `selesai`.
 Form upload hanya tampil saat `diproses`; endpoint dan payload tidak berubah.
 
