@@ -100,6 +100,7 @@ public/
 6. Untuk membatalkan pesanan yang belum dibayar tepat waktu, jadwalkan
    `php scripts/expire-unpaid-orders.php --apply` setiap menit setelah inventaris
    dan dry-run. Rincian aktivasi, argumen Task Scheduler, dan cron ada di bawah.
+7. cara migrasi ke supabase dengan ketik di terminal: `php scripts/migrate.php`.
 
 ## Alur Fitur Utama
 

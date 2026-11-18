@@ -118,7 +118,7 @@ admin_head('Produk & Kuota', 'products');
         <div class="form-row">
             <label>
                 Minimal pemesanan (porsi)
-                <input name="min_pesan" type="number" min="4" value="4"
+                <input name="min_pesan" type="number" min="10" value="10"
                     required>
             </label>
             <label>

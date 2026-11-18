@@ -1,3 +1,5 @@
+const MIN_ORDER_QTY = 10, MAX_ORDER_QTY = 50;
+const cartTotalQty = () => Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0);
 const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const money = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -188,6 +190,20 @@ async function loadCatalog(animate = false) {
         }
     }
     $('#checkout-button').disabled = catalogClosed;
+    const dailyHint = $('#daily-quota-hint');
+    if (dailyHint) {
+        const capacity = Number(d.dailyCapacity || 50);
+        const used = Number(d.dailyUsed || 0);
+        const remaining = Number(d.dailyRemaining || Math.max(0, capacity - used));
+        const label = d.dailyStatus === 'closed' ? 'Tanggal libur'
+            : d.dailyStatus === 'full' ? 'Kuota harian penuh'
+            : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
+            : 'Kuota harian tersedia';
+        dailyHint.textContent = catalogClosed
+            ? 'Tanggal libur — semua kuota ditutup.'
+            : label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi untuk tanggal ' + d.tanggal + '.';
+        dailyHint.dataset.status = catalogClosed ? 'closed' : (d.dailyStatus || 'available');
+    }
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -207,26 +223,36 @@ async function loadCatalog(animate = false) {
     schedule = d.schedule;
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
         const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
-        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
-        return '<article class="menu-card" data-product="' + Number(p.id)
+        const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
+        const available = p.available !== false && state !== 'full' && state !== 'closed';
+        const stockLabel = state === 'nearly_full' ? ' · Sisa ' + pSisa + ' porsi'
+            : !available ? (pSisa <= 0 ? ' · Habis' : ' · Stok di bawah minimum') : '';
+        return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
+            + '" data-product="' + Number(p.id) + '" data-available="' + available + '" aria-disabled="' + !available
             + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
             + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + stockLabel
             + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
+            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></article>';
     }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 
+    const canOpen = product => product && product.available !== false
+        && product.stok_status !== 'full' && product.stok_status !== 'closed';
     $$('[data-product]').forEach(card => card.onclick = e => {
         if (e.target.closest('[data-add]')) return;
+        if (card.dataset.available === 'false') return;
         showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
+        if (b.disabled) return;
+        const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
+        if (canOpen(product)) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
+        const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
+        if (canOpen(product)) showProduct(product)
     });
     renderCart();
     if (animate) requestAnimationFrame(() => {
@@ -237,8 +263,10 @@ async function loadCatalog(animate = false) {
 function showProduct(product) {
     if (!product) return;
     activeProduct = product;
-    const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
-    activeQty = Math.min(maximum, Math.max(1, minimum));
+    const minimum = Math.max(MIN_ORDER_QTY, Number(product.min_pesan));
+    const orderRoom = Math.max(0, MAX_ORDER_QTY - cartTotalQty());
+    const maximum = Math.min(Number(product.sisa), orderRoom);
+    activeQty = Math.max(minimum, Math.min(maximum, minimum));
     const sisaAfter = maximum - activeQty;
     const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
@@ -297,6 +325,10 @@ function showProduct(product) {
     }
     add.onclick = () => {
         if (add.disabled) return;
+        if (cartTotalQty() + activeQty > MAX_ORDER_QTY) {
+            toast('Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi.');
+            return;
+        }
         cart[product.id] = (cart[product.id] || 0) + activeQty;
         $('#detail-dialog').close();
         renderCart();
@@ -336,14 +368,14 @@ function openCart() {
     const lines = $('#cart-lines');
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
+        const min = Number(p?.min_pesan || MIN_ORDER_QTY);
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
             + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi">&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah">+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
     }).join('');
     $$('[data-dec]').forEach(b => b.onclick = () => {
         const id = b.dataset.dec;
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
+        const min = Number(p?.min_pesan || MIN_ORDER_QTY);
         if (cart[id] > min) {
             // Jangan pernah menurunkan jumlah ke bawah minimum produk.
             // Jika hasil pengurangan lebih kecil dari minimum, clamp ke minimum.
@@ -358,9 +390,11 @@ function openCart() {
     $$('[data-inc]').forEach(b => b.onclick = () => {
         const id = b.dataset.inc;
         const p = productCache[id];
-        const max = Number(p?.sisa || 0);
-        if ((cart[id] || 0) + Number(p?.min_pesan || 4) <= max) cart[id] = (cart[id] || 0) + Number(p?.min_pesan || 4);
-        else toast('Kuota tidak mencukupi');
+        const step = Number(p?.min_pesan || MIN_ORDER_QTY);
+        const stock = Number(p?.sisa || 0);
+        const room = Math.max(0, MAX_ORDER_QTY - cartTotalQty());
+        if (step <= stock && step <= room) cart[id] = (cart[id] || 0) + step;
+        else toast(step > room ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi.' : 'Stok tidak mencukupi');
         renderCart();
         openCart()
     });

@@ -8,7 +8,7 @@ $go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/inde
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Se.Noesa</title>
+    <title>se.noesa</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap">
     <link rel="stylesheet" href="assets/css/app.css">
 </head>

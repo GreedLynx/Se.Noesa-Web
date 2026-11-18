@@ -766,7 +766,7 @@ function editProduct(p) {
     $('#kuota-tanggal').value = $('#quota-date')?.value || '';
     $('#kuota-tanggal-selesai').value = $('#kuota-tanggal').value;
     form.elements.kuota_default.value = p?.kuota_default ?? 50;
-    form.elements.min_pesan.value = p?.min_pesan || 4;
+    form.elements.min_pesan.value = p?.min_pesan || 10;
     form.elements.gambar.value = p?.gambar || "";
     form.elements.gambar_file.required = !p;
     $("#image-help").textContent = p

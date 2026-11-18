@@ -12,7 +12,11 @@ const context = {
     },
     api: async url => url.includes('payment-methods') ? { items: [] } : detail,
     esc: String, money: String, dateLabel: String, statusLabels: {}, statusProgress: () => '',
-    confirm: text => { confirmation = text; return false; }
+    confirm: text => { confirmation = text; return false; },
+    setTimeout: () => 0,
+    clearTimeout() {},
+    paymentExpiryTimer: null,
+    Date,
 };
 vm.createContext(context);
 vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail('), source.indexOf('\nconst page =')), context);
@@ -40,7 +44,7 @@ vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail(')
         }
         if (status === 'diproses' && !canCancel) assert.match(html, /Batas Waktu Pembatalan Terlewati/);
         if (status === 'dibatalkan') assert.match(html, /<h3>Refund<\/h3>/);
-        if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat pembayaran telah berakhir/);
+        if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat waktu upload bukti pembayaran telah berakhir/);
     }
     detail = { id: 2, kode: 'RESCHEDULE', items: [], status: 'diproses', can_cancel: true,
         can_upload_proof: false, reschedule_offer: { status_tawaran: 'menunggu', alasan: 'Tanggal lama ditutup',
