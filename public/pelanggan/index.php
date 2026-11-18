@@ -29,6 +29,9 @@ $holidayRanges = q(
 <!-- State tersembunyi: tanggal kirim dipakai seluruh alur API/kasir yang sudah ada -->
 <input type="hidden" id="catalog-delivery-date" value="<?= $firstDelivery ?>" min="<?= $firstDelivery ?>">
 
+<!-- Konten tetap: sapaan, jadwal pengiriman, dan pencarian -->
+<div class="catalog-pinned shrink-0 bg-surface shadow-[0_12px_16px_-16px_rgba(18,30,22,0.5)]">
+
 <!-- Top Greeting & Motivation -->
 <div class="px-margin-mobile pt-space-xs pb-space-sm flex flex-col gap-1">
     <div class="flex items-center justify-between mt-1">
@@ -76,6 +79,11 @@ $holidayRanges = q(
     </div>
 </div>
 
+</div><!-- /konten tetap -->
+
+<!-- Area yang bergulir: hanya bagian menu (highlight chef + daftar menu) -->
+<div class="catalog-scroll flex-1 min-h-0 overflow-y-auto overscroll-contain pb-[calc(7rem+env(safe-area-inset-bottom,0px))]">
+
 <!-- Chef Spotlight — diisi dari produk nyata (api/catalog.php) -->
 <div class="px-margin-mobile mb-space-lg">
     <div class="relative overflow-hidden rounded-xl bg-primary text-on-primary p-4 shadow-[0_8px_24px_rgba(33,66,47,0.18)]">
@@ -115,19 +123,20 @@ $holidayRanges = q(
     <div class="text-body-sm text-on-surface-variant py-6 text-center">Memuat menu…</div>
 </div>
 
-<!-- Floating Mini Order Sticky Tray -->
-<div class="sticky bottom-2 z-40 px-margin-mobile w-full max-w-md mx-auto pointer-events-none">
+</div>
+
+<!-- Floating Mini Order Tray (menempel di atas navigasi) -->
+<div class="fixed inset-x-0 z-40 px-margin-mobile w-full max-w-md mx-auto pointer-events-none" style="bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));">
     <div class="pointer-events-auto bg-primary text-on-primary p-3 rounded-full shadow-[0_12px_32px_rgba(20,45,30,0.35)] flex items-center justify-between transition-transform duration-300 transform translate-y-0 hidden" id="floating-cart-bar">
         <div class="flex items-center gap-3 pl-2 min-w-0">
             <div class="w-9 h-9 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
             </div>
             <div class="flex flex-col min-w-0">
-                <span class="font-label-sm text-label-sm text-primary-fixed-dim uppercase tracking-wider">Subtotal Pesanan</span>
-                <div class="flex items-center gap-1.5">
-                    <span class="font-headline-sm text-headline-sm text-on-primary" id="cart-total-price">Rp 0</span>
-                    <span class="text-primary-fixed-dim text-xs">•</span>
-                    <span class="font-label-md text-label-md text-primary-fixed-dim" id="cart-total-items">0 Menu Dipilih (0 Porsi)</span>
+                <span class="font-label-sm text-label-sm text-primary-fixed-dim uppercase tracking-wider truncate">Subtotal Pesanan</span>
+                <div class="flex items-baseline gap-1.5 min-w-0">
+                    <span class="font-headline-sm text-headline-sm text-on-primary whitespace-nowrap" id="cart-total-price">Rp 0</span>
+                    <span class="font-label-md text-label-md text-primary-fixed-dim truncate" id="cart-total-items">0 Porsi</span>
                 </div>
             </div>
         </div>

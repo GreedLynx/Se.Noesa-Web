@@ -315,6 +315,13 @@ function catalogPage() {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => refreshCatalog(true), 200)
     };
+    // Bayangan halus di batas atas area menu saat konten mulai tergulir.
+    const catalogScroll = $('.catalog-scroll'), catalogPinned = $('.catalog-pinned');
+    if (catalogScroll && catalogPinned) {
+        const syncScrollState = () => catalogPinned.classList.toggle('is-scrolled', catalogScroll.scrollTop > 4);
+        catalogScroll.addEventListener('scroll', syncScrollState, { passive: true });
+        syncScrollState();
+    }
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
         $('#cart-dialog').close();
@@ -653,14 +660,14 @@ function renderCart() {
         bar = $('#floating-cart-bar'),
         badge = $('#nav-cart-count');
     if (bar) bar.classList.toggle('hidden', count === 0);
+    document.body.classList.toggle('cart-visible', count > 0);
     if (badge) {
         badge.textContent = count;
         badge.classList.toggle('hidden', count === 0);
     }
     const price = $('#cart-total-price'), items = $('#cart-total-items');
     if (price) price.textContent = money(total);
-    if (items) items.textContent = Object.keys(cart).filter(id => Number(cart[id]) > 0).length
-        + ' Menu Dipilih (' + count + ' Porsi)';
+    if (items) items.textContent = count + ' Porsi';
     const dialogTotal = $('#cart-dialog-total');
     if (dialogTotal) dialogTotal.textContent = money(total)
 }

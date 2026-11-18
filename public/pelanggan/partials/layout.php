@@ -103,7 +103,8 @@ function customer_head(string $title, string $page): array
         @keyframes sheetIn { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .toast.show { opacity: 1 !important; transform: translate(-50%, 0) !important; }
-        #customer-toast { left: 50% !important; bottom: 6rem !important; max-width: calc(100% - 2rem) !important; }
+        #customer-toast { left: 50% !important; bottom: 6rem !important; max-width: calc(100% - 2rem) !important; width: max-content; }
+        body.cart-visible #customer-toast { bottom: 12rem !important; }
         #menu-container .catalog-card { animation: cardIn .35s cubic-bezier(.2, .8, .25, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
         @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
         @media (prefers-reduced-motion: reduce) { #menu-container .catalog-card { animation: none; } }
@@ -113,7 +114,28 @@ function customer_head(string $title, string $page): array
         #date-sheet { animation: sheetUp .28s cubic-bezier(.2,.8,.25,1) both; }
         @keyframes sheetUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
         .calendar-open { overflow: hidden; }
+        /* Dashboard katalog: konten atas tetap, hanya area menu yang bergulir. */
+        body[data-page="catalog"] { overflow: hidden; }
+        body[data-page="catalog"] main { height: 100dvh; min-height: 100dvh; overflow: hidden; padding-bottom: 0; }
+        body[data-page="catalog"] main > div { flex: 1 1 auto; min-height: 0; }
+        .catalog-pinned { position: relative; z-index: 2; }
+        .catalog-pinned::after {
+            content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 18px;
+            background: linear-gradient(to bottom, rgba(238, 253, 239, .95), rgba(238, 253, 239, 0));
+            opacity: 0; transition: opacity .18s ease; pointer-events: none;
+        }
+        .catalog-pinned.is-scrolled::after { opacity: 1; }
+        @media (max-height: 700px) {
+            body[data-page="catalog"] main > div { overflow-y: auto; }
+            body[data-page="catalog"] .catalog-scroll { flex: none; overflow: visible; }
+        }
         #calendar-confirm:disabled { opacity: .5; cursor: not-allowed; }
+        /* date-picker.css hanya menata trigger di dalam .date-panel; dialog checkout butuh versi ringkasnya. */
+        #checkout-dialog .date-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 10px 14px; border: 1px solid #c1c8c1; border-radius: 12px; background: #fff; color: #121e16; font: inherit; text-align: left; cursor: pointer; }
+        #checkout-dialog .date-trigger svg { width: 22px; height: 22px; flex-shrink: 0; color: #385a45; }
+        #checkout-dialog .date-trigger-value { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; }
+        #checkout-dialog .date-trigger-action { margin-left: auto; white-space: nowrap; font-size: 12px; font-weight: 600; color: #385a45; }
+        #checkout-dialog .date-trigger:hover { border-color: #385a45; background: #fafcf9; }
         /* Badge angka 0 memakai display:flex, jadi atribut hidden perlu dipaksa. */
         [data-notif-count][hidden] { display: none; }
         @media (prefers-reduced-motion: reduce) { #detail-sheet, #date-sheet { animation: none; } }
