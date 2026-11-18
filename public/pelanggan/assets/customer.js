@@ -588,7 +588,7 @@ async function openHistoryDetail(id) {
         ).join('') + '</section>'
         : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="api/proof.php?order=' + Number(d.id)
-        + '" alt="Bukti pembayaran">' : '';
+        + '" alt="Bukti pembayaran" onerror="this.onerror=null;this.alt=\'Bukti tidak dapat ditampilkan\';this.style.opacity=\'.4\'">' : '';
     const paymentData = await api('api/payment-methods.php');
     const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
         return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'

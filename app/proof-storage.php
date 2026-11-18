@@ -57,8 +57,27 @@ function proof_resolve(string $relative): ?string
     if ($m[2] === '.' || $m[2] === '..') {
         return null;
     }
-    $path = dirname(__DIR__) . '/' . $relative;
+    // Bukti baru berada di storage/payments/ (di luar public). Bukti lama
+    // disimpan sebagai uploads/payments/... relatif terhadap document root public/.
+    $base = str_starts_with($relative, 'storage/payments/')
+        ? dirname(__DIR__)
+        : dirname(__DIR__) . '/public';
+    $path = $base . '/' . $relative;
     return is_file($path) ? $path : null;
+}
+
+function proof_mime(string $path): string
+{
+    // fileinfo tidak selalu tersedia; gunakan getimagesize sebagai fallback.
+    if (function_exists('mime_content_type')) {
+        $mime = @mime_content_type($path);
+        if (is_string($mime) && $mime !== '') return $mime;
+    }
+    if (function_exists('getimagesize')) {
+        $info = @getimagesize($path);
+        if (is_array($info) && !empty($info['mime'])) return (string) $info['mime'];
+    }
+    return '';
 }
 
 function proof_stream(string $relative): void
@@ -67,7 +86,7 @@ function proof_stream(string $relative): void
     if ($path === null) {
         json(['error' => 'Bukti pembayaran tidak ditemukan'], 404);
     }
-    $mime = @mime_content_type($path) ?: 'application/octet-stream';
+    $mime = proof_mime($path) ?: 'application/octet-stream';
     $allowed = ['image/jpeg', 'image/png', 'image/webp'];
     if (!in_array($mime, $allowed, true)) {
         json(['error' => 'Format bukti tidak diizinkan'], 422);

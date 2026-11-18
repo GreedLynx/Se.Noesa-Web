@@ -12,6 +12,11 @@
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
     }) : '-';
     const money = value => 'Rp ' + Number(value || 0).toLocaleString('id-ID');
+    const reconciliationStatus = value => {
+        const map = { menunggu_verifikasi: ['pending', 'Menunggu verifikasi'], terverifikasi: ['verified', 'Terverifikasi'], tidak_valid: ['invalid', 'Tidak valid'] };
+        const [type, label] = map[value] || ['pending', String(value || '-')];
+        return `<span class="late-status ${type}">${label}</span>`;
+    };
 
     async function loadEligible() {
         const select = $('#late-order');
@@ -41,11 +46,11 @@
                         <td>${esc(r.nama_pemesan)}</td><td>${esc(r.telepon_penerima || '-')}</td>
                         <td>${fmt(r.tanggal_pesanan)}</td><td>${fmt(r.tgl_kirim)}</td>
                         <td>${money(r.total)}</td><td>${esc(r.status_pesanan)}</td>
-                        <td>${esc(r.status_rekonsiliasi)}</td><td>${fmt(r.waktu_transaksi)}</td>
+                        <td>${reconciliationStatus(r.status_rekonsiliasi)}</td><td>${fmt(r.waktu_transaksi)}</td>
                         <td>${fmt(r.dicatat_at)}</td>
                         <td><button class="button small secondary" data-late-detail="${Number(r.id)}">Detail</button></td>
                     </tr>`).join('') + '</tbody></table>'
-                : '<p class="muted">Belum ada rekonsiliasi pembayaran terlambat.</p>';
+                : '<div class="late-empty"><div><span aria-hidden="true">&#10003;</span><strong>Belum ada rekonsiliasi</strong><small>Catatan pembayaran terlambat akan muncul di sini.</small></div></div>';
             $$('[data-late-detail]').forEach(b => b.onclick = () => openDetail(Number(b.dataset.lateDetail)));
         } catch (e) { box.innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
     }
