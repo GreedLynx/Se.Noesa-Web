@@ -5,6 +5,22 @@ if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
 
+// Fitur reschedule ditambahkan oleh migrasi 022. Jika tabel belum terpasang
+// pada database target, endpoint tetap harus menyajikan daftar/detail pesanan
+// daripada mengembalikan 500 yang membuat riwayat tampak kosong.
+function reschedule_table_available(): bool
+{
+    static $available = null;
+    if ($available === null) {
+        try {
+            $available = (bool) q("SELECT to_regclass('public.penawaran_jadwal_ulang')")->fetchColumn();
+        } catch (Throwable $e) {
+            $available = false;
+        }
+    }
+    return $available;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
     $request = body();
@@ -366,14 +382,18 @@ if (isset($_GET['id'])) {
     )->fetch();
     if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
 
-    $offer = q("SELECT id, status_asal, tanggal_asal, alasan, tanggal_usulan,
-            CASE WHEN status_tawaran = 'menunggu' AND berlaku_sampai <= clock_timestamp() THEN 'kedaluwarsa' ELSE status_tawaran END status_tawaran,
-            dibuat_at, berlaku_sampai, ditanggapi_at
-        FROM penawaran_jadwal_ulang WHERE pesanan_id = ?", [$order['id']])->fetch();
-    $order['reschedule_offer'] = $offer ?: null;
-    $order['can_respond_reschedule'] = $offer && $offer['status_tawaran'] === 'menunggu'
-        && $offer['status_asal'] === $order['status'];
-    if ($order['can_respond_reschedule']) $order['can_upload_proof'] = false;
+    $order['reschedule_offer'] = null;
+    $order['can_respond_reschedule'] = false;
+    if (reschedule_table_available()) {
+        $offer = q("SELECT id, status_asal, tanggal_asal, alasan, tanggal_usulan,
+                CASE WHEN status_tawaran = 'menunggu' AND berlaku_sampai <= clock_timestamp() THEN 'kedaluwarsa' ELSE status_tawaran END status_tawaran,
+                dibuat_at, berlaku_sampai, ditanggapi_at
+            FROM penawaran_jadwal_ulang WHERE pesanan_id = ?", [$order['id']])->fetch();
+        $order['reschedule_offer'] = $offer ?: null;
+        $order['can_respond_reschedule'] = $offer && $offer['status_tawaran'] === 'menunggu'
+            && $offer['status_asal'] === $order['status'];
+        if ($order['can_respond_reschedule']) $order['can_upload_proof'] = false;
+    }
 
     foreach (['payment_expires_at', 'cancel_before'] as $field) {
         if ($order[$field] !== null) {
@@ -407,9 +427,12 @@ $filter = in_array($status, $allowedStatuses, true) ? 'AND status = ?' : '';
 $queryArgs = [$customer['id']];
 if ($filter) $queryArgs[] = $status;
 
+$rescheduleColumn = reschedule_table_available()
+    ? "EXISTS (SELECT 1 FROM penawaran_jadwal_ulang r WHERE r.pesanan_id = pesanan.id AND r.status_tawaran = 'menunggu' AND r.berlaku_sampai > clock_timestamp()) reschedule_pending"
+    : "FALSE AS reschedule_pending";
 $orders = q(
     "SELECT id, kode, nama_pemesan, total, status, status_updated_at, alasan_penolakan, tgl_kirim, created_at,
-        EXISTS (SELECT 1 FROM penawaran_jadwal_ulang r WHERE r.pesanan_id = pesanan.id AND r.status_tawaran = 'menunggu' AND r.berlaku_sampai > clock_timestamp()) reschedule_pending
+        $rescheduleColumn
         FROM pesanan WHERE user_id = ? $filter ORDER BY created_at DESC LIMIT 50",
     $queryArgs
 )->fetchAll();

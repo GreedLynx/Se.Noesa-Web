@@ -2,47 +2,43 @@
     display: none;
 }
 
-.customer-bottom-user {
-    display: none;
-}
-
 @media (min-width: 701px) {
-    body[data-page="catalog"] .customer-page-nav {
-        display: none;
-    }
     body[data-page="catalog"] .customer-category-rail {
         position: fixed;
-        top: 30%;
+        top: 26%;
         left: 0;
         display: grid;
         width: 82px;
-        gap: 12px;
+        gap: 14px;
         z-index: 9;
     }
-    body[data-page="catalog"] .customer-category-rail button {
+    body[data-page="catalog"] .customer-category-rail button,
+    body[data-page="catalog"] .customer-category-rail .rail-orders {
         position: relative;
         display: grid;
         place-items: center;
         width: 82px;
-        height: 60px;
+        height: 64px;
         padding: 0;
         border: 0;
         background: transparent;
         color: var(--brown);
         transition: color .2s, transform .2s;
     }
-    body[data-page="catalog"] .customer-category-rail button:hover {
+    body[data-page="catalog"] .customer-category-rail button:hover,
+    body[data-page="catalog"] .customer-category-rail .rail-orders:hover {
         color: #fff;
         transform: translateX(2px);
     }
-    body[data-page="catalog"] .customer-category-rail button svg {
+    body[data-page="catalog"] .customer-category-rail button svg,
+    body[data-page="catalog"] .customer-category-rail .rail-orders svg {
         position: relative;
         z-index: 1;
-        width: 34px;
-        height: 34px;
+        width: 40px;
+        height: 40px;
         fill: none;
         stroke: currentColor;
-        stroke-width: 1.55;
+        stroke-width: 1.6;
         stroke-linecap: round;
         stroke-linejoin: round;
         transition: transform .2s;
@@ -53,20 +49,20 @@
     }
     body[data-page="catalog"] .customer-category-rail button.active::before {
         position: absolute;
-        inset: 0 -40px 0 0;
+        inset: 0 -42px 0 0;
         z-index: 0;
         content: "";
-        border-radius: 0 30px 30px 0;
+        border-radius: 0 32px 32px 0;
         background: var(--green);
         box-shadow: 7px 4px 15px #3148341c;
     }
     body[data-page="catalog"] .customer-category-rail button.active::after {
         position: absolute;
-        right: -16px;
+        right: -17px;
         z-index: 1;
         content: "\203A";
         color: #d5e5d6;
-        font: 30px/1 system-ui, sans-serif;
+        font: 32px/1 system-ui, sans-serif;
     }
     body[data-page="catalog"] .customer-category-rail button.active svg {
         transform: scale(1.04);
@@ -86,54 +82,36 @@
         background: var(--green);
     }
     body[data-page="catalog"] .customer-rail {
-        width: 0;
-        padding: 0;
-        overflow: visible;
-        transition: width .2s, padding .2s;
-    }
-    body[data-page="catalog"] .customer-rail.is-open {
         width: 62px;
-        padding: 15px 6px;
-    }
-    body[data-page="catalog"] .customer-rail:not(.is-open) .customer-logo,
-    body[data-page="catalog"] .customer-rail:not(.is-open) .customer-category-rail,
-    body[data-page="catalog"] .customer-rail:not(.is-open) .rail-logout,
-    body[data-page="catalog"] .customer-rail:not(.is-open) .customer-bottom-user {
-        visibility: hidden;
-        pointer-events: none;
+        padding: 14px 5px;
+        overflow: visible;
     }
     body[data-page="catalog"] .customer-logo {
-        position: fixed;
-        z-index: 10;
-        top: 4px;
-        left: 6px;
-        width: 54px;
-        height: 54px;
+        width: 44px;
+        height: 44px;
         margin: 0;
     }
     body[data-page="catalog"] .customer-logo svg {
-        width: 34px;
-        height: 34px;
+        width: 26px;
+        height: 26px;
         fill: none;
         stroke: var(--brown);
         stroke-width: 1.8;
     }
-    body[data-page="catalog"] .customer-page-nav {
-        display: none;
-    }
     body[data-page="catalog"] .customer-category-rail {
         position: fixed;
-        top: 30%;
+        top: 24%;
         left: 0;
         display: grid;
         width: 62px;
-        gap: 10px;
+        gap: 8px;
         z-index: 9;
     }
     body[data-page="catalog"] .customer-mobile-nav {
         display: none;
     }
-    body[data-page="catalog"] .customer-category-rail button {
+    body[data-page="catalog"] .customer-category-rail button,
+    body[data-page="catalog"] .customer-category-rail .rail-orders {
         position: relative;
         display: grid;
         place-items: center;
@@ -145,48 +123,13 @@
         color: var(--brown);
         transition: color .2s, transform .2s;
     }
-    body[data-page="catalog"] .rail-logout {
-        position: fixed;
-        z-index: 10;
-        bottom: 60px;
-        left: 17px;
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: #ffffff30;
-    }
-    body[data-page="catalog"] .rail-logout svg {
-        width: 20px;
-        height: 20px;
-        fill: none;
-        stroke: #fff;
-        stroke-width: 1.8;
-    }
-    body[data-page="catalog"] .customer-bottom-user {
-        position: fixed;
-        z-index: 10;
-        left: 10px;
-        bottom: 8px;
-        display: grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: var(--brown);
-        color: #fff;
-        font-size: 17px;
-        font-weight: 600;
-    }
-    body[data-page="catalog"] .customer-category-rail button svg {
-        width: 34px;
-        height: 34px;
+    body[data-page="catalog"] .customer-category-rail button svg,
+    body[data-page="catalog"] .customer-category-rail .rail-orders svg {
+        width: 36px;
+        height: 36px;
         fill: none;
         stroke: currentColor;
-        stroke-width: 1.55;
+        stroke-width: 1.6;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
@@ -198,18 +141,18 @@
         position: absolute;
         z-index: 0;
         content: "";
-        inset: 0 -40px 0 0;
-        border-radius: 0 30px 30px 0;
+        inset: 0 -38px 0 0;
+        border-radius: 0 28px 28px 0;
         background: var(--green);
         box-shadow: 7px 4px 15px #3148341c;
     }
     body[data-page="catalog"] .customer-category-rail button.active::after {
         position: absolute;
         z-index: 1;
-        right: -16px;
+        right: -15px;
         content: "›";
         color: #d5e5d6;
-        font: 30px/1 system-ui, sans-serif;
+        font: 28px/1 system-ui, sans-serif;
     }
     body[data-page="catalog"] .customer-category-rail button.active svg {
         position: relative;
@@ -222,7 +165,7 @@
         position: relative;
         height: 100dvh;
         min-height: 0;
-        margin-left: 0;
+        margin-left: 62px;
         padding-bottom: 0;
         overflow: hidden;
         background: transparent;
@@ -247,7 +190,7 @@
         height: 100%;
         min-height: 0;
         max-width: none;
-        padding: 42px 14px 12px;
+        padding: 42px 14px 12px 58px;
         overflow: hidden;
     }
     body[data-page="catalog"] .catalog-intro {
@@ -287,28 +230,6 @@
         background: var(--pale);
         color: var(--brown);
     }
-    body[data-page="catalog"] .category-toggle {
-        position: absolute;
-        top: 32px;
-        right: 54px;
-        display: grid;
-        place-items: center;
-        width: 46px;
-        height: 46px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: var(--pale);
-        color: var(--brown);
-    }
-    body[data-page="catalog"] .category-toggle svg {
-        width: 22px;
-        height: 22px;
-        fill: none;
-        stroke: currentColor;
-        stroke-linecap: round;
-        stroke-width: 1.8;
-    }
     body[data-page="catalog"] .history-link span {
         display: grid;
         place-items: center;
@@ -328,23 +249,6 @@
         display: block;
         flex: none;
         margin: 0 0 20px;
-    }
-    body[data-page="catalog"] .date-panel--delivery .date-eyebrow,
-    body[data-page="catalog"] .delivery-title-desktop {
-        display: none;
-    }
-    body[data-page="catalog"] .delivery-title-mobile {
-        display: inline;
-    }
-    body[data-page="catalog"] .date-panel--delivery .date-panel-hint {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
     }
     body[data-page="catalog"] .customer-search {
         position: relative;
@@ -472,20 +376,14 @@
     }
     body[data-page="catalog"] .cart-bar {
         left: calc(50% + 31px);
-        width: calc(100% - 132px);
+        width: calc(100% - 82px);
     }
 }
 
 @media (min-width: 701px) {
-    .customer-rail .rail-logout {
-        display: none;
-    }
-    .customer-bottom-user {
-        display: none !important;
-    }
     .customer-logo svg {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
         fill: none;
         stroke: var(--brown);
         stroke-width: 1.8;
@@ -534,56 +432,16 @@ body[data-page="catalog"] .menu-grid.category-transition .menu-card {
         overflow: visible;
     }
     body[data-page="history"] .customer-logo {
-        position: fixed;
-        z-index: 10;
-        top: 4px;
-        left: 6px;
-        width: 54px;
-        height: 54px;
+        width: 44px;
+        height: 44px;
         margin: 0;
     }
     body[data-page="history"] .customer-logo svg {
-        width: 34px;
-        height: 34px;
+        width: 26px;
+        height: 26px;
         fill: none;
         stroke: var(--brown);
         stroke-width: 1.8;
-    }
-    body[data-page="history"] .rail-logout {
-        position: fixed;
-        z-index: 10;
-        bottom: 60px;
-        left: 17px;
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: #ffffff30;
-    }
-    body[data-page="history"] .rail-logout svg {
-        width: 20px;
-        height: 20px;
-        fill: none;
-        stroke: #fff;
-        stroke-width: 1.8;
-    }
-    body[data-page="history"] .customer-bottom-user {
-        position: fixed;
-        z-index: 10;
-        left: 10px;
-        bottom: 8px;
-        display: grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: var(--brown);
-        color: #fff;
-        font-size: 17px;
-        font-weight: 600;
     }
     body[data-page="history"] .customer-page-nav, body[data-page="history"] .customer-category-rail {
         display: none;
