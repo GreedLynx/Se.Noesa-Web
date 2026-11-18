@@ -95,3 +95,9 @@
 - `app/bootstrap.php` mengaktifkan `zend.exception_ignore_args` agar kredensial tidak tampil sebagai argumen dalam stack trace. Dokumentasi API, database, dan peta kode diperbarui. PHP lint dan simulasi kegagalan koneksi tanpa kredensial nyata dijalankan. Percobaan CLI pertama memakai direktori sesi Laragon yang tidak writable di sandbox, lalu memakai TEMP.
 - Password asli tampil di error yang dilaporkan. Rotasi password Supabase dan perbarui secret di lingkungan aplikasi tanpa menyalinnya ke repo. `.env` tidak dibaca atau diubah. Perubahan lokal ada di working tree branch navigasi dan belum di-commit.
 - Simulasi PDO akhir lulus tanpa warning setelah mengatur path sesi CLI ke workspace melalui ini_set dan menghapus sesi uji. Opsi -d dengan path TEMP Windows sempat gagal diparse karena nama pendek mengandung tilde.
+
+## Verifikasi browser navigasi kembali Admin
+- Langkah 4 lulus pada feature/navigasi-kembali-admin. Chrome headless memakai PHP dan aset asli, sesi Admin fixture, dan API mock pada subdirektori /demo/admin/.
+- Lulus: empat sumber Dashboard dan tanggal, Back/Forward tanpa loop, mobile 390px dan klik selama debounce, review POST/reload dengan daftar diperbarui, simpan offline dan kembali ke filter, detail gagal, klik tab terpisah tanpa JS, dan fallback asal eksternal. Lima suite regresi Node, syntax PHP/JS, dan git diff HEAD --check lulus.
+- Uji awal Chrome di sandbox tidak menghasilkan hasil. Percobaan di luar sandbox yang diizinkan berhasil. Login dan mutasi database aplikasi belum diuji.
+- Perbandingan dengan referensi lokal origin/dev 329b4f0 menemukan navbar v1 83b76ca dan filter source yang sudah masuk. Saat integrasi, pertahankan navbar, persist filter source di URL dan validasi PHP, lalu uji ulang hasil integrasi. Working tree dan staging pengguna tetap dipertahankan. Belum commit, merge, push, atau ubah Notion.

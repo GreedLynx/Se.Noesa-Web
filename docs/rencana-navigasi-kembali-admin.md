@@ -4,7 +4,7 @@
 
 Admin yang membuka Detail Pesanan dapat kembali ke halaman asal beserta filter yang dipilih, baik dari Dashboard maupun Daftar Pesanan. Akses langsung tetap menyediakan jalan kembali yang aman ke Daftar Pesanan.
 
-Status: langkah 2 dan 3 (Phase 1 dan 2) diimplementasikan pada 18 November 2026; pengujian otomatis terarah lulus. Verifikasi browser Phase 3 masih terbuka; checklist Notion belum diubah.
+Status: langkah 2 dan 3 diimplementasikan pada 18 November 2026. Langkah 4 lulus pada branch fitur dengan Chrome headless, sesi Admin uji, dan respons API contoh. Checklist Notion belum diubah.
 Sumber kebutuhan: [REVISI PAK UNGGUL#3](https://app.notion.com/p/41b223978402804d86b3f6651e3e885d).
 
 ## Batas pekerjaan dan koordinasi
@@ -113,7 +113,7 @@ Selesai ketika semua jalur detail kembali ke sumber yang benar beserta filter, f
 | 1 / Phase 0: discovery | Selesai | Inventaris sumber dan jalur masuk di atas |
 | 2 / Phase 1: konteks asal | Selesai | `orderDetailUrl()` pada enam tautan + redirect offline; URL daftar menyimpan tab/review/q dan mempertahankan tanggal; href lama diperbarui sebelum debounce selesai |
 | 3 / Phase 2: tombol kembali | Selesai | PHP membatasi nama relatif Dashboard/daftar; href bekerja tanpa JS; handler klik biasa replace; modifier/tab baru native; fallback error memakai href yang sama |
-| 4 / Phase 3: verifikasi | Sebagian | Lima suite Node, syntax JS/PHP, dan diff check lulus; uji browser login desktop/mobile belum dilakukan |
+| 4 / Phase 3: verifikasi | Lulus pada branch fitur | Chrome desktop/mobile dengan sesi dan API uji, lima suite Node, syntax JS/PHP, dan diff check |
 
 Branch implementasi: `feature/navigasi-kembali-admin` dari `dev` (`62e3a23`).
 `dev` belum memiliki filter sumber pembatalan yang ada di branch reschedule;
@@ -142,6 +142,8 @@ fitur. Tidak ada catatan yang dibuang. Fixture VM lama perlu diberi `URL`,
 lokasi browser, dan history karena kini helper memakai API browser tersebut;
 setelah disesuaikan semua uji di atas lulus.
 
-Belum dilakukan: browser login, visual desktop/mobile, Back/Forward nyata,
-reload setelah mutasi nyata, dan form offline end-to-end. Tidak mengubah
-navbar/layout/CSS, endpoint/otorisasi, database, atau Notion; belum commit/push/merge.
+Chrome headless merender halaman PHP dan aset branch ini pada subdirektori `/demo/admin/`. Sesi Admin diisi dengan data uji dan permintaan API dijawab server fixture lokal. Empat jalur Dashboard membawa tanggal yang sama. Tombol Kembali dan Back/Forward browser tidak membuka ulang detail. Pada viewport mobile 390 px, klik saat pencarian masih menunggu debounce mempertahankan filter. POST tinjauan uji memicu reload detail dan daftar mengambil hasil terbaru. Form offline mengirim porsi ke API uji, membuka detail baru, dan kembali ke daftar yang masih terfilter. Tautan saat detail gagal dimuat, klik di tab terpisah dengan JavaScript mati, dan fallback untuk asal eksternal juga lulus.
+
+Referensi lokal `origin/dev` (`329b4f0`) sudah memuat commit navbar `83b76ca` serta filter sumber pembatalan. Referensi itu juga mengubah bagian `admin.js` yang disentuh fitur ini. Saat integrasi, pertahankan perubahan navbar, tambahkan `source` ke penyimpanan URL dan validasi PHP, lalu ulangi uji pada hasil integrasi.
+
+Login dan mutasi pada database aplikasi belum diuji. Branch belum diintegrasikan dan checklist Notion belum diubah.
