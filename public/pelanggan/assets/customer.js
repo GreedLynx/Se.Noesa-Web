@@ -86,7 +86,7 @@ let catalog = [], productCache = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
     const search = $('#catalog-search'),
-        filters = $$('.customer-category-rail [data-category]');
+        filters = $$('#catalog-category-tabs [data-category]');
     const syncFilters = () => filters.forEach(x => {
         const active = x.dataset.category === category;
         x.classList.toggle('active', active);
