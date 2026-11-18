@@ -151,29 +151,34 @@ function renderCalendar() {
 
     const year = CAL.month.getFullYear(), month = CAL.month.getMonth();
     const lastDay = new Date(year, month + 1, 0).getDate();
-    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Senin = kolom pertama
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7; // Senin = kolom pertama
+    // Isi penuh 5/6 baris seperti kalender biasa: tanggal bulan sebelah tetap tampil (redup).
+    const totalCells = Math.ceil((offset + lastDay) / 7) * 7;
     const cells = [];
+    const mutedCell = 'w-full max-w-[2rem] aspect-square rounded-full flex items-center justify-center text-[12px] font-medium text-outline-variant/60';
 
-    for (let i = 0; i < firstWeekday; i++) cells.push('<span class="w-full max-w-[2.25rem] aspect-square"></span>');
-    for (let day = 1; day <= lastDay; day++) {
-        const date = new Date(year, month, day);
+    for (let i = 0; i < totalCells; i++) {
+        const date = new Date(year, month, 1 - offset + i);
         const iso = isoDate(date);
+        const outside = date.getMonth() !== month;
         const holiday = isHolidayDate(iso);
         const tooEarly = iso < CAL.min;
         const selected = iso === CAL.selected;
+        const day = date.getDate();
 
         if (selected) {
             cells.push('<button type="button" data-day="' + iso + '" aria-current="date" aria-label="'
-                + esc(dateLabelShort(iso)) + ' (dipilih)" class="relative w-full max-w-[2.25rem] aspect-square rounded-full bg-primary text-on-primary font-headline-sm text-headline-sm flex items-center justify-center shadow-md ring-2 ring-primary-fixed/60 active:scale-95 transition-all">'
+                + esc(dateLabelShort(iso)) + ' (dipilih)" class="relative w-full max-w-[2rem] aspect-square rounded-full bg-primary text-on-primary text-[13px] font-bold flex items-center justify-center shadow-md ring-2 ring-primary-fixed/60 active:scale-95 transition-all">'
                 + day + '<span class="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-secondary-fixed"></span></button>');
+        } else if (outside) {
+            cells.push('<span aria-hidden="true" class="' + mutedCell + '">' + day + '</span>');
         } else if (holiday || tooEarly) {
             const reason = holiday ? 'Hari libur operasional' : 'Minimal pemesanan H-7';
             cells.push('<span role="img" aria-label="' + day + ' ' + reason + '" title="' + reason
-                + '" class="w-full max-w-[2.25rem] aspect-square rounded-full flex items-center justify-center font-body-sm text-body-sm text-outline-variant/50 '
-                + (holiday ? 'line-through' : '') + '">' + day + '</span>');
+                + '" class="' + mutedCell + (holiday ? ' line-through' : '') + '">' + day + '</span>');
         } else {
             cells.push('<button type="button" data-day="' + iso + '" aria-label="' + esc(dateLabelShort(iso))
-                + '" class="w-full max-w-[2.25rem] aspect-square rounded-full flex items-center justify-center font-body-md text-body-md '
+                + '" class="w-full max-w-[2rem] aspect-square rounded-full flex items-center justify-center text-[13px] font-semibold '
                 + (date.getDay() === 0 ? 'text-tertiary' : 'text-primary')
                 + ' hover:bg-surface-container active:scale-95 transition-all">' + day + '</button>');
         }
@@ -344,6 +349,18 @@ function catalogPage() {
         refreshCatalog();
     };
     $('#open-date-picker').onclick = openDateModal;
+    const deliveryCard = $('#delivery-card');
+    if (deliveryCard) {
+        deliveryCard.onclick = e => {
+            if (!e.target.closest('#open-date-picker')) openDateModal();
+        };
+        deliveryCard.onkeydown = e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openDateModal();
+            }
+        };
+    }
     $('#close-date-sheet').onclick = closeDateModal;
     $('[data-close-date-sheet]').onclick = closeDateModal;
     $('#calendar-prev').onclick = () => shiftCalendarMonth(-1);

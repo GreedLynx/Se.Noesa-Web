@@ -44,7 +44,7 @@ $holidayRanges = q(
 
 <!-- Jadwal Pengiriman (terhubung ke api/catalog.php + aturan H-7) -->
 <div class="px-margin-mobile mb-space-md">
-    <div class="bg-surface-container-lowest px-4 py-3 rounded-2xl shadow-[0_2px_12px_rgba(30,43,34,0.04)] flex items-center justify-between border border-surface-container">
+    <div class="bg-surface-container-lowest px-4 py-3 rounded-2xl shadow-[0_2px_12px_rgba(30,43,34,0.04)] flex items-center justify-between border border-surface-container cursor-pointer transition-colors hover:border-primary-fixed-dim" id="delivery-card" role="button" tabindex="0" aria-label="Ubah jadwal pengiriman">
         <div class="flex items-center gap-3 min-w-0">
             <div class="w-9 h-9 rounded-full bg-primary-container/15 flex items-center justify-center text-primary-container shrink-0">
                 <span class="material-symbols-outlined text-[18px]">calendar_today</span>
@@ -54,7 +54,7 @@ $holidayRanges = q(
                 <span class="font-headline-sm text-headline-sm text-primary font-bold truncate" id="selected-date-text">Memuat jadwal…</span>
             </div>
         </div>
-        <button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center gap-0.5 transition-all shrink-0" id="open-date-picker" type="button">
+        <button class="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center gap-0.5 transition-all shrink-0" id="open-date-picker" type="button" aria-label="Ubah tanggal pengiriman">
             <span>Ubah</span><span class="material-symbols-outlined text-[16px]">expand_more</span>
         </button>
     </div>
@@ -183,7 +183,7 @@ $holidayRanges = q(
                         <span class="font-label-sm text-label-sm text-on-surface-variant font-medium">SAB</span>
                         <span class="font-label-sm text-label-sm text-tertiary font-medium">MIN</span>
                     </div>
-                    <div id="calendar-days" class="grid grid-cols-7 gap-y-1.5 gap-x-1 text-center items-center justify-items-center"></div>
+                    <div id="calendar-days" class="grid grid-cols-7 gap-y-1 gap-x-1 text-center items-center justify-items-center"></div>
                     <div class="mt-2.5 pt-2 flex items-center justify-between gap-2 border-t border-surface-container/60 font-label-sm text-label-sm">
                         <div class="flex items-center gap-1.5 text-primary min-w-0">
                             <span class="w-2 h-2 rounded-full bg-primary shrink-0"></span>
@@ -192,14 +192,14 @@ $holidayRanges = q(
                         <span id="calendar-slot-badge" class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold shrink-0">Memeriksa…</span>
                     </div>
                 </div>
-                <div class="pt-3" style="padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));">
+                <div class="pt-2.5" style="padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));">
                     <button type="button" id="calendar-confirm" class="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-container disabled:hover:bg-primary text-on-primary font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20 active:scale-[0.98] transition-all">
                         <div class="flex items-center justify-between w-full">
                             <div class="flex flex-col text-left">
                                 <span class="text-[14px] font-bold leading-tight text-on-primary">Pilih Tanggal Ini</span>
                                 <span id="calendar-confirm-sub" class="text-[12px] font-medium text-primary-fixed">Pilih tanggal pada kalender</span>
                             </div>
-                            <div class="flex items-center gap-1.5 font-semibold text-[13px] bg-white/15 px-3 py-1.5 rounded-lg text-on-primary">
+                            <div class="flex items-center gap-1.5 font-semibold text-[13px] bg-primary-container/40 px-3 py-1.5 rounded-lg text-on-primary">
                                 <span class="leading-none">Lanjut</span>
                                 <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                             </div>
