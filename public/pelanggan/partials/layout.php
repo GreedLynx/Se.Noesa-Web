@@ -38,49 +38,21 @@ function customer_head(string $title, string $page): array
                     <circle cx="12" cy="12" r="10" />
                 </svg>
             </a>
-            <?php if ($page === 'catalog'): ?>
-                <nav class="customer-category-rail" id="category-rail" aria-label="Navigasi pelanggan">
-                    <button type="button" class="active" data-category="" aria-label="Menu" aria-pressed="true" title="Menu">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <rect x="3" y="3" width="7" height="7" rx="1" />
-                            <rect x="14" y="3" width="7" height="7" rx="1" />
-                            <rect x="3" y="14" width="7" height="7" rx="1" />
-                            <rect x="14" y="14" width="7" height="7" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false" title="Makanan">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 4v6M6 4v6M9 4v6M6 10v10M17 4v16M17 4c-3 2-3 7 0 8" />
-                            <circle cx="6" cy="8" r="5" />
-                        </svg>
-                    </button>
-                    <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false" title="Minuman">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M6 8h12l-1.5 12h-9zM9 8l2-6h8M10 12h5" />
-                        </svg>
-                    </button>
-                    <a class="rail-orders" href="riwayat.php" aria-label="Pesanan" title="Pesanan">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="m4 15 11-11a3 3 0 0 1 4 4L8 19a3 3 0 0 1-4-4zM7 17l10-10M3 20l2-2" />
-                        </svg>
-                    </a>
-                </nav>
-            <?php else: ?>
-                <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
-                    <a href="index.php">
-                        <span>◯</span>
-                        <small>Menu</small>
-                    </a>
-                    <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
-                        <span>☰</span>
-                        <small>Riwayat</small>
-                    </a>
-                    <a class="<?= $page === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php">
-                        <span>✉</span>
-                        <small>Notifikasi</small>
-                    </a>
-                </nav>
-            <?php endif; ?>
+            <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
+                <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">
+                    <span>◯</span>
+                    <small>Menu</small>
+                </a>
+                <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
+                    <span>☰</span>
+                    <small>Riwayat</small>
+                </a>
+                <a class="<?= $page === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php">
+                    <span>✉</span>
+                    <small>Notifikasi</small>
+                    <b class="customer-notif-count desktop" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
+                </a>
+            </nav>
         </aside>
         <main class="customer-main">
             <header class="customer-top">

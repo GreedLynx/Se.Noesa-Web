@@ -33,6 +33,11 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
     </div>
 </section>
 <div class="catalog-toolbar">
+    <div class="category-tabs" id="catalog-category-tabs" aria-label="Filter kategori">
+        <button type="button" class="active" data-category="" aria-label="Semua menu" aria-pressed="true">Semua</button>
+        <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false">Makanan</button>
+        <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false">Minuman</button>
+    </div>
     <label class="customer-search">
         <input id="catalog-search" type="search" placeholder="Cari menu" aria-label="Cari menu">
         <span><svg viewBox="0 0 24 24" aria-hidden="true">

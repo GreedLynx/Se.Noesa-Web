@@ -112,6 +112,10 @@ a {
     font-size:9px
 }
 
+.customer-rail nav a {
+    position:relative
+}
+
 .customer-main {
     margin-left:82px;
     min-height:100vh;
@@ -269,6 +273,14 @@ body[data-page="history"] .customer-content {
     align-items:center;
     gap:15px;
     margin:18px 0
+}
+
+.catalog-toolbar .category-tabs {
+    flex:1 1 auto;
+}
+
+.catalog-toolbar .customer-search {
+    flex:0 0 auto;
 }
 
 .category-tabs,.history-tabs {
@@ -1743,9 +1755,6 @@ body[data-page="history"] .customer-content {
     }
     body.has-cart .customer-content {
         padding-bottom:150px
-    }
-    .customer-mobile-nav {
-        z-index:9
     }
 }
 

@@ -47,6 +47,15 @@
     box-shadow: 0 0 0 2px #fff
 }
 
+.customer-notif-count.desktop {
+    top: -4px;
+    right: -6px;
+    min-width: 17px;
+    height: 17px;
+    line-height: 17px;
+    box-shadow: 0 0 0 2px var(--green)
+}
+
 .customer-notif-count[hidden] {
     display: none
 }
