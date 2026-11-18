@@ -25,11 +25,12 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <h2 class="date-panel-title" id="delivery-title">Mau dikirim kapan?</h2>
         <p class="date-panel-hint" id="delivery-hint">Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.</p>
         <p class="date-panel-hint" id="quota-full-hint" role="status" hidden></p>
+        <p class="date-panel-hint" id="daily-quota-hint" role="status"></p>
     </div>
     <div class="date-field">
         <label for="catalog-delivery-date">Tanggal pengiriman</label>
         <input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
-            aria-describedby="delivery-hint" data-date-picker required>
+            aria-describedby="delivery-hint daily-quota-hint" data-date-picker data-availability-url="api/availability.php" required>
     </div>
 </section>
 <div class="catalog-toolbar">

@@ -358,6 +358,11 @@ body[data-page="history"] .customer-content {
     transition:transform .2s,border .2s,box-shadow .2s
 }
 
+.menu-card.stock-nearly-full { border-color:#d8a23b; }
+.menu-card.stock-full, .menu-card.stock-closed { opacity:.6; }
+#daily-quota-hint[data-status="nearly_full"] { color:#8a6216; }
+#daily-quota-hint[data-status="full"], #daily-quota-hint[data-status="closed"] { color:var(--red); }
+
 .menu-card:hover {
     transform:translateY(-4px);
     border-color:var(--green);
