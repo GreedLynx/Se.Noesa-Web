@@ -1,12 +1,12 @@
 :root {
-    --green:#516b55;
-    --green-dark:#3b513e;
+    --green:#758d76;
+    --green-dark:#516b55;
     --dark:#516b55;
     --pale:#d6e5d7;
     --soft:#edf3ed;
     --brown:#5a3b24;
     --ink:#252720;
-    --muted:#687067;
+    --muted:#81877f;
     --line:#d2e1d3;
     --red:#a5463b;
     --bg:#f8faf7;
@@ -57,14 +57,23 @@ a {
 
 .customer-logo {
     font:26px Georgia,serif;
-    width:48px;
-    height:48px;
+    width:52px;
+    height:52px;
     border-radius:50%;
     background:#fff;
     color:var(--brown);
     display:grid;
     place-items:center;
-    margin-bottom:54px
+    flex:none;
+    margin-bottom:40px
+}
+
+.customer-logo svg {
+    width:32px;
+    height:32px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8
 }
 
 .customer-logo span {
@@ -103,10 +112,6 @@ a {
     font-size:9px
 }
 
-.rail-logout {
-    margin-top:auto
-}
-
 .customer-main {
     margin-left:82px;
     min-height:100vh;
@@ -124,8 +129,10 @@ a {
 }
 
 .customer-top>div:first-child small {
-    font-size:11px;
-    color:var(--muted)
+    font-size:20px;
+    font-weight:600;
+    color:var(--brown);
+    letter-spacing:-.2px
 }
 
 .customer-top h1 {
@@ -315,11 +322,6 @@ body[data-page="history"] .customer-content {
     width:100%;
     font-size:12px;
     background:transparent
-}
-
-.customer-search:focus-within {
-    outline:3px solid #29412d;
-    outline-offset:2px
 }
 
 .menu-grid {
@@ -1103,10 +1105,13 @@ body[data-page="history"] .customer-content {
         padding:12px 5px
     }
     .customer-logo {
-        width:38px;
-        height:38px;
-        margin-bottom:32px;
+        width:44px;
+        height:44px;
         font-size:21px
+    }
+    .customer-logo svg {
+        width:26px;
+        height:26px
     }
     .customer-rail nav a,.rail-logout {
         width:46px;
@@ -1279,10 +1284,6 @@ body[data-page="history"] .customer-content {
     .cart-dialog {
         margin-bottom:80px
     }
-}
-
-.category-toggle,.delivery-title-mobile {
-    display:none
 }
 
 .payment-method-card {

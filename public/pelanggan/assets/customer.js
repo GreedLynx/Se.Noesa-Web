@@ -85,17 +85,8 @@ let catalog = [], productCache = {
 }, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
-    wireLogout();
     const search = $('#catalog-search'),
-        filters = $$('.customer-category-rail [data-category]'),
-        categoryToggle = $('[data-category-toggle]'),
-        rail = $('.customer-rail');
-    const setCategoryRail = open => {
-        rail.classList.toggle('is-open', open);
-        categoryToggle.setAttribute('aria-expanded', open);
-        categoryToggle.setAttribute('aria-label', open ? 'Tutup kategori' : 'Buka kategori');
-    };
-    if (categoryToggle) categoryToggle.onclick = () => setCategoryRail(!rail.classList.contains('is-open'));
+        filters = $$('.customer-category-rail [data-category]');
     const syncFilters = () => filters.forEach(x => {
         const active = x.dataset.category === category;
         x.classList.toggle('active', active);
@@ -104,14 +95,10 @@ function catalogPage() {
 
     syncFilters();
     filters.forEach(b => b.onclick = () => {
-        if (category === b.dataset.category) {
-            if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
-            return;
-        }
+        if (category === b.dataset.category) return;
 
         category = b.dataset.category;
         syncFilters();
-        if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
         refreshCatalog(true);
     });
@@ -488,7 +475,6 @@ function statusProgress(status) {
 
 let historyStatus = '', historyTimer, paymentExpiryTimer = null;
 function historyPage() {
-    wireLogout();
     const dialog = $('#history-dialog');
     $$('[data-close-history]').forEach(b => b.onclick = () => {
         clearTimeout(paymentExpiryTimer);
@@ -776,6 +762,7 @@ async function openHistoryDetail(id) {
 }
 
 const page = document.body.dataset.page;
+wireLogout();
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
