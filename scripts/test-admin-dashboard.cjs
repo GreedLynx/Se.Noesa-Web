@@ -15,6 +15,8 @@ const element = selector => {
 const base = { orders: 2, pending: 1, critical: 0, capacity: 80, used: 8, chart: [], priority: [], recent: [] };
 let response;
 const context = {
+    URL, URLSearchParams,
+    location: { href: 'https://example.test/demo/admin/dashboard.php?tgl_kirim=2030-11-20' },
     $: element,
     api: async () => response,
     dateLabel: value => value || '-',
@@ -24,6 +26,7 @@ const context = {
     countUp: (node, value) => { node.textContent = String(value); },
 };
 vm.createContext(context);
+vm.runInContext(source.slice(source.indexOf('function orderDetailUrl('), source.indexOf('function syncOrderUrl(')), context);
 vm.runInContext(source.slice(source.indexOf('function cancellationSourceLabel('), source.indexOf('function countUp(')), context);
 vm.runInContext(source.slice(source.indexOf('async function dashboard()'), source.indexOf('\nlet orderTab')), context);
 

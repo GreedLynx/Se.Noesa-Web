@@ -1,5 +1,17 @@
 # Peta Kode
 
+## Navigasi kembali Admin
+
+| Kebutuhan | File |
+|---|---|
+| URL asal semua tautan detail Dashboard/daftar dan redirect pesanan offline | `public/admin/assets/admin.js`, `orderDetailUrl()` |
+| Simpan/pulihkan tab, tinjauan, pencarian, dan tanggal pada URL daftar | `public/admin/assets/admin.js`, `ordersPage()`, `syncOrderUrl()` |
+| Validasi tujuan kembali dan href tanpa JavaScript | `public/admin/order-detail.php` |
+| Klik kembali biasa memakai replace; klik tab baru tetap native | `public/admin/assets/admin.js`, `bindOrderBack()` |
+| Uji konteks asal, debounce, click modifiers, dan validator PHP tanpa DB | `scripts/test-admin-back-navigation.cjs` |
+
+Rencana dan progress: `docs/rencana-navigasi-kembali-admin.md`.
+
 ## Kalender libur operasional
 
 | Kebutuhan | File |
@@ -95,6 +107,7 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Save/reset override tanggal dan rentang inklusif | `public/admin/api/kuota-harian.php` |
 | Form default produk dan override rentang | `public/admin/products.php`, `public/admin/assets/admin.js` |
 | Koneksi PDO, prepared statement, session, role | `app/bootstrap.php` |
+| Sembunyikan argumen fungsi dari stack trace | `app/bootstrap.php`, `zend.exception_ignore_args` |
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
 | Autentikasi bersama dan validasi field registrasi | `public/api/auth.php` |
 | Token dan OTP reset password | `database/migrations/012_password_resets.sql`, `database/migrations/013_password_reset_otps.sql` |

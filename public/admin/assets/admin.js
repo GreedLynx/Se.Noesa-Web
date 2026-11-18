@@ -9,6 +9,34 @@ const esc = (s) =>
                 c
             ],
     );
+function orderDetailUrl(id) {
+    const origin = new URL(location.href);
+    return 'order-detail.php?' + new URLSearchParams({
+        id: Number(id), return_to: origin.pathname.split('/').pop() + origin.search,
+    });
+}
+function syncOrderUrl() {
+    const url = new URL(location.href);
+    url.searchParams.set('tab', orderTab);
+    const filters = { q: $('#order-search').value, review: orderTab === 'dibatalkan' ? cancellationReview : '' };
+    for (const [key, value] of Object.entries(filters)) {
+        if (value) url.searchParams.set(key, value);
+        else url.searchParams.delete(key);
+    }
+    history.replaceState(history.state, '', url);
+    $$('a[href*="order-detail.php?"]').forEach(link => {
+        const id = new URL(link.href, location.href).searchParams.get('id');
+        link.href = orderDetailUrl(id);
+    });
+}
+function bindOrderBack() {
+    document.addEventListener('click', event => {
+        const link = event.target.closest('[data-order-back]');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target || link.hasAttribute('download')) return;
+        event.preventDefault();
+        location.replace(link.href);
+    });
+}
 async function api(url, options = {}) {
     if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url) && !/[?&]tgl_kirim=/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
@@ -293,7 +321,7 @@ async function dashboard() {
             '</h3><strong>' + Number(item.total_porsi).toLocaleString("id-ID") +
             ' porsi</strong></div><details><summary>Lihat ' + item.pesanan.length +
             ' pesanan</summary><ul>' + item.pesanan.map(order =>
-                '<li><a href="order-detail.php?id=' + Number(order.id) + '">' +
+                '<li><a href="' + esc(orderDetailUrl(order.id)) + '">' +
                 esc(order.kode) + '</a> ' + badge(order.status) + ' · ' +
                 Number(order.porsi).toLocaleString("id-ID") + ' porsi</li>'
             ).join("") + '</ul></details></article>'
@@ -309,7 +337,7 @@ async function dashboard() {
         $("#cancellation-count").textContent = (Number(cancellations.unreviewed_count) || 0).toLocaleString("id-ID");
         $("#cancellation-urgent-count").textContent = (Number(cancellations.urgent_count) || 0).toLocaleString("id-ID") + " perlu pemeriksaan pembayaran atau penghentian persiapan/pengiriman.";
         cancellationList.innerHTML = cancellations.items.length
-            ? cancellations.items.map(order => '<a class="cancellation-alert" href="order-detail.php?id=' + Number(order.id) +
+            ? cancellations.items.map(order => '<a class="cancellation-alert" href="' + esc(orderDetailUrl(order.id)) +
                 '"><span><b>' + esc(order.kode) + ' · ' + esc(order.nama_pemesan) + '</b><small>' +
                 esc(cancellationSourceLabel(order.cancellation_source)) + ' · ' + esc(cancellationTime(order.cancelled_at)) +
                 '</small></span><p>' + esc(cancellationAttention(order)) + '</p><span class="cancellation-open">Buka detail pesanan &rarr;</span></a>').join("")
@@ -354,8 +382,7 @@ async function dashboard() {
         ? d.priority
                 .map(
                     (o) =>
-                        '<a class="priority-item" href="order-detail.php?id=' +
-                        Number(o.id) +
+                        '<a class="priority-item" href="' + esc(orderDetailUrl(o.id)) +
                         '"><div class="priority-main"><b>' +
                         esc(o.kode) +
                         " · " +
@@ -374,8 +401,7 @@ async function dashboard() {
         ? d.recent
                 .map(
                     (o) =>
-                        '<a class="activity-row" href="order-detail.php?id=' +
-                        Number(o.id) +
+                        '<a class="activity-row" href="' + esc(orderDetailUrl(o.id)) +
                         '"><span><b>' +
                         esc(o.kode) +
                         "</b>" +
@@ -433,8 +459,7 @@ async function loadOrders() {
                 money(o.total) +
                 "</b></td><td>" +
                 badge(o.status) + cancellationSummary(o) +
-                '</td><td><a class="button small secondary" href="order-detail.php?id=' +
-                Number(o.id) +
+                '</td><td><a class="button small secondary" href="' + esc(orderDetailUrl(o.id)) +
                 '">Lihat detail</a></td></tr>',
         )
         .join("");
@@ -445,8 +470,7 @@ async function loadOrders() {
         d.items
             .map(
                 (o) =>
-                    '<a class="mobile-order" href="order-detail.php?id=' +
-                    Number(o.id) +
+                    '<a class="mobile-order" href="' + esc(orderDetailUrl(o.id)) +
                     '"><span class="row-between"><b>' +
                     esc(o.kode) +
                     "</b>" +
@@ -471,6 +495,7 @@ function ordersPage() {
     const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan"];
     orderTab = tabs.includes(params.get("tab")) ? params.get("tab") : "semua";
     cancellationReview = ["unreviewed", "reviewed"].includes(params.get("review")) ? params.get("review") : "";
+    $("#order-search").value = params.get("q") || "";
     const reviewSelect = $("#cancellation-review");
     reviewSelect.value = cancellationReview;
     const syncOrderFilters = () => {
@@ -480,6 +505,7 @@ function ordersPage() {
     syncOrderFilters();
     reviewSelect.onchange = () => {
         cancellationReview = reviewSelect.value;
+        syncOrderUrl();
         loadOrders();
     };
     $$("#order-tabs button").forEach(
@@ -487,13 +513,16 @@ function ordersPage() {
             (b.onclick = () => {
                 orderTab = b.dataset.tab;
                 syncOrderFilters();
+                syncOrderUrl();
                 loadOrders();
             }),
     );
     $("#order-search").oninput = () => {
         clearTimeout(orderTimer);
+        syncOrderUrl();
         orderTimer = setTimeout(loadOrders, 220);
     };
+    syncOrderUrl();
     const dialog = $("#offline-order-dialog");
     const form = $("#offline-order-form");
     const productList = $("#offline-menu-list");
@@ -577,7 +606,7 @@ function ordersPage() {
                 method: "POST",
                 body: { ...values, action: "create_offline", items },
             });
-            location.href = "order-detail.php?id=" + Number(result.id);
+            location.href = orderDetailUrl(result.id);
         } catch (error) {
             $("#offline-order-error").textContent = error.message;
             button.disabled = false;
@@ -1174,6 +1203,7 @@ async function orderDetail() {
     });
 }
 shell();
+bindOrderBack();
 const page = document.body.dataset.page;
 const run = {
     dashboard,
@@ -1197,6 +1227,6 @@ if (run)
                 detail.innerHTML =
                     '<article class="panel empty-state">Gagal memuat detail pesanan: ' +
                     esc(e.message) +
-                    '<br><a class="button small secondary" href="orders.php">Kembali ke daftar pesanan</a></article>';
+                    '<br><a class="button small secondary" data-order-back href="' + esc($('#order-back').getAttribute('href')) + '">Kembali</a></article>';
         }
     });

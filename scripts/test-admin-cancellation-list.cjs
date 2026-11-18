@@ -24,7 +24,8 @@ const fixture = {
 };
 const context = {
     URL, URLSearchParams,
-    location: { search: '?tab=dibatalkan&review=unreviewed' },
+    location: { href: 'https://example.test/demo/admin/orders.php?tab=dibatalkan&review=unreviewed', search: '?tab=dibatalkan&review=unreviewed' },
+    history: { state: { retained: true }, replaceState(state, unused, url) { context.location.href = String(url); context.location.search = new URL(url).search; } },
     document: {
         querySelector: node,
         querySelectorAll: selector => selector === '#order-tabs button' ? tabs : [],

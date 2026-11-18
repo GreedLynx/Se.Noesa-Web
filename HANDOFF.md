@@ -1,8 +1,9 @@
 # Handoff Se.Noesa-Web
 
 ## Kondisi saat ini
-- PR #44 untuk branch `feature/pembatalan-pesanan` sudah merge ke `dev` pada 2026-11-13 (`3f782a7`). HEAD lokal saat ini `c98a903` (`docs: refresh project handoff`); branch fitur selaras dengan `origin/feature/pembatalan-pesanan` dan memuat merge PR #44 dari `dev`.
-- Tidak ada perubahan kode aplikasi yang belum di-commit. `HANDOFF.md` sedang diperbarui untuk melengkapi konteks sesi berikutnya; perubahan ini belum di-commit.
+- Branch `feature/full-stack`, HEAD sebelum Tahap 4A: `c54b4a9` (hardening notifikasi perubahan menu: closure audit, advisory lock MNOT, guard Owner read-only, `LIMIT 2` dashboard).
+- Tahap 4A (data integrity & payment safety: D2, D3, C6) sudah diimplementasi dan seluruh pengujian lulus; perubahan belum di-commit.
+- Tidak ada perubahan `.env`; database produksi tidak disentuh. Semua pengujian memakai PostgreSQL uji terisolasi `127.0.0.1:55432` (`SENOESA_TEST_PGPORT`).
 
 ## Fitur yang sudah masuk
 - Rentang libur operasional dapat ditambah, diedit, dan dihapus; checkout tanggal libur diblokir tanpa mengubah pesanan lama.
@@ -17,6 +18,7 @@
 - Uji `scripts/test-order-rejection-reason.php` dan `scripts/test-offline-order.php` lulus; keduanya membungkus data uji dalam transaksi yang di-rollback.
 - Lint PHP dan `git diff --check` lulus.
 - Migrasi 021 sebelumnya diterapkan secara terarah; pemeriksaan API Admin baca-saja menemukan jumlah pesanan tetap 47 dan 15 pesanan batal. Tidak ada POST tinjauan pada database aplikasi.
+- Tahap 4A: seluruh 11 uji Node lulus; seluruh uji PHP lulus di database uji terisolasi (termasuk `test-menu-change-notifications.php` dengan D2/D3/C6 dan `test-menu-notification-concurrency.php` dengan skenario lock kanonik + tanpa deadlock). `test-payment-deadline.php` diverifikasi lewat harness pembatalan; mode standalone tidak dipakai karena menyambung ke DB konfigurasi aplikasi.
 
 ## Keputusan dan batas
 - Tinjauan berlaku bersama bagi semua Admin, persisten sampai ditinjau, dan bukan konfirmasi refund. Refund penuh tetap ditangani di luar aplikasi.
@@ -24,6 +26,11 @@
 - Job kedaluwarsa berjalan melalui CLI; endpoint GET Admin tidak menjalankannya.
 - Migrasi dengan awalan 019/020 memiliki nama file berbeda untuk fitur libur/rekap dan fitur offline/penolakan. Periksa ledger berdasarkan nama file lengkap sebelum penerapan.
 - Belum dilakukan pemeriksaan melalui sesi browser Admin login langsung.
+- Tahap 4A (D2/D3/C6):
+  - Harga penggantian dikunci saat pelanggan memilih (`MENU_NOTICE_PRICE_POLICY = 'snapshot_saat_pelanggan_memilih'`); konfirmasi Admin memakai harga snapshot untuk detail dan total, dan perubahan harga katalog hanya diaudit (`harga_katalog_saat_konfirmasi`, `perbedaan_harga_katalog` — migrasi `024_menu_change_price_audit.sql`, tersinkron di `database/schema.sql`).
+  - Transparansi pembayaran hanya membaca data yang ada: `pembayaran` pada detail respons memuat status pembayaran, bukti, nominal tagihan dari `pesanan.total`, total lama/baru, selisih, dan status penyelesaian selisih. Tidak ada status pembayaran baru, charge, atau refund otomatis.
+  - Urutan lock tabel kanonik `produk` → `kuota_harian` → `tanggal_libur_operasional` dibungkus `daily_quota_lock_tables()` (`app/daily-quota.php`) dan dipakai checkout pelanggan, pesanan offline, respons penggantian pelanggan, serta konfirmasi/penolakan Admin.
+  - `scripts/test-payment-deadline.php` hanya dijalankan lewat harness `scripts/test-order-cancellation.php` (mode `--existing`); mode standalone menyambung ke DB konfigurasi aplikasi dan tidak boleh dipakai.
 
 ## Rujukan implementasi utama
 - Aturan dan indeks file fitur: `docs/peta-kode.md` (kalender libur, rekap produksi, pembatalan, tinjauan Admin).
@@ -34,6 +41,57 @@
 - Detail skema dan kontrak endpoint: `docs/database.md` dan `docs/api.md`. Nama migrasi harus dicocokkan lengkap karena awalan 019 dan 020 dipakai oleh migrasi fitur lain.
 
 ## Pekerjaan berikutnya
-- Fitur penolakan pesanan dengan alasan dan tawaran reschedule masih terpisah. Belum diputuskan status yang dapat ditolak dan apakah tawaran reschedule hanya berupa usulan atau alur penerimaan pelanggan.
-- Sebelum implementasi reschedule, minta keputusan: status pesanan mana yang dapat ditolak; dan apakah Admin hanya mengirim alasan beserta tanggal usulan atau pelanggan perlu menerima tawaran lalu menjalani alur perubahan tanggal.
+- Klarifikasi pengguna: pembatalan/penolakan oleh Admin mencakup status `Menunggu pembayaran`, `Menunggu Validasi`, dan `Diproses`, dilakukan manual per pesanan.
+- `Menunggu pembayaran`: penanganan bergantung kondisi; kasus yang sudah ditetapkan adalah pesanan dibuat sebelum Admin melakukan close order pada tanggal pengiriman tersebut. Admin dapat membatalkan dengan catatan dan tawaran jadwal pengiriman pengganti.
+- `Menunggu Validasi`: jika pembayaran tidak valid, Admin dapat menolak dengan catatan alasan kegagalan pembayaran. Jika pembayaran valid tetapi tanggal pengiriman ditutup oleh Admin, Admin dapat menolak dengan catatan dan tawaran jadwal pengganti.
+- `Diproses`: pembatalan hanya ketika tanggal pengiriman ditutup oleh Admin setelah pesanan dibuat, disertai catatan dan tawaran jadwal pengganti.
+- Pengguna menyetujui alur dalam aplikasi: Admin memberi satu tanggal usulan; pelanggan menerima atau menolak. Penerimaan memeriksa ulang tanggal libur dan kuota; penolakan membatalkan pesanan dan refund pembayaran valid tetap manual di luar aplikasi.
+- Rencana minimum mempertahankan status pesanan selama tawaran menunggu dan menyimpan tawaran pada tabel terpisah. Tawaran paid/diproses berlaku 24 jam; unpaid tetap mengikuti tenggat pembayaran satu jam. Tanggal tujuan tidak memesan kuota sampai diterima.
+- Rencana dan hasil eksekusi ada di `docs/rencana-penolakan-reschedule.md`. Migrasi 022 menambah tabel tawaran terpisah; Admin membuat/mengganti tawaran dan pelanggan menerima/menolak dengan token versi. Accept memeriksa kuota ulang; reject mencatat pembatalan pelanggan. Aksi pembayaran/produksi yang bentrok dijaga di server.
+- Verifikasi yang lulus: PHP lint pada API Admin/Pelanggan dan job kedaluwarsa; JavaScript syntax check; `scripts/test-order-cancellation-ui.cjs`, `scripts/test-admin-order-detail.cjs`, `scripts/test-admin-cancellation-list.cjs`, `scripts/test-admin-dashboard.cjs`; `git diff --check`.
+- Verifikasi yang belum dilakukan: integrasi PostgreSQL/migrasi dan browser login. Tes `scripts/test-payment-deadline.php` disesuaikan untuk tawaran aktif tetapi tidak dijalankan karena harness tersebut membaca konfigurasi proyek dan variabel koneksi PostgreSQL uji tidak tersedia. Tidak ada akses ke `.env` atau database aplikasi.
+- Review sumber akhir selesai: tiga temuan tentang lock, tanggal kedaluwarsa, dan tombol Admin diperbaiki; reviewer tidak menemukan isu tambahan. Berikutnya, jalankan suite PostgreSQL terisolasi dan migrasi fresh/upgrade saat koneksi test tersedia, lalu commit dengan Conventional Commit. Jangan push/merge tanpa langkah eksplisit berikutnya.
+- Percobaan awal membuat branch gagal karena sandbox tidak dapat menulis `.git`; operasi diulang dengan izin Git, lalu `dev` berhasil di-fast-forward dan branch fitur berhasil dibuat tanpa kehilangan perubahan handoff.
 - Tidak ada perubahan `.env`; tidak ada push yang dilakukan pada tugas ini.
+
+## Catatan lanjutan (16 Nov 2026)
+- Saat endpoint `public/pelanggan/api/orders.php` memuat daftar pesanan, koneksi PostgreSQL gagal pada `PDO::__construct` dengan `SSL SYSCALL error: Connection reset by peer`; kegagalan terjadi sebelum query daftar pesanan berjalan, jadi ini belum menunjukkan bug SQL pada fitur reschedule.
+- Log yang dibagikan memuat kredensial DB dalam trace argumen PDO. Rotasi password database dan pembaruan secret di konfigurasi/deployment diperlukan; kredensial tidak disimpan di repo/HANDOFF.
+- Lingkungan sesi ini tidak menyediakan variabel koneksi PostgreSQL uji dan tidak ada utilitas `psql`/`pg_isready`; verifikasi DB terisolasi dan migrasi 022 tetap belum bisa dijalankan. Jangan menerapkan migrasi ke DB aplikasi sebagai pengganti.
+- Syntax PHP endpoint tetap valid (`php -l`); `git diff --check` bersih.
+
+## Pembacaan Notion (18 November 2026)
+- Tujuan sesi: membaca Task Management dan halaman pendukung; tidak mengimplementasikan revisi.
+- Dibaca: Task Management, seluruh 20 baris Tasks Tracker, rincian REVISI GEDE-GEDEAN, REVISI PAK UNGGUL#2/#3, REVISI MITRAA, Laporan Milestone 2, Manajemen Projek, Project Overview, Scope Statement, Model Kebutuhan (Use Case), serta Notulen & Catatan Evaluasi. Halaman Teknis: Web & Basis Data kosong.
+- Tracker: 15 DONE, 4 DOING (Unggul#2, Unggul#3, Mitra, Laporan Milestone 2), 1 REVIEW (Revisi Gede-gedean). Status Notion belum diverifikasi terhadap implementasi.
+- Unggul#2: tren pesanan Owner dengan pemilihan tanggal masih terbuka. Unggul#3: seluruh tujuh item terbuka: informasi kuota penuh, sudah bayar belum unggah bukti, WA Admin, libur saat ada pesanan, keterangan penolakan pembayaran pelanggan, tombol kembali Admin mengikuti riwayat, catatan pesanan Owner tidak sinkron.
+- Mitra: nama se.noesa huruf kecil, warna, logo, background, dan tampilan foto siap kirim masih terbuka. Foto siap kirim dicentang di revisi besar tetapi belum dicentang di revisi mitra; perlu cek aplikasi sebelum menyimpulkan selesai.
+- Notulen historis menyebut katering/minimal 10 sebagai contoh; aturan AGENTS.md tetap PO makanan biasa dan minimal 4 porsi per varian. Tidak ada keputusan bisnis baru dari sesi baca ini.
+- Sumber utama: https://app.notion.com/p/f9a22397840283ccba2301273e1a3f99 dan https://app.notion.com/p/772223978402827d95f881b935f8fcca .
+- Berikutnya: gunakan konteks ini untuk tugas yang diminta pengguna; pembacaan bukan izin mengerjakan seluruh backlog. Tidak mengubah Notion/kode aplikasi/database atau membaca .env. Lampiran PDF dan embed Drive/Figma tidak dibuka; tidak ada percobaan gagal.
+
+## Plan navigasi kembali Admin (18 November 2026)
+- Permintaan terbaru: buat plan dahulu untuk item Unggul#3 tombol kembali mengikuti halaman asal. Teman pengguna sedang mengerjakan navbar tiap role dan bug; Unggul#2 dikerjakan terpisah.
+- Plan selesai: docs/rencana-navigasi-kembali-admin.md (Phase 0 discovery, Phase 1 konteks/filter, Phase 2 kembali berdasarkan asal, Phase 3 verifikasi/dokumentasi).
+- Discovery read-only main + reader: tombol detail dan fallback error statis orders.php; empat sumber Dashboard, dua tautan daftar desktop/mobile, redirect sukses offline. Filter tab/review/source/q belum disinkronkan lengkap dengan URL. Reload detail setelah aksi harus mempertahankan asal.
+- Rancangan diusulkan: return_to eksplisit pada tautan detail, validasi hanya Dashboard/Daftar Pesanan Admin pada origin/direktori instalasi yang sama, fallback orders.php; history.replaceState untuk filter; href server-side aman tanpa JS dan location.replace pada klik biasa agar tidak loop. Native Back/Forward browser tetap normal; tidak membuat stack global dan tidak memakai history.back secara buta.
+- Batas: tidak mengubah navbar/layout/CSS/API/DB/role lain, tanpa library baru. admin.js berpotensi bentrok dengan perbaikan teman; cocokkan diff sebelum implementasi. Belum implementasi atau uji browser/aplikasi.
+- Branch saat discovery feature/penolakan-reschedule ahead 7; HANDOFF sudah berubah dari tugas baca Notion. Plan dibuat tanpa mengganti branch; ketika implementasi siapkan feature/navigasi-kembali-admin dari dev dan cocokkan prasyarat, jangan membawa fitur lain diam-diam.
+- .opencode/revisi.md tidak ditemukan saat dibaca. Tidak membaca .env, tidak mengubah Notion, tidak menjalankan migrasi, tidak commit/push/merge. Langkah selanjutnya adalah meninjau rancangan bersama pengguna sebelum implementasi.
+
+## Implementasi navigasi kembali Admin (18 November 2026, status terbaru)
+- Tujuan: pengguna meminta langkah 2 dan 3 sekaligus, beserta progress. Keduanya selesai pada feature/navigasi-kembali-admin, dibuat dari dev 62e3a23. Catatan branch/fitur sebelumnya di atas merupakan riwayat sesi terdahulu, bukan isi branch fitur ini.
+- public/admin/assets/admin.js: orderDetailUrl untuk empat sumber Dashboard, dua daftar desktop/mobile, dan redirect offline; syncOrderUrl menyimpan tab/review/q dan mempertahankan tanggal, memulihkan pencarian, serta memperbarui href sebelum debounce. bindOrderBack memakai location.replace hanya untuk klik biasa; modifier/target tab baru tetap native. Error detail memakai tujuan tervalidasi yang sama.
+- public/admin/order-detail.php: validasi return_to relatif hanya dashboard.php/orders.php, whitelist query dan validasi nilai, tolak duplikat/array/tujuan asing/control character, fallback orders.php. Href server-side tetap berfungsi tanpa JS. Guard Admin dan mutasi tidak diubah.
+- Dev belum memiliki filter source; jangan membawa fitur branch reschedule diam-diam. Saat source terintegrasi, persistensi JS/allowlist PHP/tests perlu diperbarui bersama. Navbar/layout/CSS tidak disentuh.
+- Docs api/database/peta dan progress di docs/rencana-navigasi-kembali-admin.md diperbarui. scripts/test-admin-back-navigation.cjs baru; fixture dashboard dan cancellation-list disesuaikan dengan API browser.
+- Lulus: test-admin-back-navigation.cjs, test-admin-dashboard.cjs, test-admin-order-detail.cjs, test-admin-cancellation-list.cjs, test-quota-ui.cjs, node --check admin.js, php -l order-detail.php, git diff --check. Tes PHP validator diekstrak tanpa bootstrap/DB.
+- Belum: browser login desktop/mobile, native Back/Forward nyata, reload mutasi nyata dan offline end-to-end. Phase 3 masih sebagian. Tidak membaca .env, mengubah DB/Notion, atau commit/push/merge.
+- Percobaan gagal: switch branch awal ditolak sandbox; setelah eskalasi tertahan perubahan HANDOFF. Catatan diamankan ke TEMP lalu dikembalikan sesudah switch. Uji awal gagal karena fixture VM belum menyediakan helper/History dan ekstraksi handler CRLF; disesuaikan, kemudian seluruh uji terarah lulus.
+- Berikutnya: selesaikan verifikasi browser Phase 3, cocokkan perubahan admin.js dengan pekerjaan teman, dan rangkum sebelum commit. Jangan mencentang Notion sebagai selesai tanpa verifikasi dan instruksi pembaruan.
+
+## Diagnosis koneksi Supabase
+- Error pelanggan terjadi pada lookup DNS saat PDO dibuat, sebelum query dan autentikasi. DNS Windows dan PHP CLI berhasil saat diperiksa ulang. Tes TCP 5432 gagal di sandbox dan berhasil di luar sandbox. Login database dan runtime Laragon belum diverifikasi.
+- `app/bootstrap.php` mengaktifkan `zend.exception_ignore_args` agar kredensial tidak tampil sebagai argumen dalam stack trace. Dokumentasi API, database, dan peta kode diperbarui. PHP lint dan simulasi kegagalan koneksi tanpa kredensial nyata dijalankan. Percobaan CLI pertama memakai direktori sesi Laragon yang tidak writable di sandbox, lalu memakai TEMP.
+- Password asli tampil di error yang dilaporkan. Rotasi password Supabase dan perbarui secret di lingkungan aplikasi tanpa menyalinnya ke repo. `.env` tidak dibaca atau diubah. Perubahan lokal ada di working tree branch navigasi dan belum di-commit.
+- Simulasi PDO akhir lulus tanpa warning setelah mengatur path sesi CLI ke workspace melalui ini_set dan menghapus sesi uji. Opsi -d dengan path TEMP Windows sempat gagal diparse karena nama pendek mengandung tilde.

@@ -1,5 +1,11 @@
 # Database
 
+Kredensial koneksi PDO tidak disertakan sebagai argumen di stack trace PHP. Perubahan ini tidak memerlukan migrasi.
+
+Navigasi kembali Admin menyimpan konteks asal pada query URL halaman, tanpa
+perubahan tabel, kolom, VIEW, migrasi, atau data pesanan. Filter navigasi bukan
+data sesi/database dan tidak mengubah perhitungan kuota maupun pembayaran.
+
 Foto bukti pesanan tersimpan melalui path `pesanan.foto_kiriman`. Penyelesaian
 pesanan mempertahankan path dan file foto; perbaikan tampilannya tidak mengubah skema.
 

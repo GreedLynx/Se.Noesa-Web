@@ -1,4 +1,6 @@
 <?php
+// Argumen PDO memuat kredensial dan tidak boleh masuk ke stack trace.
+ini_set('zend.exception_ignore_args', '1');
 session_start();
 function cfg()
 {
