@@ -130,12 +130,6 @@ function customer_head(string $title, string $page): array
             body[data-page="catalog"] .catalog-scroll { flex: none; overflow: visible; }
         }
         #calendar-confirm:disabled { opacity: .5; cursor: not-allowed; }
-        /* date-picker.css hanya menata trigger di dalam .date-panel; dialog checkout butuh versi ringkasnya. */
-        #checkout-dialog .date-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 10px 14px; border: 1px solid #c1c8c1; border-radius: 12px; background: #fff; color: #121e16; font: inherit; text-align: left; cursor: pointer; }
-        #checkout-dialog .date-trigger svg { width: 22px; height: 22px; flex-shrink: 0; color: #385a45; }
-        #checkout-dialog .date-trigger-value { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; }
-        #checkout-dialog .date-trigger-action { margin-left: auto; white-space: nowrap; font-size: 12px; font-weight: 600; color: #385a45; }
-        #checkout-dialog .date-trigger:hover { border-color: #385a45; background: #fafcf9; }
         /* Badge angka 0 memakai display:flex, jadi atribut hidden perlu dipaksa. */
         [data-notif-count][hidden] { display: none; }
         @media (prefers-reduced-motion: reduce) { #detail-sheet, #date-sheet { animation: none; } }
@@ -198,7 +192,7 @@ function customer_foot(): void
                 <span class="material-symbols-outlined text-[22px]">cottage</span>
                 <span class="font-label-md text-label-md">Beranda</span>
             </a>
-            <a href="riwayat.php" aria-label="Pesanan" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= $active('history') ?>">
+            <a href="riwayat.php" aria-label="Pesanan" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= ($page === 'history' || $page === 'detail') ? 'text-primary-container font-headline-sm' : 'text-on-surface-variant hover:text-on-surface' ?>">
                 <span class="material-symbols-outlined text-[22px]">receipt_long</span>
                 <span class="font-label-md text-label-md">Pesanan</span>
             </a>
@@ -228,82 +222,176 @@ function customer_foot(): void
         </div>
     </div>
 
-    <dialog id="cart-dialog" class="customer-dialog cart-dialog fixed inset-0 m-auto w-[min(92vw,460px)] max-h-[86vh] rounded-2xl bg-surface-container-lowest p-5 shadow-2xl overflow-y-auto" aria-labelledby="cart-title">
-        <button type="button" class="dialog-close absolute right-3 top-3 w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" data-close-cart aria-label="Tutup">
-            <span class="material-symbols-outlined text-[20px]">close</span>
-        </button>
-        <p class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">Isi keranjang</p>
-        <h2 id="cart-title" class="font-headline-md text-headline-md text-primary mt-1">Menu pilihan</h2>
-        <div id="cart-lines" class="mt-4 flex flex-col gap-2"></div>
-        <div class="cart-total-row flex items-center justify-between border-t border-surface-container mt-4 pt-4 font-headline-sm text-headline-sm text-on-surface">
-            <span>Total sementara</span><b id="cart-dialog-total">Rp 0</b>
+    <dialog id="cart-dialog" class="customer-dialog cart-dialog" aria-labelledby="cart-title">
+        <div class="cart-shell">
+            <header class="cart-header">
+                <button type="button" class="cart-back" data-close-cart aria-label="Kembali">
+                    <span class="material-symbols-outlined text-[22px]">arrow_back</span>
+                </button>
+                <div class="cart-heading">
+                    <h2 id="cart-title">Keranjang Pesanan</h2>
+                    <p>Selesaikan pesanan hidangan Anda</p>
+                </div>
+                <span id="cart-menu-badge" class="cart-count-badge">0 Menu Terpilih</span>
+            </header>
+            <div class="cart-body">
+                <section class="cart-address">
+                    <div class="cart-address-head">
+                        <div class="cart-address-title">
+                            <span class="material-symbols-outlined text-[18px]">location_on</span>
+                            <h3>Alamat Pengiriman</h3>
+                            <span id="cart-address-badge" class="cart-address-badge" hidden>Utama</span>
+                        </div>
+                        <button type="button" id="cart-address-change" class="cart-address-change">Ubah Alamat</button>
+                    </div>
+                    <div id="cart-address-body" class="cart-address-body">
+                        <p class="cart-address-empty">Memuat alamat...</p>
+                    </div>
+                </section>
+                <div class="cart-section-head">
+                    <div class="cart-section-title">
+                        <span class="material-symbols-outlined text-[20px]">skillet</span>
+                        <h3>Daftar Hidangan</h3>
+                    </div>
+                    <span id="cart-summary-badge" class="cart-summary-badge">0 Menu &bull; 0 Porsi</span>
+                </div>
+                <section id="cart-lines" class="cart-lines"></section>
+                <section class="cart-breakdown">
+                    <div class="cart-breakdown-head">
+                        <h3>Rincian Pembayaran</h3>
+                        <span id="cart-breakdown-count">0 Total Porsi</span>
+                    </div>
+                    <div class="cart-breakdown-row"><span>Subtotal Hidangan</span><span id="cart-subtotal">Rp 0</span></div>
+                    <div class="cart-breakdown-row"><span>Ongkos Kirim</span><span id="cart-shipping">Gratis</span></div>
+                    <div class="cart-breakdown-divider"></div>
+                    <div class="cart-breakdown-total"><span>Total Pembayaran</span><b id="cart-dialog-total">Rp 0</b></div>
+                </section>
+                <button id="continue-checkout" class="cart-cta" type="button">
+                    <span class="cart-cta-label">
+                        <span class="cart-cta-title">Lanjut Pembayaran</span>
+                        <span id="cart-cta-items" class="cart-cta-sub">0 Porsi Pre-Order</span>
+                    </span>
+                    <span class="cart-cta-right">
+                        <span id="cart-footer-total">Rp 0</span>
+                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    </span>
+                </button>
+            </div>
+            <nav class="cart-nav" aria-label="Navigasi pelanggan">
+                <a href="index.php" class="cart-nav-item" aria-label="Beranda">
+                    <span class="material-symbols-outlined text-[22px]">cottage</span>
+                    <span class="cart-nav-label">Beranda</span>
+                </a>
+                <a href="riwayat.php" class="cart-nav-item" aria-label="Pesanan">
+                    <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+                    <span class="cart-nav-label">Pesanan</span>
+                </a>
+                <a href="#" class="cart-nav-item cart-nav-active" aria-current="page" aria-label="Keranjang">
+                    <span class="cart-nav-icon">
+                        <span class="material-symbols-outlined text-[22px]">local_mall</span>
+                        <span id="cart-nav-count" class="cart-nav-badge" hidden>0</span>
+                    </span>
+                    <span class="cart-nav-label">Keranjang</span>
+                </a>
+                <a href="menu-notifications.php" class="cart-nav-item" aria-label="Notifikasi">
+                    <span class="material-symbols-outlined text-[22px]">notifications</span>
+                    <span class="cart-nav-label">Notifikasi</span>
+                </a>
+            </nav>
         </div>
-        <button id="continue-checkout" class="customer-button primary w-full mt-4 py-3 rounded-full bg-primary text-on-primary font-label-lg text-label-lg font-semibold hover:brightness-110">Lanjutkan</button>
     </dialog>
 
-    <dialog id="checkout-dialog" class="customer-dialog checkout-dialog fixed inset-0 m-auto w-[min(92vw,520px)] max-h-[90vh] rounded-2xl bg-surface-container-lowest p-5 shadow-2xl overflow-y-auto" aria-labelledby="checkout-title">
-        <button type="button" class="dialog-close absolute right-3 top-3 w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" data-close-checkout aria-label="Tutup">
-            <span class="material-symbols-outlined text-[20px]">close</span>
-        </button>
-        <div class="dialog-heading">
-            <p class="eyebrow font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">Konfirmasi</p>
-            <h2 id="checkout-title" class="font-headline-md text-headline-md text-primary mt-1">Data pemesanan</h2>
-            <p class="muted text-body-sm text-on-surface-variant mt-1">Pilih alamat tersimpan atau tambahkan alamat baru.</p>
-        </div>
-        <form id="checkout-form" class="flex flex-col gap-3 mt-4">
-            <label for="checkout-name" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Nama pemesan
-                <input id="checkout-name" name="nama_pemesan" required class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
-            </label>
-            <label for="address-select" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Alamat pengiriman
-                <select id="address-select" name="alamat_id" class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
-                    <option value="">+ Tambah alamat baru</option>
-                </select>
-            </label>
-            <div id="address-fields" class="flex flex-col gap-3">
-                <label for="checkout-label" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Label alamat
-                    <input id="checkout-label" name="label_alamat" value="Rumah" maxlength="50" required class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
-                </label>
-                <div class="form-row grid grid-cols-2 gap-3">
-                    <label for="checkout-recipient" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Nama penerima
-                        <input id="checkout-recipient" name="nama_penerima" maxlength="100" required class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
-                    </label>
-                    <label for="checkout-phone" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Nomor HP
-                        <input id="checkout-phone" name="telepon" type="tel" maxlength="20" required class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
-                    </label>
+    <dialog id="address-sheet" class="customer-dialog address-sheet" aria-labelledby="address-sheet-title">
+        <div class="address-sheet-wrap">
+            <div class="address-sheet-handle"></div>
+            <div class="address-sheet-head">
+                <div>
+                    <h2 id="address-sheet-title">Pilih Alamat Pengiriman</h2>
+                    <p>Pilih alamat tujuan untuk pesanan katering ini</p>
                 </div>
-                <label for="checkout-address" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Alamat lengkap
-                    <textarea id="checkout-address" name="alamat" rows="3" maxlength="2000" required class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary resize-y"></textarea>
-                </label>
-                <label class="save-address-option flex items-center gap-2 font-label-md text-label-md text-on-surface-variant" for="checkout-save-address">
-                    <input id="checkout-save-address" type="checkbox" name="simpan_alamat" value="1" checked class="accent-primary"> Simpan alamat ini untuk pesanan berikutnya
-                </label>
-                <label class="save-address-option flex items-center gap-2 font-label-md text-label-md text-on-surface-variant" for="checkout-default-address">
-                    <input id="checkout-default-address" type="checkbox" name="jadikan_default" value="1" class="accent-primary"> Jadikan alamat default
-                </label>
+                <button type="button" class="address-sheet-close" data-close-address aria-label="Tutup">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
             </div>
-            <div class="date-field flex flex-col gap-1">
-                <label for="checkout-date" class="font-label-md text-label-md text-on-surface-variant">Tanggal kirim</label>
-                <input id="checkout-date" name="tgl_kirim" type="date" required data-date-picker class="w-full border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary">
+            <div class="address-sheet-add">
+                <button type="button" id="address-add-new" class="address-add-btn">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span><span>Tambah Alamat Baru</span>
+                </button>
             </div>
-            <div class="catalog-policy rounded-xl bg-surface-container p-3 text-body-sm text-on-surface-variant" style="margin-top:10px">
-                <ul class="list-disc pl-5">
-                    <li>Pastikan tanggal kirim dan jumlah porsi sesuai kebutuhan acara.</li>
-                    <li>Kuota menu mengikuti tanggal pengiriman yang dipilih.</li>
-                </ul>
+            <div id="address-sheet-list" class="address-sheet-list"></div>
+            <div class="address-sheet-foot">
+                <button type="button" id="address-use" class="address-use-btn">
+                    <span>Gunakan Alamat Ini</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
             </div>
-            <label for="checkout-note" class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Keterangan pesanan (opsional)
-                <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat" class="border border-outline-variant rounded-xl px-3 py-2.5 bg-surface-container-lowest text-on-surface outline-none focus:border-primary resize-y"></textarea>
-                <small class="field-hint text-body-sm text-on-surface-variant">Maksimal 120 karakter.</small>
-            </label>
-            <p id="schedule-note" class="schedule-note text-body-sm text-primary-container"></p>
-            <p class="field-hint text-body-sm text-on-surface-variant">Batas maksimal pembayaran: 1 jam sejak pesanan dibuat. Jika belum dibayar, pesanan dibatalkan otomatis.</p>
-            <p id="checkout-error" class="form-error text-body-sm text-error" role="alert"></p>
-            <button id="submit-order" class="customer-button primary w-full py-3 rounded-full bg-primary text-on-primary font-label-lg text-label-lg font-semibold" type="submit">Kirim pesanan</button>
-        </form>
+        </div>
+    </dialog>
+
+    <dialog id="address-form-sheet" class="customer-dialog address-form-sheet" aria-labelledby="af-title">
+        <div class="asf-wrap">
+            <div class="asf-handle"></div>
+            <div class="asf-head">
+                <button type="button" class="asf-close" data-close-af aria-label="Tutup form">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+                <div class="asf-head-text">
+                    <h2 id="af-title">Tambah Alamat Baru</h2>
+                    <p>Untuk pengantaran hidangan katering Se.Noesa</p>
+                </div>
+                <button type="button" id="af-reset" class="asf-reset">Reset</button>
+            </div>
+            <div class="asf-body">
+                <div class="asf-field">
+                    <label class="asf-label">Kategori Alamat</label>
+                    <div class="asf-chips" id="af-chips">
+                        <button type="button" class="asf-chip is-active" data-label="Rumah"><span class="material-symbols-outlined text-[16px]">home</span><span>Rumah</span></button>
+                        <button type="button" class="asf-chip" data-label="Kantor"><span class="material-symbols-outlined text-[16px]">apartment</span><span>Kantor</span></button>
+                        <button type="button" class="asf-chip" data-label="Apartemen"><span class="material-symbols-outlined text-[16px]">domain</span><span>Apartemen</span></button>
+                        <button type="button" class="asf-chip" data-label="Lainnya"><span class="material-symbols-outlined text-[16px]">bookmark</span><span>Lainnya</span></button>
+                    </div>
+                </div>
+                <div class="asf-grid">
+                    <div class="asf-field">
+                        <label class="asf-label" for="af-name">Nama Penerima</label>
+                        <input id="af-name" class="asf-input" type="text" placeholder="Nama lengkap penerima" autocomplete="name">
+                    </div>
+                    <div class="asf-field">
+                        <label class="asf-label" for="af-phone">Nomor WhatsApp / HP</label>
+                        <div class="asf-input-prefix"><span>+62</span><input id="af-phone" type="tel" placeholder="8xx-xxxx-xxxx" autocomplete="tel"></div>
+                    </div>
+                </div>
+                <div class="asf-field">
+                    <label class="asf-label" for="af-address">Alamat Lengkap Detail</label>
+                    <textarea id="af-address" class="asf-textarea" rows="2" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, dan kode pos"></textarea>
+                </div>
+                <div class="asf-field">
+                    <label class="asf-label" for="af-notes">Catatan untuk Kurir <span class="asf-optional">Opsional</span></label>
+                    <input id="af-notes" class="asf-input" type="text" placeholder="Contoh: Depan warung pandan, rumah cat putih">
+                </div>
+                <label class="asf-toggle-row" for="af-default">
+                    <span class="asf-toggle-text">
+                        <span class="asf-toggle-title">Jadikan Alamat Utama</span>
+                        <span class="asf-toggle-sub">Alamat default untuk pengantaran pesanan berikutnya</span>
+                    </span>
+                    <input id="af-default" type="checkbox" class="asf-switch">
+                </label>
+                <p id="af-error" class="asf-error" role="alert"></p>
+            </div>
+            <div class="asf-foot">
+                <button type="button" id="af-save" class="address-use-btn">
+                    <span>Simpan &amp; Gunakan Alamat</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </button>
+                <button type="button" class="asf-cancel" data-close-af>Batalkan</button>
+            </div>
+        </div>
     </dialog>
 
     <div id="customer-toast" class="toast fixed left-1/2 bottom-24 z-[60] -translate-x-1/2 translate-y-3 opacity-0 pointer-events-none rounded-full bg-inverse-surface text-inverse-on-surface px-5 py-3 font-label-md text-label-md shadow-xl transition-all" role="status" aria-live="polite"></div>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
+    <?php if ($page === 'detail'): ?>
+    <script src="assets/order-detail.js?v=<?= filemtime(__DIR__ . '/../assets/order-detail.js') ?>"></script>
+    <?php endif; ?>
     <script src="assets/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../assets/menu-notifications.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
 </body>

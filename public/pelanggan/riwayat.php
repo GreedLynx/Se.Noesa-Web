@@ -25,10 +25,4 @@ customer_head('Riwayat Pesanan', 'history');
 <section class="px-margin-mobile flex flex-col gap-3 mb-space-xl" id="history-list" aria-live="polite">
     <div class="text-body-sm text-on-surface-variant py-6 text-center">Memuat riwayat pesanan...</div>
 </section>
-<dialog id="history-dialog" class="customer-dialog history-dialog fixed inset-0 m-auto w-[min(94vw,520px)] max-h-[90vh] rounded-2xl bg-surface-container-lowest p-5 shadow-2xl overflow-y-auto" aria-label="Detail pesanan">
-    <button type="button" class="dialog-close absolute right-3 top-3 w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface z-10" data-close-history aria-label="Tutup">
-        <span class="material-symbols-outlined text-[20px]">close</span>
-    </button>
-    <div id="history-detail" class="pt-8"></div>
-</dialog>
 <?php customer_foot(); ?>
