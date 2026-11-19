@@ -1,5 +1,10 @@
 # Peta Kode
 
+## Jumlah porsi katalog dan keranjang Pelanggan
+
+- `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout.
+- `scripts/test-customer-cart-quantity.cjs` menguji ambang sisa porsi, batas jumlah, total, penghapusan, dan payload checkout.
+
 ## Navigasi kembali Admin
 
 | Kebutuhan | File |

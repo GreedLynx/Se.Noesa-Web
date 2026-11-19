@@ -1,5 +1,7 @@
 # API
 
+Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan batas 500 porsi per menu, sedangkan Kurangi berhenti di minimum menu. Hapus mengeluarkan menu dari keranjang. Checkout tetap mengirim `items: [{id, qty}]` dan server memeriksa ulang minimum serta kuota.
+
 Bootstrap menyembunyikan argumen fungsi dari stack trace PHP untuk melindungi kredensial. Format respons endpoint tetap sama.
 
 ## Query navigasi UI Admin

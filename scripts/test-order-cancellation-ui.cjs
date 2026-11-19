@@ -6,6 +6,7 @@ const elements = {
     '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}
 };
 const context = {
+    clearTimeout() {}, setTimeout() {}, paymentExpiryTimer: null, imagePath: String,
     $: selector => {
         if (selector === '#history-detail' || selector === '#history-dialog') return elements[selector];
         return elements['#history-detail'].innerHTML.includes('id="' + selector.slice(1) + '"') ? elements[selector] : null;
@@ -40,7 +41,7 @@ vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail(')
         }
         if (status === 'diproses' && !canCancel) assert.match(html, /Batas Waktu Pembatalan Terlewati/);
         if (status === 'dibatalkan') assert.match(html, /<h3>Refund<\/h3>/);
-        if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat pembayaran telah berakhir/);
+        if (status === 'menunggu_pembayaran' && !canUpload) assert.match(html, /Tenggat waktu upload bukti pembayaran telah berakhir/);
     }
     detail = { id: 2, kode: 'RESCHEDULE', items: [], status: 'diproses', can_cancel: true,
         can_upload_proof: false, reschedule_offer: { status_tawaran: 'menunggu', alasan: 'Tanggal lama ditutup',

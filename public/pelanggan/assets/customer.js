@@ -58,6 +58,7 @@ function wireLogout() {
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
             yes.onclick = () => done(true);
             no.onclick = () => done(false);
+            dialog.oncancel = (event) => { event.preventDefault(); done(false); };
             dialog.onclick = (e) => { if (e.target === dialog) done(false); };
             document.body.appendChild(dialog);
             dialog.showModal();
@@ -237,14 +238,17 @@ async function loadCatalog(animate = false) {
 function showProduct(product) {
     if (!product) return;
     activeProduct = product;
-    const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
-    activeQty = Math.min(maximum, Math.max(1, minimum));
-    const sisaAfter = maximum - activeQty;
+    const inCart = Number(cart[product.id] || 0);
+    const minimum = Math.max(1, Number(product.min_pesan) - inCart);
+    const available = Math.max(0, Number(product.sisa) - inCart);
+    const maximum = Math.min(available, Math.max(0, 500 - inCart));
+    activeQty = Math.min(maximum, minimum);
+    const sisaAfter = available - activeQty;
     const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah dipesan<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
+        + Number(product.min_pesan) + ' porsi</b></span><span' + (showSisa ? '' : ' hidden') + '>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -267,17 +271,10 @@ function showProduct(product) {
         }
         activeQty = quantity;
         input.value = quantity;
-        $('#detail-qty').textContent = quantity + ' porsi';
-        const remaining = maximum - quantity;
+        const remaining = available - quantity;
         const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
-        if (sisaEl) {
-            if (shouldShow) {
-                sisaEl.textContent = remaining + ' porsi';
-                sisaEl.closest('span').style.display = '';
-            } else {
-                sisaEl.closest('span').style.display = 'none';
-            }
-        }
+        sisaEl.textContent = remaining + ' porsi';
+        sisaEl.closest('span').hidden = !shouldShow;
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -293,7 +290,7 @@ function showProduct(product) {
     if (maximum < minimum) {
         input.disabled = true;
         add.disabled = true;
-        add.textContent = 'Stok kurang dari minimal pesanan'
+        add.textContent = inCart ? 'Kuota tidak cukup untuk menambah porsi' : 'Stok kurang dari minimal pesanan';
     }
     add.onclick = () => {
         if (add.disabled) return;
@@ -337,30 +334,25 @@ function openCart() {
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
         const min = Number(p?.min_pesan || 4);
+        const max = Math.min(500, Number(p?.sisa || 0));
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi">&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah">+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '>&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (qty >= max ? ' disabled' : '') + '>+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
     }).join('');
     $$('[data-dec]').forEach(b => b.onclick = () => {
         const id = b.dataset.dec;
         const p = productCache[id];
         const min = Number(p?.min_pesan || 4);
-        if (cart[id] > min) {
-            // Jangan pernah menurunkan jumlah ke bawah minimum produk.
-            // Jika hasil pengurangan lebih kecil dari minimum, clamp ke minimum.
-            if (cart[id] - min < min) toast('Minimum pesanan ' + (p?.nama || 'produk ini') + ' adalah ' + min + ' porsi');
-            cart[id] = Math.max(min, cart[id] - min);
-        } else {
-            delete cart[id];
-        }
+        if (cart[id] <= min) return;
+        cart[id] -= 1;
         renderCart();
         openCart()
     });
     $$('[data-inc]').forEach(b => b.onclick = () => {
         const id = b.dataset.inc;
         const p = productCache[id];
-        const max = Number(p?.sisa || 0);
-        if ((cart[id] || 0) + Number(p?.min_pesan || 4) <= max) cart[id] = (cart[id] || 0) + Number(p?.min_pesan || 4);
-        else toast('Kuota tidak mencukupi');
+        const max = Math.min(500, Number(p?.sisa || 0));
+        if (cart[id] >= max) return;
+        cart[id] += 1;
         renderCart();
         openCart()
     });
@@ -373,7 +365,8 @@ function openCart() {
         $('#cart-dialog').close();
         return
     }
-    $('#cart-dialog').showModal()
+    const dialog = $('#cart-dialog');
+    if (!dialog.open) dialog.showModal();
 }
 
 function toggleAddressFields() {
