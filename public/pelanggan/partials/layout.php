@@ -126,8 +126,10 @@ function customer_head(string $title, string $page): array
         }
         .catalog-pinned.is-scrolled::after { opacity: 1; }
         @media (max-height: 700px) {
-            body[data-page="catalog"] main > div { overflow-y: auto; }
-            body[data-page="catalog"] .catalog-scroll { flex: none; overflow: visible; }
+            body[data-page="catalog"] main { padding-top: calc(4rem + env(safe-area-inset-top, 0px)); }
+            body[data-page="catalog"] main > div { flex: 1 1 0; min-height: 0; overflow: hidden; }
+            body[data-page="catalog"] .catalog-pinned { flex: 0 0 auto; }
+            body[data-page="catalog"] .catalog-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; }
         }
         #calendar-confirm:disabled { opacity: .5; cursor: not-allowed; }
         /* Badge angka 0 memakai display:flex, jadi atribut hidden perlu dipaksa. */
@@ -182,28 +184,28 @@ function customer_foot(): void
 {
     $unreadNotifications = (int) ($GLOBALS['customer_unread'] ?? 0);
     $page = $GLOBALS['customer_page'] ?? '';
-    $active = fn($key) => $page === $key ? 'text-primary-container font-headline-sm' : 'text-on-surface-variant hover:text-on-surface';
+    $active = fn($key) => $page === $key ? 'customer-nav-link is-active' : 'customer-nav-link';
 ?>
         </div>
     </main>
-    <nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(30,43,34,0.06)]" aria-label="Navigasi pelanggan">
+    <nav class="customer-bottom-nav fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(30,43,34,0.06)]" aria-label="Navigasi pelanggan">
         <div class="h-16 px-space-sm flex items-center justify-around">
-            <a href="index.php" aria-label="Beranda" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= $active('catalog') ?>">
+            <a href="index.php" aria-label="Beranda" <?= $page === 'catalog' ? 'aria-current="page"' : '' ?> class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= $active('catalog') ?>">
                 <span class="material-symbols-outlined text-[22px]">cottage</span>
                 <span class="font-label-md text-label-md">Beranda</span>
             </a>
-            <a href="riwayat.php" aria-label="Pesanan" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= ($page === 'history' || $page === 'detail') ? 'text-primary-container font-headline-sm' : 'text-on-surface-variant hover:text-on-surface' ?>">
+            <a href="riwayat.php" aria-label="Pesanan" <?= in_array($page, ['history', 'detail'], true) ? 'aria-current="page"' : '' ?> class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= in_array($page, ['history', 'detail'], true) ? 'customer-nav-link is-active' : 'customer-nav-link' ?>">
                 <span class="material-symbols-outlined text-[22px]">receipt_long</span>
                 <span class="font-label-md text-label-md">Pesanan</span>
             </a>
-            <button type="button" id="nav-cart" aria-label="Keranjang" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 text-on-surface-variant hover:text-on-surface transition-all">
+            <button type="button" id="nav-cart" aria-label="Keranjang" class="customer-nav-link flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5">
                 <span class="relative flex items-center justify-center">
                     <span class="material-symbols-outlined text-[22px]">local_mall</span>
                     <span id="nav-cart-count" class="absolute -top-1 -right-2 px-1.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm leading-none flex items-center justify-center min-w-[16px] h-4 hidden">0</span>
                 </span>
                 <span class="font-label-md text-label-md">Keranjang</span>
             </button>
-            <a href="menu-notifications.php" aria-label="Notifikasi" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= $active('notifications') ?> relative">
+            <a href="menu-notifications.php" aria-label="Notifikasi" <?= $page === 'notifications' ? 'aria-current="page"' : '' ?> class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all <?= $active('notifications') ?> relative">
                 <span class="relative flex items-center justify-center">
                     <span class="material-symbols-outlined text-[22px]">notifications</span>
                     <span class="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-tertiary text-on-tertiary font-label-sm text-label-sm leading-none flex items-center justify-center" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></span>

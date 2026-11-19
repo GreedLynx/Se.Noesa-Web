@@ -101,7 +101,7 @@ customer_head('Detail Pesanan', 'detail');
                 <span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
                 <h2>Unggah Bukti Pembayaran</h2>
             </div>
-            <span id="od-proof-badge" class="od-pill">Opsional</span>
+            <span id="od-proof-badge" class="od-pill">Wajib</span>
         </div>
         <p class="od-muted od-small">Sudah bayar lewat mobile banking / e-wallet? Unggah tangkapan layar untuk verifikasi.</p>
         <form id="od-proof-form" class="od-proof-form">
@@ -111,6 +111,10 @@ customer_head('Detail Pesanan', 'detail');
                 <span class="od-upload-title">Ketuk untuk pilih foto struk / tangkapan layar</span>
                 <span class="od-muted od-small">Format JPG, PNG, WebP · Maksimal 2MB</span>
             </label>
+            <div id="od-proof-preview" class="od-proof-preview" hidden>
+                <img id="od-proof-preview-img" alt="Pratinjau bukti pembayaran">
+                <button type="button" id="od-proof-preview-clear" class="od-btn od-btn-ghost" aria-label="Hapus pilihan">Ganti</button>
+            </div>
             <label class="od-field">
                 <span class="od-label">Atas nama pembayar</span>
                 <input type="text" id="od-payer-name" name="nama_pembayar" maxlength="100" placeholder="Nama yang membayar">
@@ -146,6 +150,36 @@ customer_head('Detail Pesanan', 'detail');
     <div id="od-reschedule"></div>
     <div id="od-delivery"></div>
     <div id="od-notices"></div>
+
+    <section class="od-card od-contact" id="od-contact-card">
+        <button type="button" class="od-contact-head" id="od-contact-toggle" aria-expanded="false" aria-controls="od-contact-body">
+            <span class="od-contact-title"><span class="material-symbols-outlined text-primary text-[18px]">support_agent</span>Kontak &amp; Media Sosial Se.Noesa</span>
+            <span id="od-contact-icon" class="material-symbols-outlined text-on-surface-variant text-[20px]">expand_more</span>
+        </button>
+        <div id="od-contact-body" class="od-contact-body" hidden>
+            <p class="od-muted od-small">Hubungi kami atau ikuti kabar terbaru Se.Noesa.</p>
+            <div class="od-contact-links">
+                <?php
+                $contactConfig = $GLOBALS['config'] ?? [];
+                $whatsappNumber = preg_replace('/[^0-9]/', '', (string) ($contactConfig['whatsapp']['number'] ?? getenv('WHATSAPP_NUMBER') ?: ''));
+                $socialLinks = [
+                    'Instagram' => $contactConfig['social']['instagram'] ?? getenv('INSTAGRAM_URL') ?: '',
+                    'TikTok' => $contactConfig['social']['tiktok'] ?? getenv('TIKTOK_URL') ?: '',
+                    'Facebook' => $contactConfig['social']['facebook'] ?? getenv('FACEBOOK_URL') ?: '',
+                ];
+                if ($whatsappNumber !== ''): ?>
+                    <a class="od-contact-link" href="https://wa.me/<?= htmlspecialchars($whatsappNumber, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined">chat</span>WhatsApp</a>
+                <?php endif;
+                foreach ($socialLinks as $label => $url):
+                    if (!filter_var($url, FILTER_VALIDATE_URL) || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['https', 'http'], true)) continue; ?>
+                    <a class="od-contact-link" href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined">open_in_new</span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($whatsappNumber === '' && count(array_filter($socialLinks, fn($url) => filter_var($url, FILTER_VALIDATE_URL))) === 0): ?>
+                <p class="od-muted od-small">Informasi kontak belum tersedia.</p>
+            <?php endif; ?>
+        </div>
+    </section>
 
     <section class="od-card od-policy" id="od-policy-card" hidden>
         <button type="button" class="od-policy-head" id="od-policy-toggle">

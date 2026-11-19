@@ -81,9 +81,31 @@ function imagePath(name) {
     return file ? '../assets/img/produk/' + file : '../assets/img/produk/NK-01.png'
 }
 
+const CART_KEY = 'senoesa_cart';
+function isReloadNavigation() {
+    try {
+        const nav = performance.getEntriesByType('navigation')[0];
+        return !!nav && nav.type === 'reload';
+    } catch (e) { return false; }
+}
+function loadStoredCart() {
+    if (isReloadNavigation()) {
+        try { sessionStorage.removeItem(CART_KEY); } catch (e) {}
+        return {};
+    }
+    try {
+        const raw = sessionStorage.getItem(CART_KEY);
+        const obj = raw ? JSON.parse(raw) : {};
+        return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
+    } catch (e) { return {}; }
+}
+function saveCart() {
+    try { sessionStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {}
+}
+
 let catalog = [], productCache = {
-}, category = '', schedule = null, catalogClosed = false, cart = {
-}, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [], detailOpener = null;
+}, category = '', schedule = null, catalogClosed = false, cart = loadStoredCart(),
+    activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [], detailOpener = null;
 let selectedAddressId = null;
 function dateLabelShort(value) {
     const d = new Date(value + 'T00:00:00+07:00');
@@ -293,6 +315,29 @@ function confirmDeliveryDate() {
 }
 
 function catalogPage() {
+    const repeatId = new URLSearchParams(location.search).get('repeat');
+    if (repeatId) {
+        (async () => {
+            try {
+                const d = await api('api/orders.php?id=' + Number(repeatId));
+                const items = Array.isArray(d.items) ? d.items : [];
+                if (!items.length) { toast('Pesanan tidak ditemukan'); return; }
+                const day = $('#catalog-delivery-date')?.value;
+                const catalog = await api('api/catalog.php' + (day ? '?tgl_kirim=' + encodeURIComponent(day) : ''));
+                const map = Object.fromEntries((catalog.items || []).map(p => [String(p.id), p]));
+                let added = 0;
+                for (const it of items) {
+                    const p = map[String(it.id)];
+                    if (!p || Number(p.sisa) <= 0) continue;
+                    const qty = Math.max(Number(p.min_pesan || 1), Number(it.qty || 1));
+                    cart[it.id] = (Number(cart[it.id]) || 0) + qty;
+                    added++;
+                }
+                if (added) { renderCart(); toast('Pesanan diisi ulang ke keranjang'); }
+                else toast('Beberapa menu tidak tersedia lagi');
+            } catch (e) { toast(e.message || 'Gagal mengisi ulang pesanan'); }
+        })();
+    }
     const search = $('#catalog-search'),
         filters = $$('.category-chip');
     const syncFilters = () => filters.forEach(x => {
@@ -323,7 +368,8 @@ function catalogPage() {
         catalogScroll.addEventListener('scroll', syncScrollState, { passive: true });
         syncScrollState();
     }
-    $('#checkout-button').onclick = openCart;
+    const checkoutButton = $('#checkout-button');
+    if (checkoutButton) checkoutButton.onclick = openCart;
     $('#continue-checkout').onclick = () => directCheckout();
     $$('[data-close-cart]').forEach(b => b.onclick = () => $('#cart-dialog').close());
     const addressChange = $('#cart-address-change');
@@ -882,7 +928,8 @@ function renderCart() {
     setText('#cart-cta-items', count + ' Porsi Pre-Order');
     setText('#cart-nav-count', count);
     const navCount = $('#cart-nav-count');
-    if (navCount) navCount.hidden = count === 0
+    if (navCount) navCount.hidden = count === 0;
+    saveCart();
 }
 
 function openCart() {
@@ -1026,6 +1073,16 @@ function historyPage() {
         historyStatus = b.dataset.status;
         loadHistory()
     });
+    $$('#history-list').forEach(list => {
+        list.addEventListener('click', e => {
+            const btn = e.target.closest('[data-repeat-order]');
+            if (btn) {
+                e.stopPropagation();
+                const id = Number(btn.dataset.repeatOrder);
+                if (id) location.href = 'index.php?repeat=' + id;
+            }
+        })
+    });
     const id = new URLSearchParams(location.search).get('order');
     if (id) {
         location.href = 'detail.php?order=' + Number(id);
@@ -1057,7 +1114,8 @@ async function loadHistory() {
             + '</b><small class="text-body-sm text-on-surface-variant">' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '') + '</small></span></div>'
             + (o.reschedule_pending ? '<p class="text-body-sm text-secondary mt-2">Menunggu konfirmasi jadwal</p>' : '')
             + '<div class="flex items-center justify-between border-t border-surface-container mt-3 pt-3"><span><small class="block font-label-sm text-label-sm text-on-surface-variant">TOTAL</small><strong class="font-headline-sm text-headline-sm text-primary">' + money(o.total) + '</strong></span>'
-            + '<span class="font-label-md text-label-md text-primary flex items-center gap-1">Detail <span class="material-symbols-outlined text-[16px]">arrow_forward</span></span></div></button>'
+            + (o.status === 'selesai' || o.status === 'ditolak' ? '<button type="button" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold hover:bg-primary-container transition-colors flex items-center gap-1" data-repeat-order="' + Number(o.id) + '"><span class="material-symbols-outlined text-[15px]">replay</span>Pesan Lagi</button>' : '')
+            + '</div></div></button>'
     }).join(''): '<div class="text-body-sm text-on-surface-variant py-8 text-center">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => { location.href = 'detail.php?order=' + Number(card.dataset.order) })
 }
@@ -1086,8 +1144,3 @@ if (navCart) navCart.onclick = () => {
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
-document.addEventListener("DOMContentLoaded", function () {
-    const checkoutForm = $('#checkout-form');
-    const checkoutDateInput = checkoutForm?.elements?.tgl_kirim || document.getElementById('checkout-date');
-    if (!checkoutDateInput) return;
-});

@@ -16,6 +16,18 @@
     let countdownTimer = null;
     let currentOrder = null;
 
+    const contactToggle = $('#od-contact-toggle');
+    if (contactToggle) {
+        contactToggle.addEventListener('click', () => {
+            const body = $('#od-contact-body');
+            const open = contactToggle.getAttribute('aria-expanded') !== 'true';
+            contactToggle.setAttribute('aria-expanded', String(open));
+            if (body) body.hidden = !open;
+            const icon = $('#od-contact-icon');
+            if (icon) icon.textContent = open ? 'expand_less' : 'expand_more';
+        });
+    }
+
     function set(id, text) {
         const el = $('#' + id);
         if (el) el.textContent = text;
@@ -30,6 +42,35 @@
         el.src = src;
         el.alt = alt || '';
         el.onerror = () => { el.onerror = null; el.src = '../assets/img/produk/NK-01.png'; };
+    }
+
+    let previewUrl = null;
+    function resetPreview() {
+        if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+        const box = $('#od-proof-preview'), img = $('#od-proof-preview-img');
+        if (box) box.hidden = true;
+        if (img) img.removeAttribute('src');
+    }
+    function previewFile(fileInput) {
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        const err = $('#od-proof-error');
+        if (err) err.textContent = '';
+        if (!file) { resetPreview(); return; }
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+            if (err) err.textContent = 'Gunakan gambar JPG, PNG, atau WebP.';
+            resetPreview();
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            if (err) err.textContent = 'Ukuran maksimal 2MB.';
+            resetPreview();
+            return;
+        }
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(file);
+        const img = $('#od-proof-preview-img'), box = $('#od-proof-preview');
+        if (img) { img.src = previewUrl; img.alt = 'Pratinjau bukti pembayaran'; }
+        if (box) box.hidden = false;
     }
 
     function renderStepper(status) {
@@ -77,7 +118,7 @@
         }
         renderStepper(d.status);
 
-        if (d.status === 'menunggu_pembayaran' && d.payment_expires_at) startCountdown(d.payment_expires_at);
+        if (d.can_upload_proof && d.payment_expires_at) startCountdown(d.payment_expires_at);
         else show('od-countdown-wrap', false);
 
         set('od-recipient', d.nama_pemesan || '-');
@@ -240,28 +281,39 @@
         const form = $('#od-proof-form');
         const existing = $('#od-proof-existing');
         const payer = $('#od-payer-name');
+        const badge = $('#od-proof-badge');
+        if (badge) badge.textContent = canUpload ? 'Wajib' : 'Terkunci';
         if (payer) payer.value = d.nama_pembayar || d.nama_pemesan || '';
-        set('od-proof-id', d.id);
+        const idInput = $('#od-proof-id');
+        if (idInput) idInput.value = d.id;
+        resetPreview();
         if (hasProof) {
             setImg('od-proof-img', '../' + String(d.bukti_bayar).replace(/^\/+/, ''), 'Bukti pembayaran');
-            if (form) form.hidden = canUpload ? true : true;
             if (existing) existing.hidden = false;
-            show('od-proof-submit', false);
+            // Form tersembunyi; hanya terbuka lewat tombol "Ganti Bukti" selama jendela pembayaran masih aktif.
+            if (form) form.hidden = true;
         } else {
             if (form) form.hidden = false;
             if (existing) existing.hidden = true;
         }
         const replace = $('#od-proof-replace');
-        if (replace) replace.onclick = () => {
-            if (existing) existing.hidden = true;
-            if (form) form.hidden = false;
-        };
+        if (replace) {
+            replace.hidden = !canUpload;
+            replace.onclick = () => {
+                if (existing) existing.hidden = true;
+                if (form) form.hidden = false;
+            };
+        }
         const submit = $('#od-proof-submit');
-        if (submit) submit.onclick = (e) => {
-            e.preventDefault();
-            sendProof();
-        };
+        if (submit) submit.onclick = (e) => { e.preventDefault(); sendProof(); };
         if (form) form.onsubmit = (e) => { e.preventDefault(); sendProof(); };
+        const fileInput = $('#od-proof-file');
+        if (fileInput) fileInput.onchange = () => previewFile(fileInput);
+        const clearBtn = $('#od-proof-preview-clear');
+        if (clearBtn) clearBtn.onclick = () => {
+            if (fileInput) fileInput.value = '';
+            resetPreview()
+        };
         if (!hasProof && d.status === 'menunggu_pembayaran' && !canUpload) {
             const exp = $('#od-proof-expired');
             if (exp) {
@@ -278,11 +330,22 @@
         const err = $('#od-proof-error');
         if (err) err.textContent = '';
         if (!file) { if (err) err.textContent = 'Pilih berkas bukti pembayaran.'; return; }
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { if (err) err.textContent = 'Gunakan gambar JPG, PNG, atau WebP.'; return; }
         if (file.size > 2 * 1024 * 1024) { if (err) err.textContent = 'Ukuran maksimal 2MB.'; return; }
+        const payer = $('#od-payer-name');
+        const payerName = payer ? payer.value.trim() : '';
+        if (!payerName) { if (err) err.textContent = 'Nama pembayar wajib diisi.'; if (payer) payer.focus(); return; }
+        const orderId = (currentOrder && currentOrder.id) || $('#od-proof-id')?.value || '';
+        if (!orderId) { if (err) err.textContent = 'ID pesanan tidak ditemukan, muat ulang halaman.'; return; }
+        const payload = new FormData();
+        payload.append('action', 'upload_proof');
+        payload.append('id', String(orderId));
+        payload.append('nama_pembayar', payerName);
+        payload.append('proof', file);
         const btn = $('#od-proof-submit');
         if (btn) btn.disabled = true;
         try {
-            await api('api/orders.php', {method: 'POST', body: new FormData(form)});
+            await api('api/orders.php', {method: 'POST', body: payload});
             toast('Bukti pembayaran berhasil dikirim');
             load();
         } catch (e) {

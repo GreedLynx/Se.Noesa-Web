@@ -8,12 +8,12 @@ customer_head('Riwayat Pesanan', 'history');
             <span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">Pesanan Saya</span>
             <h1 class="font-headline-xl-mobile text-headline-xl-mobile text-primary tracking-tight font-extrabold">Riwayat Pesanan</h1>
         </div>
-        <a href="index.php" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary hover:brightness-110 transition-all" type="button" aria-label="Tambah pesanan">
+        <a href="index.php" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary hover:brightness-110 transition-all" type="button" aria-label="insic">
             <span class="material-symbols-outlined text-[20px]">add</span>
         </a>
     </div>
 </div>
-<div class="px-margin-mobile mb-space-md flex gap-2 overflow-x-auto pb-1" id="history-tabs" aria-label="Filter status pesanan">
+<div class="w-full overflow-x-auto no-scrollbar py-space-sm px-margin-mobile flex items-center gap-2" id="history-tabs" aria-label="Filter status pesanan">
     <button type="button" class="active shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md font-semibold transition-all bg-primary text-on-primary" data-status="">Semua</button>
     <button type="button" class="shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md font-semibold transition-all bg-surface-container text-on-surface-variant" data-status="menunggu_pembayaran">Menunggu pembayaran</button>
     <button type="button" class="shrink-0 px-3.5 py-1.5 rounded-full font-label-md text-label-md font-semibold transition-all bg-surface-container text-on-surface-variant" data-status="menunggu_validasi">Menunggu verifikasi</button>

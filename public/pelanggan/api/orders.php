@@ -195,13 +195,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
         if (!$id || $id < 1) json(['error' => 'ID pesanan tidak valid'], 422);
         // SELECT memastikan pesanan milik pelanggan yang sedang login sebelum menerima bukti pembayaran.
-        $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
+        $order = q('SELECT id, status, created_at FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
             if ($order['status'] === 'dibatalkan') {
                 json(['error' => 'Pesanan sudah dibatalkan dan tidak dapat menerima bukti pembayaran.'], 409);
             }
             json(['error' => 'Bukti hanya dapat diunggah untuk pesanan yang menunggu pembayaran atau verifikasi'], 409);
+        }
+        // Jendela pembayaran 1 jam: setelah tenggat, bukti (termasuk penggantian) terkunci.
+        if (strtotime($order['created_at']) + 3600 <= time()) {
+            json(['error' => 'Tenggat pembayaran telah berakhir. Bukti pembayaran terkunci, hubungi Admin bila sudah membayar.'], 409);
         }
         if ((bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
             json(['error' => 'Selesaikan respons tawaran jadwal sebelum mengunggah bukti'], 409);
@@ -241,10 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 SET bukti_bayar = ?, nama_pembayar = ?,
                     status = CASE WHEN status = 'menunggu_pembayaran' THEN 'menunggu_validasi' ELSE status END,
                     status_updated_at = CASE WHEN status = 'menunggu_pembayaran' THEN clock_timestamp() ELSE status_updated_at END
-                WHERE id = ? AND user_id = ? AND (
-                    status = 'menunggu_validasi' OR
-                    (status = 'menunggu_pembayaran' AND clock_timestamp() < created_at + interval '1 hour')
-                )",
+                WHERE id = ? AND user_id = ? AND clock_timestamp() < created_at + interval '1 hour' AND
+                    status IN ('menunggu_pembayaran', 'menunggu_validasi')",
                 ['uploads/payments/' . $filename, $payerName, $id, $customer['id']]
             )->rowCount();
             $db->commit();
@@ -375,8 +377,8 @@ if (isset($_GET['id'])) {
             ((tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date - 1)::timestamp AT TIME ZONE 'Asia/Jakarta' AS cancel_before,
             COALESCE(status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses') AND
                 (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date >= (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date + 2, FALSE) AS can_cancel,
-            COALESCE(status = 'menunggu_validasi' OR (status = 'menunggu_pembayaran' AND
-                clock_timestamp() < created_at + interval '1 hour'), FALSE) AS can_upload_proof
+            COALESCE(status IN ('menunggu_pembayaran', 'menunggu_validasi') AND
+                clock_timestamp() < created_at + interval '1 hour', FALSE) AS can_upload_proof
         FROM pesanan WHERE id = ? AND user_id = ?",
         [(int) $_GET['id'], $customer['id']]
     )->fetch();
