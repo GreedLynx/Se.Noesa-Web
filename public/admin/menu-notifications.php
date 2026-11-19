@@ -10,13 +10,11 @@ $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->forma
             <p class="eyebrow">KOMUNIKASI PELANGGAN</p>
             <h2>Notifikasi perubahan menu</h2>
             <p class="muted">
-                Beri tahu pelanggan saat menu yang dipesan tidak tersedia. Penggantian menu baru berlaku
-                setelah Admin menyetujui, dan pesanan offline harus dihubungi manual.
-            </p>
+                Beri tahu pelanggan saat menu yang dipesan tidak tersedia.
         </div>
         <button type="button" class="button primary" id="mn-new">
             <span>+</span>
-            Buat notifikasi
+            Notifikasi
         </button>
     </section>
 

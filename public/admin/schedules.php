@@ -18,7 +18,7 @@ admin_head('Tanggal Libur', 'schedules');
         <span>
             +
         </span>
-        Tambah tanggal libur
+         tanggal
     </button>
 </section>
 <section class="panel products-panel">

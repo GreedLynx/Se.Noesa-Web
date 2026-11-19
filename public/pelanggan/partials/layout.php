@@ -116,8 +116,10 @@ function customer_head(string $title, string $page): array
         .calendar-open { overflow: hidden; }
         /* Dashboard katalog: konten atas tetap, hanya area menu yang bergulir. */
         body[data-page="catalog"] { overflow: hidden; }
-        body[data-page="catalog"] main { height: 100dvh; min-height: 100dvh; overflow: hidden; padding-bottom: 0; }
-        body[data-page="catalog"] main > div { flex: 1 1 auto; min-height: 0; }
+        body[data-page="catalog"] main { height: calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px)); min-height: 0; overflow: hidden; padding-top: calc(4rem + env(safe-area-inset-top, 0px)); padding-bottom: 0; }
+        body[data-page="catalog"] main > div { display: flex; flex: 1 1 0; flex-direction: column; min-height: 0; overflow: hidden; }
+        body[data-page="catalog"] .catalog-pinned { flex: 0 0 auto; }
+        body[data-page="catalog"] .catalog-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; }
         .catalog-pinned { position: relative; z-index: 2; }
         .catalog-pinned::after {
             content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 18px;
@@ -126,7 +128,7 @@ function customer_head(string $title, string $page): array
         }
         .catalog-pinned.is-scrolled::after { opacity: 1; }
         @media (max-height: 700px) {
-            body[data-page="catalog"] main { padding-top: calc(4rem + env(safe-area-inset-top, 0px)); }
+            body[data-page="catalog"] main { padding-top: calc(4rem + env(safe-area-inset-top, 0px)); padding-bottom: 0; }
             body[data-page="catalog"] main > div { flex: 1 1 0; min-height: 0; overflow: hidden; }
             body[data-page="catalog"] .catalog-pinned { flex: 0 0 auto; }
             body[data-page="catalog"] .catalog-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; }
@@ -279,26 +281,31 @@ function customer_foot(): void
                     </span>
                 </button>
             </div>
-            <nav class="cart-nav" aria-label="Navigasi pelanggan">
-                <a href="index.php" class="cart-nav-item" aria-label="Beranda">
-                    <span class="material-symbols-outlined text-[22px]">cottage</span>
-                    <span class="cart-nav-label">Beranda</span>
-                </a>
-                <a href="riwayat.php" class="cart-nav-item" aria-label="Pesanan">
-                    <span class="material-symbols-outlined text-[22px]">receipt_long</span>
-                    <span class="cart-nav-label">Pesanan</span>
-                </a>
-                <a href="#" class="cart-nav-item cart-nav-active" aria-current="page" aria-label="Keranjang">
-                    <span class="cart-nav-icon">
-                        <span class="material-symbols-outlined text-[22px]">local_mall</span>
-                        <span id="cart-nav-count" class="cart-nav-badge" hidden>0</span>
-                    </span>
-                    <span class="cart-nav-label">Keranjang</span>
-                </a>
-                <a href="menu-notifications.php" class="cart-nav-item" aria-label="Notifikasi">
-                    <span class="material-symbols-outlined text-[22px]">notifications</span>
-                    <span class="cart-nav-label">Notifikasi</span>
-                </a>
+            <nav class="customer-bottom-nav cart-bottom-nav fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(30,43,34,0.06)]" aria-label="Navigasi pelanggan">
+                <div class="h-16 px-space-sm flex items-center justify-around">
+                    <a href="index.php" aria-label="Beranda" class="customer-nav-link flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">cottage</span>
+                        <span class="font-label-md text-label-md">Beranda</span>
+                    </a>
+                    <a href="riwayat.php" aria-label="Pesanan" class="customer-nav-link flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">receipt_long</span>
+                        <span class="font-label-md text-label-md">Pesanan</span>
+                    </a>
+                    <a href="#" class="customer-nav-link is-active flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all" aria-current="page" aria-label="Keranjang">
+                        <span class="relative flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[22px]">local_mall</span>
+                            <span id="cart-nav-count" class="absolute -top-1 -right-2 px-1.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm leading-none flex items-center justify-center min-w-[16px] h-4 hidden">0</span>
+                        </span>
+                        <span class="font-label-md text-label-md">Keranjang</span>
+                    </a>
+                    <a href="menu-notifications.php" aria-label="Notifikasi" class="customer-nav-link flex flex-col items-center justify-center min-w-[56px] min-h-[44px] gap-0.5 transition-all relative">
+                        <span class="relative flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[22px]">notifications</span>
+                            <span class="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-tertiary text-on-tertiary font-label-sm text-label-sm leading-none flex items-center justify-center" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></span>
+                        </span>
+                        <span class="font-label-md text-label-md">Notifikasi</span>
+                    </a>
+                </div>
             </nav>
         </div>
     </dialog>

@@ -82,6 +82,26 @@ if ($('#quota-date')) $('#quota-date').onchange = () => {
     url.searchParams.set('tgl_kirim', $('#quota-date').value);
     location.href = url.href
 };
+if ($('#quota-date') && $('[data-set-today]')) $('[data-set-today]').onclick = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date()).reduce((result, part) => {
+        if (part.type !== 'literal') result[part.type] = part.value;
+        return result;
+    }, {});
+    const date = parts.year + '-' + parts.month + '-' + parts.day;
+    $('#quota-date').value = date;
+    const url = new URL(location.href);
+    url.searchParams.set('tgl_kirim', date);
+    location.href = url.href;
+};
+if ($('[data-refresh-dashboard]')) $('[data-refresh-dashboard]').onclick = async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try { await dashboard(); }
+    catch (error) { toast('Dashboard belum dapat diperbarui: ' + error.message); }
+    finally { button.disabled = false; }
+};
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
 function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
@@ -255,6 +275,25 @@ function shell() {
         $(".sidebar")?.classList.toggle("open"),
     );
 
+    const accountToggle = $("[data-account-menu-toggle]");
+    const accountMenu = $("#dashboard-account-menu");
+    if (accountToggle && accountMenu) {
+        const closeAccountMenu = () => {
+            accountMenu.hidden = true;
+            accountToggle.setAttribute("aria-expanded", "false");
+        };
+        accountToggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            accountMenu.hidden = !accountMenu.hidden;
+            accountToggle.setAttribute("aria-expanded", String(!accountMenu.hidden));
+        });
+        accountMenu.addEventListener("click", (event) => event.stopPropagation());
+        document.addEventListener("click", closeAccountMenu);
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") closeAccountMenu();
+        });
+    }
+
     $$("[data-logout]").forEach((button) =>
         button.addEventListener("click", async () => {
             const confirmed = await confirmDialog(
@@ -287,6 +326,8 @@ function shell() {
 }
 async function dashboard() {
     const d = await api("api/dashboard.php");
+    const statusText = $("#dashboard-status-text");
+    if (statusText) statusText.textContent = d.tanggal_libur ? "Operasional tutup pada tanggal ini" : "Dapur beroperasi normal";
     $("#production-date").textContent = dateLabel(d.production_date || $('#quota-date')?.value);
     const productionValid = Array.isArray(d.production) && d.production.every(item => item && Array.isArray(item.pesanan));
     $("#production-list").innerHTML = !productionValid
@@ -327,14 +368,42 @@ async function dashboard() {
         const el = $('[data-stat="' + name + '"]');
         if (el) countUp(el, value);
     }
+    const yesterdayOrders = Number(d.orders_yesterday) || 0;
+    const orderDelta = Number(d.orders) - yesterdayOrders;
+    const ordersChange = $('[data-orders-change]');
+    if (ordersChange) ordersChange.textContent = orderDelta > 0
+        ? '+' + orderDelta.toLocaleString('id-ID') + ' vs kemarin'
+        : orderDelta < 0
+            ? orderDelta.toLocaleString('id-ID') + ' vs kemarin'
+            : 'Sama dengan kemarin';
+    const criticalProduct = Array.isArray(d.critical_products) ? d.critical_products[0] : null;
+    const criticalName = $('[data-critical-name]');
+    const criticalRemaining = $('[data-critical-remaining]');
+    if (criticalName) criticalName.textContent = criticalProduct?.nama || 'Belum ada menu kritis';
+    if (criticalRemaining) criticalRemaining.textContent = criticalProduct
+        ? ' · Sisa ' + Number(criticalProduct.sisa).toLocaleString('id-ID') + ' porsi'
+        : '';
+    const priorityCount = $('#dashboard-priority-count');
+    if (priorityCount) priorityCount.textContent = Number(d.pending || 0).toLocaleString('id-ID') + ' Pesanan';
+    const actionCategoryCount = $('#dashboard-action-category-count');
+    if (actionCategoryCount) actionCategoryCount.textContent =
+        [Number(d.pending) > 0, Number(d.cancellations?.unreviewed_count) > 0].filter(Boolean).length + ' Kategori';
     const ratio = d.capacity ? Math.round((d.used / d.capacity) * 100) : 0;
-    $('[data-stat="capacity"]').textContent = d.tanggal_libur ? "Libur" : ratio + "%";
+    $('[data-stat="capacity"]').textContent = d.tanggal_libur ? "—" : d.used.toLocaleString("id-ID");
+    $('[data-capacity-total]').textContent = d.tanggal_libur ? "Operasional tutup" : "/ " + d.capacity.toLocaleString("id-ID") + " porsi";
+    $('[data-capacity-percent]').textContent = d.tanggal_libur ? "Tutup" : ratio + "% penuh";
     $('[data-stat="capacity-hint"]').textContent = d.tanggal_libur
         ? "Kuota ditutup untuk tanggal ini"
         : d.used.toLocaleString("id-ID") + " / " + d.capacity.toLocaleString("id-ID") + " porsi";
     $("[data-meter]").style.width = Math.min(ratio, 100) + "%";
     const pending = $("#pending-badge");
     if (pending) pending.textContent = d.pending || "";
+    const dashboardPending = $("#dashboard-pending-count");
+    if (dashboardPending) dashboardPending.textContent = Number(d.pending || 0).toLocaleString("id-ID");
+    $$("[data-pending-count]").forEach((badge) => {
+        badge.textContent = Number(d.pending || 0).toLocaleString("id-ID");
+        badge.hidden = Number(d.pending || 0) === 0;
+    });
     const max = Math.max(1, ...d.chart.map((x) => Number(x.jumlah)));
     $("#orders-chart").innerHTML = d.chart
         .map(
@@ -407,17 +476,17 @@ async function loadOrders() {
     const rows = d.items
         .map(
             (o) =>
-                '<tr><td><small class="order-code">' +
+                '<tr><td><b class="order-user">' +
+                esc(o.nama_pemesan) +
+                '</b><small>' +
+                esc(o.keterangan || "") +
+                '</small></td><td><small class="order-code">' +
                 esc(o.kode) +
                 "</small>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
-                "<small>" +
+                '<small class="order-updated">' +
                 (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
-                '</small></td><td><b class="order-user">' +
-                esc(o.nama_pemesan) +
-                "</b><small>" +
-                esc(o.keterangan || "") +
-                "</small></td><td>" +
+                '</small></td><td>' +
                 Number(o.pax || 0).toLocaleString("id-ID") +
                 " porsi</td><td><b>" +
                 money(o.total) +
