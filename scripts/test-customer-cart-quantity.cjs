@@ -4,11 +4,10 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync('public/pelanggan/assets/customer.js', 'utf8');
 const elements = new Map();
-const stockLabel = {};
 const node = key => {
     if (!elements.has(key)) elements.set(key, {
         addEventListener(type, fn) { this[type] = fn; },
-        closest() { return stockLabel; },
+        closest() { return null; },
         close() { this.open = false; },
         showModal() { assert.ok(!this.open); this.open = true; },
     });
@@ -30,15 +29,14 @@ vm.runInContext(source.split('\n').slice(0, 2).join('\n'), context);
 vm.runInContext(source.slice(source.indexOf('function showProduct('), source.indexOf('const statusLabels')), context);
 const input = node('#quantity-value');
 context.showProduct(product);
-assert.match(node('#detail-content').innerHTML, /<span hidden>Sisa Porsi/);
+assert.match(node('#detail-content').innerHTML, /<span>Sisa kuota<b id="detail-sisa">12 porsi/);
 assert.doesNotMatch(node('#detail-content').innerHTML, /Jumlah dipesan/);
 input.value = '13';
 input.input();
-assert.equal(stockLabel.hidden, false);
 assert.equal(node('#detail-sisa').textContent, '11 porsi');
 input.value = '12';
 input.input();
-assert.equal(stockLabel.hidden, true);
+assert.equal(node('#detail-sisa').textContent, '12 porsi');
 input.value = '15';
 input.input();
 node('#add-to-cart').onclick();
@@ -68,6 +66,10 @@ assert.equal(node('#cart-dialog').open, false);
 context.cart[2] = 39;
 context.showProduct(product);
 assert.equal(node('#add-to-cart').disabled, true, 'Sisa 11 porsi tidak cukup untuk minimum 12');
+node('#detail-dialog').close();
+context.showProduct({ ...product, sisa: 0, available: false, stok_status: 'full' });
+assert.match(node('#detail-content').innerHTML, /Sisa kuota<b id="detail-sisa">0 porsi/);
+assert.equal(node('#add-to-cart').disabled, true);
 node('#detail-dialog').close();
 context.cart[2] = 37;
 // Render berikutnya membuat tombol baru seperti penggantian innerHTML di browser.

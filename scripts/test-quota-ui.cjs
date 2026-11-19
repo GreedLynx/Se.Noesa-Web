@@ -141,6 +141,7 @@ const fs = require("node:fs"),
     "PASS: Form Admin memakai default, mempertahankan nilai nol, dan mengirim save/reset rentang",
   );
   const elements = {};
+  let testCard;
   function element() {
     return {
       value: "",
@@ -161,7 +162,7 @@ const fs = require("node:fs"),
       addEventListener() {},
       getElementById() { return null; },
       querySelector: (s) => (elements[s] ??= element()),
-      querySelectorAll: () => [],
+      querySelectorAll: s => s === '[data-product]' && testCard ? [testCard] : [],
     },
     requestAnimationFrame: (fn) => fn(),
   };
@@ -194,6 +195,19 @@ const fs = require("node:fs"),
   assert.equal(elements["#delivery-hint"].hidden, true);
   assert.equal(elements["#daily-quota-hint"].hidden, false);
   assert.equal(elements["#quota-full-hint"].hidden, false);
+  testCard = { dataset: { product: '1' } };
+  vm.runInContext("api=async()=>({items:[{id:1,nama:'Menu A',kode:'A',kategori:'makanan',min_pesan:10,kuota:50,sisa:0,stok_status:'full',available:false,harga:10000,gambar:''}],tanggal:'2030-01-11',habis:[{nama:'Menu A'}],schedule:null})", context);
+  await context.loadCatalog();
+  assert.match(elements["#menu-grid"].innerHTML, /Sisa kuota: 0 porsi/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-warning"/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-add"[^>]* disabled/);
+  assert.match(elements["#menu-grid"].innerHTML, /role="button" tabindex="0"/);
+  vm.runInContext("showProduct = p => { globalThis.openedProduct = p.id; }", context);
+  testCard.onkeydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(context.openedProduct, 1);
+  context.openedProduct = null;
+  testCard.onkeydown({ key: ' ', preventDefault() {} });
+  assert.equal(context.openedProduct, 1);
   console.log(
     "PASS: Pergantian tanggal mempertahankan keranjang dan hanya menampilkan pesan saat ada kendala",
   );

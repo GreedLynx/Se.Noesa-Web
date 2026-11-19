@@ -81,7 +81,6 @@
         align-items: center;
         justify-content: space-between;
         text-align: left;
-        padding-right: 56px;
         margin: 0 0 18px;
         min-height: 106px;
     }
@@ -101,35 +100,6 @@
         font-size: clamp(22px, 6.4vw, 28px);
         font-weight: 400;
         line-height: 1.05;
-    }
-    body[data-page="catalog"] .history-link {
-        position: absolute;
-        top: 32px;
-        right: 0;
-        display: grid;
-        place-items: center;
-        width: 46px;
-        height: 46px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: var(--pale);
-        color: var(--brown);
-    }
-    body[data-page="catalog"] .history-link span {
-        display: grid;
-        place-items: center;
-        font-size: 0;
-    }
-    body[data-page="catalog"] .history-link svg {
-        width: 23px;
-        height: 23px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.7;
-    }
-    body[data-page="catalog"] .history-link b {
-        display: none;
     }
     body[data-page="catalog"] .catalog-toolbar {
         display: flex;
@@ -274,10 +244,12 @@
         color: #111;
         font-size: 12px;
     }
-    body[data-page="catalog"] .menu-add {
+    body[data-page="catalog"] .menu-action {
         grid-column: 2;
         grid-row: 2;
         justify-self: start;
+    }
+    body[data-page="catalog"] .menu-add {
         width: 28px;
         height: 28px;
         margin-top: 0;

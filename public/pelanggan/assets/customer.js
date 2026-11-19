@@ -53,8 +53,9 @@ function wireLogout() {
         b.disabled = true;
         const confirmed = await new Promise(resolve => {
             const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog';
-            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
+            dialog.className = 'customer-dialog logout-dialog';
+            dialog.setAttribute('aria-labelledby', 'logout-title');
+            dialog.innerHTML = '<p id="logout-title">Yakin ingin keluar dari akun Se.Noesa?</p><div class="logout-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div>';
             const yes = dialog.querySelector('[data-yes]');
             const no = dialog.querySelector('[data-cancel]');
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
@@ -223,37 +224,41 @@ async function loadCatalog(animate = false) {
     );
     schedule = d.schedule;
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
-        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
+        const pSisa = Number(p.sisa);
         const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
         const available = p.available !== false && state !== 'full' && state !== 'closed';
-        const stockLabel = state === 'nearly_full' ? ' · Sisa ' + pSisa + ' porsi'
-            : !available ? (pSisa <= 0 ? ' · Habis' : ' · Stok di bawah minimum') : '';
         return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
-            + '" data-product="' + Number(p.id) + '" data-available="' + available + '" aria-disabled="' + !available
+            + '" data-product="' + Number(p.id) + '"' + (available ? '' : ' role="button" tabindex="0" aria-label="Lihat detail ' + esc(p.nama) + ', sisa kuota ' + pSisa + ' porsi"')
             + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
             + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + stockLabel
-            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></article>';
-    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi · Sisa kuota: ' + pSisa
+            + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
+            + (pSisa <= 0 ? '<span class="menu-warning" role="img" aria-label="Kuota habis" title="Kuota habis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg></span>' : '')
+            + '<button class="menu-add" data-add="' + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></div></article>';
+    }).join(''): '<div class="empty-state">Menu tidak ditemukan.</div>';
 
-    const canOpen = product => product && product.available !== false
-        && product.stok_status !== 'full' && product.stok_status !== 'closed';
-    $$('[data-product]').forEach(card => card.onclick = e => {
-        if (e.target.closest('[data-add]')) return;
-        if (card.dataset.available === 'false') return;
-        showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
+    $$('[data-product]').forEach(card => {
+        const open = () => showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)));
+        card.onclick = e => {
+            if (!e.target.closest('[data-add]')) open();
+        };
+        card.onkeydown = e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        };
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
         if (b.disabled) return;
         const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
-        if (canOpen(product)) showProduct(product)
+        if (product) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
         const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
-        if (canOpen(product)) showProduct(product)
+        if (product) showProduct(product)
     });
     renderCart();
     if (animate) requestAnimationFrame(() => {
@@ -272,11 +277,10 @@ function showProduct(product) {
     const maximum = Math.min(available, orderRoom);
     activeQty = Math.min(maximum, minimum);
     const sisaAfter = available - activeQty;
-    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + productMinimum + ' porsi</b></span><span' + (showSisa ? '' : ' hidden') + '>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + productMinimum + ' porsi</b></span><span>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -300,9 +304,7 @@ function showProduct(product) {
         activeQty = quantity;
         input.value = quantity;
         const remaining = available - quantity;
-        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
         sisaEl.textContent = remaining + ' porsi';
-        sisaEl.closest('span').hidden = !shouldShow;
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -318,8 +320,10 @@ function showProduct(product) {
     if (maximum < minimum) {
         input.disabled = true;
         add.disabled = true;
-        add.textContent = orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
-            : inCart ? 'Kuota tidak cukup untuk menambah porsi' : 'Stok kurang dari minimal pesanan';
+        add.textContent = catalogClosed ? 'Tanggal ini libur'
+            : orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
+            : inCart ? 'Kuota tidak cukup untuk menambah porsi'
+            : Number(product.sisa) <= 0 ? 'Kuota habis' : 'Stok kurang dari minimal pesanan';
     }
     add.onclick = () => {
         if (add.disabled) return;

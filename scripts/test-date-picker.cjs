@@ -34,8 +34,15 @@ if (process.argv[2]) {
             const trigger = document.querySelector('.date-trigger');
             const dialog = document.querySelector('dialog');
             if (document.body.dataset.role === 'pelanggan') {
-                check(document.querySelector('.date-panel-hint').hidden, 'Pesan normal tersembunyi');
+                const panel = document.querySelector('.date-panel');
+                const hint = document.querySelector('.date-panel-hint');
+                check(hint.hidden, 'Pesan normal tersembunyi');
                 check(document.querySelector('.date-field label').textContent === 'Tanggal pengiriman', 'Label tanggal terlihat');
+                check(trigger.getBoundingClientRect().right >= panel.getBoundingClientRect().right - parseFloat(getComputedStyle(panel).paddingRight) - 2, 'Pemilih tanggal mencapai sisi kanan panel');
+                hint.hidden = false;
+                hint.textContent = 'Tanggal ini libur.';
+                check(hint.getBoundingClientRect().top >= trigger.getBoundingClientRect().bottom, 'Pesan berada di bawah pemilih tanggal');
+                hint.hidden = true;
             }
             const app = document.querySelector('.app');
             if (app) {
@@ -75,11 +82,12 @@ if (process.argv[2]) {
             parent.document.body.dataset.result = 'PASS';
         } catch (error) { parent.document.body.dataset.result = 'FAIL: ' + error.message; }
     `;
-    for (const [role, width, page = 'products'] of [['owner', 1280], ['owner', 1280, 'orders'], ['pelanggan', 390], ['admin', 1280], ['owner', 390], ['owner', 320], ['pelanggan', 320]]) {
+    for (const [role, width, page = 'products'] of [['owner', 1280], ['owner', 1280, 'orders'], ['pelanggan', 1280, 'catalog'], ['pelanggan', 390, 'catalog'], ['admin', 1280], ['owner', 390], ['owner', 320], ['pelanggan', 320, 'catalog']]) {
         const roleCss = fs.readFileSync({ pelanggan: 'public/pelanggan/assets/customer.css', admin: 'public/admin/assets/admin.css', owner: 'public/assets/css/app.css' }[role], 'utf8');
+        const mobileCss = role === 'pelanggan' ? fs.readFileSync('public/pelanggan/assets/catalog-mobile.css', 'utf8') : '';
         const ownerPanel = fs.readFileSync('public/owner/partials/layout.php', 'utf8').match(/<section class="date-panel"[\s\S]*?<\/section>/)[0].replace(/<\?=[\s\S]*?\?>/g, '2030-01-11');
         const content = role === 'owner' ? `<main class="app"><header class="top"><h1>${page === 'products' ? 'Produk &amp; Kuota' : 'Pesanan'}</h1></header>${ownerPanel}${page === 'products' ? '<p id="quota-summary">Ringkasan kapasitas tanggal pilihan</p><section id="plist" class="card"></section>' : '<div id="tabs"></div><section class="card center">Kapasitas Dapur</section><label class="search">Cari pesanan</label><div id="list"></div>'}</main>` : fixture;
-        const frame = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${roleCss}\n${css}\n${role === 'owner' ? '' : 'body{display:block;padding:16px} .date-panel{max-width:1100px}'}</style><body data-page="${page}" data-role="${role}">${content}<script>${source}</script><script>${checks.replace("const input =", `check(innerWidth === ${width}, 'Viewport sesuai ukuran uji'); const input =`)}</script></body></html>`;
+        const frame = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${roleCss}\n${mobileCss}\n${css}\n${role === 'owner' ? '' : 'body{display:block;padding:16px} .date-panel{max-width:1100px}'}</style><body data-page="${page}" data-role="${role}">${content}<script>${source}</script><script>${checks.replace("const input =", `check(innerWidth === ${width}, 'Viewport sesuai ukuran uji'); const input =`)}</script></body></html>`;
         const escapedFrame = frame.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
         fs.writeFileSync(htmlPath, `<!doctype html><html><body style="margin:0"><iframe title="Uji kalender" style="border:0;width:${width}px;height:850px" srcdoc="${escapedFrame}"></iframe></body></html>`);
         const screenshot = process.argv[3] && role === 'owner' && width === 1280 && page === 'products' ? [`--screenshot=${path.resolve(process.argv[3])}`] : [];

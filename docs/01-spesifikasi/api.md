@@ -266,8 +266,11 @@ lama atau kuota produk/override tersimpan.
 
 GET `pelanggan/api/catalog.php` menerima kategori,q,tgl_kirim (default H+7).
 Respons `{items,schedule,tanggal,tanggal_libur,maxKitchen,kitchenUsed,kitchenRemaining}`.
-Field kuota item sama dengan produk Admin. Kuota efektif 0 dikecualikan; produk
-berkuota positif yang habis tetap ditampilkan dengan sisa 0. Tanggal invalid HTTP 422.
+Field kuota item sama dengan produk Admin. `items` memuat semua produk yang cocok
+dengan filter, termasuk yang sisa kuotanya 0 atau di bawah minimum. Produk yang
+tidak dapat dipesan memiliki `available:false`; UI menonaktifkan tombol tambah,
+tetapi detail dan sisa kuota tetap dapat dilihat. `habis` tetap memuat daftar
+produk yang tidak dapat dipesan untuk peringatan. Tanggal invalid HTTP 422.
 Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
 Panel tanggal katalog hanya menampilkan label dan pemilih tanggal saat normal;

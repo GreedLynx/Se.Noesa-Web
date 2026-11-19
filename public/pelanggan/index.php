@@ -12,12 +12,6 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <h2>Pilih Menu</h2>
         <p class="catalog-description">Pilih menu favorit untuk pesanan berikutnya.</p>
     </div>
-    <a class="history-link" href="riwayat.php" aria-label="Riwayat pesanan">
-        <span><svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 3h12v18l-6-3-6 3V3zM9 8h6M9 12h6" />
-            </svg></span>
-        <b>Riwayat pesanan</b>
-    </a>
 </section>
 <section class="date-panel date-panel--delivery" aria-label="Pilih tanggal pengiriman">
     <div class="date-field">
