@@ -531,6 +531,74 @@ body[data-page="history"] .customer-content {
     backdrop-filter:blur(4px)
 }
 
+.customer-logout-dialog {
+    width: min(570px, calc(100% - 32px));
+    padding: 44px 34px 36px;
+    border: 0;
+    border-radius: 36px;
+    text-align: center;
+}
+
+.customer-logout-icon {
+    display: grid;
+    width: 98px;
+    height: 98px;
+    margin: 0 auto 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: #e6f0e6;
+    color: #506b55;
+}
+
+.customer-logout-icon svg { width: 42px; height: 42px; }
+
+.customer-logout-dialog h2 {
+    margin: 0 0 24px;
+    color: var(--ink);
+    font-size: 30px;
+    line-height: 1.2;
+}
+
+.customer-logout-dialog > p {
+    max-width: 440px;
+    margin: 0 auto 44px;
+    color: #858b84;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.customer-logout-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.customer-logout-actions .customer-button {
+    min-height: 68px;
+    border-radius: 21px;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.customer-logout-actions .customer-button.secondary {
+    border: 2px solid #171a17;
+    background: #f2f4f1;
+    color: #5c3f2d;
+}
+
+@media (max-width: 520px) {
+    .customer-logout-dialog {
+        padding: 32px 20px 24px;
+        border-radius: 28px;
+    }
+
+    .customer-logout-icon { width: 76px; height: 76px; margin-bottom: 28px; }
+    .customer-logout-dialog h2 { margin-bottom: 16px; font-size: 24px; }
+    .customer-logout-dialog > p { margin-bottom: 28px; font-size: 15px; }
+    .customer-logout-actions { gap: 10px; }
+    .customer-logout-actions .customer-button { min-height: 54px; border-radius: 16px; font-size: 15px; }
+}
+
 .dialog-close {
     position:absolute;
     right:15px;

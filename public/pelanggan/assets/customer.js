@@ -51,8 +51,18 @@ function wireLogout() {
         b.disabled = true;
         const confirmed = await new Promise(resolve => {
             const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog';
-            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
+            dialog.className = 'customer-dialog customer-logout-dialog';
+            dialog.setAttribute('aria-labelledby', 'customer-logout-title');
+            dialog.innerHTML = `
+                <div class="customer-logout-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none"><path d="m12 25 8 8 17-20" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <h2 id="customer-logout-title">Keluar Akun</h2>
+                <p>Apakah Anda yakin ingin keluar dari akun Se.Noesa?</p>
+                <div class="customer-logout-actions">
+                    <button type="button" class="customer-button secondary" data-cancel>Batal</button>
+                    <button type="button" class="customer-button primary" data-yes>Ya, Keluar</button>
+                </div>`;
             const yes = dialog.querySelector('[data-yes]');
             const no = dialog.querySelector('[data-cancel]');
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };

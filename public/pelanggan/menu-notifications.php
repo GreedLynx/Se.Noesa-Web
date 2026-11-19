@@ -8,12 +8,8 @@ customer_head('Notifikasi Menu', 'notifications'); ?>
             <span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">Pemberitahuan</span>
             <h1 class="font-headline-xl-mobile text-headline-xl-mobile text-primary tracking-tight font-extrabold">Notifikasi Menu</h1>
         </div>
-        <a href="riwayat.php" class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" aria-label="Riwayat pesanan">
-            <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-        </a>
     </div>
     <p class="text-body-sm text-on-surface-variant mt-1">Admin memberi tahu bila menu pada pesananmu berubah.</p>
-    <p class="text-body-sm text-on-surface-variant">Perubahan menu baru berlaku setelah Admin mengonfirmasi pilihanmu. Status pesanan dan pembayaran tidak berubah karena notifikasi ini.</p>
 </div>
 <div id="mnc-page" data-api="api/menu-notifications.php" class="px-margin-mobile mb-space-xl">
     <div class="mnc-toolbar flex items-center justify-between gap-2 mb-space-sm">
@@ -22,6 +18,41 @@ customer_head('Notifikasi Menu', 'notifications'); ?>
     </div>
     <section class="mnc-list flex flex-col gap-3" id="mnc-list" aria-live="polite">
         <p class="mnc-empty text-body-sm text-on-surface-variant py-6 text-center">Memuat notifikasi…</p>
+    </section>
+    <section class="mnc-contact" aria-labelledby="mnc-contact-title">
+        <div class="mnc-contact-heading">
+            <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>
+            <div>
+                <h2 id="mnc-contact-title">Butuh bantuan?</h2>
+                <p>Hubungi Se.Noesa atau ikuti media sosial kami.</p>
+            </div>
+        </div>
+        <div class="mnc-contact-links">
+            <?php
+            $contactEnv = parse_ini_file(dirname(__DIR__, 2) . '/.env', false, INI_SCANNER_RAW) ?: [];
+            $whatsappNumber = preg_replace('/[^0-9]/', '', (string) ($contactEnv['WHATSAPP_NUMBER'] ?? ''));
+            $socialLinks = [
+                'Instagram' => $contactEnv['INSTAGRAM_URL'] ?? '',
+                'TikTok' => $contactEnv['TIKTOK_URL'] ?? '',
+                'Facebook' => $contactEnv['FACEBOOK_URL'] ?? '',
+            ];
+            $hasContactLinks = $whatsappNumber !== '';
+            if ($whatsappNumber !== ''): ?>
+                <a class="mnc-contact-link" href="https://wa.me/<?= htmlspecialchars($whatsappNumber, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                    <span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp
+                </a>
+            <?php endif;
+            foreach ($socialLinks as $label => $url):
+                if (!filter_var($url, FILTER_VALIDATE_URL) || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['https', 'http'], true)) continue;
+                $hasContactLinks = true; ?>
+                <a class="mnc-contact-link" href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                    <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+        <?php if (!$hasContactLinks): ?>
+            <p class="mnc-contact-unavailable">Kontak dan media sosial belum diatur. Admin dapat menambahkannya melalui konfigurasi aplikasi.</p>
+        <?php endif; ?>
     </section>
     <button type="button" class="customer-button secondary mnc-more w-full py-3 rounded-full bg-surface-container text-primary font-label-md text-label-md font-semibold mt-3" id="mnc-more" hidden>Muat lebih banyak</button>
 </div>

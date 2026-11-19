@@ -283,16 +283,18 @@
             ? recipient.pilihan_menu
             : [];
         const id = num(recipient.id);
+        const replacementUnavailable = products.length === 0;
 
         return `
             <form class="mnc-form" data-respond="${id}">
                 <p class="mnc-form-label">Pilih tindakan</p>
+                <p class="mnc-guidance" data-mnc-guidance>Pilih salah satu tindakan. Menu pengganti baru berlaku setelah disetujui Admin.</p>
                 <div class="mnc-options">
                     ${options
                         .map(
                             (option) => `
                         <label class="mnc-option">
-                            <input type="radio" name="opsi-${id}" value="${html(option.kode_opsi)}" data-mnc-option="${html(option.kode_opsi)}" required>
+                            <input type="radio" name="opsi-${id}" value="${html(option.kode_opsi)}" data-mnc-option="${html(option.kode_opsi)}" ${option.kode_opsi === "menu_pengganti" && replacementUnavailable ? "disabled" : ""} required>
                             <span>
                                 <b>${html(option.label)}</b>
                                 ${optionHints[option.kode_opsi] ? `<small>${html(optionHints[option.kode_opsi])}</small>` : ""}
@@ -322,7 +324,7 @@
                     <small class="field-hint">Maksimal 1000 karakter.</small>
                 </label>
                 <p class="form-error" data-error role="alert"></p>
-                <button type="submit" class="customer-button primary">Kirim pilihan</button>
+                <button type="submit" class="customer-button primary">Kirim pilihan ke Admin</button>
             </form>`;
     }
 
@@ -457,6 +459,14 @@
         if (select) {
             select.required = isReplacement;
             if (!isReplacement) select.value = "";
+        }
+        const guidance = form?.querySelector("[data-mnc-guidance]");
+        if (guidance) {
+            guidance.textContent = isReplacement
+                ? "Pilih menu pengganti yang tersedia. Pilihanmu akan ditinjau Admin sebelum diterapkan."
+                : input.value === "hubungi_admin"
+                  ? "Admin akan menghubungimu. Tambahkan catatan bila ada kebutuhan khusus."
+                  : "Admin akan memberi informasi berikutnya. Catatan tambahan bersifat opsional.";
         }
     });
 

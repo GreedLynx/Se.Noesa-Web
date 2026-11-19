@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
 require_once __DIR__ . '/../../../app/menu-notifications.php';
+require_once __DIR__ . '/../../../app/daily-quota.php';
 
 // Respons lokal tanpa JSON_NUMERIC_CHECK agar nomor telepon tetap string.
 function mnc_json($data, int $code = 200): void

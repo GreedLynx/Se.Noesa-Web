@@ -10,7 +10,7 @@ $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->forma
             <p class="eyebrow">KOMUNIKASI PELANGGAN</p>
             <h2>Notifikasi perubahan menu</h2>
             <p class="muted">
-                Beri tahu pelanggan saat menu yang dipesan tidak tersedia.
+                Beri tahu pelanggan saat menu pesanannya tidak tersedia, lalu tinjau pilihan mereka sampai masalah selesai.
         </div>
         <button type="button" class="button primary" id="mn-new">
             <span>+</span>
@@ -46,55 +46,64 @@ $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->forma
         <button type="button" class="mn-close" data-mn-close aria-label="Tutup">&times;</button>
     </div>
     <form id="mn-create-form">
-        <div class="mn-form-grid">
-            <label>
-                Menu yang tidak tersedia
-                <select id="mn-product" name="produk_id" required>
-                    <option value="">Pilih menu</option>
-                </select>
-            </label>
-            <label>
-                Tanggal acuan daftar menu
-                <input id="mn-date" type="date" value="<?= htmlspecialchars($today, ENT_QUOTES, 'UTF-8') ?>"
-                    data-date-picker>
-            </label>
+        <div class="mn-stepper" aria-label="Langkah membuat notifikasi">
+            <span class="is-current" data-mn-step-indicator="1"><b>1</b> Pilih menu &amp; pesanan</span>
+            <span data-mn-step-indicator="2"><b>2</b> Tulis pesan &amp; kirim</span>
         </div>
-        <p class="mn-hint" id="mn-product-hint">Pilih menu yang tidak tersedia.</p>
-
-        <label>
-            Catatan Admin
-            <textarea id="mn-note" name="catatan_admin" rows="4" maxlength="2000" required
-                placeholder="Jelaskan alasan perubahan menu dan informasi yang perlu diketahui pelanggan."></textarea>
-        </label>
-        <p class="mn-hint">Maksimal 2000 karakter. Catatan ini akan dibaca pelanggan.</p>
-
-        <fieldset class="mn-options">
-            <legend>Tindakan yang dapat dipilih pelanggan</legend>
-            <label class="mn-option">
-                <input type="checkbox" name="opsi" value="menu_pengganti" checked>
-                Pilih menu pengganti
+        <section class="mn-step">
+            <h3>1. Pilih menu yang bermasalah</h3>
+            <p class="mn-step-copy">Kami akan mencari pesanan aktif yang berisi menu ini.</p>
+            <div class="mn-form-grid">
+                <label>
+                    Menu tidak tersedia
+                    <select id="mn-product" name="produk_id" required>
+                        <option value="">Pilih menu</option>
+                    </select>
+                </label>
+                <label>
+                    Tanggal acuan ketersediaan
+                    <input id="mn-date" type="date" value="<?= htmlspecialchars($today, ENT_QUOTES, 'UTF-8') ?>"
+                        data-date-picker>
+                </label>
+            </div>
+            <p class="mn-hint" id="mn-product-hint">Pilih menu untuk melihat pesanan yang terdampak.</p>
+            <div class="mn-preview-bar">
+                <button type="button" class="button secondary" id="mn-preview">Lihat pesanan terdampak</button>
+                <span class="mn-hint">Target dihitung dari pesanan aktif dan tanggal kirim masing-masing.</span>
+            </div>
+        </section>
+        <div class="mn-preview-result" id="mn-preview-result" aria-live="polite" hidden></div>
+        <section class="mn-step" id="mn-step-two" hidden>
+            <h3>2. Siapkan pesan untuk pelanggan</h3>
+            <p class="mn-step-copy">Jelaskan situasinya dan pilih cara pelanggan dapat menanggapinya.</p>
+            <label>
+                Pesan dari Admin
+                <textarea id="mn-note" name="catatan_admin" rows="4" maxlength="2000" required
+                    placeholder="Contoh: Maaf, menu ini tidak tersedia untuk tanggal pengiriman pesananmu."></textarea>
             </label>
-            <label class="mn-option">
-                <input type="checkbox" name="opsi" value="hubungi_admin" checked>
-                Hubungi Admin
-            </label>
-            <label class="mn-option">
-                <input type="checkbox" name="opsi" value="tunggu_informasi" checked>
-                Tunggu informasi
-            </label>
-        </fieldset>
-
-        <div class="mn-preview-bar">
-            <button type="button" class="button secondary" id="mn-preview">Preview target</button>
-            <span class="mn-hint">Target dihitung ulang oleh server dari pesanan aktif pada tanggal kirim.
-                Cakupan tanggal mengikuti masing-masing pesanan.</span>
-        </div>
-        <div class="mn-preview-result" id="mn-preview-result" hidden></div>
+            <p class="mn-hint">Pesan ini akan terlihat oleh pelanggan. Maksimal 2000 karakter.</p>
+            <fieldset class="mn-options">
+                <legend>Pilihan respons pelanggan</legend>
+                <label class="mn-option">
+                    <input type="checkbox" name="opsi" value="menu_pengganti" checked>
+                    Pilih menu pengganti
+                </label>
+                <label class="mn-option">
+                    <input type="checkbox" name="opsi" value="hubungi_admin" checked>
+                    Minta dihubungi Admin
+                </label>
+                <label class="mn-option">
+                    <input type="checkbox" name="opsi" value="tunggu_informasi" checked>
+                    Tunggu informasi berikutnya
+                </label>
+            </fieldset>
+            <p class="mn-hint">Menu pengganti baru berlaku setelah disetujui Admin. Pesanan offline perlu dihubungi secara manual.</p>
+        </section>
 
         <p class="form-error" id="mn-create-error" role="alert"></p>
         <div class="dialog-actions">
             <button type="button" class="button secondary" data-mn-close>Batal</button>
-            <button type="submit" class="button primary" id="mn-submit" disabled>Kirim notifikasi</button>
+            <button type="submit" class="button primary" id="mn-submit" disabled hidden>Kirim notifikasi</button>
         </div>
     </form>
 </dialog>
