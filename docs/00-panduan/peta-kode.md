@@ -2,6 +2,8 @@
 
 Sidebar Pelanggan berada di `public/pelanggan/partials/layout.php`, dengan tombol Keluar di bagian bawah. `customer.js` mengatur hamburger, Escape, fokus keyboard, dan latar penutup. Gaya mobile berada di `assets/catalog-mobile.css` dan gaya tombol Keluar di `assets/customer.css`.
 
+Panel tanggal katalog Pelanggan ada di `public/pelanggan/index.php`; `assets/customer.js` hanya menampilkan pesan libur atau kuota bermasalah. Gaya panel ada di `assets/customer.css` dan kalender bersama di `public/assets/css/date-picker.css`.
+
 ## Jumlah porsi katalog dan keranjang Pelanggan
 
 - `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout.

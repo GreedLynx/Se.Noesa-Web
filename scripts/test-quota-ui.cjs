@@ -182,8 +182,20 @@ const fs = require("node:fs"),
   assert.equal(vm.runInContext("productCache[1].sisa", context), 0);
   assert.equal(vm.runInContext("cart[1]", context), 4);
   assert.equal(vm.runInContext("cartTotals().total", context), 40000);
+  assert.equal(elements["#delivery-hint"].hidden, true);
+  assert.equal(elements["#daily-quota-hint"].hidden, true);
+  assert.equal(elements["#quota-full-hint"].hidden, true);
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',tanggal_libur:true,dailyStatus:'closed',habis:[],schedule:null})", context);
+  await context.loadCatalog();
+  assert.equal(elements["#delivery-hint"].hidden, false);
+  assert.equal(elements["#daily-quota-hint"].hidden, true);
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',dailyStatus:'nearly_full',dailyCapacity:50,dailyUsed:45,dailyRemaining:5,habis:[{nama:'Menu A'}],schedule:null})", context);
+  await context.loadCatalog();
+  assert.equal(elements["#delivery-hint"].hidden, true);
+  assert.equal(elements["#daily-quota-hint"].hidden, false);
+  assert.equal(elements["#quota-full-hint"].hidden, false);
   console.log(
-    "PASS: Pergantian tanggal memeriksa keranjang dan mempertahankan item tidak tersedia agar dapat dihapus pelanggan",
+    "PASS: Pergantian tanggal mempertahankan keranjang dan hanya menampilkan pesan saat ada kendala",
   );
 })().catch((e) => {
   console.error(e);

@@ -270,6 +270,9 @@ Field kuota item sama dengan produk Admin. Kuota efektif 0 dikecualikan; produk
 berkuota positif yang habis tetap ditampilkan dengan sisa 0. Tanggal invalid HTTP 422.
 Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
+Panel tanggal katalog hanya menampilkan label dan pemilih tanggal saat normal;
+pesan libur, kuota penuh/hampir penuh, dan menu habis muncul sesuai respons
+katalog. Kontrak endpoint dan batas H+7 tidak berubah.
 
 POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
 dan `items:[{id,qty}]`. Produk berulang digabung. Total maksimal 50 porsi per pesanan

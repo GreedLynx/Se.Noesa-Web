@@ -2,6 +2,8 @@
 
 Sidebar dan hamburger Pelanggan menggunakan state tampilan di browser tanpa penyimpanan database.
 
+Ringkasan panel tanggal katalog hanya mengubah tampilan pesan berdasarkan respons katalog; tidak mengubah tabel, kuota tersimpan, atau migrasi.
+
 Kontrol jumlah di keranjang Pelanggan mengubah pilihan lokal sebelum checkout. Perubahan kontrol ini tidak memerlukan migrasi atau penulisan kuota. Checkout tetap memeriksa kuota pada tanggal kirim.
 
 Kredensial koneksi PDO tidak disertakan sebagai argumen di stack trace PHP. Perubahan ini tidak memerlukan migrasi.

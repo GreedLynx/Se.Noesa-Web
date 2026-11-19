@@ -385,6 +385,7 @@ body[data-page="history"] .customer-content {
 .menu-card.stock-full, .menu-card.stock-closed { opacity:.6; }
 #daily-quota-hint[data-status="nearly_full"] { color:#8a6216; }
 #daily-quota-hint[data-status="full"], #daily-quota-hint[data-status="closed"] { color:var(--red); }
+.date-panel--delivery .date-panel-hint:not([hidden]) { flex-basis:100%; }
 
 .menu-card:hover {
     transform:translateY(-4px);

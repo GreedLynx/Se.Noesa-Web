@@ -138,3 +138,8 @@
 ## Scroll katalog dan toolbar mobile
 - Kategori toolbar rata kiri. Menghapus penguncian tinggi viewport dan overflow hidden pada pembungkus katalog; grid menu mengikuti scroll dokumen. Saat keranjang ada, padding bawah 110px menjaga menu terakhir dari overlay keranjang.
 - Chrome headless fixture katalog berhasil scrollY 400 dengan rentang scroll 968px, kategori flex-start, tanpa horizontal overflow. Uji kuota dan keranjang lulus. Panel tanggal belum diubah; pengguna meminta opsi peringkasan setelah dua perbaikan ini.
+
+## Panel tanggal katalog minimal
+- Pengguna memilih opsi 2: saat normal panel hanya menampilkan label dan pemilih tanggal. Eyebrow, judul, dan petunjuk H+7 yang panjang dihapus dari panel; batas H+7 tetap pada atribut input dan validasi server.
+- `index.php` mempertahankan tiga area pesan tersembunyi dan relasi aksesibilitas input. `customer.js` menampilkan pesan singkat hanya saat libur, kuota harian penuh/hampir penuh, atau ada menu habis. Tanggal normal menyembunyikan kembali pesan. CSS memberi pesan yang muncul satu baris tersendiri.
+- Uji quota-ui dan cart quantity lulus, PHP/JS syntax dan diff check lulus. Kalender DOM Chrome 320/390/1280 lulus pada fixture; login aplikasi dan database asli tidak diuji. Tidak commit/push.

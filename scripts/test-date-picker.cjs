@@ -26,13 +26,17 @@ if (process.argv[2]) {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'senoesa-date-picker-'));
     const htmlPath = path.join(directory, 'test.html');
     const css = fs.readFileSync('public/assets/css/date-picker.css', 'utf8');
-    const fixture = `<section class="date-panel date-panel--delivery"><div><span class="date-eyebrow">RENCANAKAN PESANANMU</span><h2 class="date-panel-title">Mau dikirim kapan?</h2><p class="date-panel-hint" id="hint">Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.</p></div><div class="date-field"><label for="date">Tanggal pengiriman</label><input id="date" type="date" min="2030-01-11" value="2030-01-11" aria-describedby="hint" data-date-picker></div></section>`;
+    const fixture = `<section class="date-panel date-panel--delivery" aria-label="Pilih tanggal pengiriman"><div class="date-field"><label for="date">Tanggal pengiriman</label><input id="date" type="date" min="2030-01-11" value="2030-01-11" aria-describedby="hint" data-date-picker></div><p class="date-panel-hint" id="hint" role="status" hidden></p></section>`;
     const checks = `
         const check = (condition, message) => { if (!condition) throw Error(message); };
         try {
             const input = document.querySelector('input');
             const trigger = document.querySelector('.date-trigger');
             const dialog = document.querySelector('dialog');
+            if (document.body.dataset.role === 'pelanggan') {
+                check(document.querySelector('.date-panel-hint').hidden, 'Pesan normal tersembunyi');
+                check(document.querySelector('.date-field label').textContent === 'Tanggal pengiriman', 'Label tanggal terlihat');
+            }
             const app = document.querySelector('.app');
             if (app) {
                 const style = getComputedStyle(app);
@@ -75,7 +79,7 @@ if (process.argv[2]) {
         const roleCss = fs.readFileSync({ pelanggan: 'public/pelanggan/assets/customer.css', admin: 'public/admin/assets/admin.css', owner: 'public/assets/css/app.css' }[role], 'utf8');
         const ownerPanel = fs.readFileSync('public/owner/partials/layout.php', 'utf8').match(/<section class="date-panel"[\s\S]*?<\/section>/)[0].replace(/<\?=[\s\S]*?\?>/g, '2030-01-11');
         const content = role === 'owner' ? `<main class="app"><header class="top"><h1>${page === 'products' ? 'Produk &amp; Kuota' : 'Pesanan'}</h1></header>${ownerPanel}${page === 'products' ? '<p id="quota-summary">Ringkasan kapasitas tanggal pilihan</p><section id="plist" class="card"></section>' : '<div id="tabs"></div><section class="card center">Kapasitas Dapur</section><label class="search">Cari pesanan</label><div id="list"></div>'}</main>` : fixture;
-        const frame = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${roleCss}\n${css}\n${role === 'owner' ? '' : 'body{display:block;padding:16px} .date-panel{max-width:1100px}'}</style><body data-page="${page}">${content}<script>${source}</script><script>${checks.replace("const input =", `check(innerWidth === ${width}, 'Viewport sesuai ukuran uji'); const input =`)}</script></body></html>`;
+        const frame = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${roleCss}\n${css}\n${role === 'owner' ? '' : 'body{display:block;padding:16px} .date-panel{max-width:1100px}'}</style><body data-page="${page}" data-role="${role}">${content}<script>${source}</script><script>${checks.replace("const input =", `check(innerWidth === ${width}, 'Viewport sesuai ukuran uji'); const input =`)}</script></body></html>`;
         const escapedFrame = frame.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
         fs.writeFileSync(htmlPath, `<!doctype html><html><body style="margin:0"><iframe title="Uji kalender" style="border:0;width:${width}px;height:850px" srcdoc="${escapedFrame}"></iframe></body></html>`);
         const screenshot = process.argv[3] && role === 'owner' && width === 1280 && page === 'products' ? [`--screenshot=${path.resolve(process.argv[3])}`] : [];

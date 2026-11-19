@@ -172,9 +172,9 @@ async function loadCatalog(animate = false) {
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
     catalogClosed = Boolean(d.tanggal_libur);
-    $('#delivery-hint').textContent = catalogClosed
-        ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
-        : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    const deliveryHint = $('#delivery-hint');
+    deliveryHint.textContent = catalogClosed ? 'Tanggal ini libur. Pilih tanggal lain.' : '';
+    deliveryHint.hidden = !catalogClosed;
     const fullHint = $('#quota-full-hint');
     if (fullHint) {
         const full = Array.isArray(d.habis) ? d.habis : [];
@@ -182,8 +182,7 @@ async function loadCatalog(animate = false) {
             const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
             });
-            fullHint.textContent = 'Kuota penuh untuk tanggal ' + label + ': '
-                + full.map(p => p.nama).join(', ') + '. Pilih tanggal atau menu lain.';
+            fullHint.textContent = 'Beberapa menu habis pada ' + label + '. Pilih menu atau tanggal lain.';
             fullHint.hidden = false;
         } else {
             fullHint.textContent = '';
@@ -200,9 +199,10 @@ async function loadCatalog(animate = false) {
             : d.dailyStatus === 'full' ? 'Kuota harian penuh'
             : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
             : 'Kuota harian tersedia';
-        dailyHint.textContent = catalogClosed
-            ? 'Tanggal libur — semua kuota ditutup.'
-            : label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi untuk tanggal ' + d.tanggal + '.';
+        const hasIssue = !catalogClosed && ['full', 'nearly_full'].includes(d.dailyStatus);
+        dailyHint.textContent = hasIssue
+            ? label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi.' : '';
+        dailyHint.hidden = !hasIssue;
         dailyHint.dataset.status = catalogClosed ? 'closed' : (d.dailyStatus || 'available');
     }
 

@@ -19,19 +19,15 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <b>Riwayat pesanan</b>
     </a>
 </section>
-<section class="date-panel date-panel--delivery" aria-labelledby="delivery-title">
-    <div>
-        <span class="date-eyebrow">RENCANAKAN PESANANMU</span>
-        <h2 class="date-panel-title" id="delivery-title">Mau dikirim kapan?</h2>
-        <p class="date-panel-hint" id="delivery-hint">Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.</p>
-        <p class="date-panel-hint" id="quota-full-hint" role="status" hidden></p>
-        <p class="date-panel-hint" id="daily-quota-hint" role="status"></p>
-    </div>
+<section class="date-panel date-panel--delivery" aria-label="Pilih tanggal pengiriman">
     <div class="date-field">
         <label for="catalog-delivery-date">Tanggal pengiriman</label>
         <input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
-            aria-describedby="delivery-hint daily-quota-hint" data-date-picker data-availability-url="api/availability.php" required>
+            aria-describedby="delivery-hint quota-full-hint daily-quota-hint" data-date-picker data-availability-url="api/availability.php" required>
     </div>
+    <p class="date-panel-hint" id="delivery-hint" role="status" hidden></p>
+    <p class="date-panel-hint" id="quota-full-hint" role="status" hidden></p>
+    <p class="date-panel-hint" id="daily-quota-hint" role="status" hidden></p>
 </section>
 <div class="catalog-toolbar">
     <div class="category-tabs" id="catalog-category-tabs" aria-label="Filter kategori">
