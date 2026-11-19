@@ -1,8 +1,6 @@
 @media (max-width: 700px) {
     body[data-page="catalog"] .customer-shell {
-        height: 100dvh;
-        min-height: 0;
-        overflow: hidden;
+        min-height: 100dvh;
     }
     body[data-page="catalog"] .customer-rail {
         width: 62px;
@@ -45,11 +43,9 @@
         display: flex;
         flex-direction: column;
         position: relative;
-        height: 100dvh;
-        min-height: 0;
+        min-height: 100dvh;
         margin-left: 62px;
         padding-bottom: 0;
-        overflow: hidden;
         background: transparent;
     }
     body[data-page="catalog"] .customer-main::before {
@@ -75,7 +71,10 @@
         min-height: 0;
         max-width: none;
         padding: 22px 14px 18px;
-        overflow: hidden;
+        overflow: visible;
+    }
+    body[data-page="catalog"].has-cart .customer-content {
+        padding-bottom: 110px;
     }
     body[data-page="catalog"] .catalog-intro {
         position: relative;
@@ -147,7 +146,7 @@
         overflow-x: auto;
         scrollbar-width: none;
         padding-bottom: 2px;
-        justify-content: center;
+        justify-content: flex-start;
     }
     body[data-page="catalog"] .category-tabs::-webkit-scrollbar {
         display: none;
@@ -213,12 +212,11 @@
     }
     body[data-page="catalog"] .menu-grid {
         display: grid;
-        flex: 1 1 auto;
+        flex: none;
         min-height: 0;
         grid-template-columns: 1fr;
         gap: 0;
-        overflow-y: auto;
-        overscroll-behavior: contain;
+        overflow: visible;
         align-content: start;
         scrollbar-width: none;
     }

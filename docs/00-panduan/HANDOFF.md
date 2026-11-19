@@ -134,3 +134,7 @@
 - CSS katalog sebelumnya menyembunyikan customer-top sehingga hamburger tidak tampil. Header kini terlihat dan tidak menyusut dalam flex column. Padding konten dibuat simetris, judul/kategori di tengah, dan offset cart-bar mengikuti tengah viewport tanpa ruang sidebar lama. Padding kiri khusus <=360px dihapus.
 - Uji keranjang dan kuota lulus. Chrome headless dengan fixture markup katalog dan CSS aktual mengukur viewport 504px serta 1262px tanpa overflow. Pada mobile hamburger 44x44 tampil dan pusat grid sama dengan pusat viewport. Permintaan window-size 320/390 dibatasi minimum jendela Chrome menjadi 504px sehingga viewport sempit itu belum diverifikasi. Tidak akses database.
 - Header katalog mobile diperbarui sesuai arahan: div judul rata kiri, eyebrow dan catalog-description ditampilkan kembali. Ruang kanan 56px tetap disediakan untuk tautan Riwayat. Diff check lulus; render browser belum diulang.
+
+## Scroll katalog dan toolbar mobile
+- Kategori toolbar rata kiri. Menghapus penguncian tinggi viewport dan overflow hidden pada pembungkus katalog; grid menu mengikuti scroll dokumen. Saat keranjang ada, padding bawah 110px menjaga menu terakhir dari overlay keranjang.
+- Chrome headless fixture katalog berhasil scrollY 400 dengan rentang scroll 968px, kategori flex-start, tanpa horizontal overflow. Uji kuota dan keranjang lulus. Panel tanggal belum diubah; pengguna meminta opsi peringkasan setelah dua perbaikan ini.
