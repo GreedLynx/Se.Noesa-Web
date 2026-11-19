@@ -174,6 +174,63 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 12px;
 }
+.mn-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mn-stepper span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #f1f4f0;
+  color: var(--mn-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.mn-stepper b {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dfe8dd;
+  color: var(--mn-green);
+}
+.mn-stepper .is-current,
+.mn-stepper .is-done {
+  background: var(--mn-green-pale);
+  color: var(--mn-green);
+}
+.mn-stepper .is-current b,
+.mn-stepper .is-done b {
+  background: var(--mn-green);
+  color: #fff;
+}
+.mn-step {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 14px;
+  border: 1px solid var(--mn-line);
+  border-radius: 13px;
+  background: #fff;
+}
+.mn-step[hidden] { display: none; }
+.mn-step h3 {
+  margin: 0;
+  color: var(--mn-ink);
+  font-size: 14px;
+}
+.mn-step-copy {
+  margin: -6px 0 0;
+  color: var(--mn-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .mn-hint {
   margin: 0;
   color: var(--mn-muted);

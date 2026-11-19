@@ -482,9 +482,22 @@
         const previewBox = document.getElementById("mn-preview-result");
         const errorEl = document.getElementById("mn-create-error");
         const submitBtn = document.getElementById("mn-submit");
+        const stepTwo = document.getElementById("mn-step-two");
+        const stepIndicators = [...form.querySelectorAll("[data-mn-step-indicator]")];
 
         let previewProductId = null;
         let previewReady = 0;
+
+        const setStep = (step) => {
+            if (stepTwo) stepTwo.hidden = step !== 2;
+            stepIndicators.forEach((indicator) => {
+                const number = Number(indicator.dataset.mnStepIndicator);
+                indicator.classList.toggle("is-current", number === step);
+                indicator.classList.toggle("is-done", number < step);
+                if (number === step) indicator.setAttribute("aria-current", "step");
+                else indicator.removeAttribute("aria-current");
+            });
+        };
 
         const resetPreview = () => {
             previewProductId = null;
@@ -493,7 +506,11 @@
                 previewBox.hidden = true;
                 previewBox.innerHTML = "";
             }
-            if (submitBtn) submitBtn.disabled = true;
+            setStep(1);
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.hidden = true;
+            }
         };
 
         const selectedProduct = () => {
@@ -592,9 +609,12 @@
                 }
                 if (submitBtn) {
                     submitBtn.disabled = previewReady < 1;
+                    submitBtn.hidden = previewReady < 1;
                     submitBtn.textContent =
                         previewReady > 0 ? `Kirim ke ${previewReady} pesanan` : "Tidak ada target baru";
                 }
+                setStep(previewReady > 0 ? 2 : 1);
+                if (previewReady > 0) stepTwo?.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 if (previewReady < 1) {
                     if (errorEl)
                         errorEl.textContent =
@@ -606,7 +626,7 @@
                 if (errorEl) errorEl.textContent = error.message;
             } finally {
                 previewBtn.disabled = false;
-                previewBtn.textContent = "Preview target";
+                previewBtn.textContent = "Lihat pesanan terdampak";
             }
         }
 

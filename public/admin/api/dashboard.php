@@ -4,13 +4,16 @@ require_role('admin');
 require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
 
-$today = (new DateTimeImmutable('today'))->format('Y-m-d');
+$localToday = new DateTimeImmutable('today', new DateTimeZone('Asia/Jakarta'));
+$today = $localToday->format('Y-m-d');
+$yesterday = $localToday->modify('-1 day')->format('Y-m-d');
 // COUNT dengan FILTER menghitung pesanan hari ini dan yang menunggu validasi dalam satu query.
 $stats = q(
     "SELECT COUNT(*) FILTER (WHERE created_at::date = ?) AS orders,
+        COUNT(*) FILTER (WHERE created_at::date = ?) AS orders_yesterday,
         COUNT(*) FILTER (WHERE status = 'menunggu_validasi') AS pending
     FROM pesanan",
-    [$today]
+    [$today, $yesterday]
 )->fetch();
 $date = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
 // Ambil ringkasan kapasitas dan pemakaian kuota untuk tanggal pengiriman yang diminta.
@@ -55,6 +58,17 @@ $critical = count(array_filter(
 if ($quota['tanggal_libur']) {
     $critical = 0;
 }
+$criticalProducts = $quota['tanggal_libur'] ? [] : array_values(array_map(
+    static fn($product) => [
+        'nama' => $product['nama'],
+        'sisa' => (int) $product['sisa'],
+    ],
+    array_filter(
+        $quota['items'],
+        static fn($product) => (int) $product['kuota'] === 0
+            || (int) $product['sisa'] <= (int) $product['kuota'] * 0.2
+    )
+));
 // LEFT JOIN ke rentang tujuh hari dan COUNT FILTER menghasilkan grafik pesanan selesai per hari.
 $chart = q(
     "SELECT d::date AS hari, to_char(d, 'Dy') AS label,
@@ -91,6 +105,7 @@ $cancellations = q('SELECT * FROM v_pembatalan_pesanan
 
 json([
     'orders' => (int) $stats['orders'],
+    'orders_yesterday' => (int) $stats['orders_yesterday'],
     'pending' => (int) $stats['pending'],
     'capacity' => (int) $capacity['kapasitas'],
     'used' => (int) $capacity['pakai'],
@@ -98,6 +113,7 @@ json([
     'production' => array_values($production),
     'tanggal_libur' => $quota['tanggal_libur'],
     'critical' => $critical,
+    'critical_products' => $criticalProducts,
     'chart' => $chart,
     'priority' => $priority,
     'recent' => $recent,

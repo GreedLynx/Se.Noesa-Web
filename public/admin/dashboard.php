@@ -4,28 +4,19 @@ admin_head('Dashboard', 'dashboard');
 ?>
 <section class="welcome-row">
     <div>
-        <p class="eyebrow">
-            PANTAU OPERASIONAL HARI INI
-        </p>
-        <h2>
-            Selamat datang, <?= htmlspecialchars(me()['username'], ENT_QUOTES, 'UTF-8') ?>!
-        </h2>
+        <p class="eyebrow dashboard-status"><span></span><b id="dashboard-status-text">Dapur beroperasi normal</b></p>
+        <div class="dashboard-welcome-title">
+            <h2>Selamat datang, <?= htmlspecialchars(me()['username'], ENT_QUOTES, 'UTF-8') ?>!</h2>
+            <button class="dashboard-refresh" type="button" data-refresh-dashboard aria-label="Segarkan data"><span class="material-symbols-outlined">sync</span></button>
+        </div>
         <p class="muted">
-            Ringkasan pesanan, kapasitas dapur, dan produk Se.Noesa.
+            Pantau pesanan dapur artisanal dan kuota katering hari ini.
         </p>
     </div>
-    <a class="button primary" href="orders.php">
-        Buka antrean
-        <span>
-            &rarr;
-        </span>
-    </a>
 </section>
 <section class="stats-grid" id="admin-stats" aria-live="polite">
     <article class="stat-card">
-        <span class="stat-icon">
-            &#9776;
-        </span>
+        <div class="dashboard-stat-top"><span class="stat-icon"><span class="material-symbols-outlined">receipt_long</span></span><span class="stat-chip">Hari ini</span></div>
         <span class="stat-label">
             Pesanan hari
       ini
@@ -33,14 +24,10 @@ admin_head('Dashboard', 'dashboard');
         <strong class="stat-value" data-stat="orders">
             --
         </strong>
-        <small class="stat-hint">
-            semua status
-        </small>
+        <small class="stat-hint dashboard-orders-change" data-orders-change>Semua status pesanan</small>
     </article>
     <article class="stat-card">
-        <span class="stat-icon">
-            &#10003;
-        </span>
+        <div class="dashboard-stat-top"><span class="stat-icon dashboard-stat-secondary"><span class="material-symbols-outlined">task_alt</span></span><span class="stat-chip stat-chip-secondary">Perlu cek</span></div>
         <span class="stat-label">
             Perlu
       validasi
@@ -48,22 +35,15 @@ admin_head('Dashboard', 'dashboard');
         <strong class="stat-value" data-stat="pending">
             --
         </strong>
-        <small class="stat-hint">
-            menunggu
-      pemeriksaan
-        </small>
+        <small class="stat-hint">Menunggu pemeriksaan</small>
     </article>
     <article class="stat-card">
-        <span class="stat-icon">
-            &#9749;
-        </span>
+        <div class="dashboard-stat-top"><span class="stat-icon"><span class="material-symbols-outlined">skillet</span></span><span class="stat-chip" data-capacity-percent>—</span></div>
         <span class="stat-label">
             Kapasitas
       dapur
         </span>
-        <strong class="stat-value" data-stat="capacity">
-            --
-        </strong>
+        <strong class="stat-value dashboard-capacity-value"><span data-stat="capacity">--</span><small data-capacity-total>/ -- porsi</small></strong>
         <small class="stat-hint"
       data-stat="capacity-hint">
             memuat kapasitas
@@ -74,20 +54,16 @@ admin_head('Dashboard', 'dashboard');
         </div>
     </article>
     <article class="stat-card">
-        <span class="stat-icon">
-            &#9888;
-        </span>
-        <span class="stat-label">
-            Produk kritis
-        </span>
-        <strong
-      class="stat-value" data-stat="critical">
-            --
+        <div class="dashboard-stat-top"><span class="stat-icon dashboard-stat-critical"><span class="material-symbols-outlined">warning</span></span><span class="stat-chip stat-chip-critical">Kritis</span></div>
+        <span class="stat-label">Kuota menipis</span>
+        <strong class="stat-value"><span data-stat="critical">--</span> Menu
         </strong>
-        <small class="stat-hint">
-            kuota tersisa 20% atau kurang
-        </small>
+        <small class="stat-hint"><b data-critical-name>—</b><span data-critical-remaining></span></small>
     </article>
+</section>
+<section class="dashboard-action-heading" id="action-queue">
+    <h2>Butuh Tindakan <span id="dashboard-action-category-count">2 Kategori</span></h2>
+    <a href="orders.php">Lihat Semua <span class="material-symbols-outlined">chevron_right</span></a>
 </section>
 <section class="content-grid">
     <article class="panel chart-panel">
@@ -113,16 +89,12 @@ admin_head('Dashboard', 'dashboard');
     <article class="panel priority-panel">
         <div class="panel-heading">
             <div>
-                <p class="eyebrow">
-                    BUTUH TINDAKAN
-                </p>
+                    <p class="eyebrow">ANTREAN PEMBAYARAN</p>
                 <h2>
-                    Pesanan menunggu verifikasi
+                    Menunggu verifikasi pembayaran
                 </h2>
             </div>
-            <a href="orders.php">
-                Lihat semua &rarr;
-            </a>
+            <span class="dashboard-priority-count" id="dashboard-priority-count">— Pesanan</span>
         </div>
         <div id="priority-list">
             <div class="loading">
@@ -131,7 +103,7 @@ admin_head('Dashboard', 'dashboard');
         </div>
     </article>
 </section>
-<section class="panel production-panel" aria-labelledby="production-title">
+<section class="panel production-panel dashboard-production" aria-labelledby="production-title">
     <div class="panel-heading">
         <div>
             <p class="eyebrow">PERSIAPAN PRODUKSI</p>
