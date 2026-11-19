@@ -129,3 +129,8 @@
 - customer-mobile-nav dihapus. Tombol logout dipindah dari header ke bawah customer-rail dengan margin-top:auto. Navigasi Riwayat mobile yang sebelumnya tersembunyi kini tampil dalam sidebar.
 - Mobile <=700px memakai hamburger di header. Sidebar awalnya tersembunyi dan inert, dibuka dengan hamburger, ditutup dengan tombol/klik latar/Escape. Fokus berputar di sidebar dan dikembalikan ke hamburger. Desktop menampilkan rail biasa.
 - Update layout.php, customer.js, customer.css, catalog-mobile.css, fixture quota-ui dan docs. Self-check VM buka/tutup/Escape/backdrop/desktop, suite kuota, keranjang, pembatalan, notifikasi, PHP lint dan JS syntax lulus. Render browser langsung belum diperiksa. Belum commit/push.
+
+## Perataan katalog dan hamburger
+- CSS katalog sebelumnya menyembunyikan customer-top sehingga hamburger tidak tampil. Header kini terlihat dan tidak menyusut dalam flex column. Padding konten dibuat simetris, judul/kategori di tengah, dan offset cart-bar mengikuti tengah viewport tanpa ruang sidebar lama. Padding kiri khusus <=360px dihapus.
+- Uji keranjang dan kuota lulus. Chrome headless dengan fixture markup katalog dan CSS aktual mengukur viewport 504px serta 1262px tanpa overflow. Pada mobile hamburger 44x44 tampil dan pusat grid sama dengan pusat viewport. Permintaan window-size 320/390 dibatasi minimum jendela Chrome menjadi 504px sehingga viewport sempit itu belum diverifikasi. Tidak akses database.
+- Header katalog mobile diperbarui sesuai arahan: div judul rata kiri, eyebrow dan catalog-description ditampilkan kembali. Ruang kanan 56px tetap disediakan untuk tautan Riwayat. Diff check lulus; render browser belum diulang.
