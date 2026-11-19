@@ -159,6 +159,7 @@ const fs = require("node:fs"),
     document: {
       body: { dataset: { page: "test" }, classList: { toggle() {} } },
       addEventListener() {},
+      getElementById() { return null; },
       querySelector: (s) => (elements[s] ??= element()),
       querySelectorAll: () => [],
     },

@@ -787,6 +787,38 @@ async function openHistoryDetail(id) {
 }
 
 const page = document.body.dataset.page;
+(() => {
+    const sidebar = document.getElementById('customer-sidebar');
+    const toggle = document.querySelector('.customer-sidebar-toggle');
+    const close = document.querySelector('.customer-sidebar-close');
+    const backdrop = document.querySelector('.customer-sidebar-backdrop');
+    if (!sidebar || !toggle || !close || !backdrop) return;
+    const mobile = window.matchMedia('(max-width: 700px)');
+    function setOpen(open, restoreFocus = false) {
+        const visible = open && mobile.matches;
+        sidebar.classList.toggle('is-open', visible);
+        sidebar.inert = mobile.matches && !visible;
+        toggle.setAttribute('aria-expanded', String(visible));
+        backdrop.hidden = !visible;
+        if (visible) close.focus();
+        else if (restoreFocus) toggle.focus();
+    }
+    toggle.addEventListener('click', () => setOpen(true));
+    close.addEventListener('click', () => setOpen(false, true));
+    backdrop.addEventListener('click', () => setOpen(false, true));
+    document.addEventListener('keydown', event => {
+        if (backdrop.hidden || document.querySelector('dialog[open]')) return;
+        if (event.key === 'Escape') setOpen(false, true);
+        if (event.key === 'Tab') {
+            const controls = [...sidebar.querySelectorAll('a[href], button:not([disabled])')];
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    mobile.addEventListener('change', () => setOpen(false));
+    setOpen(false);
+})();
 wireLogout();
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();

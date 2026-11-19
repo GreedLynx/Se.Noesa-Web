@@ -117,3 +117,15 @@
 ## Resolusi merge revisi Pelanggan
 - Konflik tunggal customer.js pada feature/revisi-pelanggan-sheet diselesaikan dengan mempertahankan aturan incoming dev (minimum efektif 10 atau minimum menu yang lebih tinggi, total maksimal 50) dan perubahan satu porsi per klik. Tambahan memeriksa stok per menu setelah isi keranjang, dan indikator sisa memakai stok aktual alih-alih ruang total pesanan.
 - Skrip uji jumlah menguji dua menu pada batas total 50. Fixture kuota diselaraskan dengan dataset status katalog dari dev. Uji jumlah, kuota UI, pembatalan UI, notifikasi UI, ketersediaan stok PHP tanpa DB, sintaks JS, dan review sumber lulus. Browser/database belum diuji; merge belum di-commit atau didorong.
+
+## Ringkas header notifikasi Pelanggan
+- Menghapus paragraf tanpa class di catalog-intro dan paragraf mnc-summary pada menu-notifications.php sesuai permintaan pengguna. Renderer ringkasan JS sudah mengabaikan elemen yang tidak ada. PHP lint dan uji UI notifikasi lulus.
+
+## Header notifikasi responsive
+- Tautan history-link pada header notifikasi Pelanggan dihapus di semua viewport. Wrapper mnc-page kini mencakup header. CSS grid mulai 901px menempatkan tombol Muat ulang di kanan header. Mobile tetap memakai alur header lalu toolbar, dengan satu tombol refresh dan handler lama.
+- PHP lint, uji UI notifikasi, pemeriksaan struktur dan diff check lulus. Render browser belum dicek.
+
+## Sidebar Pelanggan dan hamburger mobile
+- customer-mobile-nav dihapus. Tombol logout dipindah dari header ke bawah customer-rail dengan margin-top:auto. Navigasi Riwayat mobile yang sebelumnya tersembunyi kini tampil dalam sidebar.
+- Mobile <=700px memakai hamburger di header. Sidebar awalnya tersembunyi dan inert, dibuka dengan hamburger, ditutup dengan tombol/klik latar/Escape. Fokus berputar di sidebar dan dikembalikan ke hamburger. Desktop menampilkan rail biasa.
+- Update layout.php, customer.js, customer.css, catalog-mobile.css, fixture quota-ui dan docs. Self-check VM buka/tutup/Escape/backdrop/desktop, suite kuota, keranjang, pembatalan, notifikasi, PHP lint dan JS syntax lulus. Render browser langsung belum diperiksa. Belum commit/push.

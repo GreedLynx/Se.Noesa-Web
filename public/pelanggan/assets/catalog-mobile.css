@@ -355,7 +355,9 @@ body[data-page="catalog"] .menu-grid.category-transition .menu-card {
         stroke-width: 1.8;
     }
     body[data-page="history"] .customer-page-nav {
-        display: none;
+        display: grid;
+        margin-top:18px;
+        gap:10px;
     }
     body[data-page="history"] .customer-main {
         min-height: 100dvh;
@@ -414,4 +416,64 @@ body[data-page="catalog"] .menu-grid.category-transition .menu-card {
     width: 24px !important;
     height: 24px !important;
   }
+}
+
+/* Sidebar Pelanggan dapat dibuka dari hamburger pada mobile. */
+.customer-sidebar-toggle,
+.customer-sidebar-close,
+.customer-sidebar-backdrop {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    body[data-page] .customer-rail {
+        width: 82px;
+        height: 100dvh;
+        z-index: 30;
+        transform: translateX(-100%);
+        visibility: hidden;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        overflow-y: auto;
+    }
+    body[data-page] .customer-rail.is-open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+    body[data-page] .customer-main {
+        margin-left: 0;
+        padding-bottom: 0;
+    }
+    body[data-page] .cart-bar {
+        left: 14px;
+        bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+    body[data-page="history"] .history-link {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+    .customer-sidebar-toggle,
+    .customer-sidebar-close {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        flex: none;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--brown);
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .customer-sidebar-close {
+        color: #fff;
+        margin-bottom: 12px;
+    }
+    .customer-sidebar-backdrop:not([hidden]) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 29;
+        border: 0;
+        background: rgb(0 0 0 / 35%);
+    }
 }

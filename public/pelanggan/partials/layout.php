@@ -30,7 +30,8 @@ function customer_head(string $title, string $page): array
 
 <body data-page="<?= htmlspecialchars($page) ?>">
     <div class="customer-shell">
-        <aside class="customer-rail">
+        <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
+            <button class="customer-sidebar-close" type="button" aria-label="Tutup menu">&times;</button>
             <a class="customer-logo" href="riwayat.php" aria-label="Profil pelanggan">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="12" cy="8" r="3.3" />
@@ -53,14 +54,19 @@ function customer_head(string $title, string $page): array
                     <b class="customer-notif-count desktop" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
                 </a>
             </nav>
+            <button class="rail-logout" type="button" data-logout aria-label="Keluar dari akun">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+                <small>Keluar</small>
+            </button>
         </aside>
+        <button class="customer-sidebar-backdrop" type="button" aria-label="Tutup menu" hidden></button>
         <main class="customer-main">
             <header class="customer-top">
+                <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false">&#9776;</button>
                 <div><small>Se.Noesa / Pelanggan</small></div>
                 <div class="customer-user">
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
-                    <button class="logout-text" type="button" data-logout>Keluar</button>
                 </div>
             </header>
             <div class="customer-content">
@@ -74,34 +80,6 @@ function customer_foot(): void
 ?>
             </div>
         </main>
-        <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan">
-            <a class="<?= $GLOBALS['customer_page'] === 'catalog' ? 'active' : '' ?>" href="index.php" aria-label="Menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M4 12h16" />
-                </svg>
-                <span>Menu</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'history' ? 'active' : '' ?>" href="riwayat.php" aria-label="Riwayat">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M5 6h14M5 12h14M5 18h14" />
-                </svg>
-                <span>Riwayat</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php" aria-label="Notifikasi">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-                </svg>
-                <span>Notifikasi</span>
-                <b class="customer-notif-count mobile" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
-            </a>
-            <button type="button" data-logout aria-label="Keluar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-                <span>Keluar</span>
-            </button>
-        </nav>
         <dialog id="detail-dialog" class="customer-dialog" aria-label="Detail menu">
             <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
             <div id="detail-content"></div>
