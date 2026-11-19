@@ -160,12 +160,12 @@ customer_head('Detail Pesanan', 'detail');
             <p class="od-muted od-small">Hubungi kami atau ikuti kabar terbaru Se.Noesa.</p>
             <div class="od-contact-links">
                 <?php
-                $contactConfig = $GLOBALS['config'] ?? [];
-                $whatsappNumber = preg_replace('/[^0-9]/', '', (string) ($contactConfig['whatsapp']['number'] ?? getenv('WHATSAPP_NUMBER') ?: ''));
+                $contactEnv = parse_ini_file(dirname(__DIR__, 2) . '/.env', false, INI_SCANNER_RAW) ?: [];
+                $whatsappNumber = preg_replace('/[^0-9]/', '', (string) ($contactEnv['WHATSAPP_NUMBER'] ?? ''));
                 $socialLinks = [
-                    'Instagram' => $contactConfig['social']['instagram'] ?? getenv('INSTAGRAM_URL') ?: '',
-                    'TikTok' => $contactConfig['social']['tiktok'] ?? getenv('TIKTOK_URL') ?: '',
-                    'Facebook' => $contactConfig['social']['facebook'] ?? getenv('FACEBOOK_URL') ?: '',
+                    'Instagram' => $contactEnv['INSTAGRAM_URL'] ?? '',
+                    'TikTok' => $contactEnv['TIKTOK_URL'] ?? '',
+                    'Facebook' => $contactEnv['FACEBOOK_URL'] ?? '',
                 ];
                 if ($whatsappNumber !== ''): ?>
                     <a class="od-contact-link" href="https://wa.me/<?= htmlspecialchars($whatsappNumber, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined">chat</span>WhatsApp</a>

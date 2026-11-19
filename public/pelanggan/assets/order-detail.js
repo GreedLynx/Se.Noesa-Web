@@ -411,6 +411,7 @@
             const icon = $('#od-policy-icon');
             if (!body) return;
             body.hidden = !body.hidden;
+            policyToggle.setAttribute('aria-expanded', String(!body.hidden));
             if (icon) icon.style.transform = body.hidden ? 'rotate(0deg)' : 'rotate(180deg)';
         };
     }
