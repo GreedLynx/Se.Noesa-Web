@@ -229,11 +229,12 @@ async function loadCatalog(animate = false) {
         const available = p.available !== false && state !== 'full' && state !== 'closed';
         return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
             + '" data-product="' + Number(p.id) + '"' + (available ? '' : ' role="button" tabindex="0" aria-label="Lihat detail ' + esc(p.nama) + ', sisa kuota ' + pSisa + ' porsi"')
-            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
+            + ' style="--i:' + i + '">'
+            + (pSisa <= 0 ? '<span class="menu-warning">Stok habis</span>' : '')
+            + '<div class="menu-photo"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
+            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div><div class="menu-card-copy"><span class="category-pill">'
             + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi · Sisa kuota: ' + pSisa
             + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
-            + (pSisa <= 0 ? '<span class="menu-warning" role="img" aria-label="Kuota habis" title="Kuota habis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg></span>' : '')
             + '<button class="menu-add" data-add="' + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></div></article>';
     }).join(''): '<div class="empty-state">Menu tidak ditemukan.</div>';
 

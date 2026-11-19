@@ -185,7 +185,8 @@
         flex: none;
         min-height: 0;
         grid-template-columns: 1fr;
-        gap: 0;
+        gap: 14px;
+        padding: 0 4px;
         overflow: visible;
         align-content: start;
         scrollbar-width: none;
@@ -195,28 +196,32 @@
     }
     body[data-page="catalog"] .menu-card {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 38px;
+        grid-template-columns: minmax(0, 1fr) auto;
         grid-template-rows: 210px auto;
         align-items: start;
         gap: 0 8px;
         min-height: 290px;
-        padding: 0 0 10px;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 19px;
+        background: #fff;
+        box-shadow: var(--shadow);
     }
     body[data-page="catalog"] .menu-card:hover {
         transform: none;
         border-color: transparent;
         box-shadow: none;
     }
-    body[data-page="catalog"] .menu-image {
+    body[data-page="catalog"] .menu-photo {
         grid-column: 1 / -1;
         grid-row: 1;
         justify-self: center;
         width: min(100%, 238px);
         height: 205px;
+    }
+    body[data-page="catalog"] .menu-image {
+        width: 100%;
+        height: 100%;
         border-radius: 0;
         object-fit: contain;
         background: transparent;
@@ -247,7 +252,8 @@
     body[data-page="catalog"] .menu-action {
         grid-column: 2;
         grid-row: 2;
-        justify-self: start;
+        justify-self: end;
+        align-items: flex-end;
     }
     body[data-page="catalog"] .menu-add {
         width: 28px;

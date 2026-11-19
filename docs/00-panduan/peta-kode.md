@@ -5,6 +5,8 @@ Sidebar Pelanggan berada di `public/pelanggan/partials/layout.php`, dengan tombo
 Panel tanggal katalog Pelanggan ada di `public/pelanggan/index.php`; `assets/customer.js` hanya menampilkan pesan libur atau kuota bermasalah. Gaya panel ada di `assets/customer.css` dan kalender bersama di `public/assets/css/date-picker.css`.
 
 Katalog menampilkan semua produk termasuk yang kuotanya nol lewat `public/pelanggan/api/catalog.php`. Kartu, detail menu, penanda stok habis, dan dialog Keluar dirender oleh `public/pelanggan/assets/customer.js`; CSS desktop di `assets/customer.css` dan mobile di `assets/catalog-mobile.css`.
+Label `Stok habis` menjadi anak langsung `.menu-card` agar berada di pojok kanan atas kartu pada kedua ukuran layar; gaya pita abu berada di `assets/customer.css`.
+Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa lebar browser ada di `scripts/test-catalog-card-layout.cjs`.
 
 ## Jumlah porsi katalog dan keranjang Pelanggan
 

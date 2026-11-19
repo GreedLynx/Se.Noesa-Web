@@ -200,8 +200,10 @@ const fs = require("node:fs"),
   await context.loadCatalog();
   assert.match(elements["#menu-grid"].innerHTML, /Sisa kuota: 0 porsi/);
   assert.match(elements["#menu-grid"].innerHTML, /class="menu-warning"/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-warning">Stok habis<\/span><div class="menu-photo">/);
+  assert.doesNotMatch(elements["#menu-grid"].innerHTML, /role="img"/);
   assert.match(elements["#menu-grid"].innerHTML, /class="menu-add"[^>]* disabled/);
-  assert.match(elements["#menu-grid"].innerHTML, /role="button" tabindex="0"/);
+  assert.match(elements["#menu-grid"].innerHTML, /data-product="1" role="button" tabindex="0" aria-label="[^"]+" style="--i:0"/);
   vm.runInContext("showProduct = p => { globalThis.openedProduct = p.id; }", context);
   testCard.onkeydown({ key: 'Enter', preventDefault() {} });
   assert.equal(context.openedProduct, 1);

@@ -271,6 +271,8 @@ dengan filter, termasuk yang sisa kuotanya 0 atau di bawah minimum. Produk yang
 tidak dapat dipesan memiliki `available:false`; UI menonaktifkan tombol tambah,
 tetapi detail dan sisa kuota tetap dapat dilihat. `habis` tetap memuat daftar
 produk yang tidak dapat dipesan untuk peringatan. Tanggal invalid HTTP 422.
+Produk dengan sisa 0 diberi label `Stok habis` di pojok kanan atas kartu;
+label berbentuk pita abu dan tidak mengubah respons API atau aturan checkout.
 Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
 Panel tanggal katalog hanya menampilkan label dan pemilih tanggal saat normal;

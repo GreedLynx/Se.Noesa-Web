@@ -5,6 +5,9 @@ Sidebar dan hamburger Pelanggan menggunakan state tampilan di browser tanpa peny
 Ringkasan panel tanggal katalog hanya mengubah tampilan pesan berdasarkan respons katalog; tidak mengubah tabel, kuota tersimpan, atau migrasi.
 
 Produk dengan sisa nol kini tetap dikirim dalam daftar katalog agar pelanggan melihat statusnya. Perubahan ini hanya pada filter respons API dan tampilan; perhitungan sisa, validasi checkout, dan skema database tetap sama.
+Kartu mobile dan label stok habis hanya perubahan CSS/HTML; tidak memerlukan migrasi.
+Pemindahan label ke pojok kartu juga hanya mengubah struktur kartu dan CSS.
+Pilihan gaya pita abu pada label tetap tidak mengubah skema maupun data.
 
 Kontrol jumlah di keranjang Pelanggan mengubah pilihan lokal sebelum checkout. Perubahan kontrol ini tidak memerlukan migrasi atau penulisan kuota. Checkout tetap memeriksa kuota pada tanggal kirim.
 

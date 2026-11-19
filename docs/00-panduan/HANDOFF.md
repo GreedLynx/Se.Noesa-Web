@@ -148,3 +148,16 @@
 - Permintaan terbaru: pemilih tanggal desktop selebar panel dan pesan di bawahnya; tampilkan semua produk serta sisa kuota pada kartu/detail; ikon peringatan merah dan tombol tambah pudar untuk kuota nol; hapus tautan Riwayat pada katalog desktop/mobile; dialog Keluar berteks lebih besar dan rata tengah.
 - `api/catalog.php` sekarang mengirim semua produk yang cocok filter dalam `items`, termasuk unavailable. Field `available` dan validasi checkout tetap membatasi pemesanan; `habis` tetap untuk pesan. Kartu produk tidak tersedia masih dapat membuka detail melalui klik atau Enter/Spasi, tetapi tombol tambah tetap nonaktif. Tidak ada migrasi/penulisan DB.
 - `index.php`, `customer.js`, `customer.css`, dan `catalog-mobile.css` diperbarui. Reviewer menemukan detail stok habis awalnya tak terjangkau keyboard; diperbaiki dengan fokus serta Enter/Spasi dan uji fixture. Uji quota-ui, cart quantity, helper stok PHP, PHP/JS lint, diff check, dan kalender Chrome 320/390/1280 lulus. Login aplikasi/DB asli dan visual dialog Keluar belum diuji. Tidak commit/push.
+
+## Kartu katalog mobile dan label stok habis
+- Kartu mobile kini memiliki latar putih, batas, radius, bayangan, jarak antarkartu, dan ruang luar/dalam. Gambar, teks, label stok, dan tombol tidak menempel sisi kartu/halaman.
+- Ikon peringatan pada kedua ukuran diganti label horizontal `Stok habis` dengan latar abu transparan dan teks abu gelap. Tombol tambah tetap pudar/nonaktif. Tanda kutip berlebih pada atribut kartu yang ditemukan saat pemeriksaan renderer diperbaiki.
+- `scripts/test-quota-ui.cjs`, `scripts/test-customer-cart-quantity.cjs`, sintaks JS, diff check, dan Chrome fixture 320/390/1280 lulus. Belum diuji dengan data/login aplikasi asli. Tidak commit/push.
+
+## Label stok habis menimpa foto
+- Sesuai permintaan terakhir, label `Stok habis` dipindah dari atas tombol tambah ke sudut kanan atas foto produk pada desktop dan mobile. Tombol tambah tetap pudar/nonaktif dan kartu tetap berjarak dari tepi.
+- `customer.js` memakai pembungkus `.menu-photo` agar posisi label mengikuti foto; `customer.css` dan `catalog-mobile.css` mengatur ukuran. Fixture Chrome memastikan label berada dalam batas foto pada 320/390/1280px; tes kuota UI, keranjang, sintaks JS dan diff check lulus. Login aplikasi/DB asli belum diuji. Tidak commit/push.
+
+## Label stok habis di pojok kartu
+- Permintaan berikutnya memindahkan label ke pojok kanan atas `.menu-card`, bukan mengikuti foto. Renderer menempatkan label sebagai anak kartu dan CSS memakai posisi absolut 12px dari atas/kanan. Fixture Chrome 320/390/1280px memastikan posisi pojok kartu, tes kuota UI dan keranjang lulus.
+- Pengguna memilih opsi 3: pita abu dengan sudut membulat kecil. CSS memakai abu gelap transparan, teks putih tebal, dan bayangan tipis. Chrome 320/390/1280px memeriksa posisi dan gaya; tes kuota UI, keranjang, sintaks JS, dan diff check lulus. Login aplikasi/DB asli belum diuji. Tidak commit/push.
