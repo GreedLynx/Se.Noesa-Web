@@ -37,10 +37,10 @@ try {
     q('CREATE TEMP TABLE tanggal_libur_operasional (id SERIAL,tanggal_mulai DATE,tanggal_selesai DATE) ON COMMIT DROP');
     q('CREATE TEMP TABLE kuota_harian (id SERIAL,produk_id INT,tanggal DATE,kuota INT,UNIQUE(produk_id,tanggal)) ON COMMIT DROP');
     q('CREATE TEMP TABLE produk (id INT PRIMARY KEY,kode TEXT,nama TEXT,kategori TEXT,harga INT,gambar TEXT,min_pesan INT,kuota_harian INT) ON COMMIT DROP');
-    q('CREATE TEMP TABLE pesanan (id INT PRIMARY KEY,tgl_kirim TIMESTAMPTZ,status TEXT,created_at TIMESTAMPTZ) ON COMMIT DROP');
+    q('CREATE TEMP TABLE pesanan (id INT PRIMARY KEY,tgl_kirim TIMESTAMPTZ,status TEXT,created_at TIMESTAMPTZ,bukti_bayar TEXT) ON COMMIT DROP');
     q('CREATE TEMP TABLE detail_pesanan (pesanan_id INT,produk_id INT,qty INT) ON COMMIT DROP');
     q("INSERT INTO produk VALUES (1,'A','Menu A','makanan',10000,NULL,4,10),(2,'B','Menu B','makanan',12000,NULL,4,90),(3,'C','Menu C','makanan',9000,NULL,4,0)");
-    q("INSERT INTO pesanan VALUES (1,'2030-01-10 00:00:00+07','menunggu_pembayaran','2029-12-01'),(2,'2030-01-10 23:59:59+07','selesai','2029-12-01'),(3,'2030-01-11 00:00:00+07','diproses','2029-12-01')");
+    q("INSERT INTO pesanan VALUES (1,'2030-01-10 00:00:00+07','menunggu_pembayaran',now(),NULL),(2,'2030-01-10 23:59:59+07','selesai',now(),NULL),(3,'2030-01-11 00:00:00+07','diproses',now(),NULL)");
     q('INSERT INTO detail_pesanan VALUES (1,1,8),(2,2,72),(3,1,10)');
     q("INSERT INTO kuota_harian VALUES (1,1,'2030-01-10',10),(2,2,'2030-01-10',90),(3,1,'2030-01-11',10),(4,2,'2030-01-11',50)");
     // Buat temporary VIEW dari definisi laporan untuk membandingkan hasil query kuota.
@@ -52,27 +52,26 @@ try {
     check_quota((int) q('SELECT COUNT(*) FROM kuota_harian')->fetchColumn() === 4, 'Migrasi tidak menghapus override lama');
     check_quota((bool) q('SELECT convalidated FROM pg_constraint WHERE conrelid = ?::regclass AND conname = ?', ['pg_temp.produk', 'produk_kuota_harian_nonnegative_check'])->fetchColumn(), 'CHECK default pada migrasi penuh tervalidasi');
     q('ROLLBACK TO SAVEPOINT migration_fixture');
-    $viewSql = substr($migrationSql, strpos($migrationSql, 'CREATE OR REPLACE VIEW'));
+    $availabilitySql = file_get_contents(__DIR__ . '/../database/migrations/025_daily_package_availability.sql');
+    $viewSql = substr($availabilitySql, strpos($availabilitySql, 'CREATE OR REPLACE VIEW'));
     q(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE TEMP VIEW v_kuota_harian', $viewSql));
-    $cancellationSql = file_get_contents(__DIR__ . '/../database/migrations/016_order_cancellation.sql');
-    $db->exec(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE OR REPLACE TEMP VIEW v_kuota_harian', $cancellationSql));
     $snapshot = daily_quota_snapshot('2030-01-10');
-    check_quota($snapshot['maxKitchen'] === 80 && $snapshot['kitchenUsed'] === 80, 'Batas 80%, pesanan belum dibayar/selesai dihitung, tanggal lain dikecualikan');
+    check_quota($snapshot['maxKitchen'] === 50 && $snapshot['kitchenUsed'] === 80, 'Kapasitas 50 paket/hari, pesanan aktif dihitung, tanggal lain dikecualikan');
     check_quota($snapshot === daily_quota_snapshot('2030-01-10', true), 'VIEW laporan sama dengan prepared query checkout');
-    check_quota(daily_quota_snapshot('2030-01-11')['maxKitchen'] === 48, 'Kuota tanggal berbeda menghasilkan batas dapur 48');
-    check_quota(daily_quota_snapshot('2030-01-12')['maxKitchen'] === 80, 'Tanggal tanpa override memakai kuota default');
+    check_quota(daily_quota_snapshot('2030-01-11')['maxKitchen'] === 50, 'Kuota tanggal berbeda tetap memakai batas harian 50');
+    check_quota(daily_quota_snapshot('2030-01-12')['maxKitchen'] === 50, 'Tanggal tanpa override memakai batas harian 50');
     check_quota(daily_quota_snapshot('2030-01-12') === daily_quota_snapshot('2030-01-12', true), 'Laporan tanggal tanpa baris VIEW memakai default dan sisa yang sama');
-    rejects_quota($snapshot, [1 => 3], 'Sisa kuota: 2 porsi');
-    rejects_quota($snapshot, [2 => 4], '80%');
-    rejects_quota($snapshot, [3 => 4], 'tidak tersedia');
+    rejects_quota($snapshot, [1 => 10], 'Sisa 0 porsi');
+    rejects_quota($snapshot, [2 => 10], 'Sisa 0 porsi');
+    rejects_quota(daily_quota_snapshot('2030-01-12'), [3 => 10], 'tidak tersedia');
     // UPDATE status menjadi ditolak untuk memastikan pemakaian kuotanya tidak lagi dihitung.
     q("UPDATE pesanan SET status='ditolak' WHERE id=1");
     $snapshot = daily_quota_snapshot('2030-01-10');
     check_quota($snapshot['kitchenUsed'] === 72 && (int) $snapshot['items'][0]['sisa'] === 10, 'Penolakan memulihkan kuota tanpa update counter');
     q("UPDATE pesanan SET status='dibatalkan' WHERE id=1");
     check_quota($snapshot === daily_quota_snapshot('2030-01-10') && $snapshot === daily_quota_snapshot('2030-01-10', true), 'Pembatalan memulihkan kuota produk/dapur sama dengan penolakan dan VIEW');
-    check_quota(count(daily_quota_validate($snapshot, [1 => 8])) === 1, 'Pesanan tepat pada batas dapur diterima');
-    rejects_quota($snapshot, [1 => 3], 'minimal dipesan 4');
+    check_quota(count(daily_quota_validate(daily_quota_snapshot('2030-01-12'), [1 => 10])) === 1, 'Pesanan tepat pada batas stok diterima');
+    rejects_quota($snapshot, [1 => 3], 'Minimal');
     check_quota(daily_quota_snapshot('2030-01-11')['kitchenUsed'] === 10, 'Batas hari memakai Asia/Jakarta');
     // DELETE konfigurasi kuota untuk menguji bahwa transaksi yang sudah ada tetap masuk laporan.
     q("DELETE FROM kuota_harian WHERE produk_id=2 AND tanggal='2030-01-10'");
@@ -94,9 +93,9 @@ try {
     daily_quota_write_range(1, '2030-01-11', '2030-01-11', 5);
     $lowered = daily_quota_snapshot('2030-01-11');
     check_quota((int) $lowered['items'][0]['sisa'] === 0 && $lowered['kitchenUsed'] === 10, 'Penurunan di bawah pemakaian mempertahankan pesanan dan membatasi sisa nol');
-    rejects_quota($lowered, [1=>4], 'Sisa kuota: 0 porsi');
+    rejects_quota($lowered, [1=>10], 'Sisa 0 porsi');
     q('UPDATE kuota_harian SET kuota=0');
-    rejects_quota(daily_quota_snapshot('2030-01-10'), [1 => 4], 'tidak tersedia');
+    rejects_quota(daily_quota_snapshot('2030-01-10'), [1 => 10], 'Sisa 0 porsi');
     foreach ([['2030-02-30','2030-03-01'],['2030-11-25','2030-11-20'],['2030-01-01','2031-01-02'],['0000-01-01','0000-01-02'],['bad','2030-01-01']] as [$start,$end]) {
         try {
             daily_quota_range($start, $end);

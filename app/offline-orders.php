@@ -43,12 +43,12 @@ function create_offline_order(array $request): array
         }
         $productId = filter_var($item['id'] ?? null, FILTER_VALIDATE_INT);
         $quantity = filter_var($item['qty'] ?? null, FILTER_VALIDATE_INT);
-        if (!$productId || $productId < 1 || !$quantity || $quantity < 1 || $quantity > 500) {
+        if (!$productId || $productId < 1 || !$quantity || $quantity < 1 || $quantity > SENOESA_MAX_ORDER_QTY) {
             throw new DomainException('Jumlah menu tidak valid.');
         }
         $quantities[$productId] = ($quantities[$productId] ?? 0) + $quantity;
-        if ($quantities[$productId] > 500) {
-            throw new DomainException('Maksimal 500 porsi per menu.');
+        if (array_sum($quantities) > SENOESA_MAX_ORDER_QTY) {
+            throw new DomainException('Satu pesanan maksimal ' . SENOESA_MAX_ORDER_QTY . ' porsi.');
         }
     }
     ksort($quantities);

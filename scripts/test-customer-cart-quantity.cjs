@@ -15,58 +15,77 @@ const node = key => {
     return elements.get(key);
 };
 for (const key of ['dec', 'inc', 'remove']) node(`[data-${key}]`).dataset = { [key]: '1' };
-const product = { id: 1, nama: 'Menu uji', min_pesan: 4, kuota: 20, sisa: 14, harga: 10000 };
+const product = { id: 1, nama: 'Menu uji', min_pesan: 12, kuota: 24, sisa: 24, harga: 10000 };
+const otherProduct = { ...product, id: 2, min_pesan: 10, kuota: 50, sisa: 50 };
 let sent;
 const context = {
     $: node, $$: key => [node(key)], imagePath: String, esc: String, money: String, toast() {},
     document: { body: { classList: { toggle() {} } } },
-    cart: {}, productCache: { 1: product }, catalogClosed: false, location: {},
+    cart: {}, productCache: { 1: product, 2: otherProduct }, catalogClosed: false, location: {},
     FormData: class { *[Symbol.iterator]() {} },
     api: async (url, options) => { assert.equal(url, 'api/orders.php'); sent = options.body; return { id: 123 }; },
 };
 vm.createContext(context);
+vm.runInContext(source.split('\n').slice(0, 2).join('\n'), context);
 vm.runInContext(source.slice(source.indexOf('function showProduct('), source.indexOf('const statusLabels')), context);
 const input = node('#quantity-value');
 context.showProduct(product);
 assert.match(node('#detail-content').innerHTML, /<span hidden>Sisa Porsi/);
 assert.doesNotMatch(node('#detail-content').innerHTML, /Jumlah dipesan/);
-input.value = '5';
+input.value = '13';
 input.input();
 assert.equal(stockLabel.hidden, false);
-assert.equal(node('#detail-sisa').textContent, '9 porsi');
-input.value = '4';
+assert.equal(node('#detail-sisa').textContent, '11 porsi');
+input.value = '12';
 input.input();
 assert.equal(stockLabel.hidden, true);
-input.value = '7';
+input.value = '15';
 input.input();
 node('#add-to-cart').onclick();
 context.openCart();
 node('[data-dec]').onclick();
-assert.equal(context.cart[1], 6);
+assert.equal(context.cart[1], 14);
 node('[data-inc]').onclick();
-assert.equal(node('#cart-dialog-total').textContent, '70000');
+assert.equal(node('#cart-dialog-total').textContent, '150000');
 for (let i = 0; i < 5; i++) node('[data-dec]').onclick();
-assert.equal(context.cart[1], 4);
+assert.equal(context.cart[1], 12);
 assert.match(node('#cart-lines').innerHTML, /aria-label="Kurangi" disabled/);
 context.showProduct(product);
-input.value = '11';
+input.value = '13';
 input.input();
 assert.equal(node('#add-to-cart').disabled, true);
-input.value = '10';
+input.value = '12';
 input.input();
 node('#add-to-cart').onclick();
 context.openCart();
 node('[data-inc]').onclick();
-assert.equal(context.cart[1], 14);
+assert.equal(context.cart[1], 24);
 assert.match(node('#cart-lines').innerHTML, /aria-label="Tambah" disabled/);
 node('[data-remove]').onclick();
 assert.equal(context.cart[1], undefined);
 assert.equal(node('#cart-dialog').open, false);
 
+context.cart[2] = 39;
+context.showProduct(product);
+assert.equal(node('#add-to-cart').disabled, true, 'Sisa 11 porsi tidak cukup untuk minimum 12');
+node('#detail-dialog').close();
+context.cart[2] = 37;
+// Render berikutnya membuat tombol baru seperti penggantian innerHTML di browser.
+elements.delete('#add-to-cart');
+context.showProduct(product);
+node('#add-to-cart').onclick();
+context.openCart();
+node('[data-inc]').onclick();
+node('[data-inc]').onclick();
+assert.equal(context.cart[1], 13, 'Tambah satu porsi berhenti saat total mencapai 50');
+assert.match(node('#cart-lines').innerHTML, /aria-label="Tambah" disabled/);
+node('#cart-dialog').close();
+context.showProduct(product);
+assert.equal(node('#add-to-cart').disabled, true, 'Modal juga mematuhi batas satu pesanan');
+
 (async () => {
-    context.cart[1] = 7;
     await context.submitOrder({ preventDefault() {}, currentTarget: { elements: { alamat_id: { value: '1' } } } });
-    assert.equal(JSON.stringify(sent.items), '[{"id":1,"qty":7}]');
+    assert.equal(JSON.stringify(sent.items), '[{"id":1,"qty":13},{"id":2,"qty":37}]');
     assert.equal(context.location.href, 'riwayat.php?order=123');
     console.log('PASS: sisa porsi, batas cart, hapus, total, dan payload checkout');
 })().catch(error => { console.error(error); process.exitCode = 1; });

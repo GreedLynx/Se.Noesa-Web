@@ -1,6 +1,6 @@
 # API
 
-Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan batas 500 porsi per menu, sedangkan Kurangi berhenti di minimum menu. Hapus mengeluarkan menu dari keranjang. Checkout tetap mengirim `items: [{id, qty}]` dan server memeriksa ulang minimum serta kuota.
+Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan total 50 porsi per pesanan. Kurangi berhenti di minimum menu, sekurang-kurangnya 10 porsi, dan Hapus mengeluarkan menu dari keranjang. Checkout mengirim `items: [{id, qty}]` dan server memeriksa ulang batas serta kuota.
 
 Bootstrap menyembunyikan argumen fungsi dari stack trace PHP untuk melindungi kredensial. Format respons endpoint tetap sama.
 
@@ -270,8 +270,8 @@ Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
 
 POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
-dan `items:[{id,qty}]`. Produk berulang digabung; maksimal 500 porsi per produk dan
-minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
+dan `items:[{id,qty}]`. Produk berulang digabung. Total maksimal 50 porsi per pesanan
+dan minimum tiap menu mengikuti `max(10, min_pesan)`. Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota atau tanggal libur mempertahankan pesanan lama dan membatasi

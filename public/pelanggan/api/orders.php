@@ -294,15 +294,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (count($items) > 50) json(['error' => 'Maksimal 50 jenis menu per pesanan'], 422);
 
     $quantities = [];
+    $requestedTotal = 0;
     foreach ($items as $line) {
         if (!is_array($line)) json(['error' => 'Pilihan menu tidak valid'], 422);
         $productId = filter_var($line['id'] ?? null, FILTER_VALIDATE_INT);
         $quantity = filter_var($line['qty'] ?? null, FILTER_VALIDATE_INT);
-        if (!$productId || $productId < 1 || !$quantity || $quantity < 1 || $quantity > 500) {
+        if (!$productId || $productId < 1 || !$quantity || $quantity < 1 || $quantity > SENOESA_MAX_ORDER_QTY) {
             json(['error' => 'Jumlah menu tidak valid'], 422);
         }
         $quantities[$productId] = ($quantities[$productId] ?? 0) + $quantity;
-        if ($quantities[$productId] > 500) json(['error' => 'Maksimal 500 porsi per menu'], 422);
+        if ($quantities[$productId] > SENOESA_MAX_ORDER_QTY) {
+            json(['error' => 'Satu pesanan maksimal ' . SENOESA_MAX_ORDER_QTY . ' porsi'], 422);
+        }
+        $requestedTotal += $quantity;
+        if ($requestedTotal > SENOESA_MAX_ORDER_QTY) {
+            json(['error' => 'Satu pesanan maksimal ' . SENOESA_MAX_ORDER_QTY . ' porsi'], 422);
+        }
     }
 
     ksort($quantities);

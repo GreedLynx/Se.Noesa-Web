@@ -13,7 +13,11 @@ const context = {
     },
     api: async url => url.includes('payment-methods') ? { items: [] } : detail,
     esc: String, money: String, dateLabel: String, statusLabels: {}, statusProgress: () => '',
-    confirm: text => { confirmation = text; return false; }
+    confirm: text => { confirmation = text; return false; },
+    setTimeout: () => 0,
+    clearTimeout() {},
+    paymentExpiryTimer: null,
+    Date,
 };
 vm.createContext(context);
 vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail('), source.indexOf('\nconst page =')), context);

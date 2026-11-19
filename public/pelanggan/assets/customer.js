@@ -1,3 +1,5 @@
+const MIN_ORDER_QTY = 10, MAX_ORDER_QTY = 50;
+const cartTotalQty = () => Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0);
 const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const money = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -189,6 +191,20 @@ async function loadCatalog(animate = false) {
         }
     }
     $('#checkout-button').disabled = catalogClosed;
+    const dailyHint = $('#daily-quota-hint');
+    if (dailyHint) {
+        const capacity = Number(d.dailyCapacity || 50);
+        const used = Number(d.dailyUsed || 0);
+        const remaining = Number(d.dailyRemaining || Math.max(0, capacity - used));
+        const label = d.dailyStatus === 'closed' ? 'Tanggal libur'
+            : d.dailyStatus === 'full' ? 'Kuota harian penuh'
+            : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
+            : 'Kuota harian tersedia';
+        dailyHint.textContent = catalogClosed
+            ? 'Tanggal libur — semua kuota ditutup.'
+            : label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi untuk tanggal ' + d.tanggal + '.';
+        dailyHint.dataset.status = catalogClosed ? 'closed' : (d.dailyStatus || 'available');
+    }
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -208,26 +224,36 @@ async function loadCatalog(animate = false) {
     schedule = d.schedule;
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
         const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
-        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
-        return '<article class="menu-card" data-product="' + Number(p.id)
+        const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
+        const available = p.available !== false && state !== 'full' && state !== 'closed';
+        const stockLabel = state === 'nearly_full' ? ' · Sisa ' + pSisa + ' porsi'
+            : !available ? (pSisa <= 0 ? ' · Habis' : ' · Stok di bawah minimum') : '';
+        return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
+            + '" data-product="' + Number(p.id) + '" data-available="' + available + '" aria-disabled="' + !available
             + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
             + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + stockLabel
             + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
+            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></article>';
     }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
 
+    const canOpen = product => product && product.available !== false
+        && product.stok_status !== 'full' && product.stok_status !== 'closed';
     $$('[data-product]').forEach(card => card.onclick = e => {
         if (e.target.closest('[data-add]')) return;
+        if (card.dataset.available === 'false') return;
         showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
+        if (b.disabled) return;
+        const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
+        if (canOpen(product)) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
+        const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
+        if (canOpen(product)) showProduct(product)
     });
     renderCart();
     if (animate) requestAnimationFrame(() => {
@@ -239,16 +265,18 @@ function showProduct(product) {
     if (!product) return;
     activeProduct = product;
     const inCart = Number(cart[product.id] || 0);
-    const minimum = Math.max(1, Number(product.min_pesan) - inCart);
+    const productMinimum = Math.max(MIN_ORDER_QTY, Number(product.min_pesan));
+    const minimum = Math.max(1, productMinimum - inCart);
     const available = Math.max(0, Number(product.sisa) - inCart);
-    const maximum = Math.min(available, Math.max(0, 500 - inCart));
+    const orderRoom = Math.max(0, MAX_ORDER_QTY - cartTotalQty());
+    const maximum = Math.min(available, orderRoom);
     activeQty = Math.min(maximum, minimum);
     const sisaAfter = available - activeQty;
     const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + Number(product.min_pesan) + ' porsi</b></span><span' + (showSisa ? '' : ' hidden') + '>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + productMinimum + ' porsi</b></span><span' + (showSisa ? '' : ' hidden') + '>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -290,10 +318,15 @@ function showProduct(product) {
     if (maximum < minimum) {
         input.disabled = true;
         add.disabled = true;
-        add.textContent = inCart ? 'Kuota tidak cukup untuk menambah porsi' : 'Stok kurang dari minimal pesanan';
+        add.textContent = orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
+            : inCart ? 'Kuota tidak cukup untuk menambah porsi' : 'Stok kurang dari minimal pesanan';
     }
     add.onclick = () => {
         if (add.disabled) return;
+        if (cartTotalQty() + activeQty > MAX_ORDER_QTY) {
+            toast('Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi.');
+            return;
+        }
         cart[product.id] = (cart[product.id] || 0) + activeQty;
         $('#detail-dialog').close();
         renderCart();
@@ -331,17 +364,17 @@ function openCart() {
         return;
     }
     const lines = $('#cart-lines');
+    const orderFull = cartTotalQty() >= MAX_ORDER_QTY;
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
-        const max = Math.min(500, Number(p?.sisa || 0));
+        const min = Math.max(MIN_ORDER_QTY, Number(p?.min_pesan || 0));
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '>&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (qty >= max ? ' disabled' : '') + '>+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '>&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (orderFull || qty >= Number(p.sisa) ? ' disabled' : '') + '>+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
     }).join('');
     $$('[data-dec]').forEach(b => b.onclick = () => {
         const id = b.dataset.dec;
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
+        const min = Math.max(MIN_ORDER_QTY, Number(p?.min_pesan || 0));
         if (cart[id] <= min) return;
         cart[id] -= 1;
         renderCart();
@@ -350,8 +383,7 @@ function openCart() {
     $$('[data-inc]').forEach(b => b.onclick = () => {
         const id = b.dataset.inc;
         const p = productCache[id];
-        const max = Math.min(500, Number(p?.sisa || 0));
-        if (cart[id] >= max) return;
+        if (cart[id] >= Number(p?.sisa || 0) || cartTotalQty() >= MAX_ORDER_QTY) return;
         cart[id] += 1;
         renderCart();
         openCart()

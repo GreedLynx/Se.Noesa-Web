@@ -147,6 +147,7 @@ const fs = require("node:fs"),
       innerHTML: "",
       hidden: false,
       textContent: "",
+      dataset: {},
       classList: { remove() {}, add() {}, toggle() {} },
       querySelectorAll: () => [],
     };
