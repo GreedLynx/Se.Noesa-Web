@@ -89,6 +89,20 @@ let catalog = [], productCache = {
 }, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
+    const shortcut = document.querySelector('.catalog-search-shortcut');
+    const searchField = document.querySelector('.customer-search');
+    if (shortcut && searchField && 'IntersectionObserver' in window) {
+        const header = document.querySelector('.customer-top');
+        const observer = new IntersectionObserver(([entry]) => {
+            shortcut.hidden = entry.boundingClientRect.bottom > entry.rootBounds.top;
+        }, { rootMargin: `-${header.getBoundingClientRect().height}px 0px 0px 0px`, threshold: [0, 1] });
+        observer.observe(searchField);
+        shortcut.onclick = () => {
+            const input = document.querySelector('#catalog-search');
+            input.focus({ preventScroll: true });
+            input.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
+        };
+    }
     const search = $('#catalog-search'),
         filters = $$('#catalog-category-tabs [data-category]');
     const syncFilters = () => filters.forEach(x => {

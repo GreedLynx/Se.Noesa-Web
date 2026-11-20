@@ -59,6 +59,9 @@ if (process.argv[2]) {
             input.min = '2030-01-11';
             trigger.click();
             check(dialog.open && trigger.getAttribute('aria-expanded') === 'true', 'Kalender terbuka');
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            check(reduced ? getComputedStyle(dialog).animationName === 'none' : getComputedStyle(dialog).animationName !== 'none', 'Animasi mengikuti preferensi gerak');
+            check(dialog.contains(document.activeElement), 'Fokus berada di kalender');
             check(dialog.querySelector('[data-day="2030-01-10"]').disabled, 'Tanggal sebelum minimum nonaktif');
             check(dialog.querySelector('[data-month="-1"]').disabled, 'Navigasi tidak melewati minimum');
             dialog.querySelector('[data-day="2030-01-12"]').click();

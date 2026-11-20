@@ -187,3 +187,12 @@
 ## Pergantian kategori tanpa animasi ulang
 - Efek `category-transition` dihapus karena membuat pergantian filter terasa seperti katalog dimuat dua kali. Pemicu JavaScript, parameter `animate`, timer 750ms, aturan CSS, dan keyframe yang terkait ikut dibersihkan; filter dan pemuatan data tetap berjalan langsung.
 - Lulus: syntax JavaScript, `test-quota-ui.cjs`, `test-customer-cart-quantity.cjs`, dan fixture Chrome katalog pada viewport 320, 390, dan 1280px.
+
+## Rencana header sticky, akses search, dan animasi UI
+- Rencana rinci dibuat di `docs/rencana-ui-pelanggan-scroll-dan-animasi.md`. Keputusan pengguna: header sticky untuk semua halaman Pelanggan di desktop/mobile; tombol search katalog scroll+focus ke input asli; animasi sidebar mobile; animasi pembukaan kalender bersama untuk Pelanggan, Admin, dan Owner.
+- Discovery read-only memetakan layout bersama, search katalog, state/fokus sidebar, dialog kalender, konflik cart bar, safe area, reduced motion, dan fixture yang perlu diperluas. Belum ada implementasi kode dari rencana ini.
+
+## Implementasi header sticky dan animasi UI
+- Fase 1–4 diterapkan: header bersama sticky desktop/mobile; tombol search katalog muncul setelah input terlewati lalu scroll+focus; sidebar mobile memakai transisi transform/opacity dengan delayed visibility; kalender bersama memakai animasi pembukaan CSS untuk semua role.
+- Sidebar mempertahankan state/fokus/keyboard JS yang ada. CSS mempertahankan backdrop dalam render selama fade keluar walau atribut hidden sudah aktif, dengan pointer-events langsung nonaktif. Reduced motion menonaktifkan transisi/animasi.
+- Syntax JS/PHP, suite quota-ui dan customer-cart-quantity lulus. Verifikasi browser dikoordinasikan terpisah. API dan skema tidak berubah. Tidak commit/push.

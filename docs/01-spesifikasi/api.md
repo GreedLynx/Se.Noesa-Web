@@ -1,5 +1,7 @@
 # API
 
+Header sticky Pelanggan, pintasan pencarian katalog, animasi sidebar mobile, dan animasi kalender bersama hanya mengubah UI; kontrak endpoint serta payload tetap sama. Tombol pintasan pencarian tidak memicu request katalog.
+
 Navigasi Pelanggan memakai sidebar dengan tombol Keluar yang memanggil alur logout bersama. Hamburger mobile hanya mengatur visibilitas sidebar dan fokus keyboard.
 
 Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan total 50 porsi per pesanan. Kurangi berhenti di minimum menu, sekurang-kurangnya 4 porsi atau nilai `min_pesan` produk yang lebih tinggi, dan Hapus mengeluarkan menu dari keranjang. Checkout mengirim `items: [{id, qty}]` dan server memeriksa ulang batas serta kuota.

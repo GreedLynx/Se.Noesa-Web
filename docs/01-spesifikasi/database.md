@@ -1,5 +1,7 @@
 # Database
 
+Header sticky, pintasan search katalog, animasi sidebar mobile, dan kalender bersama tidak memerlukan perubahan skema atau migrasi; state interaksi hanya berada di browser.
+
 Sidebar dan hamburger Pelanggan menggunakan state tampilan di browser tanpa penyimpanan database.
 
 Ringkasan panel tanggal katalog hanya mengubah tampilan pesan berdasarkan respons katalog; tidak mengubah tabel, kuota tersimpan, atau migrasi.

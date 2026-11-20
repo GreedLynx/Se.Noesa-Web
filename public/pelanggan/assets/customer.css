@@ -146,6 +146,9 @@ a {
 }
 
 .customer-top {
+    position:sticky;
+    top:0;
+    z-index:10;
     height:82px;
     padding:0 clamp(20px,5vw,70px);
     display:flex;
@@ -301,6 +304,11 @@ body[data-page="history"] .customer-content {
     gap:15px;
     margin:18px 0
 }
+
+.catalog-search-shortcut:not([hidden]) { display:grid; place-items:center; position:fixed; right:max(18px, env(safe-area-inset-right)); bottom:calc(20px + env(safe-area-inset-bottom)); width:48px; height:48px; padding:12px; border:1px solid var(--line); border-radius:50%; background:var(--green); color:#fff; box-shadow:var(--shadow); z-index:7; }
+.catalog-search-shortcut svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; }
+.catalog-search-shortcut:focus-visible { outline:3px solid var(--brown); outline-offset:3px; }
+body.has-cart .catalog-search-shortcut { bottom:calc(116px + env(safe-area-inset-bottom)); }
 
 .catalog-toolbar .category-tabs {
     flex:1 1 auto;

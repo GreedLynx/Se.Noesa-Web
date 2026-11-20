@@ -1,5 +1,7 @@
 # Peta Kode
 
+Header sticky semua halaman Pelanggan berada pada `.customer-top` di `public/pelanggan/assets/customer.css`, dengan override mobile di `catalog-mobile.css`. Tombol `.catalog-search-shortcut` di `public/pelanggan/index.php` diamati oleh `IntersectionObserver` dalam `catalogPage()` (`customer.js`); tombol menggulir dan memfokuskan input pencarian asli. Animasi sidebar memakai transform/opacity dan visibility tertunda pada `catalog-mobile.css`; animasi pembukaan kalender semua role ada di `public/assets/css/date-picker.css`. Keduanya menghormati reduced motion.
+
 Sidebar Pelanggan berada di `public/pelanggan/partials/layout.php`, dengan tombol Keluar di bagian bawah. `customer.js` mengatur hamburger, Escape, fokus keyboard, dan latar penutup. Gaya mobile berada di `assets/catalog-mobile.css` dan gaya tombol Keluar di `assets/customer.css`.
 
 Panel tanggal katalog Pelanggan ada di `public/pelanggan/index.php`; `assets/customer.js` hanya menampilkan pesan libur atau kuota bermasalah. Gaya panel ada di `assets/customer.css` dan kalender bersama di `public/assets/css/date-picker.css`.

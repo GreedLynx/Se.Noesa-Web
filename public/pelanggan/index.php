@@ -39,6 +39,9 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
     </label>
 </div>
 <section class="menu-grid" id="menu-grid" aria-live="polite"></section>
+<button type="button" class="catalog-search-shortcut" aria-label="Kembali ke pencarian menu" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+</button>
 <div class="cart-bar" id="cart-bar" hidden>
     <div class="cart-icon">&#128722;<b id="cart-count">0</b></div>
     <span><strong id="cart-total">Rp 0</strong><small id="cart-summary">0 menu dipilih</small></span>
