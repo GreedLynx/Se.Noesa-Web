@@ -7,6 +7,8 @@ function head(string $title, string $page, bool $auth = false)
             require_owner(false);
     }
     $GLOBALS['owner_page'] = $page;
+    $GLOBALS['owner_auth'] = $auth;
+    $assetPrefix = $auth ? 'assets/' : '../assets/';
     $u = me();
     ?>
 <!doctype html>
@@ -16,12 +18,12 @@ function head(string $title, string $page, bool $auth = false)
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
+    <title><?= htmlspecialchars($title) ?> · <?= $auth ? 'se.noesa' : 'Se.Noesa' ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="../assets/css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
-    <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
-    <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
+    <link rel="stylesheet" href="<?= $assetPrefix ?>css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= $assetPrefix ?>css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
+    <link rel="stylesheet" href="<?= $assetPrefix ?>css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
 <body data-page="<?= $page ?>" data-role="owner">
@@ -100,6 +102,7 @@ function nav(string $on)
 
 function foot()
 {
+    $assetPrefix = !empty($GLOBALS['owner_auth']) ? 'assets/' : '../assets/';
     ?>
     </main>
 
@@ -117,9 +120,9 @@ function foot()
     </dialog>
 
     <div class="toast" id="toast"></div>
-    <script src="../assets/js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
-    <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
-    <script src="../assets/js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
+    <script src="<?= $assetPrefix ?>js/app.js?v=<?= filemtime(__DIR__ . '/../../assets/js/app.js') ?>"></script>
+    <script src="<?= $assetPrefix ?>js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
+    <script src="<?= $assetPrefix ?>js/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../../assets/js/menu-notifications.js') ?>"></script>
 </body>
 
 </html>

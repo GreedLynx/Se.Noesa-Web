@@ -57,7 +57,7 @@ function wireLogout() {
             const dialog = document.createElement('dialog');
             dialog.className = 'customer-dialog logout-dialog';
             dialog.setAttribute('aria-labelledby', 'logout-title');
-            dialog.innerHTML = '<p id="logout-title">Yakin ingin keluar dari akun Se.Noesa?</p><div class="logout-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div>';
+            dialog.innerHTML = '<p id="logout-title">Yakin ingin keluar dari akun se.noesa?</p><div class="logout-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div>';
             const yes = dialog.querySelector('[data-yes]');
             const no = dialog.querySelector('[data-cancel]');
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
@@ -560,7 +560,7 @@ async function loadHistory() {
             (o.status === 'ditolak' && o.alasan_penolakan
                 ? '<p class="history-rejection-reason"><b>Alasan penolakan:</b> ' + esc(o.alasan_penolakan) + '</p>'
                 : '') + '<div class="history-products">' + (first.gambar ? '<img src="'
-            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
+            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan se.noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
             + '</small></span></div>' + (o.reschedule_pending ? '<p class="history-rejection-reason">Menunggu konfirmasi jadwal</p>' : '')
             + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
@@ -929,7 +929,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alertBox.style.background = '#fff3cd';
                 alertBox.style.borderColor = '#ffeeba';
                 alertBox.style.color = '#856404';
-                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>Se.Noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>se.noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
                 return;
             }
 

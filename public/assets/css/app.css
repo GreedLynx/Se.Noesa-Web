@@ -133,6 +133,15 @@ svg {
 .hero.short {
   height: 190px;
 }
+body:is([data-page="login"], [data-page="register"]) .auth-logo {
+  position: absolute;
+  z-index: 1;
+  top: 24px;
+  right: clamp(28px, 8vw, 56px);
+  width: 42px;
+  height: 132px;
+  object-fit: contain;
+}
 .hello {
   position: relative;
 }
@@ -1259,7 +1268,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   .app.auth .hero.short { height: 100%; min-height: 0; }
   .app.auth .hello h2 { font-size: clamp(44px, 5vw, 62px); }
   .app.auth .hello p { font-size: 19px; }
-  .app.auth .hero.short::after { content: "Bergabung dengan Se.Noesa"; position: relative; z-index: 1; max-width: 360px; color: #fff; font-size: clamp(30px, 4vw, 48px); font-weight: 600; line-height: 1.12; }
+  .app.auth .hero.short::after { content: "Bergabung dengan se.noesa"; position: relative; z-index: 1; max-width: 360px; color: #fff; font-size: clamp(30px, 4vw, 48px); font-weight: 600; line-height: 1.12; }
   .app.auth .sheet { display: flex; flex-direction: column; justify-content: center; min-height: 0; margin: 0; padding: clamp(32px, 5vw, 68px); border-radius: 0; overflow-y: auto; }
   .app.auth .sheet form { width: 100%; max-width: 440px; margin-inline: auto; }
   .app.auth .title { font-size: 34px; margin: 12px auto 26px; }

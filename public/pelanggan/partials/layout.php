@@ -17,7 +17,7 @@ function customer_head(string $title, string $page): array
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
+    <title><?= htmlspecialchars($title) ?> · se.noesa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@ function customer_head(string $title, string $page): array
     <div class="customer-shell">
         <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
             <button class="customer-sidebar-close" type="button" aria-label="Tutup menu">&times;</button>
-            <a class="customer-logo" href="index.php" aria-label="Se.Noesa — kembali ke katalog">
+            <a class="customer-logo" href="index.php" aria-label="se.noesa — kembali ke katalog">
                 <img src="../assets/img/logo-icon.png" alt="" width="32" height="40">
             </a>
             <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
@@ -59,7 +59,7 @@ function customer_head(string $title, string $page): array
         <main class="customer-main">
             <header class="customer-top">
                 <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false">&#9776;</button>
-                <div><small>Se.Noesa / Pelanggan</small></div>
+                <div><small>se.noesa / Pelanggan</small></div>
                 <div class="customer-user">
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
@@ -124,16 +124,16 @@ function customer_foot(): void
                         <input id="checkout-default-address" type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
                     </label>
                 </div>
-                <label for="checkout-date">
-                    Tanggal kirim
-                    <input id="checkout-date" name="tgl_kirim" type="date" required>
-                </label>
                 <div class="catalog-policy" style="margin-top:10px">
                     <ul>
                         <li>Pastikan tanggal kirim dan jumlah porsi sesuai kebutuhan acara.</li>
                         <li>Kuota menu mengikuti tanggal pengiriman yang dipilih.</li>
                     </ul>
                 </div>
+                <label for="checkout-date">
+                    Tanggal kirim
+                    <input id="checkout-date" name="tgl_kirim" type="date" required>
+                </label>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>

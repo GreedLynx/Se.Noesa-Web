@@ -8,7 +8,7 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
 ?>
 <section class="catalog-intro">
     <div>
-        <p class="eyebrow">MENU SE.NOESA</p>
+        <p class="eyebrow">MENU se.noesa</p>
         <h2>Pilih Menu</h2>
         <p class="catalog-description">Pilih menu favorit untuk pesanan berikutnya.</p>
     </div>
