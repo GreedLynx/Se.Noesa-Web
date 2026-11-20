@@ -161,3 +161,20 @@
 ## Label stok habis di pojok kartu
 - Permintaan berikutnya memindahkan label ke pojok kanan atas `.menu-card`, bukan mengikuti foto. Renderer menempatkan label sebagai anak kartu dan CSS memakai posisi absolut 12px dari atas/kanan. Fixture Chrome 320/390/1280px memastikan posisi pojok kartu, tes kuota UI dan keranjang lulus.
 - Pengguna memilih opsi 3: pita abu dengan sudut membulat kecil. CSS memakai abu gelap transparan, teks putih tebal, dan bayangan tipis. Chrome 320/390/1280px memeriksa posisi dan gaya; tes kuota UI, keranjang, sintaks JS, dan diff check lulus. Login aplikasi/DB asli belum diuji. Tidak commit/push.
+
+## Status kuota pada kalender pelanggan dan kapasitas dapur
+- Kalender memberi titik warna di bawah setiap tanggal dan legend untuk Tersedia, Hampir penuh, Penuh, Menu Habis, dan Libur. Status berasal dari kapasitas dapur dan sisa menu; tombol `Tanggal tersedia` mencari status `available` terdekat mulai H+7, hingga 12 bulan. Jika fetch gagal, tombol menampilkan coba lagi; data tak dikenal tidak dipilih otomatis.
+- Kapasitas dapur bersama sekarang floor(0.8 * jumlah kuota efektif produk pada tanggal). Override sudah diterapkan; tanggal libur menurunkan semua kuota efektif ke nol. Perubahan helper berlaku pada checkout, offline, Admin/Owner, dan kalender; tidak ada migrasi. Status Hampir penuh untuk sisa 40% atau kurang (asumsi karena jawaban batas tepat40% belum diterima).
+- Lulus: `test-calendar-status.php`, `test-daily-availability.php`, `test-daily-quota.php` (TEMP/rollback, VIEW dan lock), `test-calendar-availability-ui.cjs` Chrome 320/390/1280 termasuk next-month/error, `test-date-picker.cjs`, `test-quota-ui.cjs`, lint, JS syntax, diff check. Tidak uji login aplikasi langsung.
+- Reviewer agent kalender gagal berjalan karena limit penggunaan. Reader memetakan konsumen dan mengonfirmasi lock transaksi checkout tetap mengambil produk/kuota sebelum snapshot; belum ada review reviewer final. Tidak commit/push. Working tree juga memiliki file upload JPG baru dan perubahan staged dari pengguna; jangan hapus atau reset.
+
+## Minimum pemesanan 4 porsi
+- Menyamakan minimum dasar ke 4 di helper kuota, UI Pelanggan, form/API Admin, schema baru, dan dokumentasi. Minimum khusus produk yang lebih tinggi dari 4 tetap dihormati.
+- Migration 026 mengubah nilai 10 menjadi 4 karena migration 025 sebelumnya menaikkan semua nilai di bawah 10; nilai di atas 10 tetap. Migration lama tidak diubah.
+- Memperbarui self-check stok, fixture API, dan uji keranjang supaya batas 4 terlihat. Belum menjalankan tes sesuai cakupan permintaan; perlu verifikasi migration/test PostgreSQL pada langkah berikutnya. Tidak commit/push; perubahan staged sebelumnya dan JPG user tetap dipertahankan.
+
+## Lebar katalog mobile dan filter Snack
+- Pill kategori pada mobile disamakan lebarnya; kartu produk memakai lebar penuh grid. Intro dan panel tanggal katalog diberi lebar penuh, dan gutter scrollbar stabil mencegah lebar konten berubah ketika kategori berganti.
+- Menambahkan filter Snack; handler kategori yang sudah generik menangani filter tanpa perubahan JS.
+- Belum menjalankan render/test browser. Perubahan staged sebelumnya dan JPG user tetap dipertahankan.
+- Tindak lanjut: `menu-grid` mobile dipaksa `width:100%; min-width:0` agar ukuran min-content item kategori tidak melebarkan flex child. Belum diuji render browser.
