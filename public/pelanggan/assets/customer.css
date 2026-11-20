@@ -202,6 +202,10 @@ a {
     padding:34px clamp(20px,5vw,70px) 60px
 }
 
+html:has(body[data-page="catalog"]) { scrollbar-gutter:stable; }
+body[data-page="catalog"] .catalog-intro,
+body[data-page="catalog"] .date-panel--delivery { width:100%; min-width:0; }
+
 .catalog-intro {
     display:flex;
     align-items:center;

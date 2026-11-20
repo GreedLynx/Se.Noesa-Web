@@ -123,6 +123,7 @@
     }
     body[data-page="catalog"] .category-tabs button {
         flex: none;
+        width: 84px;
         border: 1px solid var(--line);
         background: #fff;
         color: var(--brown);
@@ -131,6 +132,7 @@
         font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
+        text-align: center;
         transition: .2s;
     }
     body[data-page="catalog"] .category-tabs button.active {
@@ -183,6 +185,8 @@
     body[data-page="catalog"] .menu-grid {
         display: grid;
         flex: none;
+        width: 100%;
+        min-width: 0;
         min-height: 0;
         grid-template-columns: 1fr;
         gap: 14px;
@@ -196,6 +200,8 @@
     }
     body[data-page="catalog"] .menu-card {
         display: grid;
+        width: 100%;
+        min-width: 0;
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-rows: 210px auto;
         align-items: start;
