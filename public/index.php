@@ -16,7 +16,7 @@ $go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/inde
 <body data-page="splash" data-next="<?= htmlspecialchars($go, ENT_QUOTES, 'UTF-8') ?>">
     <main class="app splash">
         <div class="drift"></div>
-        <img class="logo-pop" src="assets/img/logo-full.png" alt="se.noesa">
+        <img class="logo-pop" src="assets/img/logo-icon.png" alt="Se.Noesa" width="48" height="260">
     </main>
     <script src="assets/js/app.js"></script>
 </body>

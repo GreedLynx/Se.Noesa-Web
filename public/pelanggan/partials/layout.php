@@ -32,12 +32,8 @@ function customer_head(string $title, string $page): array
     <div class="customer-shell">
         <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
             <button class="customer-sidebar-close" type="button" aria-label="Tutup menu">&times;</button>
-            <a class="customer-logo" href="riwayat.php" aria-label="Profil pelanggan">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.3" />
-                    <path d="M5.5 19c.7-3.1 3.1-4.8 6.5-4.8s5.8 1.7 6.5 4.8" />
-                    <circle cx="12" cy="12" r="10" />
-                </svg>
+            <a class="customer-logo" href="index.php" aria-label="Se.Noesa — kembali ke katalog">
+                <img src="../assets/img/logo-icon.png" alt="" width="32" height="40">
             </a>
             <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
                 <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">

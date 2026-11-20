@@ -1,5 +1,10 @@
 # Handoff Se.Noesa-Web
 
+## Logo resmi sidebar Pelanggan
+- Ukuran gambar sidebar dibatasi eksplisit 32x40px dan overflow pembungkus disembunyikan agar tidak menimpa navigasi. Splash `public/index.php` kini memakai logo-icon.png dengan batas tinggi responsif; efek pop dan redirect lama dipertahankan.
+- Ikon profil pada `.customer-logo` diganti logo resmi dari `foto/Icon_Logo.png`, disalin ke `public/assets/img/logo-icon.png` agar dapat diakses dari public root. Tautan menuju katalog, label aksesibel diperbarui, gambar memakai object-fit contain tanpa latar tambahan.
+- PHP lint layout dan diff check lulus. Tampilan browser belum diperiksa; belum commit/push.
+
 ## Kondisi saat ini
 - Branch `feature/full-stack`, HEAD sebelum Tahap 4A: `c54b4a9` (hardening notifikasi perubahan menu: closure audit, advisory lock MNOT, guard Owner read-only, `LIMIT 2` dashboard).
 - Tahap 4A (data integrity & payment safety: D2, D3, C6) sudah diimplementasi dan seluruh pengujian lulus; perubahan belum di-commit.

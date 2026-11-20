@@ -60,13 +60,16 @@ a {
     width:52px;
     height:52px;
     border-radius:50%;
-    background:#fff;
+    background:transparent;
     color:var(--brown);
     display:grid;
     place-items:center;
     flex:none;
     margin-bottom:40px
 }
+
+.customer-logo { overflow:hidden; }
+.customer-logo img { display:block; width:32px; height:40px; max-width:100%; max-height:100%; object-fit:contain; }
 
 .customer-logo svg {
     width:32px;
