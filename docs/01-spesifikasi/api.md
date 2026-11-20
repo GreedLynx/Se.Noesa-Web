@@ -1,5 +1,30 @@
 # API
 
+Info pemesanan checkout Pelanggan berada sebelum field tanggal kirim; nama merek
+di UI Pelanggan dan splash ditulis `se.noesa`. Logo login/register dan background
+pola Pelanggan merupakan perubahan presentasi tanpa perubahan endpoint/payload.
+Posisi dan ukuran logo login/register desktop serta animasi pattern hanya diatur oleh CSS.
+Helper layout bersama memakai URL `assets/` untuk halaman autentikasi di public
+root dan `../assets/` untuk halaman Owner agar aset tetap termuat pada subdirektori.
+
+## Pemberitahuan pembayaran dan angka sisa Pelanggan
+
+Kontrak `pelanggan/api/orders.php` (GET detail dan POST `action=upload_proof`) serta
+`pelanggan/api/payment-methods.php` tetap. `customer.js` menampilkan kegagalan
+pemuatan detail/metode/QRIS dan upload langsung di bagian pembayaran, bukan
+menyimpan error ke halaman Notifikasi. Ada aksi muat ulang; POST upload tidak
+diulang otomatis. Keberhasilan upload yang sudah dikonfirmasi server dibedakan
+dari kegagalan refresh. Jika hasil upload belum dapat dipastikan karena koneksi
+atau respons tidak valid, pelanggan harus memuat ulang status sebelum mengirim
+lagi. Sesi berakhir tetap menuju login; konflik status/tenggat memuat ulang izin
+upload dari server.
+
+Kartu katalog menampilkan angka sisa hanya saat `sisa < kuota * 0.5` dengan kuota
+efektif positif dan valid untuk tanggal pilihan. Tepat 50% tidak ditampilkan.
+Detail menerapkan ambang yang sama pada sisa setelah pilihan lokal/keranjang dan
+memperbarui visibilitas saat jumlah berubah. Label Stok habis tetap tersedia;
+aturan ketersediaan, kuota checkout, minimum/maksimum porsi, dan payload tidak berubah.
+
 Header sticky Pelanggan, pintasan pencarian katalog, animasi sidebar mobile, dan animasi kalender bersama hanya mengubah UI; kontrak endpoint serta payload tetap sama. Tombol pintasan pencarian tidak memicu request katalog.
 
 Navigasi Pelanggan memakai sidebar dengan tombol Keluar yang memanggil alur logout bersama. Hamburger mobile hanya mengatur visibilitas sidebar dan fokus keyboard.

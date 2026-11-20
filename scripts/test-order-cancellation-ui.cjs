@@ -3,7 +3,7 @@ const source = fs.readFileSync('public/pelanggan/assets/customer.js', 'utf8');
 let detail, confirmation;
 const elements = {
     '#history-detail': {}, '#history-dialog': { showModal() {} },
-    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}
+    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}, '#retry-payment': {}, '#payment-status': {}
 };
 const context = {
     clearTimeout() {}, setTimeout() {}, paymentExpiryTimer: null, imagePath: String,

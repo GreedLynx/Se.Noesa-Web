@@ -26,22 +26,42 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(source.split('\n').slice(0, 2).join('\n'), context);
-vm.runInContext(source.slice(source.indexOf('function showProduct('), source.indexOf('const statusLabels')), context);
+vm.runInContext(source.slice(source.indexOf('function showRemainingStock('), source.indexOf('const statusLabels')), context);
 const input = node('#quantity-value');
+for (const [kuota, remaining, visible] of [
+    [50, 26, false], [50, 25, false], [50, 24, true],
+    [80, 40, false], [80, 39, true], [0, 0, false],
+    [undefined, 1, false], ['invalid', 1, false], [Infinity, 1, false], [50, NaN, false],
+]) assert.equal(context.showRemainingStock({kuota}, remaining), visible);
+context.showProduct({...product, min_pesan: 4, kuota: 50, sisa: 30});
+assert.match(node('#detail-content').innerHTML, /id="detail-stock" hidden/);
+input.value = '6'; input.input();
+assert.equal(node('#detail-sisa').textContent, '24 porsi');
+assert.equal(node('#detail-stock').hidden, false);
+input.value = '5'; input.input();
+assert.equal(node('#detail-stock').hidden, true);
+context.cart[1] = 5;
+node('#detail-dialog').close();
+context.showProduct({...product, min_pesan: 4, kuota: 50, sisa: 30});
+assert.match(node('#detail-content').innerHTML, /id="detail-stock">Sisa kuota<b id="detail-sisa">24 porsi/);
+delete context.cart[1];
+node('#detail-dialog').close();
 const minimumProduct = { ...product, id: 3, min_pesan: 4, kuota: 8, sisa: 8 };
 context.showProduct(minimumProduct);
 assert.match(node('#detail-content').innerHTML, /Min\. Pesan<b>4 porsi/);
 assert.match(node('#detail-content').innerHTML, /min="4"[^>]+value="4"/, 'Jumlah awal mengikuti minimum 4 porsi');
 node('#detail-dialog').close();
 context.showProduct(product);
-assert.match(node('#detail-content').innerHTML, /<span>Sisa kuota<b id="detail-sisa">12 porsi/);
+assert.match(node('#detail-content').innerHTML, /<span id="detail-stock" hidden>Sisa kuota<b id="detail-sisa">12 porsi/);
 assert.doesNotMatch(node('#detail-content').innerHTML, /Jumlah dipesan/);
 input.value = '13';
 input.input();
 assert.equal(node('#detail-sisa').textContent, '11 porsi');
+assert.equal(node('#detail-stock').hidden, false);
 input.value = '12';
 input.input();
 assert.equal(node('#detail-sisa').textContent, '12 porsi');
+assert.equal(node('#detail-stock').hidden, true);
 input.value = '15';
 input.input();
 node('#add-to-cart').onclick();

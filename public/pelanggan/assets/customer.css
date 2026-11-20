@@ -143,9 +143,22 @@ a {
 }
 
 .customer-main {
+    position:relative;
+    isolation:isolate;
     margin-left:82px;
     min-height:100vh;
     padding-bottom:40px
+}
+
+.customer-main::after {
+    content:"";
+    position:absolute;
+    z-index:0;
+    inset:0;
+    background:url('../../assets/img/Pattern_Se.Noesa.png') repeat;
+    background-size:402px auto;
+    opacity:.06;
+    pointer-events:none;
 }
 
 .customer-top {
@@ -203,6 +216,8 @@ a {
 }
 
 .customer-content {
+    position:relative;
+    z-index:1;
     max-width:1300px;
     margin:auto;
     padding:34px clamp(20px,5vw,70px) 60px
@@ -2051,3 +2066,6 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
     font-size: 12px;
     color: var(--green-dark);
 }
+
+#detail-dialog .product-facts > [hidden] { display:none; }
+.payment-load-error { padding-top:30px; }

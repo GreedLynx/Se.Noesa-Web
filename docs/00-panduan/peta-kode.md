@@ -1,5 +1,24 @@
 # Peta Kode
 
+## Identitas, checkout, dan background Pelanggan
+
+- `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari
+  `public/assets/img/logo-icon.png`; posisi dasar kanan atas dan override logo
+  login/register desktop yang besar di tengah hero berada di `public/assets/css/app.css`.
+  Referensi ada di `public/assets/img/desain/`.
+- Pattern animasi login/register memakai `.drift` dengan tile 402 x 260 px;
+  `@keyframes drift` menggeser lapisan dengan `transform` sejauh satu tile.
+- `public/owner/partials/layout.php` menyimpan flag autentikasi untuk memilih prefix
+  aset `assets/` pada halaman auth public root, `../assets/` pada halaman Owner.
+- `public/pelanggan/partials/layout.php` menempatkan `.catalog-policy` sebelum
+  `#checkout-date`. Teks merek UI Pelanggan/shared splash memakai `se.noesa`.
+- `public/pelanggan/assets/customer.css` menempatkan pola 6% pada
+  `.customer-main::after`, di atas latar mobile dan di bawah `.customer-content`.
+  Aset public `public/assets/img/Pattern_Se.Noesa.png` disalin dari
+  `foto/Pattern_Se.Noesa.png`; dekorasi tidak menerima pointer events.
+- `scripts/test-customer-revisions-browser.cjs` memeriksa login/register responsif,
+  identitas, urutan info, background, dan alur pelanggan dengan API fixture.
+
 Splash awal `public/index.php` memakai `public/assets/img/logo-icon.png`; ukuran responsif dan animasi `.logo-pop` berada di `public/assets/css/app.css`.
 
 Logo sidebar Pelanggan memakai `public/assets/img/logo-icon.png`, salinan `foto/Icon_Logo.png`, melalui layout bersama dan tautan ke katalog.
@@ -17,8 +36,16 @@ Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa l
 
 ## Jumlah porsi katalog dan keranjang Pelanggan
 
-- `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout.
+- `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout. `showRemainingStock(product, remaining)` mengatur angka sisa hanya di bawah 50% kuota efektif; wrapper `#detail-stock` diperbarui saat jumlah berubah dan aturan hidden berada di `customer.css`.
 - `scripts/test-customer-cart-quantity.cjs` menguji ambang sisa porsi, batas jumlah, total, penghapusan, dan payload checkout.
+- `scripts/test-quota-ui.cjs` juga memeriksa angka sisa kartu pada batas 50% dan kuota efektif berbeda.
+
+## Error pembayaran Pelanggan
+
+- `public/pelanggan/assets/customer.js`: `api()` meneruskan status HTTP dan hasil respons tidak valid; `openHistoryDetail(id)` menangani kegagalan detail/metode/QRIS, aksi muat ulang, dan submit bukti. Pesan tampil lokal dalam dialog pembayaran, tidak masuk halaman Notifikasi. POST yang berhasil dipisahkan dari refresh yang gagal; hasil belum pasti harus diperiksa melalui muat ulang tanpa auto-retry upload.
+- `public/pelanggan/assets/customer.css`: `.payment-load-error` memberi ruang untuk tombol tutup dialog.
+- `scripts/test-customer-payment-errors.cjs`: regresi pemuatan detail/metode/QRIS, validasi/konflik/sesi/server/jaringan/respons upload, submit ganda, dan upload sukses dengan refresh gagal.
+- `scripts/test-order-cancellation-ui.cjs`: izin upload/pembatalan, tenggat, dan detail foto/tawaran jadwal tetap diuji.
 
 ## Navigasi kembali Admin
 
