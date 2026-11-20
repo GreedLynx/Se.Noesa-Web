@@ -28,6 +28,7 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
         <button type="button" class="active" data-category="" aria-label="Semua menu" aria-pressed="true">Semua</button>
         <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false">Makanan</button>
         <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false">Minuman</button>
+        <button type="button" data-category="snack" aria-label="Snack" aria-pressed="false">Snack</button>
     </div>
     <label class="customer-search">
         <input id="catalog-search" type="search" placeholder="Cari menu" aria-label="Cari menu">
