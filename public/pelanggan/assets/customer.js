@@ -248,8 +248,8 @@ async function loadCatalog() {
             + (pSisa <= 0 ? '<span class="menu-warning">Stok habis</span>' : '')
             + '<div class="menu-photo"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
             + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi · Sisa kuota: ' + pSisa
-            + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi'
+            + (showRemainingStock(p, pSisa) ? ' · Sisa kuota: ' + pSisa + ' porsi' : '') + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
             + '<button class="menu-add" data-add="' + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></div></article>';
     }).join(''): '<div class="empty-state">Menu tidak ditemukan.</div>';
 
@@ -278,6 +278,10 @@ async function loadCatalog() {
     });
     renderCart();
 }
+function showRemainingStock(product, remaining) {
+    const quota = Number(product.kuota);
+    return Number.isFinite(quota) && quota > 0 && Number.isFinite(remaining) && remaining < quota * 0.5;
+}
 function showProduct(product) {
     if (!product) return;
     activeProduct = product;
@@ -291,8 +295,8 @@ function showProduct(product) {
     const sisaAfter = available - activeQty;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
-        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + productMinimum + ' porsi</b></span><span>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan se.noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
+        + productMinimum + ' porsi</b></span><span id="detail-stock"' + (showRemainingStock(product, sisaAfter) ? '' : ' hidden') + '>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -317,6 +321,7 @@ function showProduct(product) {
         input.value = quantity;
         const remaining = available - quantity;
         sisaEl.textContent = remaining + ' porsi';
+        $('#detail-stock').hidden = !showRemainingStock(product, remaining);
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }

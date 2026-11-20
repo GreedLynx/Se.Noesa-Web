@@ -2051,3 +2051,6 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
     font-size: 12px;
     color: var(--green-dark);
 }
+
+#detail-dialog .product-facts > [hidden] { display:none; }
+.payment-load-error { padding-top:30px; }

@@ -210,6 +210,15 @@ const fs = require("node:fs"),
   context.openedProduct = null;
   testCard.onkeydown({ key: ' ', preventDefault() {} });
   assert.equal(context.openedProduct, 1);
+  for (const [quota, remaining, visible] of [
+    [50, 26, false], [50, 25, false], [50, 24, true],
+    [80, 40, false], [80, 39, true], [0, 0, false],
+  ]) {
+    testCard = null;
+    vm.runInContext(`api=async()=>({items:[{id:1,nama:'Menu A',kode:'A',kategori:'makanan',min_pesan:4,kuota:${quota},sisa:${remaining},harga:10000,gambar:''}],tanggal:'2030-01-11',schedule:null})`, context);
+    await context.loadCatalog();
+    assert.equal(elements['#menu-grid'].innerHTML.includes('Sisa kuota:'), visible);
+  }
   vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',dailyCapacity:0,dailyUsed:0,dailyRemaining:0,dailyStatus:'full',habis:[],schedule:null})", context);
   await context.loadCatalog();
   assert.match(elements["#daily-quota-hint"].textContent, /sisa 0 dari 0 porsi/);
