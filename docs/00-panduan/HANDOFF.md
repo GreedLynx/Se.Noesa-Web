@@ -178,3 +178,8 @@
 - Menambahkan filter Snack; handler kategori yang sudah generik menangani filter tanpa perubahan JS.
 - Belum menjalankan render/test browser. Perubahan staged sebelumnya dan JPG user tetap dipertahankan.
 - Tindak lanjut: `menu-grid` mobile dipaksa `width:100%; min-width:0` agar ukuran min-content item kategori tidak melebarkan flex child. Belum diuji render browser.
+
+## Lebar konten kategori katalog mobile
+- `.customer-content` katalog mobile kini selalu selebar `.customer-main`, dapat menyusut tanpa overflow, dan tidak lagi memakai margin auto desktop. Lebar halaman tidak berubah ketika kategori dengan ukuran intrinsik menu berbeda dipilih.
+- Fixture `test-catalog-card-layout.cjs` memeriksa lebar pembungkus sebelum dan sesudah nama menu diganti dari pendek ke panjang, selain pemeriksaan kartu, label stok, dan overflow yang sudah ada.
+- Chrome headless lulus pada viewport 320, 390, dan 1280px. Percobaan awal di sandbox gagal menjalankan proses GPU Chrome; pengujian ulang di luar sandbox lulus seluruh assertion.

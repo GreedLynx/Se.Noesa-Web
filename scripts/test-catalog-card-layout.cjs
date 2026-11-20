@@ -19,15 +19,22 @@ const check = `<script>
 try {
     const card = document.querySelector('.menu-card').getBoundingClientRect();
     const grid = document.querySelector('.menu-grid').getBoundingClientRect();
+    const main = document.querySelector('.customer-main').getBoundingClientRect();
+    const contentElement = document.querySelector('.customer-content');
+    const content = contentElement.getBoundingClientRect();
     const copy = document.querySelector('.menu-card-copy').getBoundingClientRect();
     const action = document.querySelector('.menu-action').getBoundingClientRect();
     const warning = document.querySelector('.menu-warning').getBoundingClientRect();
     const add = document.querySelector('.menu-add').getBoundingClientRect();
     const fail = reason => { throw Error(reason); };
     if (innerWidth <= 700) {
+        if (Math.abs(content.width - main.width) > 1 || Math.abs(content.left - main.left) > 1) fail('Lebar konten mengikuti isi kategori');
         if (!(card.left > grid.left && card.right < grid.right)) fail('Kartu menyentuh tepi grid');
         if (!(copy.left >= card.left + 12 && action.right <= card.right - 12)) fail('Isi menyentuh tepi kartu');
         if (getComputedStyle(document.querySelector('.menu-card')).borderStyle !== 'solid') fail('Batas kartu hilang');
+        const initialWidth = content.width;
+        document.querySelector('.menu-card-copy h3').textContent = 'Nama menu kategori yang jauh lebih panjang dari Snack';
+        if (Math.abs(contentElement.getBoundingClientRect().width - initialWidth) > 1) fail('Lebar konten berubah antar kategori');
     }
     if (!(warning.width > warning.height && Math.abs(warning.right - (card.right - 12)) <= 3 && Math.abs(warning.top - (card.top + 12)) <= 3)) fail('Label tidak di pojok kanan atas kartu');
     const labelStyle = getComputedStyle(document.querySelector('.menu-warning'));
@@ -47,7 +54,7 @@ try {
         const result = spawnSync(chrome, ['--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check', `--user-data-dir=${path.join(temp, 'profile')}`, `--window-size=${width},800`, '--dump-dom', pathToFileURL(file).href], { encoding: 'utf8', timeout: 30000 });
         assert.equal(result.status, 0, result.error?.message || result.stderr);
         assert.equal(result.stdout.match(/data-result="([^"]*)"/)?.[1], 'PASS', `${width}px`);
-        console.log(`PASS: kartu katalog ${width}px, ruang tepi, label, tombol, overflow`);
+        console.log(`PASS: katalog ${width}px, lebar kategori stabil, ruang tepi, label, tombol, overflow`);
     }
 } finally {
     fs.rmSync(temp, { recursive: true, force: true });
