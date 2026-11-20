@@ -183,3 +183,7 @@
 - `.customer-content` katalog mobile kini selalu selebar `.customer-main`, dapat menyusut tanpa overflow, dan tidak lagi memakai margin auto desktop. Lebar halaman tidak berubah ketika kategori dengan ukuran intrinsik menu berbeda dipilih.
 - Fixture `test-catalog-card-layout.cjs` memeriksa lebar pembungkus sebelum dan sesudah nama menu diganti dari pendek ke panjang, selain pemeriksaan kartu, label stok, dan overflow yang sudah ada.
 - Chrome headless lulus pada viewport 320, 390, dan 1280px. Percobaan awal di sandbox gagal menjalankan proses GPU Chrome; pengujian ulang di luar sandbox lulus seluruh assertion.
+
+## Pergantian kategori tanpa animasi ulang
+- Efek `category-transition` dihapus karena membuat pergantian filter terasa seperti katalog dimuat dua kali. Pemicu JavaScript, parameter `animate`, timer 750ms, aturan CSS, dan keyframe yang terkait ikut dibersihkan; filter dan pemuatan data tetap berjalan langsung.
+- Lulus: syntax JavaScript, `test-quota-ui.cjs`, `test-customer-cart-quantity.cjs`, dan fixture Chrome katalog pada viewport 320, 390, dan 1280px.

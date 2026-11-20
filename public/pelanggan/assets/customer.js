@@ -104,12 +104,12 @@ function catalogPage() {
         category = b.dataset.category;
         syncFilters();
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
-        refreshCatalog(true);
+        refreshCatalog();
     });
 
     search.oninput = () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => refreshCatalog(true), 200)
+        searchTimer = setTimeout(refreshCatalog, 200)
     };
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
@@ -157,18 +157,17 @@ function catalogPage() {
 
     refreshCatalog();
 }
-async function refreshCatalog(animate = false) {
+async function refreshCatalog() {
     try {
-        await loadCatalog(animate);
+        await loadCatalog();
     } catch (err) {
         const grid = $('#menu-grid');
         grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
-        $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
+        $('[data-retry-catalog]').onclick = refreshCatalog;
     }
 }
-async function loadCatalog(animate = false) {
+async function loadCatalog() {
     const grid = $('#menu-grid');
-    grid.classList.remove('category-transition');
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
@@ -262,10 +261,6 @@ async function loadCatalog(animate = false) {
         if (product) showProduct(product)
     });
     renderCart();
-    if (animate) requestAnimationFrame(() => {
-        grid.classList.add('category-transition');
-        setTimeout(() => grid.classList.remove('category-transition'), 750)
-    })
 }
 function showProduct(product) {
     if (!product) return;
