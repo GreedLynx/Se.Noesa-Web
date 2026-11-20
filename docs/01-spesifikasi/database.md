@@ -1,5 +1,17 @@
 # Database
 
+Urutan info checkout, penulisan merek, logo autentikasi, dan pola background
+Pelanggan tidak memerlukan perubahan skema atau migrasi. Background memakai
+salinan aset `foto/Pattern_Se.Noesa.png` di `public/assets/img/Pattern_Se.Noesa.png`;
+opacity dekorasi 6% hanya diterapkan lewat CSS, tanpa state database baru.
+
+Pemberitahuan kegagalan pembayaran Pelanggan hanya state UI lokal; tidak disimpan
+sebagai notifikasi database. Penanganan ulang status memakai endpoint baca yang
+sudah ada, tanpa perubahan skema, mutasi upload otomatis, atau aturan pembayaran.
+Visibilitas angka sisa di bawah 50% memakai `kuota` efektif dan `sisa` dari katalog;
+pilihan jumlah lokal pada detail tidak mengubah kuota tersimpan. Tidak ada migrasi
+untuk kedua revisi ini.
+
 Header sticky, pintasan search katalog, animasi sidebar mobile, dan kalender bersama tidak memerlukan perubahan skema atau migrasi; state interaksi hanya berada di browser.
 
 Sidebar dan hamburger Pelanggan menggunakan state tampilan di browser tanpa penyimpanan database.
