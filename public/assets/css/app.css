@@ -965,7 +965,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
 .rise { opacity: 0; animation: rise 0.6s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
-.drift { position: absolute; inset: 0; width: calc(100% + 402px); height: calc(100% + 260px); background: var(--g) url(../img/pattern.png); animation: drift 30s linear infinite; }
+.drift { position: absolute; inset: 0; width: calc(100% + 402px); height: calc(100% + 260px); background: var(--g) url(../img/Pattern_Se.Noesa.png); animation: drift 30s linear infinite; }
 .splash { background: var(--g); display: grid; place-items: center; }
 .splash .logo-pop { width: 48px; height: min(260px, 45dvh); object-fit: contain; position: relative; animation: splash-logo-enter 1.2s var(--ease) 0.2s both; mix-blend-mode: normal; }
 @keyframes splash-logo-enter {
