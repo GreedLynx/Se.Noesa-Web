@@ -2,7 +2,7 @@
 // Dipakai setelah bootstrap.php. Seluruh pemakaian dihitung dari transaksi.
 
 // Minimum per menu dan maksimum per pesanan tidak menentukan kapasitas dapur harian.
-const SENOESA_MIN_PACKAGE_QTY = 10;
+const SENOESA_MIN_PACKAGE_QTY = 4;
 const SENOESA_MAX_ORDER_QTY = 50;
 
 /** Minimum efektif untuk satu produk pada snapshot kuota. */

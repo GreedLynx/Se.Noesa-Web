@@ -52,17 +52,17 @@ try {
     $p2 = array_column($s['items'], null, 'id')[2];
     check((int) $p1['terpakai'] === 40 && (int) $p1['sisa'] === 10, 'stok per menu A = 10');
     check((int) $p2['terpakai'] === 5 && (int) $p2['sisa'] === 15, 'stok per menu B = 15');
-    check((int) $p1['min_pesan'] === 10, 'minimum menu A dinaikkan ke 10 oleh aturan baru');
+    check((int) $p1['min_pesan'] === 4, 'minimum menu A mengikuti batas dasar 4 porsi');
     rejects([...$s, 'dailyUsed' => 90], [2 => 10], 'Kuota harian', 'checkout ditolak saat sisa dapur 6');
 
     $c = daily_quota_snapshot($clean);
     check((int) $c['dailyUsed'] === 0 && $c['dailyStatus'] === 'available', 'tanggal bersih tersedia');
-    rejects($c, [1 => 9], 'Minimal', 'minimal 10 porsi per menu ditolak');
+    rejects($c, [1 => 3], 'Minimal', 'minimal 4 porsi per pesanan ditolak');
     rejects($c, [1 => 51], 'maksimal 50', 'total 51 porsi ditolak');
     rejects($c, [1 => 30, 2 => 30], 'maksimal 50', 'total 60 porsi ditolak');
     rejects($c, [2 => 21], 'Stok Menu B', 'stok menu B (20) ditolak untuk 21 porsi');
-    $ok = daily_quota_validate($c, [1 => 10, 2 => 10]);
-    check(count($ok) === 2, 'checkout sah untuk 20 porsi pada tanggal bersih');
+    $ok = daily_quota_validate($c, [1 => 4, 2 => 10]);
+    check(count($ok) === 2, 'checkout sah untuk minimum 4 porsi dan minimum produk 10 porsi');
 
     // Pembatalan melepas reservasi.
     q("UPDATE pesanan SET status='dibatalkan' WHERE id=1");

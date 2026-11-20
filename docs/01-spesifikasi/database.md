@@ -206,6 +206,16 @@ sama agar urutan lock konsisten dan bebas deadlock.
 
 Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
 minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
+Snapshot kapasitas menjumlahkan override/default efektif semua produk untuk
+tanggal tersebut, lalu mengambil floor 80%-nya. Saat libur, kuota efektif telah
+menjadi 0 sebelum kapasitas dihitung. Perubahan rumus tidak memerlukan migrasi;
+VIEW laporan dan checkout memakai kuota produk efektif yang sama.
+
+## Migrasi 026: minimum pemesanan 4 porsi
+
+`produk.min_pesan` memiliki default dan batas minimum 4 porsi. Migrasi 026
+memulihkan nilai 10 menjadi 4 setelah normalisasi pada migrasi 025; nilai di
+atas 10 tetap menjadi minimum khusus produk.
 
 ## Migrasi 021: metadata dan tinjauan pembatalan Admin
 

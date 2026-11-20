@@ -1,4 +1,4 @@
-const MIN_ORDER_QTY = 10, MAX_ORDER_QTY = 50;
+const MIN_ORDER_QTY = 4, MAX_ORDER_QTY = 50;
 const cartTotalQty = () => Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0);
 const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => [...r.querySelectorAll(s)];

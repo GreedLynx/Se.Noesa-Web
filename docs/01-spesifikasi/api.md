@@ -2,7 +2,7 @@
 
 Navigasi Pelanggan memakai sidebar dengan tombol Keluar yang memanggil alur logout bersama. Hamburger mobile hanya mengatur visibilitas sidebar dan fokus keyboard.
 
-Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan total 50 porsi per pesanan. Kurangi berhenti di minimum menu, sekurang-kurangnya 10 porsi, dan Hapus mengeluarkan menu dari keranjang. Checkout mengirim `items: [{id, qty}]` dan server memeriksa ulang batas serta kuota.
+Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan total 50 porsi per pesanan. Kurangi berhenti di minimum menu, sekurang-kurangnya 4 porsi atau nilai `min_pesan` produk yang lebih tinggi, dan Hapus mengeluarkan menu dari keranjang. Checkout mengirim `items: [{id, qty}]` dan server memeriksa ulang batas serta kuota.
 
 Bootstrap menyembunyikan argumen fungsi dari stack trace PHP untuk melindungi kredensial. Format respons endpoint tetap sama.
 
@@ -273,6 +273,12 @@ tetapi detail dan sisa kuota tetap dapat dilihat. `habis` tetap memuat daftar
 produk yang tidak dapat dipesan untuk peringatan. Tanggal invalid HTTP 422.
 Produk dengan sisa 0 diberi label `Stok habis` di pojok kanan atas kartu;
 label berbentuk pita abu dan tidak mengubah respons API atau aturan checkout.
+GET `pelanggan/api/availability.php?start=YYYY-MM-DD&end=YYYY-MM-DD` mengembalikan
+status per tanggal: `available`, `nearly_full`, `full`, `menu_empty`, atau `closed`.
+Kapasitas dapur adalah 80% jumlah kuota efektif tanggal; kalender menandai status
+dengan titik warna di bawah angka. Tombol `Tanggal tersedia` memilih status
+`available` terdekat mulai H+7, hingga 12 bulan pencarian. Kapasitas checkout
+Admin, Owner, Pelanggan, dan pesanan offline memakai snapshot bersama yang sama.
 Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
 Panel tanggal katalog hanya menampilkan label dan pemilih tanggal saat normal;
@@ -281,7 +287,7 @@ katalog. Kontrak endpoint dan batas H+7 tidak berubah.
 
 POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
 dan `items:[{id,qty}]`. Produk berulang digabung. Total maksimal 50 porsi per pesanan
-dan minimum tiap menu mengikuti `max(10, min_pesan)`. Harga dari database disimpan sebagai snapshot; alamat
+dan minimum tiap menu mengikuti `max(4, min_pesan)`. Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota atau tanggal libur mempertahankan pesanan lama dan membatasi
