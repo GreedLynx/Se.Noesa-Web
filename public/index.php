@@ -10,7 +10,7 @@ $go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/inde
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>se.noesa</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap">
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/assets/css/app.css') ?>">
 </head>
 
 <body data-page="splash" data-next="<?= htmlspecialchars($go, ENT_QUOTES, 'UTF-8') ?>">

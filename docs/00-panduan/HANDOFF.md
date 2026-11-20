@@ -1,5 +1,8 @@
 # Handoff Se.Noesa-Web
 
+## Animasi logo splash
+- Efek masuk splash memakai keyframe khusus splash-logo-enter (fade, naik, dan pop) dengan durasi 1.2 detik. URL app.css pada splash diberi versi filemtime untuk menyegarkan cache; redirect tetap mengikuti timer lama. Reduced-motion global tetap dihormati. PHP lint dan diff check dijalankan; visual browser belum diverifikasi.
+
 ## Logo resmi sidebar Pelanggan
 - Ukuran gambar sidebar dibatasi eksplisit 32x40px dan overflow pembungkus disembunyikan agar tidak menimpa navigasi. Splash `public/index.php` kini memakai logo-icon.png dengan batas tinggi responsif; efek pop dan redirect lama dipertahankan.
 - Ikon profil pada `.customer-logo` diganti logo resmi dari `foto/Icon_Logo.png`, disalin ke `public/assets/img/logo-icon.png` agar dapat diakses dari public root. Tautan menuju katalog, label aksesibel diperbarui, gambar memakai object-fit contain tanpa latar tambahan.
