@@ -1,5 +1,20 @@
 # Peta Kode
 
+Splash awal `public/index.php` memakai `public/assets/img/logo-icon.png`; ukuran responsif dan animasi `.logo-pop` berada di `public/assets/css/app.css`.
+
+Logo sidebar Pelanggan memakai `public/assets/img/logo-icon.png`, salinan `foto/Icon_Logo.png`, melalui layout bersama dan tautan ke katalog.
+
+Header sticky semua halaman Pelanggan berada pada `.customer-top` di `public/pelanggan/assets/customer.css`, dengan override mobile di `catalog-mobile.css`. Tombol `.catalog-search-shortcut` di `public/pelanggan/index.php` diamati oleh `IntersectionObserver` dalam `catalogPage()` (`customer.js`); tombol menggulir dan memfokuskan input pencarian asli. Animasi sidebar memakai transform/opacity dan visibility tertunda pada `catalog-mobile.css`; animasi pembukaan kalender semua role ada di `public/assets/css/date-picker.css`. Keduanya menghormati reduced motion.
+
+Sidebar Pelanggan berada di `public/pelanggan/partials/layout.php`, dengan tombol Keluar di bagian bawah. `customer.js` mengatur hamburger, Escape, fokus keyboard, dan latar penutup. Gaya mobile berada di `assets/catalog-mobile.css` dan gaya tombol Keluar di `assets/customer.css`.
+
+Panel tanggal katalog Pelanggan ada di `public/pelanggan/index.php`; `assets/customer.js` hanya menampilkan pesan libur atau kuota bermasalah. Gaya panel ada di `assets/customer.css` dan kalender bersama di `public/assets/css/date-picker.css`.
+Filter kategori katalog (Semua, Makanan, Minuman, Snack) berada di `public/pelanggan/index.php`; lebar pill, grid, dan kartu produk mobile diatur oleh `assets/catalog-mobile.css`.
+
+Katalog menampilkan semua produk termasuk yang kuotanya nol lewat `public/pelanggan/api/catalog.php`. Kartu, detail menu, penanda stok habis, dan dialog Keluar dirender oleh `public/pelanggan/assets/customer.js`; CSS desktop di `assets/customer.css` dan mobile di `assets/catalog-mobile.css`.
+Label `Stok habis` menjadi anak langsung `.menu-card` agar berada di pojok kanan atas kartu pada kedua ukuran layar; gaya pita abu berada di `assets/customer.css`.
+Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa lebar browser ada di `scripts/test-catalog-card-layout.cjs`.
+
 ## Jumlah porsi katalog dan keranjang Pelanggan
 
 - `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout.
@@ -95,13 +110,18 @@ yang sumber/status sebelumnya belum tercatat. GET hanya membaca data.
 
 | Kebutuhan | File |
 |---|---|
-| Kalender dialog, label tanggal Indonesia, navigasi keyboard, dan batas tanggal input | `public/assets/js/date-picker.js` |
-| Tampilan kartu pengiriman, filter ringkas, dan kalender sage | `public/assets/css/date-picker.css` |
+| Kalender dialog, status/titik warna tanggal, pencarian tanggal tersedia terdekat, navigasi keyboard, dan batas tanggal input | `public/assets/js/date-picker.js` |
+| Tampilan kartu pengiriman, kalender sage, titik status, dan legend | `public/assets/css/date-picker.css` |
 | Grid desktop Owner dan lebar ringkasan kuota | `public/assets/css/app.css` |
 | Kartu tanggal pengiriman pelanggan | `public/pelanggan/index.php` |
 | Pemuatan aset bersama dan filter tanggal Admin/Owner | `public/pelanggan/partials/layout.php`, `public/admin/partials/layout.php`, `public/owner/partials/layout.php` |
 | Sinkronisasi tanggal katalog saat checkout berubah | `public/pelanggan/assets/customer.js` |
-| Uji kalender dan uji browser opsional tanpa dependensi tambahan | `scripts/test-date-picker.cjs` |
+| Uji status kapasitas dan kalender browser dengan API fixture | `scripts/test-calendar-status.php`, `scripts/test-calendar-availability-ui.cjs`, `scripts/test-date-picker.cjs` |
+| Minimum pesanan 4 porsi, validasi produk Admin, dan migration database | `app/daily-quota.php`, `public/pelanggan/assets/customer.js`, `public/admin/products.php`, `public/admin/api/products.php`, `database/migrations/026_minimum_order_4.sql` |
+
+`app/daily-quota.php` adalah sumber kapasitas dapur bersama: floor 80% total
+kuota efektif produk pada tanggal. Kapasitas/sisa ini dipakai checkout, laporan
+Admin/Owner, pesanan offline, katalog, dan status tanggal.
 
 Kalender memperbarui input tanggal yang sudah ada dan memicu event `input`/`change`.
 Browser tanpa dukungan dialog atau JavaScript tetap memakai input tanggal bawaan.

@@ -71,6 +71,20 @@
 }
 
 /* Ringkasan dan daftar notifikasi. */
+@media (min-width: 901px) {
+    #mnc-page {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 16px;
+        align-items: start;
+    }
+
+    #mnc-page > .mnc-list,
+    #mnc-page > .mnc-more {
+        grid-column: 1 / -1;
+    }
+}
+
 .mnc-toolbar {
     display: flex;
     align-items: center;

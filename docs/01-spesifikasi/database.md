@@ -1,5 +1,16 @@
 # Database
 
+Header sticky, pintasan search katalog, animasi sidebar mobile, dan kalender bersama tidak memerlukan perubahan skema atau migrasi; state interaksi hanya berada di browser.
+
+Sidebar dan hamburger Pelanggan menggunakan state tampilan di browser tanpa penyimpanan database.
+
+Ringkasan panel tanggal katalog hanya mengubah tampilan pesan berdasarkan respons katalog; tidak mengubah tabel, kuota tersimpan, atau migrasi.
+
+Produk dengan sisa nol kini tetap dikirim dalam daftar katalog agar pelanggan melihat statusnya. Perubahan ini hanya pada filter respons API dan tampilan; perhitungan sisa, validasi checkout, dan skema database tetap sama.
+Kartu mobile dan label stok habis hanya perubahan CSS/HTML; tidak memerlukan migrasi.
+Pemindahan label ke pojok kartu juga hanya mengubah struktur kartu dan CSS.
+Pilihan gaya pita abu pada label tetap tidak mengubah skema maupun data.
+
 Kontrol jumlah di keranjang Pelanggan mengubah pilihan lokal sebelum checkout. Perubahan kontrol ini tidak memerlukan migrasi atau penulisan kuota. Checkout tetap memeriksa kuota pada tanggal kirim.
 
 Kredensial koneksi PDO tidak disertakan sebagai argumen di stack trace PHP. Perubahan ini tidak memerlukan migrasi.
@@ -197,6 +208,16 @@ sama agar urutan lock konsisten dan bebas deadlock.
 
 Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
 minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
+Snapshot kapasitas menjumlahkan override/default efektif semua produk untuk
+tanggal tersebut, lalu mengambil floor 80%-nya. Saat libur, kuota efektif telah
+menjadi 0 sebelum kapasitas dihitung. Perubahan rumus tidak memerlukan migrasi;
+VIEW laporan dan checkout memakai kuota produk efektif yang sama.
+
+## Migrasi 026: minimum pemesanan 4 porsi
+
+`produk.min_pesan` memiliki default dan batas minimum 4 porsi. Migrasi 026
+memulihkan nilai 10 menjadi 4 setelah normalisasi pada migrasi 025; nilai di
+atas 10 tetap menjadi minimum khusus produk.
 
 ## Migrasi 021: metadata dan tinjauan pembatalan Admin
 

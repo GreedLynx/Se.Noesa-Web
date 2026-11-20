@@ -1,4 +1,4 @@
-const MIN_ORDER_QTY = 10, MAX_ORDER_QTY = 50;
+const MIN_ORDER_QTY = 4, MAX_ORDER_QTY = 50;
 const cartTotalQty = () => Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0);
 const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -53,8 +53,9 @@ function wireLogout() {
         b.disabled = true;
         const confirmed = await new Promise(resolve => {
             const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog';
-            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
+            dialog.className = 'customer-dialog logout-dialog';
+            dialog.setAttribute('aria-labelledby', 'logout-title');
+            dialog.innerHTML = '<p id="logout-title">Yakin ingin keluar dari akun Se.Noesa?</p><div class="logout-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div>';
             const yes = dialog.querySelector('[data-yes]');
             const no = dialog.querySelector('[data-cancel]');
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
@@ -88,6 +89,20 @@ let catalog = [], productCache = {
 }, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
+    const shortcut = document.querySelector('.catalog-search-shortcut');
+    const searchField = document.querySelector('.customer-search');
+    if (shortcut && searchField && 'IntersectionObserver' in window) {
+        const header = document.querySelector('.customer-top');
+        const observer = new IntersectionObserver(([entry]) => {
+            shortcut.hidden = entry.boundingClientRect.bottom > entry.rootBounds.top;
+        }, { rootMargin: `-${header.getBoundingClientRect().height}px 0px 0px 0px`, threshold: [0, 1] });
+        observer.observe(searchField);
+        shortcut.onclick = () => {
+            const input = document.querySelector('#catalog-search');
+            input.focus({ preventScroll: true });
+            input.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
+        };
+    }
     const search = $('#catalog-search'),
         filters = $$('#catalog-category-tabs [data-category]');
     const syncFilters = () => filters.forEach(x => {
@@ -103,12 +118,12 @@ function catalogPage() {
         category = b.dataset.category;
         syncFilters();
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
-        refreshCatalog(true);
+        refreshCatalog();
     });
 
     search.oninput = () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => refreshCatalog(true), 200)
+        searchTimer = setTimeout(refreshCatalog, 200)
     };
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
@@ -156,25 +171,24 @@ function catalogPage() {
 
     refreshCatalog();
 }
-async function refreshCatalog(animate = false) {
+async function refreshCatalog() {
     try {
-        await loadCatalog(animate);
+        await loadCatalog();
     } catch (err) {
         const grid = $('#menu-grid');
         grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
-        $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
+        $('[data-retry-catalog]').onclick = refreshCatalog;
     }
 }
-async function loadCatalog(animate = false) {
+async function loadCatalog() {
     const grid = $('#menu-grid');
-    grid.classList.remove('category-transition');
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
     catalogClosed = Boolean(d.tanggal_libur);
-    $('#delivery-hint').textContent = catalogClosed
-        ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
-        : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    const deliveryHint = $('#delivery-hint');
+    deliveryHint.textContent = catalogClosed ? 'Tanggal ini libur. Pilih tanggal lain.' : '';
+    deliveryHint.hidden = !catalogClosed;
     const fullHint = $('#quota-full-hint');
     if (fullHint) {
         const full = Array.isArray(d.habis) ? d.habis : [];
@@ -182,8 +196,7 @@ async function loadCatalog(animate = false) {
             const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
             });
-            fullHint.textContent = 'Kuota penuh untuk tanggal ' + label + ': '
-                + full.map(p => p.nama).join(', ') + '. Pilih tanggal atau menu lain.';
+            fullHint.textContent = 'Beberapa menu habis pada ' + label + '. Pilih menu atau tanggal lain.';
             fullHint.hidden = false;
         } else {
             fullHint.textContent = '';
@@ -193,16 +206,17 @@ async function loadCatalog(animate = false) {
     $('#checkout-button').disabled = catalogClosed;
     const dailyHint = $('#daily-quota-hint');
     if (dailyHint) {
-        const capacity = Number(d.dailyCapacity || 50);
-        const used = Number(d.dailyUsed || 0);
-        const remaining = Number(d.dailyRemaining || Math.max(0, capacity - used));
+        const capacity = Number(d.dailyCapacity ?? 0);
+        const used = Number(d.dailyUsed ?? 0);
+        const remaining = Number(d.dailyRemaining ?? Math.max(0, capacity - used));
         const label = d.dailyStatus === 'closed' ? 'Tanggal libur'
             : d.dailyStatus === 'full' ? 'Kuota harian penuh'
             : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
             : 'Kuota harian tersedia';
-        dailyHint.textContent = catalogClosed
-            ? 'Tanggal libur — semua kuota ditutup.'
-            : label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi untuk tanggal ' + d.tanggal + '.';
+        const hasIssue = !catalogClosed && ['full', 'nearly_full'].includes(d.dailyStatus);
+        dailyHint.textContent = hasIssue
+            ? label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi.' : '';
+        dailyHint.hidden = !hasIssue;
         dailyHint.dataset.status = catalogClosed ? 'closed' : (d.dailyStatus || 'available');
     }
 
@@ -223,43 +237,44 @@ async function loadCatalog(animate = false) {
     );
     schedule = d.schedule;
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
-        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
+        const pSisa = Number(p.sisa);
         const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
         const available = p.available !== false && state !== 'full' && state !== 'closed';
-        const stockLabel = state === 'nearly_full' ? ' · Sisa ' + pSisa + ' porsi'
-            : !available ? (pSisa <= 0 ? ' · Habis' : ' · Stok di bawah minimum') : '';
         return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
-            + '" data-product="' + Number(p.id) + '" data-available="' + available + '" aria-disabled="' + !available
-            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + stockLabel
-            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></article>';
-    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+            + '" data-product="' + Number(p.id) + '"' + (available ? '' : ' role="button" tabindex="0" aria-label="Lihat detail ' + esc(p.nama) + ', sisa kuota ' + pSisa + ' porsi"')
+            + ' style="--i:' + i + '">'
+            + (pSisa <= 0 ? '<span class="menu-warning">Stok habis</span>' : '')
+            + '<div class="menu-photo"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
+            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div><div class="menu-card-copy"><span class="category-pill">'
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi · Sisa kuota: ' + pSisa
+            + ' porsi</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
+            + '<button class="menu-add" data-add="' + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></div></article>';
+    }).join(''): '<div class="empty-state">Menu tidak ditemukan.</div>';
 
-    const canOpen = product => product && product.available !== false
-        && product.stok_status !== 'full' && product.stok_status !== 'closed';
-    $$('[data-product]').forEach(card => card.onclick = e => {
-        if (e.target.closest('[data-add]')) return;
-        if (card.dataset.available === 'false') return;
-        showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
+    $$('[data-product]').forEach(card => {
+        const open = () => showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)));
+        card.onclick = e => {
+            if (!e.target.closest('[data-add]')) open();
+        };
+        card.onkeydown = e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        };
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
         if (b.disabled) return;
         const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
-        if (canOpen(product)) showProduct(product)
+        if (product) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
         const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
-        if (canOpen(product)) showProduct(product)
+        if (product) showProduct(product)
     });
     renderCart();
-    if (animate) requestAnimationFrame(() => {
-        grid.classList.add('category-transition');
-        setTimeout(() => grid.classList.remove('category-transition'), 750)
-    })
 }
 function showProduct(product) {
     if (!product) return;
@@ -272,11 +287,10 @@ function showProduct(product) {
     const maximum = Math.min(available, orderRoom);
     activeQty = Math.min(maximum, minimum);
     const sisaAfter = available - activeQty;
-    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + productMinimum + ' porsi</b></span><span' + (showSisa ? '' : ' hidden') + '>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + productMinimum + ' porsi</b></span><span>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
         + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
         + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
@@ -300,9 +314,7 @@ function showProduct(product) {
         activeQty = quantity;
         input.value = quantity;
         const remaining = available - quantity;
-        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
         sisaEl.textContent = remaining + ' porsi';
-        sisaEl.closest('span').hidden = !shouldShow;
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -318,8 +330,10 @@ function showProduct(product) {
     if (maximum < minimum) {
         input.disabled = true;
         add.disabled = true;
-        add.textContent = orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
-            : inCart ? 'Kuota tidak cukup untuk menambah porsi' : 'Stok kurang dari minimal pesanan';
+        add.textContent = catalogClosed ? 'Tanggal ini libur'
+            : orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
+            : inCart ? 'Kuota tidak cukup untuk menambah porsi'
+            : Number(product.sisa) <= 0 ? 'Kuota habis' : 'Stok kurang dari minimal pesanan';
     }
     add.onclick = () => {
         if (add.disabled) return;
@@ -787,6 +801,38 @@ async function openHistoryDetail(id) {
 }
 
 const page = document.body.dataset.page;
+(() => {
+    const sidebar = document.getElementById('customer-sidebar');
+    const toggle = document.querySelector('.customer-sidebar-toggle');
+    const close = document.querySelector('.customer-sidebar-close');
+    const backdrop = document.querySelector('.customer-sidebar-backdrop');
+    if (!sidebar || !toggle || !close || !backdrop) return;
+    const mobile = window.matchMedia('(max-width: 700px)');
+    function setOpen(open, restoreFocus = false) {
+        const visible = open && mobile.matches;
+        sidebar.classList.toggle('is-open', visible);
+        sidebar.inert = mobile.matches && !visible;
+        toggle.setAttribute('aria-expanded', String(visible));
+        backdrop.hidden = !visible;
+        if (visible) close.focus();
+        else if (restoreFocus) toggle.focus();
+    }
+    toggle.addEventListener('click', () => setOpen(true));
+    close.addEventListener('click', () => setOpen(false, true));
+    backdrop.addEventListener('click', () => setOpen(false, true));
+    document.addEventListener('keydown', event => {
+        if (backdrop.hidden || document.querySelector('dialog[open]')) return;
+        if (event.key === 'Escape') setOpen(false, true);
+        if (event.key === 'Tab') {
+            const controls = [...sidebar.querySelectorAll('a[href], button:not([disabled])')];
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    mobile.addEventListener('change', () => setOpen(false));
+    setOpen(false);
+})();
 wireLogout();
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();

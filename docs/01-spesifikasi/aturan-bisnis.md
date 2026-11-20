@@ -17,12 +17,13 @@
 
 ## Pemesanan dan pemakaian
 
-- Satuan pesanan porsi; minimal 4 porsi per varian atau nilai min_pesan lebih tinggi.
+- Satuan pesanan porsi; minimal 4 porsi per varian atau nilai `min_pesan` lebih tinggi. Default produk 4 porsi.
 - Tanggal kirim minimal H+7 dalam Asia/Jakarta.
 - Pemakaian adalah jumlah detail pesanan pada tanggal kirim, semua status selain
   `ditolak` dan `dibatalkan`, termasuk belum dibayar dan selesai.
 - Sisa produk `max(0, kuota efektif - pemakaian)`.
-- Batas dapur `floor(jumlah kuota efektif seluruh produk × 80%)`; sisa dapur minimal 0.
+- Kapasitas dapur per tanggal `floor(jumlah kuota efektif semua produk × 80%)`; sisa dapur minimal 0. Override tanggal dan libur sudah diterapkan sebelum penjumlahan.
+- Status kalender memakai sisa kapasitas: Tersedia di atas 40%, Hampir penuh pada 40% atau kurang selama masih ada sisa, dan Penuh jika sisa 0. Libur ditandai Libur; jika kapasitas masih tersisa tetapi tidak ada menu yang memenuhi minimum, statusnya Menu Habis.
 - Penurunan default/override atau kuota 0 tidak membatalkan pesanan lama. Pemakaian
   tetap dihitung dan checkout baru ditolak jika sisa produk/dapur tidak mencukupi.
 - Penolakan/pembatalan pesanan memulihkan sisa melalui agregasi, tanpa update counter.
