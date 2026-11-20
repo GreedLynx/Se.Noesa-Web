@@ -29,12 +29,14 @@ async function api(url, options = {}) {
             ? options.body
             : options.body ? JSON.stringify(options.body) : undefined
     });
-    const data = await response.json().catch(() => ({error: 'Respons server tidak valid'}));
     if (response.status === 401) {
         location.href = '../login.php';
-        throw Error('Sesi berakhir')
+        throw Object.assign(Error('Sesi berakhir. Silakan masuk kembali.'), {status: 401})
     }
-    if (!response.ok) throw Error(data.error || 'Terjadi kesalahan');
+    const data = await response.json().catch(() => {
+        throw Object.assign(Error('Respons server tidak valid. Silakan muat ulang.'), {status: response.status, uncertain: true})
+    });
+    if (!response.ok) throw Object.assign(Error(data.error || 'Terjadi kesalahan'), {status: response.status});
 
     return data
 }
@@ -572,7 +574,16 @@ function dateLabel(value, withTime = false) {
 }
 
 async function openHistoryDetail(id) {
-    const d = await api('api/orders.php?id=' + id);
+    let d;
+    try {
+        d = await api('api/orders.php?id=' + id);
+        if (!d || typeof d !== 'object' || !d.id) throw Error('Detail tidak valid');
+    } catch (err) {
+        $('#history-detail').innerHTML = '<div class="payment-load-error"><p class="form-error" role="alert">Detail pesanan belum dapat dimuat. Periksa koneksi lalu coba lagi.</p><button type="button" class="customer-button secondary" id="retry-payment">Muat ulang detail</button></div>';
+        $('#retry-payment').onclick = () => openHistoryDetail(id);
+        if (!$('#history-dialog').open) $('#history-dialog').showModal();
+        return false;
+    }
     const itemsArray = Array.isArray(d.items) ? d.items : [];
     const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
@@ -594,10 +605,17 @@ async function openHistoryDetail(id) {
         : '';
     const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
         + '" alt="Bukti pembayaran">' : '';
-    const paymentData = await api('api/payment-methods.php');
-    const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
+    let paymentData, paymentError = false;
+    try {
+        paymentData = await api('api/payment-methods.php');
+        if (!Array.isArray(paymentData.items)) throw Error('Metode tidak valid');
+    } catch (err) {
+        paymentError = true;
+        paymentData = {items: []};
+    }
+    const qris = paymentError ? '<section class="detail-section"><h3>Pembayaran</h3><p class="form-error" role="alert">Metode pembayaran belum dapat dimuat. Periksa koneksi lalu muat ulang detail.</p></section>' : paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
         return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'
-            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div></div>'
+            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><p class="form-error" role="alert" hidden>Gambar pembayaran belum dapat dimuat. Muat ulang detail atau hubungi Admin sebelum membayar.</p></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
     const canUploadProof = d.can_upload_proof === true, hasProof = !!d.bukti_bayar;
     const proofForm = canUploadProof ? '<form class="proof-upload" id="proof-form" ' + (hasProof ? 'hidden': '') + '><label for="payer-name">Atas nama</label><input id="payer-name" name="nama_pembayar" type="text" maxlength="100" value="'
@@ -709,12 +727,22 @@ async function openHistoryDetail(id) {
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
         + menuNoticeSection
+        + '<p id="payment-status" class="form-error" role="alert" tabindex="-1"></p><button type="button" id="retry-payment" class="customer-button secondary" hidden>Muat ulang status pembayaran</button>'
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 
         + '</div>';
         
-    $('#history-dialog').showModal();
+    if (!$('#history-dialog').open) $('#history-dialog').showModal();
+    const paymentNotice = (message, retry = false) => {
+        const notice = $('#payment-status');
+        notice.textContent = message;
+        notice.focus?.();
+        notice.scrollIntoView?.({block: 'nearest'});
+        $('#retry-payment').hidden = !retry;
+    };
+    $('#retry-payment').hidden = !paymentError;
+    $('#retry-payment').onclick = () => openHistoryDetail(id);
 
     // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
     clearTimeout(paymentExpiryTimer);
@@ -786,18 +814,40 @@ async function openHistoryDetail(id) {
     if (form) form.onsubmit = async e => {
         e.preventDefault();
         const button = form.querySelector('button');
+        if (button.disabled) return;
         button.disabled = true;
+        $('#proof-error').textContent = '';
         try {
             const body = new FormData(form);
-            await api('api/orders.php', { method: 'POST', body });
-            toast('Bukti pembayaran berhasil dikirim');
-            await openHistoryDetail(id);
-            loadHistory()
+            const result = await api('api/orders.php', { method: 'POST', body });
+            if (result.ok !== true) throw Object.assign(Error('Hasil upload belum dapat dipastikan.'), {uncertain: true});
         } catch (err) {
-            $('#proof-error').textContent = err.message;
-            button.disabled = false
+            if (err.status === 401) return;
+            const uncertain = !err.status || err.uncertain;
+            const message = uncertain
+                ? 'Hasil pengiriman bukti belum dapat dipastikan. Muat ulang status sebelum mencoba mengirim lagi.'
+                : err.status === 409 ? 'Status pesanan atau tenggat pembayaran berubah. Muat ulang status untuk melanjutkan.'
+                : err.status >= 500 ? 'Server belum dapat menyimpan bukti pembayaran. Silakan coba lagi.'
+                : err.message;
+            $('#proof-error').textContent = message;
+            paymentNotice(message, uncertain || err.status === 409);
+            button.disabled = uncertain || err.status === 409;
+            if (err.status === 409) {
+                if (await openHistoryDetail(id)) paymentNotice(message, true);
+            }
+            return;
         }
+        // Bukti sudah tersimpan; kegagalan refresh tidak boleh menawarkan upload ulang.
+        form.hidden = true;
+        if ($('#replace-proof')) $('#replace-proof').hidden = true;
+        toast('Bukti pembayaran berhasil dikirim');
+        const refreshed = await openHistoryDetail(id);
+        if (!refreshed) {
+            $('#history-detail').insertAdjacentHTML('afterbegin', '<p role="status">Bukti pembayaran berhasil dikirim. Status terbaru belum dapat dimuat; muat ulang detail tanpa mengirim bukti lagi.</p>');
+        }
+        loadHistory();
     };
+    return true;
 }
 
 const page = document.body.dataset.page;
