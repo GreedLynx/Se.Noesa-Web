@@ -4,6 +4,7 @@ Urutan info checkout, penulisan merek, logo autentikasi, dan pola background
 Pelanggan tidak memerlukan perubahan skema atau migrasi. Background memakai
 salinan aset `foto/Pattern_Se.Noesa.png` di `public/assets/img/Pattern_Se.Noesa.png`;
 opacity dekorasi 6% hanya diterapkan lewat CSS, tanpa state database baru.
+Pembesaran dan pemusatan logo login/register desktop serta animasi pattern juga hanya perubahan CSS.
 
 Pemberitahuan kegagalan pembayaran Pelanggan hanya state UI lokal; tidak disimpan
 sebagai notifikasi database. Penanganan ulang status memakai endpoint baca yang

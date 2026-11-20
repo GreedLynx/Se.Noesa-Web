@@ -3,6 +3,7 @@
 Info pemesanan checkout Pelanggan berada sebelum field tanggal kirim; nama merek
 di UI Pelanggan dan splash ditulis `se.noesa`. Logo login/register dan background
 pola Pelanggan merupakan perubahan presentasi tanpa perubahan endpoint/payload.
+Posisi dan ukuran logo login/register desktop serta animasi pattern hanya diatur oleh CSS.
 Helper layout bersama memakai URL `assets/` untuk halaman autentikasi di public
 root dan `../assets/` untuk halaman Owner agar aset tetap termuat pada subdirektori.
 

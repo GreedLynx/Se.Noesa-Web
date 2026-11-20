@@ -1,5 +1,13 @@
 # Handoff Se.Noesa-Web
 
+## Animasi pattern auth dan logo register desktop (20 November 2026)
+- Pengguna meminta pattern login/register bergerak mulus dan logo register desktop disamakan dengan login. `pattern.png` berukuran 402 x 260 px; animasi sebelumnya mengubah `background-position` dengan jarak tepat satu tile. `.drift` kini menggerakkan lapisan yang diperluas satu tile memakai `translate3d(-402px, -260px, 0)`, sehingga area hero tetap tertutup dan siklus kembali ke gambar identik. Hero memotong kelebihan lapisan. Logo desktop login/register memakai aturan tengah dan ukuran yang sama; mobile tetap aturan dasar.
+- Fixture browser auth kini memeriksa lapisan pattern menutup hero serta logo kedua halaman di tengah pada desktop. Perlu jalankan `node --check`, `git diff --check`, dan render browser jika tersedia. Tidak ada perubahan auth API/DB/aset.
+
+## Logo login desktop (20 November 2026)
+- Permintaan terbaru: logo login desktop diperbesar dan dipusatkan pada hero berpola bergerak. `public/assets/css/app.css` kini memiliki override khusus `body[data-page="login"]` pada breakpoint minimal 760px: logo berada di 50% panel dengan tinggi maksimal 300px dan 34vh untuk layar pendek. Posisi login mobile dan semua register tetap memakai aturan dasar kanan atas.
+- Dokumentasi peta kode, API, dan database diperbarui. Fixture browser memeriksa pusat dan pembesaran logo login desktop. `node --check` fixture dan `git diff --check` lulus; render browser belum diverifikasi. Tidak ada endpoint, skema, atau aset baru.
+
 ## Eksekusi revisi Pelanggan (20 November 2026, status terbaru)
 - Pengguna telah meminta menjalankan `docs/rencana-revisi-pelanggan-tersisa.md`. Phase 0–4 selesai pada `feature/perbaikan-ui-pelanggan`; Phase 5 baru sebagian dan verifikasi browser menyeluruh belum selesai. Catatan plan-only di bawah adalah riwayat, bukan status aktif.
 - F7: GET detail/metode dan QRIS gagal memberikan pesan lokal pembayaran dan muat ulang; upload menangani validasi/status/sesi/jaringan/respons tidak valid, mencegah submit ganda, dan memisahkan POST sukses dari refresh gagal. Error tidak disimpan ke halaman Notifikasi; tidak ada auto-retry POST. F18: sisa angka hanya <50% kuota efektif; detail memperbarui pembungkus hidden saat jumlah berubah.

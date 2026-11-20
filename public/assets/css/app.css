@@ -68,7 +68,7 @@ svg {
 }
 @keyframes drift {
   to {
-    background-position: 402px 260px;
+    transform: translate3d(-402px, -260px, 0);
   }
 }
 @keyframes pop {
@@ -105,6 +105,8 @@ svg {
 .drift {
   position: absolute;
   inset: 0;
+  width: calc(100% + 402px);
+  height: calc(100% + 260px);
   background: var(--g) url(../img/pattern.png);
   animation: drift 30s linear infinite;
 }
@@ -125,6 +127,7 @@ svg {
 .hero {
   height: 260px;
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: flex-end;
   padding: 0 38px 30px;
@@ -956,13 +959,13 @@ body:is([data-page="login"], [data-page="register"]) .auth-logo {
 svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-@keyframes drift { to { background-position: 402px 260px; } }
+@keyframes drift { to { transform: translate3d(-402px, -260px, 0); } }
 @keyframes pop { 0% { opacity: 0; transform: scale(0.6) translateY(20px); } 70% { transform: scale(1.04); } 100% { opacity: 1; transform: none; } }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
 .rise { opacity: 0; animation: rise 0.6s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
-.drift { position: absolute; inset: 0; background: var(--g) url(../img/pattern.png); animation: drift 30s linear infinite; }
+.drift { position: absolute; inset: 0; width: calc(100% + 402px); height: calc(100% + 260px); background: var(--g) url(../img/pattern.png); animation: drift 30s linear infinite; }
 .splash { background: var(--g); display: grid; place-items: center; }
 .splash .logo-pop { width: 48px; height: min(260px, 45dvh); object-fit: contain; position: relative; animation: splash-logo-enter 1.2s var(--ease) 0.2s both; mix-blend-mode: normal; }
 @keyframes splash-logo-enter {
@@ -971,7 +974,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.hero { height: 260px; position: relative; display: flex; align-items: flex-end; padding: 0 38px 30px; color: #fff; }
+.hero { height: 260px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 0 38px 30px; color: #fff; }
 .hero.short { height: 190px; }
 .hello { position: relative; }
 .hello h2 { font-size: 44px; font-weight: 600; }
@@ -1266,6 +1269,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   .app.auth { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); width: min(1040px, 100%); max-width: none; height: min(760px, calc(100vh - 48px)); min-height: min(620px, calc(100vh - 32px)); padding: 0; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px #263a2b24; }
   .app.auth .hero { height: 100%; min-height: 0; align-items: flex-end; padding: clamp(32px, 5vw, 68px); overflow: hidden; }
   .app.auth .hero.short { height: 100%; min-height: 0; }
+  body:is([data-page="login"], [data-page="register"]) .app.auth .auth-logo { top: 50%; left: 50%; right: auto; width: auto; height: min(300px, 34vh); transform: translate(-50%, -50%); }
   .app.auth .hello h2 { font-size: clamp(44px, 5vw, 62px); }
   .app.auth .hello p { font-size: 19px; }
   .app.auth .hero.short::after { content: "Bergabung dengan se.noesa"; position: relative; z-index: 1; max-width: 360px; color: #fff; font-size: clamp(30px, 4vw, 48px); font-weight: 600; line-height: 1.12; }

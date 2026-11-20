@@ -49,11 +49,13 @@ for (const page of paymentOnly ? [] : ['login', 'register']) {
     const checks = `${fail}
     window.addEventListener('load',()=>{try {
         const logos=document.querySelectorAll('.auth-logo');check(logos.length===1,'Tepat satu logo');
-        const logo=logos[0], hero=document.querySelector('.hero'), form=document.querySelector('form');
+        const logo=logos[0], hero=document.querySelector('.hero'), drift=hero.querySelector('.drift'), form=document.querySelector('form');
         check(logo.complete&&logo.naturalWidth>0,'Aset logo termuat');
         const l=box(logo),h=box(hero);check(l.width>0&&l.height>0,'Logo terlihat');
         check(l.left>=h.left&&l.right<=h.right+1&&l.top>=h.top&&l.bottom<=h.bottom+1,'Logo dalam hero');
         check(getComputedStyle(logo).objectFit==='contain','Proporsi logo dipertahankan');
+        const d=box(drift);check(d.width>=h.width+401&&d.height>=h.height+259,'Lapisan pattern menutup hero sepanjang animasi');
+        if(innerWidth>=760){check(Math.abs((l.left+l.right-h.left-h.right)/2)<2&&Math.abs((l.top+l.bottom-h.top-h.bottom)/2)<2,'Logo auth desktop di tengah hero');check(l.height>132,'Logo auth desktop diperbesar');}
         const text=document.querySelector('.hello');if(text){const t=box(text);check(l.bottom<=t.top||l.left>=t.right||l.right<=t.left,'Logo tidak menimpa welcome');}
         check(form.querySelector('button').getBoundingClientRect().width>0,'Submit dapat diakses');
         check(document.documentElement.scrollWidth<=innerWidth,'Tidak ada overflow horizontal');

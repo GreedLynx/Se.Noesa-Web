@@ -3,8 +3,11 @@
 ## Identitas, checkout, dan background Pelanggan
 
 - `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari
-  `public/assets/img/logo-icon.png`; posisi hero kanan atas dan ukuran responsif
-  berada di `public/assets/css/app.css`. Referensi ada di `public/assets/img/desain/`.
+  `public/assets/img/logo-icon.png`; posisi dasar kanan atas dan override logo
+  login/register desktop yang besar di tengah hero berada di `public/assets/css/app.css`.
+  Referensi ada di `public/assets/img/desain/`.
+- Pattern animasi login/register memakai `.drift` dengan tile 402 x 260 px;
+  `@keyframes drift` menggeser lapisan dengan `transform` sejauh satu tile.
 - `public/owner/partials/layout.php` menyimpan flag autentikasi untuk memilih prefix
   aset `assets/` pada halaman auth public root, `../assets/` pada halaman Owner.
 - `public/pelanggan/partials/layout.php` menempatkan `.catalog-policy` sebelum
