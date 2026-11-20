@@ -210,6 +210,9 @@ const fs = require("node:fs"),
   context.openedProduct = null;
   testCard.onkeydown({ key: ' ', preventDefault() {} });
   assert.equal(context.openedProduct, 1);
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',dailyCapacity:0,dailyUsed:0,dailyRemaining:0,dailyStatus:'full',habis:[],schedule:null})", context);
+  await context.loadCatalog();
+  assert.match(elements["#daily-quota-hint"].textContent, /sisa 0 dari 0 porsi/);
   console.log(
     "PASS: Pergantian tanggal mempertahankan keranjang dan hanya menampilkan pesan saat ada kendala",
   );

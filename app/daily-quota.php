@@ -1,9 +1,7 @@
 <?php
 // Dipakai setelah bootstrap.php. Seluruh pemakaian dihitung dari transaksi.
 
-// Aturan yang disetujui: maksimal 50 paket per tanggal kirim, minimal 10 porsi
-// per menu per pesanan, dan maksimal 50 porsi untuk seluruh pesanan.
-const SENOESA_DAILY_PACKAGE_LIMIT = 50;
+// Minimum per menu dan maksimum per pesanan tidak menentukan kapasitas dapur harian.
 const SENOESA_MIN_PACKAGE_QTY = 10;
 const SENOESA_MAX_ORDER_QTY = 50;
 
@@ -24,6 +22,26 @@ function daily_product_available(array $product, bool $holiday = false): bool
         return false;
     }
     return (int) ($product['sisa'] ?? 0) >= daily_product_min_qty($product);
+}
+
+function daily_capacity_status(int $remaining, int $capacity, bool $holiday = false): string
+{
+    if ($holiday) return 'closed';
+    if ($remaining <= 0 || $capacity <= 0) return 'full';
+    return $remaining * 5 <= $capacity * 2 ? 'nearly_full' : 'available';
+}
+
+function daily_kitchen_capacity(array $items): int
+{
+    return intdiv((int) array_sum(array_column($items, 'kuota')) * 4, 5);
+}
+
+function daily_calendar_status(array $snapshot, int $availableItems): string
+{
+    $status = daily_capacity_status((int) $snapshot['dailyRemaining'], (int) $snapshot['dailyCapacity'], !empty($snapshot['tanggal_libur']));
+    if ($status === 'closed' || $status === 'full') return $status;
+    if ($availableItems === 0) return 'menu_empty';
+    return $status;
 }
 
 /**
@@ -100,9 +118,8 @@ function daily_quota_snapshot($date, bool $report = false): array
         unset($item);
     }
 
-    // Kapasitas harian = 50 paket untuk seluruh menu pada tanggal kirim.
-    // Field maxKitchen/kitchenUsed/kitchenRemaining dipertahankan agar API
-    // Admin/Owner lama tetap kompatibel, kini bermakna kapasitas paket harian.
+    // Kuota efektif sudah menimpa default dengan override dan nol saat libur.
+    $maximum = daily_kitchen_capacity($items);
     $rangeParams = [$start->format('Y-m-d H:i:sP'), $start->modify('+1 day')->format('Y-m-d H:i:sP')];
     $dailyUsed = $isHoliday ? 0 : (int) q(
         "SELECT COALESCE(SUM(d.qty), 0)
@@ -112,12 +129,9 @@ function daily_quota_snapshot($date, bool $report = false): array
         $rangeParams
     )->fetchColumn();
 
-    $maximum = SENOESA_DAILY_PACKAGE_LIMIT;
     $used = $dailyUsed;
     $dailyRemaining = max(0, $maximum - $used);
-    $dailyStatus = $isHoliday ? 'closed'
-        : ($dailyRemaining <= 0 ? 'full'
-        : ($dailyRemaining <= intdiv($maximum, 5) ? 'nearly_full' : 'available'));
+    $dailyStatus = daily_capacity_status($dailyRemaining, $maximum, $isHoliday);
 
     return [
         'tanggal' => $date,
@@ -147,7 +161,7 @@ function daily_quota_validate(array $snapshot, array $quantities): array
         throw new DomainException('Satu pesanan maksimal ' . SENOESA_MAX_ORDER_QTY . ' porsi.');
     }
 
-    $capacity = (int) ($snapshot['dailyCapacity'] ?? $snapshot['maxKitchen'] ?? SENOESA_DAILY_PACKAGE_LIMIT);
+    $capacity = (int) ($snapshot['dailyCapacity'] ?? $snapshot['maxKitchen'] ?? 0);
     $used = (int) ($snapshot['dailyUsed'] ?? $snapshot['kitchenUsed'] ?? 0);
     if ($used + $total > $capacity) {
         throw new DomainException('Kuota harian untuk tanggal ini tidak mencukupi. Sisa ' . max(0, $capacity - $used) . ' porsi.');

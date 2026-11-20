@@ -38,15 +38,14 @@ for ($day = new DateTimeImmutable($start, $zone), $last = new DateTimeImmutable(
         if (daily_product_available($item, $holiday)) $availableItems++;
     }
     $remaining = (int) $snapshot['dailyRemaining'];
-    $status = $holiday ? 'closed'
-        : ($remaining <= 0 || $availableItems === 0 ? 'full'
-        : ($remaining <= intdiv(SENOESA_DAILY_PACKAGE_LIMIT, 5) ? 'nearly_full' : 'available'));
+    $capacity = (int) $snapshot['dailyCapacity'];
+    $status = daily_calendar_status($snapshot, $availableItems);
 
     $dates[] = [
         'tanggal' => $value,
         'status' => $status,
         'sisa' => $remaining,
-        'kapasitas' => (int) $snapshot['dailyCapacity'],
+        'kapasitas' => $capacity,
         'menu_tersedia' => $availableItems,
         'tanggal_libur' => (bool) $snapshot['tanggal_libur'],
     ];

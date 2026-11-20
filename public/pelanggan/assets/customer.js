@@ -193,9 +193,9 @@ async function loadCatalog(animate = false) {
     $('#checkout-button').disabled = catalogClosed;
     const dailyHint = $('#daily-quota-hint');
     if (dailyHint) {
-        const capacity = Number(d.dailyCapacity || 50);
-        const used = Number(d.dailyUsed || 0);
-        const remaining = Number(d.dailyRemaining || Math.max(0, capacity - used));
+        const capacity = Number(d.dailyCapacity ?? 0);
+        const used = Number(d.dailyUsed ?? 0);
+        const remaining = Number(d.dailyRemaining ?? Math.max(0, capacity - used));
         const label = d.dailyStatus === 'closed' ? 'Tanggal libur'
             : d.dailyStatus === 'full' ? 'Kuota harian penuh'
             : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
