@@ -175,6 +175,8 @@ function customer_foot(): void
     </div>
     <script>window.snoesaContact = <?= json_encode([
         'adminWhatsapp' => cfg()['contact']['admin_whatsapp'] ?? '',
+        'instagram' => cfg()['contact']['instagram'] ?? '',
+        'tiktok' => cfg()['contact']['tiktok'] ?? '',
     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;</script>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
     <script src="assets/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../assets/menu-notifications.js') ?>"></script>

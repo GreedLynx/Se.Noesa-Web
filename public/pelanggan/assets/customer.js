@@ -602,14 +602,29 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
 
     const adminWhatsapp = (window.snoesaContact && window.snoesaContact.adminWhatsapp || '').trim();
-    const contactLine = adminWhatsapp
-        ? `<p class="admin-wa-text">Nomor WA Admin: ${esc(adminWhatsapp)}</p>`
+    const socialUrl = value => {
+        try {
+            const url = new URL(String(value || ''));
+            return url.protocol === 'https:' ? url.href : '';
+        } catch (_) { return ''; }
+    };
+    const whatsappDigits = adminWhatsapp.replace(/\D/g, '');
+    const contactLine = adminWhatsapp && whatsappDigits
+        ? `<a class="admin-wa-text" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">Hubungi Admin via WhatsApp <span>${esc(adminWhatsapp)}</span></a>`
         : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
+    const socialChannels = [
+        ['Instagram', socialUrl(window.snoesaContact && window.snoesaContact.instagram), '◎'],
+        ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '♪'],
+    ].filter(([, url]) => url);
+    const socialLine = socialChannels.length
+        ? `<div class="admin-socials"><small>Ikuti info Se.Noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} Se.Noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
+        : '';
     const expiredAdminContact = `
         <div class="payment-expired-notice">
             <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
             <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
             ${contactLine}
+            ${socialLine}
         </div>
     `;
 
