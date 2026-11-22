@@ -14,8 +14,8 @@
   `#checkout-date`. Teks merek UI Pelanggan/shared splash memakai `se.noesa`.
 - `public/pelanggan/assets/customer.css` menempatkan pola 6% pada
   `.customer-main::after`, di atas latar mobile dan di bawah `.customer-content`.
-  Aset public `public/assets/img/Pattern_Se.Noesa.png` disalin dari
-  `foto/Pattern_Se.Noesa.png`; dekorasi tidak menerima pointer events.
+  Aset public `public/assets/img/Pattern_Se.Noesa_Background.png` disalin dari
+  `foto/Pattern_Se.Noesa_Background.png`; dekorasi tidak menerima pointer events.
 - `scripts/test-customer-revisions-browser.cjs` memeriksa login/register responsif,
   identitas, urutan info, background, dan alur pelanggan dengan API fixture.
 
