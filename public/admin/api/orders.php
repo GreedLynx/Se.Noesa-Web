@@ -243,13 +243,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$current || (bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$current['id'] ?? 0])->fetchColumn()) {
                 throw new DomainException('Item tidak ditemukan, pesanan berubah, atau tawaran jadwal sedang menunggu');
             }
-            q('UPDATE detail_pesanan SET sudah_dicek = ? WHERE id = ? AND pesanan_id = ?', [(bool) ($request['checked'] ?? false), (int) ($request['item_id'] ?? 0), $current['id']]);
+            $isChecked = filter_var($request['checked'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            q(
+                'UPDATE detail_pesanan SET sudah_dicek = CASE WHEN ? = 1 THEN TRUE ELSE FALSE END WHERE id = ? AND pesanan_id = ?',
+                [$isChecked ? 1 : 0, (int) ($request['item_id'] ?? 0), $current['id']]
+            );
             $db->commit();
         } catch (Throwable $error) {
             if ($db->inTransaction()) $db->rollBack();
             json(['error' => $error instanceof DomainException ? $error->getMessage() : 'Checklist belum dapat diperbarui'], $error instanceof DomainException ? 409 : 500);
         }
-        json(['ok' => true]);
+        json(['ok' => true, 'checked' => $isChecked]);
     }
     $actions = ['validate' => ['menunggu_validasi', 'diproses'], 'reject' => ['menunggu_validasi', 'ditolak'], 'complete' => ['diproses', 'selesai']];
     $transition = $actions[$request['action'] ?? ''] ?? null;

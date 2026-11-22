@@ -15,7 +15,7 @@ admin_head('Dashboard', 'dashboard');
         </p>
     </div>
     <a class="button primary" href="orders.php">
-        Buka antrean
+        Lihat antrean
         <span>
             &rarr;
         </span>
@@ -43,7 +43,7 @@ admin_head('Dashboard', 'dashboard');
         </span>
         <span class="stat-label">
             Perlu
-      validasi
+      verifikasi
         </span>
         <strong class="stat-value" data-stat="pending">
             --

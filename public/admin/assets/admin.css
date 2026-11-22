@@ -1471,26 +1471,59 @@ td small {
     inset: auto 0 0;
     z-index: 18;
     height: 68px;
+    padding: 0 6px;
     border-top: 1px solid var(--line);
     background: #ffffffed;
     backdrop-filter: blur(10px);
     display: flex;
     justify-content: space-around;
     align-items: center;
+    gap: 4px;
+  }
+  .mobile-nav-indicator {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--green-pale);
+    z-index: 0;
+    pointer-events: none;
+    transition:
+      transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+      width 0.36s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .mobile-nav a,
   .mobile-nav button {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex: 1 1 0;
     min-width: 0;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 3px;
+    flex: 1;
+    height: 52px;
     padding: 4px 2px;
     border: 0;
-    background: none;
+    border-radius: 12px;
+    background: transparent;
     color: var(--brown);
     font-size: 17px;
+    transition: color 0.25s ease, transform 0.18s ease;
+  }
+  .mobile-nav a:active,
+  .mobile-nav button:active {
+    transform: scale(0.94);
+  }
+  .mobile-nav:not(.has-slider) a.active {
+    background: var(--green-pale);
+  }
+  .mobile-nav a.active {
+    color: var(--green-dark);
+    font-weight: 700;
   }
   .mobile-nav span {
     font-size: 9px;
@@ -1809,9 +1842,9 @@ input:checked + .slider:before {
    ========================================= */
 .date-filter-wrapper {
   display: flex;
-  flex-direction: column; /* Memaksa elemen tersusun ke bawah */
-  align-items: flex-start; /* Meratakan semua elemen ke kiri */
-  gap: 6px; /* Jarak antar elemen */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin-bottom: 24px;
 }
 
@@ -1829,7 +1862,6 @@ input:checked + .slider:before {
   margin-top: 4px;
 }
 
-/* Styling Input Tanggal */
 .date-filter-input {
   appearance: none;
   -webkit-appearance: none;
@@ -1849,24 +1881,20 @@ input:checked + .slider:before {
   margin-top: 2px;
 }
 
-/* Efek Hover */
 .date-filter-input:hover {
   border-color: var(--green);
   box-shadow: 0 4px 12px rgba(40, 62, 43, 0.08);
 }
 
-/* Efek Fokus (saat diklik) */
 .date-filter-input:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px var(--green-pale);
 }
 
-/* Mengubah ikon kalender bawaan menjadi warna hijau tema */
 .date-filter-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.5;
   transition: 0.2s;
-  /* Filter CSS di bawah ini mengubah warna hitam menjadi hijau gelap */
   filter: invert(36%) sepia(14%) saturate(1154%) hue-rotate(83deg) brightness(94%) contrast(88%);
 }
 
