@@ -131,7 +131,7 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(cancelled, /class="panel-heading"[^]*<\/div><div class="cancellation-meta">/);
     assert.doesNotMatch(cancelled.slice(cancelled.indexOf('class="panel-heading"'), cancelled.indexOf('class="cancellation-meta"')), /class="detail-pair"/);
     assert.doesNotMatch(cancelled.slice(cancelled.indexOf('class="order-summary"')), /<span>Selesai<\/span>/, 'canceled status is not repeated inside the order summary');
-    assert.match(cancelled, /kept\.png/);
+    assert.match(cancelled, /api\/proof\.php\?order=42/, 'proof is loaded through authenticated proxy');
     assert.match(cancelled, /Foto pesanan tersimpan/);
     assert.match(cancelled, /Daftar menu disimpan sebagai riwayat/);
     assert.match(cancelled, /data-item-check="1"[^>]*disabled/);

@@ -108,7 +108,7 @@ function toast(message) {
 if ($('#quota-date')) $('#quota-date').onchange = () => {
     const url = new URL(location.href);
     url.searchParams.set('tgl_kirim', $('#quota-date').value);
-    location.href = url.href
+    location.href = url.href;
 };
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
@@ -156,6 +156,7 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
         };
     });
 }
+window.confirmDialog = confirmDialog;
 // ------------------------------------
 
 function badge(status) {
@@ -260,11 +261,22 @@ async function schedulesPage() {
     $$('[data-close-dialog]').forEach(b => b.onclick = () => $("#holiday-dialog").close());
     form.onsubmit = async e => {
         e.preventDefault();
+        const isEdit = Boolean(form.elements.id.value);
+        const start = form.elements.tanggal_mulai.value;
+        const end = form.elements.tanggal_selesai.value;
+        const confirmed = await confirmDialog(
+            isEdit ? "Simpan Perubahan Libur" : "Simpan Tanggal Libur",
+            `Terapkan tanggal libur operasional ${start} s/d ${end}? Pelanggan tidak dapat memesan pada rentang tanggal ini.`,
+            "Ya, Simpan",
+            "primary"
+        );
+        if (!confirmed) return;
+
         const body = {
             action: "save",
-            ...(form.elements.id.value ? { id: Number(form.elements.id.value) } : {}),
-            tanggal_mulai: form.elements.tanggal_mulai.value,
-            tanggal_selesai: form.elements.tanggal_selesai.value,
+            ...(isEdit ? { id: Number(form.elements.id.value) } : {}),
+            tanggal_mulai: start,
+            tanggal_selesai: end,
         };
         try {
             await api("api/holidays.php", { method: "POST", body });
@@ -277,11 +289,62 @@ async function schedulesPage() {
     };
     loadHolidays();
 }
+function initMobileNavSlider() {
+    const nav = $(".mobile-nav");
+    if (!nav) return;
+    const links = $$("a", nav);
+    const activeIndex = links.findIndex((a) => a.classList.contains("active"));
+    if (activeIndex < 0) return;
+
+    const indicator = document.createElement("span");
+    indicator.className = "mobile-nav-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    nav.prepend(indicator);
+    nav.classList.add("has-slider");
+
+    const moveIndicator = (targetEl, instant = false) => {
+        if (!targetEl || !targetEl.offsetWidth) return;
+        if (instant) indicator.style.transition = "none";
+        indicator.style.width = targetEl.offsetWidth + "px";
+        indicator.style.transform = `translateX(${targetEl.offsetLeft}px)`;
+        if (instant) {
+            indicator.getBoundingClientRect();
+            indicator.style.transition = "";
+        }
+    };
+
+    const prevRaw = sessionStorage.getItem("admin_mobile_nav_prev");
+    const prevIndex = prevRaw !== null ? Number(prevRaw) : -1;
+
+    if (prevIndex >= 0 && prevIndex < links.length && prevIndex !== activeIndex) {
+        moveIndicator(links[prevIndex], true);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => moveIndicator(links[activeIndex], false));
+        });
+    } else {
+        moveIndicator(links[activeIndex], true);
+    }
+
+    sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
+
+    links.forEach((link, idx) => {
+        link.addEventListener("click", () => {
+            sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
+            links.forEach((l) => l.classList.remove("active"));
+            link.classList.add("active");
+            moveIndicator(links[idx], false);
+        });
+    });
+
+    window.addEventListener("resize", () => moveIndicator(links[activeIndex], true));
+}
 function shell() {
     const toggle = $(".menu-toggle");
     toggle?.addEventListener("click", () =>
         $(".sidebar")?.classList.toggle("open"),
     );
+
+    initMobileNavSlider();
 
     $$("[data-logout]").forEach((button) =>
         button.addEventListener("click", async () => {
@@ -414,6 +477,34 @@ let offlineProducts = [];
 
 async function loadOrders() {
     const query = encodeURIComponent($("#order-search")?.value || "");
+    if (orderTab === "pembayaran_terlambat") {
+        const [orders, latePayments] = await Promise.all([
+            api("api/orders.php?tab=semua&q="),
+            api("api/late-payments.php"),
+        ]);
+        $("#all-count").textContent = orders.counts.total;
+        $("#payment-count").textContent = orders.counts.payment;
+        $("#pending-count").textContent = orders.counts.pending;
+        $("#processing-count").textContent = orders.counts.processing;
+        $("#completed-count").textContent = orders.counts.completed;
+        $("#rejected-count").textContent = orders.counts.rejected;
+        $("#cancelled-count").textContent = orders.counts.cancelled;
+        $("#cancellation-unreviewed-count").textContent = orders.counts.cancellation_unreviewed;
+        $("#orders-capacity").textContent = (Number(orders.capacity.pakai) || 0).toLocaleString("id-ID") + " / " + (Number(orders.capacity.kapasitas) || 0).toLocaleString("id-ID") + " porsi";
+        const items = latePayments.items || [];
+        $("#late-payment-count").textContent = items.length;
+        const status = value => {
+            const states = { menunggu_verifikasi: ["pending", "Menunggu verifikasi"], terverifikasi: ["verified", "Terverifikasi"], tidak_valid: ["invalid", "Tidak valid"] };
+            const [type, label] = states[value] || ["pending", "-"];
+            return '<span class="late-payment-status ' + type + '">' + label + "</span>";
+        };
+        $("#late-payment-view").innerHTML = items.length
+            ? '<table><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Nominal</th><th>Status</th><th>Waktu transaksi</th><th></th></tr></thead><tbody>' + items.map(item =>
+                '<tr><td><div class="late-payment-meta"><b>' + esc(item.kode) + '</b><small>Pesanan ' + dateLabel(item.tanggal_pesanan, true) + '</small></div></td><td><div class="late-payment-meta"><b>' + esc(item.nama_pemesan) + '</b><small>' + esc(item.telepon_penerima || "-") + '</small></div></td><td><b>' + money(item.nominal_dilaporkan) + '</b></td><td>' + status(item.status_rekonsiliasi) + '</td><td>' + dateLabel(item.waktu_transaksi, true) + '</td><td><a class="button small secondary" href="late-payments.php">Kelola</a></td></tr>'
+            ).join("") + "</tbody></table>"
+            : '<div class="empty-state">Belum ada pembayaran terlambat yang dicatat.</div>';
+        return;
+    }
     const reviewQuery = orderTab === "dibatalkan" && cancellationReview ? "&review=" + cancellationReview : "";
     const sourceQuery = orderTab === "dibatalkan" && filterCancellationSource ? "&source=" + filterCancellationSource : "";
     const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query + reviewQuery + sourceQuery);
@@ -425,25 +516,26 @@ async function loadOrders() {
     document.querySelector("#completed-count").textContent = d.counts.completed;
     $("#rejected-count").textContent = d.counts.rejected;
     $("#cancelled-count").textContent = d.counts.cancelled;
+    $("#late-payment-count").textContent = $("#late-payment-count").textContent || "0";
     $("#cancellation-unreviewed-count").textContent = d.counts.cancellation_unreviewed;
     $("#orders-capacity").textContent =
         (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
         " / " +
         (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") +
         " porsi";
-    const rows = d.items
+const rows = d.items
         .map(
             (o) =>
-                '<tr><td><small class="order-code">' +
+                '<tr><td><b class="order-user">' +
+                esc(o.nama_pemesan) +
+                "</b><small>" +
+                esc(o.keterangan || "") +
+                '</small></td><td><small class="order-code">' +
                 esc(o.kode) +
                 "</small>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                 "<small>" +
                 (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
-                '</small></td><td><b class="order-user">' +
-                esc(o.nama_pemesan) +
-                "</b><small>" +
-                esc(o.keterangan || "") +
                 "</small></td><td>" +
                 Number(o.pax || 0).toLocaleString("id-ID") +
                 " porsi</td><td><b>" +
@@ -484,7 +576,7 @@ async function loadOrders() {
 
 function ordersPage() {
     const params = new URLSearchParams(location.search);
-    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan"];
+    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan", "pembayaran_terlambat"];
     orderTab = tabs.includes(params.get("tab")) ? params.get("tab") : "semua";
 
     cancellationReview = ["unreviewed", "reviewed"].includes(params.get("review")) ? params.get("review") : "";
@@ -500,6 +592,10 @@ function ordersPage() {
     const syncOrderFilters = () => {
         $$("#order-tabs button").forEach(button => button.classList.toggle("active", button.dataset.tab === orderTab));
         $("#cancellation-review-filter").hidden = orderTab !== "dibatalkan";
+        $(".table-wrap").hidden = orderTab === "pembayaran_terlambat";
+        $("#mobile-orders").hidden = orderTab === "pembayaran_terlambat";
+        $("#late-payment-view").hidden = orderTab !== "pembayaran_terlambat";
+        $("#order-search").closest(".search").hidden = orderTab === "pembayaran_terlambat";
     };
     syncOrderFilters();
 
@@ -537,6 +633,26 @@ function ordersPage() {
     const form = $("#offline-order-form");
     const productList = $("#offline-menu-list");
     const deliveryDate = $("#offline-delivery-date");
+    const orderTypeSelect = $("#offline-order-type");
+    const addressField = $("#offline-address-field");
+    const addressInput = form?.elements?.alamat;
+    const customerNameInput = form?.elements?.nama_pemesan;
+    const recipientNameInput = form?.elements?.nama_penerima;
+    const deliveryDateLabel = $("#offline-date-label");
+    const deliveryTimeLabel = $("#offline-time-label");
+
+    const isDineIn = () => (orderTypeSelect?.value || "dine_in") === "dine_in";
+
+    let recipientEdited = false;
+    recipientNameInput?.addEventListener("input", () => {
+        recipientEdited = recipientNameInput.value.trim() !== "";
+    });
+    customerNameInput?.addEventListener("input", () => {
+        if (!recipientEdited && recipientNameInput) {
+            recipientNameInput.value = customerNameInput.value;
+        }
+    });
+
     const today = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
     }).formatToParts(new Date()).reduce((value, part) => {
@@ -546,6 +662,42 @@ function ordersPage() {
         return value;
     }, {});
     const todayValue = today.year + "-" + today.month + "-" + today.day;
+
+    const renderOfflineProducts = () => {
+        const dineIn = isDineIn();
+        productList.innerHTML = offlineProducts.length
+            ? offlineProducts.map((product) => {
+                const minQty = dineIn ? 1 : Number(product.min_pesan || 4);
+                const minText = dineIn ? "tanpa minimal porsi (Dine-in)" : `minimal ${minQty} porsi`;
+                return '<label class="offline-menu-item"><span><b>' + esc(product.nama) + '</b><small>' +
+                    money(product.harga) + ' · sisa ' + Number(product.sisa).toLocaleString("id-ID") +
+                    ' · ' + minText + '</small></span><input type="number" min="0" max="' +
+                    Number(product.sisa) + '" value="0" data-offline-qty data-product-id="' +
+                    Number(product.id) + '" data-price="' + Number(product.harga) +
+                    '" data-min="' + minQty + '" data-name="' + esc(product.nama) +
+                    '" aria-label="Jumlah ' + esc(product.nama) + '"' +
+                    (Number(product.sisa) <= 0 ? " disabled" : "") + '></label>';
+            }).join("")
+            : '<p class="muted">Belum ada menu yang tersedia.</p>';
+        updateOfflineTotal();
+    };
+
+    const syncOrderTypeUI = () => {
+        const dineIn = isDineIn();
+        if (addressField) addressField.hidden = dineIn;
+        if (addressInput) {
+            addressInput.required = !dineIn;
+            if (dineIn) addressInput.value = "";
+        }
+        if (deliveryDateLabel) {
+            deliveryDateLabel.textContent = dineIn ? "Tanggal Dine-in / Acara" : "Tanggal Pengiriman";
+        }
+        if (deliveryTimeLabel) {
+            deliveryTimeLabel.textContent = dineIn ? "Jam Sajian / Kedatangan" : "Jam Pengiriman";
+        }
+        if (offlineProducts.length) renderOfflineProducts();
+    };
+
     const updateOfflineTotal = () => {
         let total = 0;
         $$("[data-offline-qty]", productList).forEach((input) => {
@@ -554,6 +706,7 @@ function ordersPage() {
         });
         $("#offline-order-total").textContent = money(total);
     };
+
     const loadOfflineProducts = async () => {
         productList.textContent = "Memuat menu dan kuota...";
         $("#offline-menu-capacity").textContent = "";
@@ -566,27 +719,25 @@ function ordersPage() {
             const kitchenUsed = offlineProducts.reduce((sum, product) => sum + Number(product.terpakai), 0);
             $("#offline-menu-capacity").textContent = "Sisa dapur " +
                 Math.max(0, kitchenMaximum - kitchenUsed).toLocaleString("id-ID") + " porsi";
-            productList.innerHTML = offlineProducts.length
-                ? offlineProducts.map((product) =>
-                    '<label class="offline-menu-item"><span><b>' + esc(product.nama) + '</b><small>' +
-                    money(product.harga) + ' · sisa ' + Number(product.sisa).toLocaleString("id-ID") +
-                    ' · minimal ' + Number(product.min_pesan) + ' porsi</small></span><input type="number" min="0" max="' +
-                    Number(product.sisa) + '" value="0" data-offline-qty data-product-id="' +
-                    Number(product.id) + '" data-price="' + Number(product.harga) + '" aria-label="Jumlah ' +
-                    esc(product.nama) + '"' + (Number(product.sisa) <= 0 ? " disabled" : "") + '></label>',
-                ).join("")
-                : '<p class="muted">Belum ada menu yang tersedia.</p>';
-            updateOfflineTotal();
+            renderOfflineProducts();
         } catch (error) {
             productList.textContent = error.message;
         }
     };
+
+    if (orderTypeSelect) {
+        orderTypeSelect.onchange = syncOrderTypeUI;
+    }
+
     $("#new-offline-order").onclick = () => {
         form.reset();
+        recipientEdited = false;
+        if (orderTypeSelect) orderTypeSelect.value = "dine_in";
         deliveryDate.min = todayValue;
         deliveryDate.value = todayValue;
         form.elements.waktu_kirim.value = "12:00";
         $("#offline-order-error").textContent = "";
+        syncOrderTypeUI();
         dialog.showModal();
         loadOfflineProducts();
     };
@@ -598,17 +749,53 @@ function ordersPage() {
     form.onsubmit = async (event) => {
         event.preventDefault();
         const button = $("#save-offline-order");
-        const items = $$("[data-offline-qty]", productList)
-            .map((input) => ({ id: Number(input.dataset.productId), qty: Number(input.value) || 0 }))
+        const dineIn = isDineIn();
+        const rawItems = $$("[data-offline-qty]", productList)
+            .map((input) => ({
+                id: Number(input.dataset.productId),
+                qty: Number(input.value) || 0,
+                min: Number(input.dataset.min) || 1,
+                name: input.dataset.name || "Menu",
+            }))
             .filter((item) => item.qty > 0);
-        if (!items.length) {
+
+        if (!rawItems.length) {
             $("#offline-order-error").textContent = "Pilih jumlah untuk setidaknya satu menu.";
             return;
         }
+
+        if (!dineIn) {
+            const belowMin = rawItems.find((item) => item.qty < item.min);
+            if (belowMin) {
+                $("#offline-order-error").textContent =
+                    `Pesanan diantar untuk "${belowMin.name}" minimal ${belowMin.min} porsi.`;
+                return;
+            }
+            if (!addressInput?.value.trim()) {
+                $("#offline-order-error").textContent = "Alamat pengiriman wajib diisi untuk pesanan diantar.";
+                addressInput?.focus();
+                return;
+            }
+        }
+
+        const items = rawItems.map(({ id, qty }) => ({ id, qty }));
+        const tipeLabel = dineIn ? "Dine-in" : "Delivery / Diantar";
+        const confirmed = await confirmDialog(
+            `Simpan Pesanan ${tipeLabel}`,
+            `Buat pesanan ${tipeLabel} atas nama "${form.elements.nama_pemesan.value.trim()}" untuk tanggal ${deliveryDate.value} pukul ${form.elements.waktu_kirim.value} WIB (Total ${$("#offline-order-total").textContent})? Kuota produk akan langsung terpotong.`,
+            "Ya, Simpan Pesanan",
+            "primary"
+        );
+        if (!confirmed) return;
+
         button.disabled = true;
         $("#offline-order-error").textContent = "";
         try {
             const values = Object.fromEntries(new FormData(form));
+            if (dineIn) {
+                values.alamat = "Dine-in di tempat";
+            }
+            values.jenis_pesanan = dineIn ? "dine_in" : "delivery";
             const result = await api("api/orders.php", {
                 method: "POST",
                 body: { ...values, action: "create_offline", items },
@@ -709,7 +896,7 @@ async function loadProducts() {
     return d.items;
 }
 function refreshProducts() {
-    loadProducts().catch ((e) => {
+    loadProducts().catch((e) => {
         const grid = $("#product-grid");
         if (grid)
             grid.innerHTML =
@@ -734,11 +921,20 @@ async function loadKuotaHarian(produkId) {
             : '<tr><td colspan="3">Semua tanggal memakai kuota default</td></tr>';
         $$("[data-delete-kuota]").forEach((btn) => {
             btn.onclick = async () => {
+                const confirmed = await confirmDialog(
+                    "Kembalikan ke Kuota Default",
+                    "Hapus pengaturan kuota khusus pada tanggal ini dan gunakan kuota default produk?",
+                    "Ya, Kembalikan",
+                    "danger"
+                );
+                if (!confirmed) return;
+
                 try {
                     await api("api/kuota-harian.php", {
                         method: "POST",
                         body: { action: "delete", id: Number(btn.dataset.deleteKuota) },
                     });
+                    toast("Kuota tanggal dikembalikan ke default");
                     await loadKuotaHarian(produkId);
                     refreshProducts();
                 } catch (e) {
@@ -820,6 +1016,16 @@ function productsPage() {
                 $('#product-error').textContent = 'Isi rentang tanggal dan kuota dengan benar.';
                 return;
             }
+            const confirmed = await confirmDialog(
+                action === 'reset' ? "Reset Kuota Rentang" : "Simpan Kuota Khusus",
+                action === 'reset'
+                    ? `Kembalikan kuota tanggal ${tanggal_mulai} s/d ${tanggal_selesai} ke kuota default produk?`
+                    : `Terapkan kuota ${kuota} porsi untuk tanggal ${tanggal_mulai} s/d ${tanggal_selesai}?`,
+                action === 'reset' ? "Ya, Reset" : "Ya, Simpan",
+                action === 'reset' ? "danger" : "primary"
+            );
+            if (!confirmed) return;
+
             try {
                 await api("api/kuota-harian.php", {
                     method: "POST",
@@ -847,8 +1053,19 @@ function productsPage() {
     };
     $("#product-form").onsubmit = async (e) => {
         e.preventDefault();
-        const f = e.currentTarget,
-            body = new FormData(f);
+        const f = e.currentTarget;
+        const isEdit = Boolean(f.elements.id.value);
+        const confirmed = await confirmDialog(
+            isEdit ? "Simpan Perubahan Produk" : "Tambah Produk Baru",
+            isEdit
+                ? `Simpan perubahan pada produk "${f.elements.nama.value.trim()}"?`
+                : `Tambahkan produk baru "${f.elements.nama.value.trim()}" ke katalog?`,
+            "Ya, Simpan",
+            "primary"
+        );
+        if (!confirmed) return;
+
+        const body = new FormData(f);
         body.set("action", "save");
         try {
             const response = await fetch("api/products.php", {
@@ -856,17 +1073,14 @@ function productsPage() {
                     headers: { "X-CSRF-Token": csrfToken() },
                     body,
                 }),
-                data = await response.json().catch (() => ({ error: "Respons server tidak valid" }));
+                data = await response.json().catch(() => ({ error: "Respons server tidak valid" }));
             if (response.status === 401) {
                 location.href = "../login.php";
                 return;
             }
             if (!response.ok) throw Error(data.error || "Terjadi kesalahan");
             const savedCode = f.elements.kode.value.trim().toUpperCase();
-            // Pertahankan filter kategori/pencarian yang sedang aktif setelah simpan.
             await loadProducts();
-            // Verifikasi terhadap seluruh produk, bukan daftar yang sedang difilter,
-            // agar produk yang tersimpan di luar filter tidak dianggap gagal.
             const allProducts = await api("api/products.php");
             if (
                 !allProducts.items.some(
@@ -901,18 +1115,14 @@ async function orderDetail() {
     const o = await api("api/orders.php?id=" + id);
     $("#detail-status").outerHTML = badge(o.status);
     const raw = o.bukti_bayar || "",
-        proofUrl = raw
-            ? /^https?:\/\//.test(raw) || raw.startsWith("/")
-                ? raw
-                : "../" + raw.replace(/^\.\//, "")
-            : "";
+        proofUrl = raw ? "api/proof.php?order=" + Number(id) : "";
     const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
     const proof = raw
         ? '<a class="proof-image" href="' +
             esc(proofUrl) +
             '" target="_blank" rel="noopener"><img src="' +
             esc(proofUrl) +
-            '" alt="Bukti transfer pelanggan"></a>'
+            '" alt="Bukti transfer pelanggan" onerror="this.onerror=null;this.hidden=true;var s=this.nextElementSibling;if(s)s.hidden=false"><span class="proof-empty" hidden>Bukti tidak dapat ditampilkan</span></a>'
         : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
     const proofPending = raw
         ? proof
@@ -934,11 +1144,12 @@ async function orderDetail() {
         "</b></div></article>";
     const menuItems = Array.isArray(o.menu) ? o.menu : [];
     const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
+    const isItemChecked = (val) => val === true || val === 1 || val === "1" || val === "t";
     const menu = menuItems.map((m) =>
         '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
-        Number(m.item_id) + '" ' + (m.sudah_dicek ? "checked" : "") + " " +
+        Number(m.item_id) + '" ' + (isItemChecked(m.sudah_dicek) ? "checked" : "") + " " +
         (o.status === "diproses" ? "" : "disabled") + "><span><b>" + esc(m.nama) +
-        "</b><small>" + Number(m.qty).toLocaleString("id-ID") + " porsi ? " +
+        "</b><small>" + Number(m.qty).toLocaleString("id-ID") + " porsi &times; " +
         money(m.harga) + "</small></span><strong>" + money(m.subtotal) + "</strong></label>"
     ).join("");
     const sentPhotos = Array.isArray(o.foto_kiriman_list)
@@ -1132,30 +1343,6 @@ async function orderDetail() {
         };
     });
     actions.hidden = !actionButtons.some(btn => !btn.hidden);
-    $$("[data-item-check]").forEach(
-        (box) =>
-            (box.onchange = async () => {
-                box.disabled = true;
-                try {
-                    await api("api/orders.php", {
-                        method: "POST",
-                        body: {
-                            action: "check_item",
-                            id,
-                            item_id: Number(box.dataset.itemCheck),
-                            checked: box.checked,
-                        },
-                    });
-                    syncCompleteButton();
-                } catch (e) {
-                    box.checked = !box.checked;
-                    toast(e.message);
-                } finally {
-                    box.disabled = false;
-                    syncCompleteButton();
-                }
-            }),
-    );
 
     function syncCompleteButton() {
         const completeBtn = $$("[data-order-action]").find(b => b.dataset.orderAction === "complete");
@@ -1164,7 +1351,40 @@ async function orderDetail() {
         const allChecked = boxes.length > 0 && boxes.every(b => b.checked);
         completeBtn.disabled = !allChecked;
         completeBtn.style.opacity = allChecked ? "1" : "0.5";
+        completeBtn.title = allChecked ? "" : "Centang semua menu terlebih dahulu";
     }
+
+    $$("[data-item-check]").forEach(
+        (box) =>
+            (box.onchange = async () => {
+                const targetChecked = box.checked;
+                syncCompleteButton();
+                box.disabled = true;
+                try {
+                    const res = await api("api/orders.php", {
+                        method: "POST",
+                        body: {
+                            action: "check_item",
+                            id,
+                            item_id: Number(box.dataset.itemCheck),
+                            checked: targetChecked,
+                        },
+                    });
+                    if (typeof res.checked === "boolean") {
+                        box.checked = res.checked;
+                    }
+                } catch (e) {
+                    box.checked = !targetChecked;
+                    toast(e.message);
+                } finally {
+                    box.disabled = false;
+                    syncCompleteButton();
+                }
+            }),
+    );
+
+    syncCompleteButton();
+
     const upload = $("#dispatch-photo-form");
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -1180,6 +1400,14 @@ async function orderDetail() {
                 "Ukuran setiap foto maksimal 2 MB. Kecilkan foto lalu pilih kembali.";
             return;
         }
+        const confirmed = await confirmDialog(
+            "Unggah Foto Makanan",
+            `Simpan ${photos.length} foto makanan siap kirim ke pesanan ini? Foto akan dapat dilihat oleh pelanggan.`,
+            "Ya, Unggah",
+            "primary"
+        );
+        if (!confirmed) return;
+
         button.disabled = true;
         let uploadedCount = 0;
         try {

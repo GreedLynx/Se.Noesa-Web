@@ -2296,3 +2296,220 @@ body[data-page="payments"] .nav { max-width: 430px; }
 .chart-col.is-last .chart-label {
   font-weight: 700;
 }
+
+/* =========================================
+   PENYELARASAN HEADER & SIDEBAR OWNER = ADMIN
+   ========================================= */
+.owner-brand,
+.owner-sidebar-bottom {
+  display: none;
+}
+
+.today-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  body[data-page="dashboard"] .nav,
+  body[data-page="orders"] .nav,
+  body[data-page="products"] .nav,
+  body[data-page="notifications"] .nav,
+  body[data-page="detail"] .nav,
+  body[data-page="payments"] .nav {
+    width: 252px;
+    padding: 25px 18px;
+    border-radius: 0;
+    border-right: 1px solid #d3e2d4;
+    box-shadow: none;
+  }
+
+  .owner-brand {
+    display: flex !important;
+    gap: 12px;
+    align-items: center;
+    color: var(--br);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 4px 9px 26px;
+    min-height: auto !important;
+  }
+
+  .owner-brand small {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #758d76;
+    margin-top: 3px;
+  }
+
+  .owner-brand-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    background: #758d76;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font: 25px Georgia, serif;
+    flex: none;
+  }
+
+  body[data-page="dashboard"] .nav a:not(.owner-brand),
+  body[data-page="orders"] .nav a:not(.owner-brand),
+  body[data-page="products"] .nav a:not(.owner-brand),
+  body[data-page="notifications"] .nav a:not(.owner-brand),
+  body[data-page="detail"] .nav a:not(.owner-brand),
+  body[data-page="payments"] .nav a:not(.owner-brand) {
+    height: 46px;
+    min-height: 46px;
+    padding: 0 12px;
+    border-radius: 12px;
+    gap: 12px;
+    font-size: 14px;
+    color: #5f645f;
+  }
+
+  body[data-page="dashboard"] .nav a:not(.owner-brand).on,
+  body[data-page="orders"] .nav a:not(.owner-brand).on,
+  body[data-page="products"] .nav a:not(.owner-brand).on,
+  body[data-page="notifications"] .nav a:not(.owner-brand).on,
+  body[data-page="detail"] .nav a:not(.owner-brand).on,
+  body[data-page="payments"] .nav a:not(.owner-brand).on {
+    background: #e5eee5;
+    color: #506b55;
+    font-weight: 600;
+  }
+
+  body[data-page="dashboard"] .pill,
+  body[data-page="orders"] .pill,
+  body[data-page="products"] .pill,
+  body[data-page="notifications"] .pill,
+  body[data-page="detail"] .pill,
+  body[data-page="payments"] .pill {
+    display: none;
+  }
+
+  .owner-sidebar-bottom {
+    display: block;
+    margin-top: auto;
+    border-top: 1px solid #edf1ec;
+    padding-top: 17px;
+  }
+
+  .owner-profile {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 7px 5px 13px;
+  }
+
+  .owner-profile .avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .owner-profile b,
+  .owner-profile small {
+    display: block;
+  }
+
+  .owner-profile b {
+    font-size: 13px;
+    color: var(--tx);
+  }
+
+  .owner-profile small {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .owner-signout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    background: none;
+    border: 0;
+    color: var(--br);
+    padding: 10px 8px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .owner-signout svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .owner-signout:hover {
+    background: #f7efeb;
+  }
+
+  body[data-page="dashboard"] .app,
+  body[data-page="orders"] .app,
+  body[data-page="products"] .app,
+  body[data-page="notifications"] .app,
+  body[data-page="detail"] .app,
+  body[data-page="payments"] .app {
+    width: calc(100% - 252px);
+    margin-left: 252px;
+    padding-top: 119px;
+    background: #f5f7f4;
+  }
+
+  body[data-page="dashboard"] .top,
+  body[data-page="orders"] .top,
+  body[data-page="products"] .top,
+  body[data-page="notifications"] .top,
+  body[data-page="detail"] .top,
+  body[data-page="payments"] .top {
+    position: fixed;
+    top: 0;
+    left: 252px;
+    right: 0;
+    height: 91px;
+    margin: 0;
+    padding: 0 clamp(24px, 4vw, 56px);
+    background: #fff;
+    border-bottom: 1px solid #d3e2d4;
+    z-index: 10;
+  }
+
+  .top small {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .top h1 {
+    font-size: 23px;
+    margin: 3px 0 0;
+    color: #506b55;
+  }
+
+  body[data-page="detail"] .cta {
+    left: calc(252px + (100vw - 252px) / 2);
+  }
+}
+
+@media (max-width: 899px) {
+  .today-label {
+    display: none;
+  }
+  .top {
+    background: #fff;
+    border-bottom: 1px solid #d3e2d4;
+    padding: 14px 16px;
+    margin: -14px -16px 14px;
+  }
+  .top small {
+    color: var(--muted);
+  }
+  .top h1 {
+    font-size: 19px;
+    color: #506b55;
+  }
+}
