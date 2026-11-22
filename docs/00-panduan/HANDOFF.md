@@ -1,5 +1,8 @@
 # Handoff Se.Noesa-Web
 
+## Respons daftar pesanan Admin (22 November 2026)
+- Error sementara `Respons server tidak valid` pada `loadOrders()` dilaporkan pulih oleh pengguna. Status HTTP/body penyebab tidak tersedia; tidak ada perubahan kode, migrasi, atau database yang dipertahankan. Jika berulang, periksa respons Network `api/orders.php?tab=...` dan log PHP sebelum mengubah endpoint.
+
 ## Animasi pattern auth dan logo register desktop (20 November 2026)
 - Pengguna meminta pattern login/register bergerak mulus dan logo register desktop disamakan dengan login. `pattern.png` berukuran 402 x 260 px; animasi sebelumnya mengubah `background-position` dengan jarak tepat satu tile. `.drift` kini menggerakkan lapisan yang diperluas satu tile memakai `translate3d(-402px, -260px, 0)`, sehingga area hero tetap tertutup dan siklus kembali ke gambar identik. Hero memotong kelebihan lapisan. Logo desktop login/register memakai aturan tengah dan ukuran yang sama; mobile tetap aturan dasar.
 - Fixture browser auth kini memeriksa lapisan pattern menutup hero serta logo kedua halaman di tengah pada desktop. Perlu jalankan `node --check`, `git diff --check`, dan render browser jika tersedia. Tidak ada perubahan auth API/DB/aset.
