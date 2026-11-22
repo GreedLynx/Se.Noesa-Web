@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../../app/bootstrap.php';
 function head(string $title, string $page, bool $auth = false)
 {
     if (!$auth) {
-            require_owner(false);
+        require_owner(false);
     }
     $GLOBALS['owner_page'] = $page;
     $GLOBALS['owner_auth'] = $auth;
@@ -27,14 +27,17 @@ function head(string $title, string $page, bool $auth = false)
     <link rel="stylesheet" href="<?= $assetPrefix ?>css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
 
-<body data-page="<?= $page ?>" data-role="owner">
+<body data-page="<?= htmlspecialchars($page, ENT_QUOTES, 'UTF-8') ?>" data-role="owner">
     <main class="app<?= $auth ? ' auth' : '' ?>">
 <?php
 }
 
 function topbar(string $title, bool $back = false)
 {
-    $u = me();
+    $hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    $bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'));
+    $todayText = $hari[(int) $now->format('w')] . ', ' . $now->format('j') . ' ' . $bulan[(int) $now->format('n')] . ' ' . $now->format('Y');
     ?>
         <header class="top rise">
             <div class="row">
@@ -48,19 +51,13 @@ function topbar(string $title, bool $back = false)
                 </div>
             </div>
             <div class="row">
-                <button class="btn-logout" type="button" data-logout>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M10 17l5-5-5-5M15 12H3M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
-                    </svg>
-                    <span>Keluar</span>
-                </button>
-                <div class="avatar"><?= strtoupper(substr($u['username'] ?? 'A', 0, 1)) ?></div>
+                <span class="today-label" id="today-label"><?= htmlspecialchars($todayText, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
         </header>
         <?php if (in_array($GLOBALS['owner_page'] ?? '', ['products', 'orders'], true)):
-                $quotaDay = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+                $quotaDay = $_GET['tgl_kirim'] ?? $now->format('Y-m-d');
                 if (!is_string($quotaDay)) {
-                        $quotaDay = '';
+                    $quotaDay = '';
                 }
                 ?>
             <section class="date-panel" aria-label="Filter tanggal kuota">
@@ -83,6 +80,7 @@ function topbar(string $title, bool $back = false)
 
 function nav(string $on)
 {
+    $u = me();
     $i = [
         'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
         'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
@@ -91,6 +89,10 @@ function nav(string $on)
     ];
     ?>
         <nav class="nav">
+            <a class="owner-brand" href="dashboard.php">
+                <span class="owner-brand-mark">S</span>
+                <span>Se.Noesa<small>OWNER PANEL</small></span>
+            </a>
             <span class="pill" id="pill"></span>
             <?php foreach ($i as $k => [$l, $p]): ?>
                 <a href="<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>">
@@ -98,6 +100,18 @@ function nav(string $on)
                     <span><?= $l ?></span>
                 </a>
             <?php endforeach; ?>
+            <div class="owner-sidebar-bottom">
+                <div class="owner-profile">
+                    <span class="avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'O', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span><b><?= htmlspecialchars($u['username'] ?? 'Owner', ENT_QUOTES, 'UTF-8') ?></b><small>Owner</small></span>
+                </div>
+                <button class="owner-signout" type="button" data-logout>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4" />
+                    </svg>
+                    <span>Keluar</span>
+                </button>
+            </div>
         </nav>
 <?php
 }

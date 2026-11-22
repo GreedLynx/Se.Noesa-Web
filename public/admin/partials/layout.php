@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../../app/bootstrap.php';
 
 function admin_head(string $title, string $page): void
 {
-    $GLOBALS['admin_page'] = $page;
+    $GLOBALS['__admin_current_page'] = $page;
     $u = require_role('admin', false);
 ?>
 <!doctype html>
@@ -55,10 +55,6 @@ function admin_head(string $title, string $page): void
                 </a>
             </nav>
             <div class="sidebar-bottom">
-                <div class="admin-profile">
-                    <span class="avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'A', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span><b><?= htmlspecialchars($u['username'] ?? 'Admin', ENT_QUOTES, 'UTF-8') ?></b><small>Administrator</small></span>
-                </div>
                 <button class="signout" data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4"/></svg> Keluar</button>
             </div>
         </aside>
@@ -95,7 +91,7 @@ function admin_head(string $title, string $page): void
 <?php
 }
 
-function admin_foot(): void
+function admin_foot(?string $page = null): void
 {
     $page = $GLOBALS['admin_page'] ?? '';
     ?>

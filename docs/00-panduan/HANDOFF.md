@@ -1,5 +1,8 @@
 # Handoff Se.Noesa-Web
 
+## Respons daftar pesanan Admin (22 November 2026)
+- Error sementara `Respons server tidak valid` pada `loadOrders()` dilaporkan pulih oleh pengguna. Status HTTP/body penyebab tidak tersedia; tidak ada perubahan kode, migrasi, atau database yang dipertahankan. Jika berulang, periksa respons Network `api/orders.php?tab=...` dan log PHP sebelum mengubah endpoint.
+
 ## Animasi pattern auth dan logo register desktop (20 November 2026)
 - Pengguna meminta pattern login/register bergerak mulus dan logo register desktop disamakan dengan login. `pattern.png` berukuran 402 x 260 px; animasi sebelumnya mengubah `background-position` dengan jarak tepat satu tile. `.drift` kini menggerakkan lapisan yang diperluas satu tile memakai `translate3d(-402px, -260px, 0)`, sehingga area hero tetap tertutup dan siklus kembali ke gambar identik. Hero memotong kelebihan lapisan. Logo desktop login/register memakai aturan tengah dan ukuran yang sama; mobile tetap aturan dasar.
 - Fixture browser auth kini memeriksa lapisan pattern menutup hero serta logo kedua halaman di tengah pada desktop. Perlu jalankan `node --check`, `git diff --check`, dan render browser jika tersedia. Tidak ada perubahan auth API/DB/aset.
@@ -12,7 +15,7 @@
 - Pengguna telah meminta menjalankan `docs/rencana-revisi-pelanggan-tersisa.md`. Phase 0–4 selesai pada `feature/perbaikan-ui-pelanggan`; Phase 5 baru sebagian dan verifikasi browser menyeluruh belum selesai. Catatan plan-only di bawah adalah riwayat, bukan status aktif.
 - F7: GET detail/metode dan QRIS gagal memberikan pesan lokal pembayaran dan muat ulang; upload menangani validasi/status/sesi/jaringan/respons tidak valid, mencegah submit ganda, dan memisahkan POST sukses dari refresh gagal. Error tidak disimpan ke halaman Notifikasi; tidak ada auto-retry POST. F18: sisa angka hanya <50% kuota efektif; detail memperbarui pembungkus hidden saat jumlah berubah.
 - F13/H4: info sebelum tanggal checkout; merek pelanggan/splash dan copy auth terkait memakai se.noesa. Login/register menampilkan `.auth-logo` di kanan atas hero. Shared Owner layout memilih assets/ untuk auth public root dan ../assets/ untuk Owner agar deployment subdirektori tidak kehilangan CSS/JS. Autentikasi/role tidak berubah.
-- H7: `foto/Pattern_Se.Noesa.png` disalin identik ke `public/assets/img/Pattern_Se.Noesa.png`; `.customer-main::after` beropacity6%, pola402px, pointer-events none; konten di lapisan atas. Pseudo after menghindari konflik before mobile dan mencakup main kosong/panjang. Kartu/form/dialog tetap solid.
+- H7: aset `foto/Pattern_Se.Noesa_Background.png` disalin identik ke `public/assets/img/Pattern_Se.Noesa_Background.png`; `.customer-main::after` beropacity40%, pola402px, pointer-events none; konten di lapisan atas. Pseudo after menghindari konflik before mobile dan mencakup main kosong/panjang. Kartu/form/dialog tetap solid.
 - File terkait: `public/pelanggan/assets/customer.js`, `customer.css`, `partials/layout.php`, `index.php`; `public/index.php`, `login.php`, `register.php`, `public/assets/css/app.css`, `public/owner/partials/layout.php`; test payment errors/cart/quota/cancellation serta `scripts/test-customer-revisions-browser.cjs`; docs peta/API/database/plan.
 - Lulus: empat suite Node payment-errors/cart-quantity/quota-ui/cancellation-ui, PHP lint6 file, JS syntax, diffcheck, review F7/F18/final tanpa P1/P2. Regresi Chrome `test-catalog-card-layout.cjs`320/390/1280 lulus. Subset Chrome awal API-simulasi320/390/1280 lulus untuk F7 sebelum CSS akhir; screenshot menemukan close button menimpa pesan lalu diperbaiki. Tidak ada hasil/screenshot final terverifikasi untuk suite auth/background/pembayaran menyeluruh; jangan klaim seluruh plan selesai diuji.
 - Percobaan gagal: Chrome sandbox GPU crash. Dua permintaan eksekusi/eskalasi browser menyeluruh dibatalkan, terakhir oleh pengguna setelah166detik tanpa hasil/sesi yang dapat diteruskan; tidak ada permintaan Chrome tambahan. Fixture tenggat2099 memicu overflow timer; diganti waktu sekarang+1jam. Tidak membaca .env, menjalankan transaksi DB aplikasi, mengubah spreadsheet, commit/push.
@@ -31,7 +34,7 @@
 
 ## Plan revisi Pelanggan tersisa (20 November 2026)
 - Pengguna menetapkan F10 dan F21 tuntas karena perubahan; F7 dilewati dahulu karena maksud keluhan belum jelas. Keputusan ini menggantikan status belum pasti pada audit di bawah.
-- Plan tersedia di `docs/rencana-revisi-pelanggan-tersisa.md`: H4 nama se.noesa lowercase; F13 info sebelum tanggal checkout; F18 angka sisa hanya <50% kuota efektif; H7 background dari `foto/Pattern_Se.Noesa.png` beropasitas rendah.
+- Plan tersedia di `docs/rencana-revisi-pelanggan-tersisa.md`: H4 nama se.noesa lowercase; F13 info sebelum tanggal checkout; F18 angka sisa hanya <50% kuota efektif; H7 background dari `foto/Pattern_Se.Noesa_Background.png` beropasitas rendah.
 - Aset sumber benar-benar ada dan sudah dilihat agent utama (sekitar 486 KB); belum ada salinan public bernama sama. Asumsi plan: latar area konten seluruh halaman Pelanggan dengan opacity awal 6%; kartu/dialog solid. Ambang F18 memakai sisa setelah pilihan lokal di detail dan diperbarui saat jumlah berubah; tepat 50% disembunyikan.
 - Discovery main + reader selesai. Plan memiliki Phase 0–4, lokasi kode, pola yang dipakai, test edge case, regresi, dan verifikasi visual. Tidak ada perubahan kode/aset aplikasi, spreadsheet, DB, branch, commit, atau push. Belum menjalankan suite/browser; berikutnya implementasi sesuai plan dan evaluasi opacity dari render aktual.
 
@@ -246,3 +249,7 @@
 - Fase 1–4 diterapkan: header bersama sticky desktop/mobile; tombol search katalog muncul setelah input terlewati lalu scroll+focus; sidebar mobile memakai transisi transform/opacity dengan delayed visibility; kalender bersama memakai animasi pembukaan CSS untuk semua role.
 - Sidebar mempertahankan state/fokus/keyboard JS yang ada. CSS mempertahankan backdrop dalam render selama fade keluar walau atribut hidden sudah aktif, dengan pointer-events langsung nonaktif. Reduced motion menonaktifkan transisi/animasi.
 - Syntax JS/PHP, suite quota-ui dan customer-cart-quantity lulus. Verifikasi browser dikoordinasikan terpisah. API dan skema tidak berubah. Tidak commit/push.
+
+## Aset background pola Pelanggan (22 November 2026)
+- H7 sudah direncanakan dan diimplementasikan. CSS kini memakai Pattern_Se.Noesa_Background.png, aset disalin ke public, dan dokumentasi/peta kode diselaraskan. Opasitas lapisan dekorasi diatur ke 40% sesuai permintaan; endpoint dan skema tidak berubah.
+- Belum dilakukan render browser untuk menilai pola pada seluruh halaman/ukuran layar.
