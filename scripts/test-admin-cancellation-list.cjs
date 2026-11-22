@@ -24,7 +24,8 @@ const fixture = {
 };
 const context = {
     URL, URLSearchParams,
-    location: { search: '?tab=dibatalkan&review=unreviewed' },
+    location: { href: 'https://example.test/demo/admin/orders.php?tab=dibatalkan&review=unreviewed', search: '?tab=dibatalkan&review=unreviewed' },
+    history: { state: { retained: true }, replaceState(state, unused, url) { context.location.href = String(url); context.location.search = new URL(url).search; } },
     document: {
         querySelector: node,
         querySelectorAll: selector => selector === '#order-tabs button' ? tabs : [],
@@ -38,7 +39,11 @@ vm.runInContext('api = globalThis.testApi;', context);
 
 (async () => {
     context.ordersPage();
+    node('#cancellation-source').value = 'pelanggan';
+    node('#cancellation-source').onchange();
+    assert.equal(new URL(context.location.href).searchParams.get('source'), 'pelanggan');
     await context.loadOrders();
+    assert.match(requested, /source=pelanggan/);
     assert.match(requested, /tab=dibatalkan/);
     assert.match(requested, /review=unreviewed/);
     assert.equal(node('#cancellation-review-filter').hidden, false);
@@ -61,6 +66,7 @@ vm.runInContext('api = globalThis.testApi;', context);
     await context.loadOrders();
     assert.match(requested, /tab=selesai/);
     assert.doesNotMatch(requested, /review=/);
+    assert.equal(new URL(context.location.href).searchParams.has('source'), false);
     assert.equal(node('#cancellation-review-filter').hidden, true);
 
     context.location.search = '?tab=invalid&review=invalid';

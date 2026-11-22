@@ -34,11 +34,10 @@ $decorate = static function (array $product) use ($stockState, $holiday): array 
     $product['available'] = daily_product_available($product, $holiday);
     return $product;
 };
-$items = array_map($decorate, array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView, $holiday) {
-    return daily_product_available($product, $holiday) && $matchesView($product);
+$items = array_map($decorate, array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView) {
+    return $matchesView($product);
 })));
-// Menu dengan sisa kuota 0 tetap diinformasikan agar Pelanggan memahami
-// produk mana yang penuh pada tanggal pengiriman yang dipilih (IMG-CUS-01).
+// Daftar terpisah ini dipakai untuk peringatan menu yang tidak dapat dipesan.
 $habis = array_map(static function (array $product) use ($stockState): array {
     return [
         'id' => (int) $product['id'],

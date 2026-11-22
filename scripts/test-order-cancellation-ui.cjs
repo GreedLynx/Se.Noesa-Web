@@ -3,9 +3,10 @@ const source = fs.readFileSync('public/pelanggan/assets/customer.js', 'utf8');
 let detail, confirmation;
 const elements = {
     '#history-detail': {}, '#history-dialog': { showModal() {} },
-    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}
+    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}, '#retry-payment': {}, '#payment-status': {}
 };
 const context = {
+    clearTimeout() {}, setTimeout() {}, paymentExpiryTimer: null, imagePath: String,
     $: selector => {
         if (selector === '#history-detail' || selector === '#history-dialog') return elements[selector];
         return elements['#history-detail'].innerHTML.includes('id="' + selector.slice(1) + '"') ? elements[selector] : null;

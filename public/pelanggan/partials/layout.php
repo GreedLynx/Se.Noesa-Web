@@ -17,7 +17,7 @@ function customer_head(string $title, string $page): array
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
+    <title><?= htmlspecialchars($title) ?> · se.noesa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,13 +30,10 @@ function customer_head(string $title, string $page): array
 
 <body data-page="<?= htmlspecialchars($page) ?>">
     <div class="customer-shell">
-        <aside class="customer-rail">
-            <a class="customer-logo" href="riwayat.php" aria-label="Profil pelanggan">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.3" />
-                    <path d="M5.5 19c.7-3.1 3.1-4.8 6.5-4.8s5.8 1.7 6.5 4.8" />
-                    <circle cx="12" cy="12" r="10" />
-                </svg>
+        <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
+            <button class="customer-sidebar-close" type="button" aria-label="Tutup menu">&times;</button>
+            <a class="customer-logo" href="index.php" aria-label="se.noesa — kembali ke katalog">
+                <img src="../assets/img/logo-icon.png" alt="" width="32" height="40">
             </a>
             <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
                 <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">
@@ -53,14 +50,19 @@ function customer_head(string $title, string $page): array
                     <b class="customer-notif-count desktop" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
                 </a>
             </nav>
+            <button class="rail-logout" type="button" data-logout aria-label="Keluar dari akun">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+                <small>Keluar</small>
+            </button>
         </aside>
+        <button class="customer-sidebar-backdrop" type="button" aria-label="Tutup menu" hidden></button>
         <main class="customer-main">
             <header class="customer-top">
-                <div><small>Se.Noesa / Pelanggan</small></div>
+                <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false">&#9776;</button>
+                <div><small>se.noesa / Pelanggan</small></div>
                 <div class="customer-user">
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
-                    <button class="logout-text" type="button" data-logout>Keluar</button>
                 </div>
             </header>
             <div class="customer-content">
@@ -74,34 +76,6 @@ function customer_foot(): void
 ?>
             </div>
         </main>
-        <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan">
-            <a class="<?= $GLOBALS['customer_page'] === 'catalog' ? 'active' : '' ?>" href="index.php" aria-label="Menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M4 12h16" />
-                </svg>
-                <span>Menu</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'history' ? 'active' : '' ?>" href="riwayat.php" aria-label="Riwayat">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M5 6h14M5 12h14M5 18h14" />
-                </svg>
-                <span>Riwayat</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php" aria-label="Notifikasi">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-                </svg>
-                <span>Notifikasi</span>
-                <b class="customer-notif-count mobile" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
-            </a>
-            <button type="button" data-logout aria-label="Keluar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-                <span>Keluar</span>
-            </button>
-        </nav>
         <dialog id="detail-dialog" class="customer-dialog" aria-label="Detail menu">
             <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
             <div id="detail-content"></div>
@@ -150,16 +124,16 @@ function customer_foot(): void
                         <input id="checkout-default-address" type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
                     </label>
                 </div>
-                <label for="checkout-date">
-                    Tanggal kirim
-                    <input id="checkout-date" name="tgl_kirim" type="date" required>
-                </label>
                 <div class="catalog-policy" style="margin-top:10px">
                     <ul>
                         <li>Pastikan tanggal kirim dan jumlah porsi sesuai kebutuhan acara.</li>
                         <li>Kuota menu mengikuti tanggal pengiriman yang dipilih.</li>
                     </ul>
                 </div>
+                <label for="checkout-date">
+                    Tanggal kirim
+                    <input id="checkout-date" name="tgl_kirim" type="date" required>
+                </label>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>

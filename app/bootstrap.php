@@ -1,4 +1,6 @@
 <?php
+// Argumen PDO memuat kredensial dan tidak boleh masuk ke stack trace.
+ini_set('zend.exception_ignore_args', '1');
 // Pengaturan cookie sesi dikeraskan sebelum sesi dimulai (K1/D1).
 // Secure hanya aktif pada HTTPS agar pengembangan lokal via HTTP tetap jalan;
 // HttpOnly mencegah pembacaan cookie oleh skrip, SameSite=Lax membatasi

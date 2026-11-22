@@ -56,10 +56,10 @@ try {
     $viewSql = substr($availabilitySql, strpos($availabilitySql, 'CREATE OR REPLACE VIEW'));
     q(str_replace('CREATE OR REPLACE VIEW v_kuota_harian', 'CREATE TEMP VIEW v_kuota_harian', $viewSql));
     $snapshot = daily_quota_snapshot('2030-01-10');
-    check_quota($snapshot['maxKitchen'] === 50 && $snapshot['kitchenUsed'] === 80, 'Kapasitas 50 paket/hari, pesanan aktif dihitung, tanggal lain dikecualikan');
+    check_quota($snapshot['maxKitchen'] === 80 && $snapshot['kitchenUsed'] === 80, 'Kapasitas dapur 80% dari kuota efektif, pesanan aktif dihitung');
     check_quota($snapshot === daily_quota_snapshot('2030-01-10', true), 'VIEW laporan sama dengan prepared query checkout');
-    check_quota(daily_quota_snapshot('2030-01-11')['maxKitchen'] === 50, 'Kuota tanggal berbeda tetap memakai batas harian 50');
-    check_quota(daily_quota_snapshot('2030-01-12')['maxKitchen'] === 50, 'Tanggal tanpa override memakai batas harian 50');
+    check_quota(daily_quota_snapshot('2030-01-11')['maxKitchen'] === 48, 'Override tanggal mengubah kapasitas dapur');
+    check_quota(daily_quota_snapshot('2030-01-12')['maxKitchen'] === 80, 'Tanggal tanpa override memakai total kuota default');
     check_quota(daily_quota_snapshot('2030-01-12') === daily_quota_snapshot('2030-01-12', true), 'Laporan tanggal tanpa baris VIEW memakai default dan sisa yang sama');
     rejects_quota($snapshot, [1 => 10], 'Sisa 0 porsi');
     rejects_quota($snapshot, [2 => 10], 'Sisa 0 porsi');

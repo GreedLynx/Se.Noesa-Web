@@ -32,7 +32,7 @@
         if (typeof HTMLDialogElement === 'undefined') return;
         const availabilityUrl = input.getAttribute('data-availability-url');
         let availability = new Map();
-        const loadedMonths = new Set();
+        const loadedMonths = new Map();
         const field = input.closest('.date-field');
         const label = field.querySelector('label');
         const trigger = document.createElement('button');
@@ -57,6 +57,7 @@
             legend.innerHTML = '<span><i class="date-available"></i>Tersedia</span>'
                 + '<span><i class="date-nearly-full"></i>Hampir penuh</span>'
                 + '<span><i class="date-full"></i>Penuh</span>'
+                + '<span><i class="date-menu-empty"></i>Menu Habis</span>'
                 + '<span><i class="date-closed"></i>Libur</span>';
             dialog.append(legend);
         }
@@ -64,9 +65,9 @@
         label.htmlFor = trigger.id;
         let visibleMonth;
 
-        function monthRange() {
-            const year = visibleMonth.getFullYear();
-            const month = visibleMonth.getMonth();
+        function monthRange(date = visibleMonth) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
             const first = dateValue(new Date(year, month, 1, 12));
             const last = dateValue(new Date(year, month + 1, 0, 12));
             return {
@@ -79,24 +80,27 @@
             if (!isAvailable(value, input.min, input.max)) return false;
             if (!availabilityUrl) return true;
             const state = availability.get(value);
-            return !state || (state.status !== 'full' && state.status !== 'closed');
+            return !state || !['full', 'menu_empty', 'closed'].includes(state.status);
         }
 
-        async function ensureAvailability() {
-            if (!availabilityUrl) return;
-            const { start, end } = monthRange();
+        function ensureAvailability(month = visibleMonth) {
+            if (!availabilityUrl) return Promise.resolve(true);
+            const { start, end } = monthRange(month);
             const key = start.slice(0, 7);
-            if (loadedMonths.has(key) || start > end) return;
-            loadedMonths.add(key);
-            try {
-                const response = await fetch(`${availabilityUrl}?start=${start}&end=${end}`, { cache: 'no-store' });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                (data.dates || []).forEach(day => availability.set(day.tanggal, day));
-            } catch (e) {
-                loadedMonths.delete(key);
-            }
-            paintAvailability();
+            if (start > end) return Promise.resolve(true);
+            if (!loadedMonths.has(key)) loadedMonths.set(key,
+                fetch(`${availabilityUrl}?start=${start}&end=${end}`, { cache: 'no-store' })
+                    .then(async response => {
+                        const data = await response.json();
+                        if (!response.ok || data.error) throw Error(data.error || 'Gagal memuat tanggal');
+                        (data.dates || []).forEach(day => availability.set(day.tanggal, day));
+                        return true;
+                    }).catch(() => {
+                        loadedMonths.delete(key);
+                        return false;
+                    }).finally(paintAvailability)
+            );
+            return loadedMonths.get(key);
         }
 
         function paintAvailability() {
@@ -104,12 +108,19 @@
             dialog.querySelectorAll('[data-day]').forEach(button => {
                 const value = button.dataset.day;
                 const state = availability.get(value);
-                button.classList.remove('date-available', 'date-nearly-full', 'date-full', 'date-closed');
+                button.classList.remove('date-available', 'date-nearly-full', 'date-full', 'date-menu-empty', 'date-closed');
                 if (state) {
-                    button.classList.add('date-' + state.status);
+                    button.classList.add('date-' + state.status.replaceAll('_', '-'));
+                    const statusLabel = state.status === 'closed' ? 'Libur'
+                        : state.status === 'full' ? 'Penuh'
+                        : state.status === 'menu_empty' ? 'Menu Habis'
+                        : state.status === 'nearly_full' ? 'Hampir penuh' : 'Tersedia';
+                    button.setAttribute('aria-label', `${dayFormat.format(dateFromValue(value))}, ${statusLabel}`);
                     button.title = state.status === 'closed' ? 'Tanggal libur'
                         : state.status === 'full'
-                            ? (Number(state.menu_tersedia) === 0 ? 'Tidak ada menu yang memenuhi minimum' : 'Kuota penuh')
+                            ? 'Kuota dapur penuh'
+                            : state.status === 'menu_empty'
+                                ? 'Tidak ada menu yang dapat dipesan'
                             : `Sisa ${state.sisa} porsi`;
                 }
                 button.disabled = !selectable(value);
@@ -158,10 +169,31 @@
             dialog.querySelector('[data-month="-1"]').disabled = Boolean(input.min && days[0].slice(0, 7) <= input.min.slice(0, 7));
             dialog.querySelector('[data-month="1"]').disabled = Boolean(input.max && days[0].slice(0, 7) >= input.max.slice(0, 7));
             const first = dialog.querySelector('.date-first-button');
+            if (availabilityUrl) first.setAttribute('aria-live', 'polite');
             const firstDay = input.min && today < input.min ? input.min : today;
-            first.textContent = firstDay === today ? 'Ke hari ini' : 'Tanggal terawal';
-            first.disabled = !selectable(firstDay);
-            first.onclick = () => select(firstDay);
+            first.textContent = availabilityUrl ? 'Tanggal tersedia' : firstDay === today ? 'Ke hari ini' : 'Tanggal terawal';
+            first.disabled = availabilityUrl ? Boolean(input.max && firstDay > input.max) : !selectable(firstDay);
+            first.onclick = async () => {
+                if (!availabilityUrl) return select(firstDay);
+                first.disabled = true;
+                first.textContent = 'Mencari tanggal...';
+                let failed = false;
+                // shortcut: pencarian dibatasi 12 bulan agar satu klik tidak memuat kalender tanpa batas.
+                for (let offset = 0; offset < 12; offset++) {
+                    const base = dateFromValue(firstDay);
+                    const month = new Date(base.getFullYear(), base.getMonth() + offset, 1, 12);
+                    const { start, end } = monthRange(month);
+                    if (start > end) break;
+                    if (!await ensureAvailability(month)) { failed = true; break; }
+                    if (!dialog.open) return;
+                    const next = [...availability.values()]
+                        .filter(day => day.tanggal >= firstDay && day.tanggal <= end && day.status === 'available')
+                        .sort((a, b) => a.tanggal.localeCompare(b.tanggal))[0];
+                    if (next) return select(next.tanggal);
+                }
+                first.textContent = failed ? 'Gagal memuat. Coba lagi' : 'Tidak ada tanggal tersedia';
+                first.disabled = !failed;
+            };
             paintAvailability();
             ensureAvailability();
         }

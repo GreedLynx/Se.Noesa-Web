@@ -1,5 +1,64 @@
 # Peta Kode
 
+## Identitas, checkout, dan background Pelanggan
+
+- `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari
+  `public/assets/img/logo-icon.png`; posisi dasar kanan atas dan override logo
+  login/register desktop yang besar di tengah hero berada di `public/assets/css/app.css`.
+  Referensi ada di `public/assets/img/desain/`.
+- Pattern animasi login/register memakai `.drift` dengan tile 402 x 260 px;
+  `@keyframes drift` menggeser lapisan dengan `transform` sejauh satu tile.
+- `public/owner/partials/layout.php` menyimpan flag autentikasi untuk memilih prefix
+  aset `assets/` pada halaman auth public root, `../assets/` pada halaman Owner.
+- `public/pelanggan/partials/layout.php` menempatkan `.catalog-policy` sebelum
+  `#checkout-date`. Teks merek UI Pelanggan/shared splash memakai `se.noesa`.
+- `public/pelanggan/assets/customer.css` menempatkan pola 6% pada
+  `.customer-main::after`, di atas latar mobile dan di bawah `.customer-content`.
+  Aset public `public/assets/img/Pattern_Se.Noesa.png` disalin dari
+  `foto/Pattern_Se.Noesa.png`; dekorasi tidak menerima pointer events.
+- `scripts/test-customer-revisions-browser.cjs` memeriksa login/register responsif,
+  identitas, urutan info, background, dan alur pelanggan dengan API fixture.
+
+Splash awal `public/index.php` memakai `public/assets/img/logo-icon.png`; ukuran responsif dan animasi `.logo-pop` berada di `public/assets/css/app.css`.
+
+Logo sidebar Pelanggan memakai `public/assets/img/logo-icon.png`, salinan `foto/Icon_Logo.png`, melalui layout bersama dan tautan ke katalog.
+
+Header sticky semua halaman Pelanggan berada pada `.customer-top` di `public/pelanggan/assets/customer.css`, dengan override mobile di `catalog-mobile.css`. Tombol `.catalog-search-shortcut` di `public/pelanggan/index.php` diamati oleh `IntersectionObserver` dalam `catalogPage()` (`customer.js`); tombol menggulir dan memfokuskan input pencarian asli. Animasi sidebar memakai transform/opacity dan visibility tertunda pada `catalog-mobile.css`; animasi pembukaan kalender semua role ada di `public/assets/css/date-picker.css`. Keduanya menghormati reduced motion.
+
+Sidebar Pelanggan berada di `public/pelanggan/partials/layout.php`, dengan tombol Keluar di bagian bawah. `customer.js` mengatur hamburger, Escape, fokus keyboard, dan latar penutup. Gaya mobile berada di `assets/catalog-mobile.css` dan gaya tombol Keluar di `assets/customer.css`.
+
+Panel tanggal katalog Pelanggan ada di `public/pelanggan/index.php`; `assets/customer.js` hanya menampilkan pesan libur atau kuota bermasalah. Gaya panel ada di `assets/customer.css` dan kalender bersama di `public/assets/css/date-picker.css`.
+Filter kategori katalog (Semua, Makanan, Minuman, Snack) berada di `public/pelanggan/index.php`; lebar pill, grid, dan kartu produk mobile diatur oleh `assets/catalog-mobile.css`.
+
+Katalog menampilkan semua produk termasuk yang kuotanya nol lewat `public/pelanggan/api/catalog.php`. Kartu, detail menu, penanda stok habis, dan dialog Keluar dirender oleh `public/pelanggan/assets/customer.js`; CSS desktop di `assets/customer.css` dan mobile di `assets/catalog-mobile.css`.
+Label `Stok habis` menjadi anak langsung `.menu-card` agar berada di pojok kanan atas kartu pada kedua ukuran layar; gaya pita abu berada di `assets/customer.css`.
+Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa lebar browser ada di `scripts/test-catalog-card-layout.cjs`.
+
+## Jumlah porsi katalog dan keranjang Pelanggan
+
+- `public/pelanggan/assets/customer.js` mengelola indikator sisa porsi, perubahan satu porsi, penghapusan menu, dan jumlah pada payload checkout. `showRemainingStock(product, remaining)` mengatur angka sisa hanya di bawah 50% kuota efektif; wrapper `#detail-stock` diperbarui saat jumlah berubah dan aturan hidden berada di `customer.css`.
+- `scripts/test-customer-cart-quantity.cjs` menguji ambang sisa porsi, batas jumlah, total, penghapusan, dan payload checkout.
+- `scripts/test-quota-ui.cjs` juga memeriksa angka sisa kartu pada batas 50% dan kuota efektif berbeda.
+
+## Error pembayaran Pelanggan
+
+- `public/pelanggan/assets/customer.js`: `api()` meneruskan status HTTP dan hasil respons tidak valid; `openHistoryDetail(id)` menangani kegagalan detail/metode/QRIS, aksi muat ulang, dan submit bukti. Pesan tampil lokal dalam dialog pembayaran, tidak masuk halaman Notifikasi. POST yang berhasil dipisahkan dari refresh yang gagal; hasil belum pasti harus diperiksa melalui muat ulang tanpa auto-retry upload.
+- `public/pelanggan/assets/customer.css`: `.payment-load-error` memberi ruang untuk tombol tutup dialog.
+- `scripts/test-customer-payment-errors.cjs`: regresi pemuatan detail/metode/QRIS, validasi/konflik/sesi/server/jaringan/respons upload, submit ganda, dan upload sukses dengan refresh gagal.
+- `scripts/test-order-cancellation-ui.cjs`: izin upload/pembatalan, tenggat, dan detail foto/tawaran jadwal tetap diuji.
+
+## Navigasi kembali Admin
+
+| Kebutuhan | File |
+|---|---|
+| URL asal semua tautan detail Dashboard/daftar dan redirect pesanan offline | `public/admin/assets/admin.js`, `orderDetailUrl()` |
+| Simpan/pulihkan tab, tinjauan, pencarian, dan tanggal pada URL daftar | `public/admin/assets/admin.js`, `ordersPage()`, `syncOrderUrl()` |
+| Validasi tujuan kembali dan href tanpa JavaScript | `public/admin/order-detail.php` |
+| Klik kembali biasa memakai replace; klik tab baru tetap native | `public/admin/assets/admin.js`, `bindOrderBack()` |
+| Uji konteks asal, debounce, click modifiers, dan validator PHP tanpa DB | `scripts/test-admin-back-navigation.cjs` |
+
+Rencana dan progress: `docs/rencana-navigasi-kembali-admin.md`.
+
 ## Kalender libur operasional
 
 | Kebutuhan | File |
@@ -78,13 +137,18 @@ yang sumber/status sebelumnya belum tercatat. GET hanya membaca data.
 
 | Kebutuhan | File |
 |---|---|
-| Kalender dialog, label tanggal Indonesia, navigasi keyboard, dan batas tanggal input | `public/assets/js/date-picker.js` |
-| Tampilan kartu pengiriman, filter ringkas, dan kalender sage | `public/assets/css/date-picker.css` |
+| Kalender dialog, status/titik warna tanggal, pencarian tanggal tersedia terdekat, navigasi keyboard, dan batas tanggal input | `public/assets/js/date-picker.js` |
+| Tampilan kartu pengiriman, kalender sage, titik status, dan legend | `public/assets/css/date-picker.css` |
 | Grid desktop Owner dan lebar ringkasan kuota | `public/assets/css/app.css` |
 | Kartu tanggal pengiriman pelanggan | `public/pelanggan/index.php` |
 | Pemuatan aset bersama dan filter tanggal Admin/Owner | `public/pelanggan/partials/layout.php`, `public/admin/partials/layout.php`, `public/owner/partials/layout.php` |
 | Sinkronisasi tanggal katalog saat checkout berubah | `public/pelanggan/assets/customer.js` |
-| Uji kalender dan uji browser opsional tanpa dependensi tambahan | `scripts/test-date-picker.cjs` |
+| Uji status kapasitas dan kalender browser dengan API fixture | `scripts/test-calendar-status.php`, `scripts/test-calendar-availability-ui.cjs`, `scripts/test-date-picker.cjs` |
+| Minimum pesanan 4 porsi, validasi produk Admin, dan migration database | `app/daily-quota.php`, `public/pelanggan/assets/customer.js`, `public/admin/products.php`, `public/admin/api/products.php`, `database/migrations/026_minimum_order_4.sql` |
+
+`app/daily-quota.php` adalah sumber kapasitas dapur bersama: floor 80% total
+kuota efektif produk pada tanggal. Kapasitas/sisa ini dipakai checkout, laporan
+Admin/Owner, pesanan offline, katalog, dan status tanggal.
 
 Kalender memperbarui input tanggal yang sudah ada dan memicu event `input`/`change`.
 Browser tanpa dukungan dialog atau JavaScript tetap memakai input tanggal bawaan.
@@ -106,6 +170,7 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Save/reset override tanggal dan rentang inklusif | `public/admin/api/kuota-harian.php` |
 | Form default produk dan override rentang | `public/admin/products.php`, `public/admin/assets/admin.js` |
 | Koneksi PDO, prepared statement, session, role | `app/bootstrap.php` |
+| Sembunyikan argumen fungsi dari stack trace | `app/bootstrap.php`, `zend.exception_ignore_args` |
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
 | Autentikasi bersama dan validasi field registrasi | `public/api/auth.php` |
 | Token dan OTP reset password | `database/migrations/012_password_resets.sql`, `database/migrations/013_password_reset_otps.sql` |

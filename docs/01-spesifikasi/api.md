@@ -1,5 +1,52 @@
 # API
 
+Info pemesanan checkout Pelanggan berada sebelum field tanggal kirim; nama merek
+di UI Pelanggan dan splash ditulis `se.noesa`. Logo login/register dan background
+pola Pelanggan merupakan perubahan presentasi tanpa perubahan endpoint/payload.
+Posisi dan ukuran logo login/register desktop serta animasi pattern hanya diatur oleh CSS.
+Helper layout bersama memakai URL `assets/` untuk halaman autentikasi di public
+root dan `../assets/` untuk halaman Owner agar aset tetap termuat pada subdirektori.
+
+## Pemberitahuan pembayaran dan angka sisa Pelanggan
+
+Kontrak `pelanggan/api/orders.php` (GET detail dan POST `action=upload_proof`) serta
+`pelanggan/api/payment-methods.php` tetap. `customer.js` menampilkan kegagalan
+pemuatan detail/metode/QRIS dan upload langsung di bagian pembayaran, bukan
+menyimpan error ke halaman Notifikasi. Ada aksi muat ulang; POST upload tidak
+diulang otomatis. Keberhasilan upload yang sudah dikonfirmasi server dibedakan
+dari kegagalan refresh. Jika hasil upload belum dapat dipastikan karena koneksi
+atau respons tidak valid, pelanggan harus memuat ulang status sebelum mengirim
+lagi. Sesi berakhir tetap menuju login; konflik status/tenggat memuat ulang izin
+upload dari server.
+
+Kartu katalog menampilkan angka sisa hanya saat `sisa < kuota * 0.5` dengan kuota
+efektif positif dan valid untuk tanggal pilihan. Tepat 50% tidak ditampilkan.
+Detail menerapkan ambang yang sama pada sisa setelah pilihan lokal/keranjang dan
+memperbarui visibilitas saat jumlah berubah. Label Stok habis tetap tersedia;
+aturan ketersediaan, kuota checkout, minimum/maksimum porsi, dan payload tidak berubah.
+
+Header sticky Pelanggan, pintasan pencarian katalog, animasi sidebar mobile, dan animasi kalender bersama hanya mengubah UI; kontrak endpoint serta payload tetap sama. Tombol pintasan pencarian tidak memicu request katalog.
+
+Navigasi Pelanggan memakai sidebar dengan tombol Keluar yang memanggil alur logout bersama. Hamburger mobile hanya mengatur visibilitas sidebar dan fokus keyboard.
+
+Keranjang Pelanggan mengubah jumlah satu porsi per klik. Tambah dibatasi sisa kuota dan total 50 porsi per pesanan. Kurangi berhenti di minimum menu, sekurang-kurangnya 4 porsi atau nilai `min_pesan` produk yang lebih tinggi, dan Hapus mengeluarkan menu dari keranjang. Checkout mengirim `items: [{id, qty}]` dan server memeriksa ulang batas serta kuota.
+
+Bootstrap menyembunyikan argumen fungsi dari stack trace PHP untuk melindungi kredensial. Format respons endpoint tetap sama.
+
+## Query navigasi UI Admin
+
+`admin/order-detail.php?id=...&return_to=...` menerima tujuan kembali opsional.
+Nilainya hanya nama relatif `dashboard.php` atau `orders.php`, dengan query
+`tgl_kirim`; khusus daftar juga `tab`, `review`, `source`, dan `q`. Query di-encode
+sebagai satu nilai `return_to`. URL absolut, direktori lain, parameter asing,
+duplikat/array, tanggal tidak valid, dan tujuan bersarang kembali ke `orders.php`.
+`review` dan `source` hanya dipertahankan untuk tab `dibatalkan`.
+
+Daftar menyimpan tab/tinjauan/sumber/pencarian ke URL tanpa menambah entri history;
+tanggal yang sudah dipilih dipertahankan. Tombol kembali memakai href tervalidasi
+server; klik biasa mengganti entri detail, sedangkan tab baru tetap native.
+Parameter ini bukan parameter API JSON atau POST; kontrak endpoint tidak berubah.
+
 Detail pesanan Admin tetap menampilkan `foto_kiriman` setelah status `selesai`.
 Form upload hanya tampil saat `diproses`; endpoint dan payload tidak berubah.
 
@@ -246,14 +293,28 @@ lama atau kuota produk/override tersimpan.
 
 GET `pelanggan/api/catalog.php` menerima kategori,q,tgl_kirim (default H+7).
 Respons `{items,schedule,tanggal,tanggal_libur,maxKitchen,kitchenUsed,kitchenRemaining}`.
-Field kuota item sama dengan produk Admin. Kuota efektif 0 dikecualikan; produk
-berkuota positif yang habis tetap ditampilkan dengan sisa 0. Tanggal invalid HTTP 422.
+Field kuota item sama dengan produk Admin. `items` memuat semua produk yang cocok
+dengan filter, termasuk yang sisa kuotanya 0 atau di bawah minimum. Produk yang
+tidak dapat dipesan memiliki `available:false`; UI menonaktifkan tombol tambah,
+tetapi detail dan sisa kuota tetap dapat dilihat. `habis` tetap memuat daftar
+produk yang tidak dapat dipesan untuk peringatan. Tanggal invalid HTTP 422.
+Produk dengan sisa 0 diberi label `Stok habis` di pojok kanan atas kartu;
+label berbentuk pita abu dan tidak mengubah respons API atau aturan checkout.
+GET `pelanggan/api/availability.php?start=YYYY-MM-DD&end=YYYY-MM-DD` mengembalikan
+status per tanggal: `available`, `nearly_full`, `full`, `menu_empty`, atau `closed`.
+Kapasitas dapur adalah 80% jumlah kuota efektif tanggal; kalender menandai status
+dengan titik warna di bawah angka. Tombol `Tanggal tersedia` memilih status
+`available` terdekat mulai H+7, hingga 12 bulan pencarian. Kapasitas checkout
+Admin, Owner, Pelanggan, dan pesanan offline memakai snapshot bersama yang sama.
 Saat `tanggal_libur` true, semua kuota dan kapasitas efektif 0; UI memberi
 peringatan tanggal libur.
+Panel tanggal katalog hanya menampilkan label dan pemilih tanggal saat normal;
+pesan libur, kuota penuh/hampir penuh, dan menu habis muncul sesuai respons
+katalog. Kontrak endpoint dan batas H+7 tidak berubah.
 
 POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_kirim,
-dan `items:[{id,qty}]`. Produk berulang digabung; maksimal 500 porsi per produk dan
-minimal max(4,min_pesan). Harga dari database disimpan sebagai snapshot; alamat
+dan `items:[{id,qty}]`. Produk berulang digabung. Total maksimal 50 porsi per pesanan
+dan minimum tiap menu mengikuti `max(4, min_pesan)`. Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota atau tanggal libur mempertahankan pesanan lama dan membatasi
