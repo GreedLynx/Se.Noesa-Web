@@ -289,11 +289,62 @@ async function schedulesPage() {
     };
     loadHolidays();
 }
+function initMobileNavSlider() {
+    const nav = $(".mobile-nav");
+    if (!nav) return;
+    const links = $$("a", nav);
+    const activeIndex = links.findIndex((a) => a.classList.contains("active"));
+    if (activeIndex < 0) return;
+
+    const indicator = document.createElement("span");
+    indicator.className = "mobile-nav-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    nav.prepend(indicator);
+    nav.classList.add("has-slider");
+
+    const moveIndicator = (targetEl, instant = false) => {
+        if (!targetEl || !targetEl.offsetWidth) return;
+        if (instant) indicator.style.transition = "none";
+        indicator.style.width = targetEl.offsetWidth + "px";
+        indicator.style.transform = `translateX(${targetEl.offsetLeft}px)`;
+        if (instant) {
+            indicator.getBoundingClientRect();
+            indicator.style.transition = "";
+        }
+    };
+
+    const prevRaw = sessionStorage.getItem("admin_mobile_nav_prev");
+    const prevIndex = prevRaw !== null ? Number(prevRaw) : -1;
+
+    if (prevIndex >= 0 && prevIndex < links.length && prevIndex !== activeIndex) {
+        moveIndicator(links[prevIndex], true);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => moveIndicator(links[activeIndex], false));
+        });
+    } else {
+        moveIndicator(links[activeIndex], true);
+    }
+
+    sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
+
+    links.forEach((link, idx) => {
+        link.addEventListener("click", () => {
+            sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
+            links.forEach((l) => l.classList.remove("active"));
+            link.classList.add("active");
+            moveIndicator(links[idx], false);
+        });
+    });
+
+    window.addEventListener("resize", () => moveIndicator(links[activeIndex], true));
+}
 function shell() {
     const toggle = $(".menu-toggle");
     toggle?.addEventListener("click", () =>
         $(".sidebar")?.classList.toggle("open"),
     );
+
+    initMobileNavSlider();
 
     $$("[data-logout]").forEach((button) =>
         button.addEventListener("click", async () => {
@@ -1064,9 +1115,10 @@ async function orderDetail() {
         "</b></div></article>";
     const menuItems = Array.isArray(o.menu) ? o.menu : [];
     const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
+    const isItemChecked = (val) => val === true || val === 1 || val === "1" || val === "t";
     const menu = menuItems.map((m) =>
         '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
-        Number(m.item_id) + '" ' + (m.sudah_dicek ? "checked" : "") + " " +
+        Number(m.item_id) + '" ' + (isItemChecked(m.sudah_dicek) ? "checked" : "") + " " +
         (o.status === "diproses" ? "" : "disabled") + "><span><b>" + esc(m.nama) +
         "</b><small>" + Number(m.qty).toLocaleString("id-ID") + " porsi &times; " +
         money(m.harga) + "</small></span><strong>" + money(m.subtotal) + "</strong></label>"
@@ -1262,30 +1314,6 @@ async function orderDetail() {
         };
     });
     actions.hidden = !actionButtons.some(btn => !btn.hidden);
-    $$("[data-item-check]").forEach(
-        (box) =>
-            (box.onchange = async () => {
-                box.disabled = true;
-                try {
-                    await api("api/orders.php", {
-                        method: "POST",
-                        body: {
-                            action: "check_item",
-                            id,
-                            item_id: Number(box.dataset.itemCheck),
-                            checked: box.checked,
-                        },
-                    });
-                    syncCompleteButton();
-                } catch (e) {
-                    box.checked = !box.checked;
-                    toast(e.message);
-                } finally {
-                    box.disabled = false;
-                    syncCompleteButton();
-                }
-            }),
-    );
 
     function syncCompleteButton() {
         const completeBtn = $$("[data-order-action]").find(b => b.dataset.orderAction === "complete");
@@ -1294,7 +1322,40 @@ async function orderDetail() {
         const allChecked = boxes.length > 0 && boxes.every(b => b.checked);
         completeBtn.disabled = !allChecked;
         completeBtn.style.opacity = allChecked ? "1" : "0.5";
+        completeBtn.title = allChecked ? "" : "Centang semua menu terlebih dahulu";
     }
+
+    $$("[data-item-check]").forEach(
+        (box) =>
+            (box.onchange = async () => {
+                const targetChecked = box.checked;
+                syncCompleteButton();
+                box.disabled = true;
+                try {
+                    const res = await api("api/orders.php", {
+                        method: "POST",
+                        body: {
+                            action: "check_item",
+                            id,
+                            item_id: Number(box.dataset.itemCheck),
+                            checked: targetChecked,
+                        },
+                    });
+                    if (typeof res.checked === "boolean") {
+                        box.checked = res.checked;
+                    }
+                } catch (e) {
+                    box.checked = !targetChecked;
+                    toast(e.message);
+                } finally {
+                    box.disabled = false;
+                    syncCompleteButton();
+                }
+            }),
+    );
+
+    syncCompleteButton();
+
     const upload = $("#dispatch-photo-form");
     upload?.addEventListener("submit", async (e) => {
         e.preventDefault();

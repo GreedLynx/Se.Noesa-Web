@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../app/bootstrap.php';
 
-function admin_head(string $title, string $page): void
+function admin_head(string $title, string$page): void
 {
+    $GLOBALS['__admin_current_page'] =$page;
     $u = require_role('admin', false);
 ?>
 <!doctype html>
@@ -70,9 +71,8 @@ function admin_head(string $title, string $page): void
             </header>
             <div class="page-content">
             <?php if (in_array($page, ['products', 'orders', 'dashboard'], true)):
-                    $quotaDay = $_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
-                    if (!is_string($quotaDay)) {
-                            $quotaDay = '';
+                    $quotaDay =$_GET['tgl_kirim'] ?? (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
+                    if (!is_string($quotaDay)) {$quotaDay = '';
                     }
                     ?>
                 <section class="date-panel" aria-label="Filter tanggal kuota">
@@ -90,8 +90,9 @@ function admin_head(string $title, string $page): void
 <?php
 }
 
-function admin_foot(): void
+function admin_foot(?string $page = null): void
 {
+    $page = $page ?? ($GLOBALS['__admin_current_page'] ?? '');
     ?>
             </div>
             <nav class="mobile-nav">
