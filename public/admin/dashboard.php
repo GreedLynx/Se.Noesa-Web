@@ -43,7 +43,7 @@ admin_head('Dashboard', 'dashboard');
         </span>
         <span class="stat-label">
             Perlu
-      validasi
+      verifikasi
         </span>
         <strong class="stat-value" data-stat="pending">
             --
