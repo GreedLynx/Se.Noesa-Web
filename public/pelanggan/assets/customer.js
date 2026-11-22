@@ -50,14 +50,31 @@ function toast(message) {
     setTimeout(() => el.classList.remove('show'), 2600)
 }
 
+function confirmCancelOrder(message) {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'customer-dialog cancel-order-dialog';
+        dialog.setAttribute('aria-labelledby', 'cancel-order-title');
+        dialog.innerHTML = '<div class="cancel-order-icon" aria-hidden="true">!</div><h2 id="cancel-order-title">Batalkan Pesanan</h2><p class="cancel-order-message"></p><div class="cancel-order-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button" data-confirm>Ya, Batalkan</button></div>';
+        dialog.querySelector('.cancel-order-message').textContent = message;
+        const done = value => { dialog.close(); dialog.remove(); resolve(value); };
+        dialog.querySelector('[data-cancel]').onclick = () => done(false);
+        dialog.querySelector('[data-confirm]').onclick = () => done(true);
+        dialog.oncancel = event => { event.preventDefault(); done(false); };
+        dialog.onclick = event => { if (event.target === dialog) done(false); };
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    });
+}
+
 function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
         b.disabled = true;
         const confirmed = await new Promise(resolve => {
             const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog logout-dialog';
-            dialog.setAttribute('aria-labelledby', 'logout-title');
-            dialog.innerHTML = '<p id="logout-title">Yakin ingin keluar dari akun se.noesa?</p><div class="logout-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div>';
+            dialog.className = 'customer-dialog customer-logout-confirm';
+            dialog.setAttribute('aria-labelledby', 'customer-logout-title');
+            dialog.innerHTML = '<h2 id="customer-logout-title">Yakin ingin keluar dari akun se.noesa?</h2><div class="customer-logout-actions"><button type="button" data-cancel>Batal</button><button type="button" data-yes>Ya, Keluar</button></div>';
             const yes = dialog.querySelector('[data-yes]');
             const no = dialog.querySelector('[data-cancel]');
             const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
@@ -519,16 +536,18 @@ function statusProgress(status) {
         + '">' + s + '</span>').join('') + '</div>'
 }
 
-let historyStatus = '', historyTimer, paymentExpiryTimer = null;
+let historyStatus = '', historyTimer, paymentExpiryTimer = null, paymentCountdownInterval = null;
 function historyPage() {
     const dialog = $('#history-dialog');
     $$('[data-close-history]').forEach(b => b.onclick = () => {
         clearTimeout(paymentExpiryTimer);
+        clearInterval(paymentCountdownInterval);
         dialog.close();
     });
     dialog.addEventListener('click', e => {
         if (e.target === dialog) {
             clearTimeout(paymentExpiryTimer);
+            clearInterval(paymentCountdownInterval);
             dialog.close();
         }
     });
@@ -659,9 +678,6 @@ async function openHistoryDetail(id) {
             + (hasProof
                 ? '<div class="proof-display-row">' + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>'
                 : proof)
-            + (d.status === 'menunggu_pembayaran'
-                ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>'
-                : '')
             + proofForm + '</section>'
         : (proof
             ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>'
@@ -710,13 +726,17 @@ async function openHistoryDetail(id) {
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
                     <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
-                    <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
-                        <b>Syarat Pembatalan:</b><br>
+                    <details class="cancellation-terms">
+                        <summary>Syarat Pembatalan</summary>
+                        <div class="cancellation-terms-content">
                         Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
                         Batas akhir pembatalan: <b>${cancelLimitLabel}, akhir hari WIB</b>.<br>
                         Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.<br>
                         ${refundNotice}
-                    </div>
+                        ${contactLine}
+                        ${socialLine}
+                        </div>
+                    </details>
                 </div>
             `;
         } else {
@@ -736,10 +756,15 @@ async function openHistoryDetail(id) {
     const rejectionNotice = d.status === 'ditolak' && d.alasan_penolakan
         ? '<section class="rejection-notice" role="alert"><b>Pesanan ditolak</b><p>Alasan: ' + esc(d.alasan_penolakan) + '</p></section>'
         : '';
+    const hasPaymentWindow = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status)
+        && canUploadProof && d.payment_expires_at;
+    const paymentTimerBox = hasPaymentWindow
+        ? '<section class="payment-countdown" role="status"><b>Batas waktu pembayaran</b><p>Anda dapat mengirim atau mengganti bukti pembayaran selama waktu ini.</p><strong id="payment-countdown" data-expires="' + esc(d.payment_expires_at) + '">Menghitung sisa waktu…</strong><small>Jika belum ada bukti saat waktu habis, pesanan akan dibatalkan otomatis.</small></section>'
+        : '';
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
-        + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
+        + '</h2><div class="status-meta-row"><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
-        + '</p>' + statusProgress(d.status) + rejectionNotice + offerPanel + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
+        + '</p></div>' + statusProgress(d.status) + rejectionNotice + offerPanel + paymentTimerBox + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
@@ -758,15 +783,32 @@ async function openHistoryDetail(id) {
         notice.scrollIntoView?.({block: 'nearest'});
         $('#retry-payment').hidden = !retry;
     };
-    $('#retry-payment').hidden = !paymentError;
     $('#retry-payment').onclick = () => openHistoryDetail(id);
 
     // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
     clearTimeout(paymentExpiryTimer);
-    if (d.status === 'menunggu_pembayaran' && canUploadProof && d.payment_expires_at) {
-        const remainingMs = new Date(d.payment_expires_at).getTime() - Date.now();
+    if (hasPaymentWindow) {
+        const countdown = $('#payment-countdown');
+        const expiresAt = new Date(d.payment_expires_at).getTime();
+        const renderCountdown = () => {
+            const remainingMs = expiresAt - Date.now();
+            if (remainingMs <= 0) {
+                countdown.textContent = 'Waktu pembayaran telah habis';
+                return;
+            }
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            countdown.textContent = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+        };
+        renderCountdown();
+        clearInterval(paymentCountdownInterval);
+        paymentCountdownInterval = setInterval(renderCountdown, 1000);
+        const remainingMs = expiresAt - Date.now();
         if (remainingMs > 0) {
             paymentExpiryTimer = setTimeout(() => {
+                clearInterval(paymentCountdownInterval);
                 if ($('#history-dialog')?.open) {
                     openHistoryDetail(id);
                     loadHistory();
@@ -804,7 +846,7 @@ async function openHistoryDetail(id) {
     const cancelBtn = $('#cancel-order-btn');
     if (cancelBtn) {
         cancelBtn.onclick = async () => {
-            if (!confirm('Batalkan pesanan ini? Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
+            if (!await confirmCancelOrder('Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
             
             cancelBtn.disabled = true;
             cancelBtn.textContent = 'Membatalkan...';

@@ -1,7 +1,10 @@
 <?php
-// Proof stream khusus Admin. File tidak pernah disajikan lewat URL publik langsung.
+// Proof stream khusus Admin dan Owner. File tidak pernah disajikan lewat URL publik langsung.
 require __DIR__ . '/../../../app/bootstrap.php';
-require_role('admin');
+$user = me();
+if (!$user || !in_array($user['role'], ['admin', 'owner'], true)) {
+    json(['error' => 'Unauthorized'], 401);
+}
 require_once __DIR__ . '/../../../app/proof-storage.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json(['error' => 'Method tidak didukung'], 405);
