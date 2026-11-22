@@ -2377,6 +2377,12 @@ body[data-page="detail"] .proof img {
     font: 25px Georgia, serif;
     flex: none;
   }
+  .owner-brand-mark img {
+    display: block;
+    width: 16px;
+    height: 34px;
+    object-fit: contain;
+  }
 
   body[data-page="dashboard"] .nav a:not(.owner-brand),
   body[data-page="orders"] .nav a:not(.owner-brand),

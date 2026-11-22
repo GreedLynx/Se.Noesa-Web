@@ -90,7 +90,7 @@ function nav(string $on)
     ?>
         <nav class="nav">
             <a class="owner-brand" href="dashboard.php">
-                <span class="owner-brand-mark">S</span>
+                <span class="owner-brand-mark"><img src="../assets/img/logo-icon.png" alt=""></span>
                 <span>Se.Noesa<small>OWNER PANEL</small></span>
             </a>
             <span class="pill" id="pill"></span>
