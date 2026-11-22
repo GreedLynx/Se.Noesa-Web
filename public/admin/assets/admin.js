@@ -414,6 +414,34 @@ let offlineProducts = [];
 
 async function loadOrders() {
     const query = encodeURIComponent($("#order-search")?.value || "");
+    if (orderTab === "pembayaran_terlambat") {
+        const [orders, latePayments] = await Promise.all([
+            api("api/orders.php?tab=semua&q="),
+            api("api/late-payments.php"),
+        ]);
+        $("#all-count").textContent = orders.counts.total;
+        $("#payment-count").textContent = orders.counts.payment;
+        $("#pending-count").textContent = orders.counts.pending;
+        $("#processing-count").textContent = orders.counts.processing;
+        $("#completed-count").textContent = orders.counts.completed;
+        $("#rejected-count").textContent = orders.counts.rejected;
+        $("#cancelled-count").textContent = orders.counts.cancelled;
+        $("#cancellation-unreviewed-count").textContent = orders.counts.cancellation_unreviewed;
+        $("#orders-capacity").textContent = (Number(orders.capacity.pakai) || 0).toLocaleString("id-ID") + " / " + (Number(orders.capacity.kapasitas) || 0).toLocaleString("id-ID") + " porsi";
+        const items = latePayments.items || [];
+        $("#late-payment-count").textContent = items.length;
+        const status = value => {
+            const states = { menunggu_verifikasi: ["pending", "Menunggu verifikasi"], terverifikasi: ["verified", "Terverifikasi"], tidak_valid: ["invalid", "Tidak valid"] };
+            const [type, label] = states[value] || ["pending", "-"];
+            return '<span class="late-payment-status ' + type + '">' + label + "</span>";
+        };
+        $("#late-payment-view").innerHTML = items.length
+            ? '<table><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Nominal</th><th>Status</th><th>Waktu transaksi</th><th></th></tr></thead><tbody>' + items.map(item =>
+                '<tr><td><div class="late-payment-meta"><b>' + esc(item.kode) + '</b><small>Pesanan ' + dateLabel(item.tanggal_pesanan, true) + '</small></div></td><td><div class="late-payment-meta"><b>' + esc(item.nama_pemesan) + '</b><small>' + esc(item.telepon_penerima || "-") + '</small></div></td><td><b>' + money(item.nominal_dilaporkan) + '</b></td><td>' + status(item.status_rekonsiliasi) + '</td><td>' + dateLabel(item.waktu_transaksi, true) + '</td><td><a class="button small secondary" href="late-payments.php">Kelola</a></td></tr>'
+            ).join("") + "</tbody></table>"
+            : '<div class="empty-state">Belum ada pembayaran terlambat yang dicatat.</div>';
+        return;
+    }
     const reviewQuery = orderTab === "dibatalkan" && cancellationReview ? "&review=" + cancellationReview : "";
     const sourceQuery = orderTab === "dibatalkan" && filterCancellationSource ? "&source=" + filterCancellationSource : "";
     const d = await api("api/orders.php?tab=" + orderTab + "&q=" + query + reviewQuery + sourceQuery);
@@ -425,6 +453,7 @@ async function loadOrders() {
     document.querySelector("#completed-count").textContent = d.counts.completed;
     $("#rejected-count").textContent = d.counts.rejected;
     $("#cancelled-count").textContent = d.counts.cancelled;
+    $("#late-payment-count").textContent = $("#late-payment-count").textContent || "0";
     $("#cancellation-unreviewed-count").textContent = d.counts.cancellation_unreviewed;
     $("#orders-capacity").textContent =
         (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
@@ -484,7 +513,7 @@ async function loadOrders() {
 
 function ordersPage() {
     const params = new URLSearchParams(location.search);
-    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan"];
+    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan", "pembayaran_terlambat"];
     orderTab = tabs.includes(params.get("tab")) ? params.get("tab") : "semua";
 
     cancellationReview = ["unreviewed", "reviewed"].includes(params.get("review")) ? params.get("review") : "";
@@ -500,6 +529,10 @@ function ordersPage() {
     const syncOrderFilters = () => {
         $$("#order-tabs button").forEach(button => button.classList.toggle("active", button.dataset.tab === orderTab));
         $("#cancellation-review-filter").hidden = orderTab !== "dibatalkan";
+        $(".table-wrap").hidden = orderTab === "pembayaran_terlambat";
+        $("#mobile-orders").hidden = orderTab === "pembayaran_terlambat";
+        $("#late-payment-view").hidden = orderTab !== "pembayaran_terlambat";
+        $("#order-search").closest(".search").hidden = orderTab === "pembayaran_terlambat";
     };
     syncOrderFilters();
 
@@ -901,18 +934,14 @@ async function orderDetail() {
     const o = await api("api/orders.php?id=" + id);
     $("#detail-status").outerHTML = badge(o.status);
     const raw = o.bukti_bayar || "",
-        proofUrl = raw
-            ? /^https?:\/\//.test(raw) || raw.startsWith("/")
-                ? raw
-                : "../" + raw.replace(/^\.\//, "")
-            : "";
+        proofUrl = raw ? "api/proof.php?order=" + Number(id) : "";
     const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
     const proof = raw
         ? '<a class="proof-image" href="' +
             esc(proofUrl) +
             '" target="_blank" rel="noopener"><img src="' +
             esc(proofUrl) +
-            '" alt="Bukti transfer pelanggan"></a>'
+            '" alt="Bukti transfer pelanggan" onerror="this.onerror=null;this.hidden=true;var s=this.nextElementSibling;if(s)s.hidden=false"><span class="proof-empty" hidden>Bukti tidak dapat ditampilkan</span></a>'
         : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
     const proofPending = raw
         ? proof

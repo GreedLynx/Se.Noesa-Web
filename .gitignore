@@ -12,6 +12,14 @@ yarn-debug.log*
 # Uploads Lokal (Agar foto dummy saat testing tidak mengotori Git)
 /public/uploads/*
 !/public/uploads/.gitkeep
+# Aturan deny untuk bukti lama harus tetap ikut version control
+!/public/uploads/payments/
+/public/uploads/payments/*
+!/public/uploads/payments/.htaccess
+!/public/uploads/payments/web.config
+# Bukti pembayaran baru disimpan di luar public dan tidak boleh masuk Git
+/storage/payments/*
+!/storage/payments/.gitkeep
 .opencode/docs/
 .opencode/*
 .codex/*
