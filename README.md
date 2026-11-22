@@ -29,13 +29,36 @@ Aplikasi web manajemen operasional dan pemesanan *pre-order* (PO) makanan untuk 
 
 ## Arsitektur Basis Data
 
-Sistem menggunakan tabel utama PostgreSQL berikut:
+Database menggunakan PostgreSQL bernama `senoesa`. Aplikasi mengaksesnya
+melalui PDO dan prepared statements. Skema mencakup tabel inti dan tabel
+pendukung berikut:
 
-1. `users` — akun pelanggan, admin, dan owner beserta otorisasi peran.
-2. `produk` — katalog menu, harga, dan minimal pesan 4 porsi.
-3. `jadwal_po` — jadwal pembukaan pre-order, status aktif, dan kapasitas jadwal.
-4. `pesanan` — transaksi pemesanan pelanggan.
-5. `detail_pesanan` — rincian produk dalam pesanan.
+| Tabel | Fungsi |
+|---|---|
+| `users` | Akun dan role `pelanggan`, `admin`, atau `owner`. Registrasi publik hanya membuat pelanggan. |
+| `produk` | Katalog, harga, kategori, minimum porsi, dan kuota harian default. Minimum dasar 4 porsi. |
+| `jadwal_po` | Referensi jadwal PO yang masih dipakai pesanan. Kalender operasional/libur menggunakan tabel tersendiri. |
+| `kuota_harian` | Override kuota produk untuk tanggal tertentu; jika tidak ada override, sistem memakai default produk. |
+| `tanggal_libur_operasional` | Rentang tanggal libur inklusif. Kuota efektif pada rentang ini menjadi 0 tanpa menghapus kuota tersimpan. |
+| `pesanan` | Header pesanan, pemesan, alamat/pengiriman, total, pembayaran, status, sumber online/offline, dan metadata pembatalan. Kolom lama `pax` tetap dipakai sampai migrasi disetujui. |
+| `detail_pesanan` | Item produk, jumlah porsi, snapshot harga, dan checklist dispatch. |
+| `pesanan_foto_kiriman` | Galeri foto pengiriman; kolom foto lama dipertahankan untuk kompatibilitas. |
+| `penawaran_jadwal_ulang` | Satu tawaran tanggal pengganti per pesanan beserta alasan, status, dan tenggat jawaban. |
+| `pemberitahuan_perubahan_menu*` | Pemberitahuan perubahan menu, pilihan respons, snapshot item/harga, audit konfirmasi, dan tindak lanjut. |
+| `password_resets`, `password_reset_otps` | Token dan OTP pemulihan akun. Pengaktifan email tetap mengikuti keputusan tim tentang PIC dan metode. |
+
+VIEW PostgreSQL menyediakan agregat kuota dan laporan, termasuk
+`v_kuota_harian`, `v_rekap_produksi_harian`, dan `v_pembatalan_pesanan`.
+Kapasitas dapur per tanggal adalah 80% dari total kuota produk efektif.
+Pesanan berstatus `ditolak` atau `dibatalkan` tidak memakai kuota.
+
+Perubahan skema dilakukan melalui file baru di `database/migrations/` dan
+dicatat oleh `scripts/migrate.php`. Nama file migrasi memiliki beberapa nomor
+seri yang sama dari pengembangan paralel; jangan menyimpulkan bahwa nomor
+tertinggi saja berarti seluruh migrasi sebelumnya sudah diterapkan. Gunakan
+ledger migrasi dan periksa urutan/prasyarat sebelum deploy. `database/schema.sql`
+adalah initializer untuk database kosong dan melakukan `DROP TABLE`; jangan
+jalankan pada database berisi data.
 
 ## Aturan Git dan Branching Strategy
 
