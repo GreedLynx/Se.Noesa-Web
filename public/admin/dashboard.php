@@ -15,7 +15,7 @@ admin_head('Dashboard', 'dashboard');
         </p>
     </div>
     <a class="button primary" href="orders.php">
-        Buka antrean
+        Lihat antrean
         <span>
             &rarr;
         </span>
