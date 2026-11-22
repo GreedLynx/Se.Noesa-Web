@@ -494,19 +494,19 @@ async function loadOrders() {
         " / " +
         (Number(d.capacity.kapasitas) || 0).toLocaleString("id-ID") +
         " porsi";
-    const rows = d.items
+const rows = d.items
         .map(
             (o) =>
-                '<tr><td><small class="order-code">' +
+                '<tr><td><b class="order-user">' +
+                esc(o.nama_pemesan) +
+                "</b><small>" +
+                esc(o.keterangan || "") +
+                '</small></td><td><small class="order-code">' +
                 esc(o.kode) +
                 "</small>" +
                 (o.sumber === "offline" ? '<span class="tag soft order-source">Offline</span>' : "") +
                 "<small>" +
                 (o.status_updated_at ? "Terakhir diubah " + dateLabel(o.status_updated_at, true) : "Dibuat pada " + dateLabel(o.created_at, true)) +
-                '</small></td><td><b class="order-user">' +
-                esc(o.nama_pemesan) +
-                "</b><small>" +
-                esc(o.keterangan || "") +
                 "</small></td><td>" +
                 Number(o.pax || 0).toLocaleString("id-ID") +
                 " porsi</td><td><b>" +
