@@ -1131,6 +1131,9 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .btn-logout:hover { background: var(--g); color: #fff; }
 
 @media (max-width: 480px) {
+  body[data-page="detail"] .nav {
+    display: none;
+  }
   body { justify-content: stretch; }
   .app:not(.auth):not(.splash) { width: 100%; max-width: none; min-height: 100dvh; padding: max(12px, env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom)); }
   .top { gap: 8px; padding: 5px 0 12px; }
@@ -1191,7 +1194,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   body[data-page="dashboard"] .nav,
   body[data-page="orders"] .nav,
   body[data-page="products"] .nav,
-  body[data-page="notifications"] .nav {
+  body[data-page="notifications"] .nav,
+  body[data-page="detail"] .nav {
     inset: 0 auto 0 0;
     transform: none;
     width: 224px;
@@ -1210,7 +1214,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   body[data-page="dashboard"] .nav a,
   body[data-page="orders"] .nav a,
   body[data-page="products"] .nav a,
-  body[data-page="notifications"] .nav a {
+  body[data-page="notifications"] .nav a,
+  body[data-page="detail"] .nav a {
     flex-direction: row;
     justify-content: flex-start;
     gap: 13px;
@@ -1221,7 +1226,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   body[data-page="dashboard"] .pill,
   body[data-page="orders"] .pill,
   body[data-page="products"] .pill,
-  body[data-page="notifications"] .pill {
+  body[data-page="notifications"] .pill,
+  body[data-page="detail"] .pill {
     top: 38px;
     left: 12px;
     height: 52px;
@@ -1751,6 +1757,11 @@ body[data-page="payments"] .nav { max-width: 430px; }
   gap: 10px;
   margin: 14px 0;
 }
+.top .btn-ic svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
+}
 .owner-back-link {
   color: var(--br);
   font-size: 13px;
@@ -1782,6 +1793,18 @@ body[data-page="payments"] .nav { max-width: 430px; }
 }
 .proof {
   display: block;
+}
+body[data-page="detail"] .proof {
+  max-height: min(70vh, 620px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+body[data-page="detail"] .proof img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
 }
 .owner-rejection {
   border-color: #efcfca;

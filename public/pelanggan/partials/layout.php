@@ -18,6 +18,7 @@ function customer_head(string $title, string $page): array
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title) ?> · se.noesa</title>
+    <link rel="icon" type="image/png" sizes="16x16 32x32" href="../assets/img/logo-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">

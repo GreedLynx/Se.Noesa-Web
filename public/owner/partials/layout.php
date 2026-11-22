@@ -19,6 +19,7 @@ function head(string $title, string $page, bool $auth = false)
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title) ?> · <?= $auth ? 'se.noesa' : 'Se.Noesa' ?></title>
+    <link rel="icon" type="image/png" sizes="16x16 32x32" href="<?= $auth ? 'assets/img/logo-icon.png' : '../assets/img/logo-icon.png' ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="<?= $assetPrefix ?>css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
@@ -38,10 +39,11 @@ function topbar(string $title, bool $back = false)
         <header class="top rise">
             <div class="row">
                 <?php if ($back): ?>
-                    <a class="btn-ic" href="orders.php" aria-label="Kembali">‹</a>
+                    <a class="btn-ic" href="orders.php" aria-label="Kembali ke pesanan">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6M9 12h12" /></svg>
+                    </a>
                 <?php endif; ?>
                 <div>
-                    <small>Owner</small>
                     <h1><?= $title ?></h1>
                 </div>
             </div>

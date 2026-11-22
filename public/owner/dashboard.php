@@ -9,8 +9,8 @@ topbar('Dashboard');
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 
 <section class="rise">
-    <h2 class="greet">Selamat Pagi, <span id="nama"><?= ucfirst(me()['username']) ?></span></h2>
-    <p class="sub">Pantauan performa operasional &amp; kapasitas dapur Se.Noesa.</p>
+    <h2 class="greet">Selamat Pagi, <span id="nama">Owner</span></h2>
+    <p class="sub">Pantauan performa operasional &amp; kapasitas dapur se.noesa.</p>
 </section>
 
 <section class="hero-card rise">
@@ -21,7 +21,7 @@ topbar('Dashboard');
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
     <p class="ok">✓ Pesanan Lunas</p>
     <div class="stats">
-        <div><small>TIKET RATA-RATA</small><b id="tiket">-</b></div>
+        <div><small>PENDAPATAN /Hari</small><b id="tiket">-</b></div>
         <div><small id="l2">KUANTITAS PAX</small><b id="items">-</b></div>
         <div><small>STATUS LUNAS</small><b>100% Lunas</b></div>
     </div>

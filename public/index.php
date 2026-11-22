@@ -9,6 +9,7 @@ $go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/inde
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>se.noesa</title>
+    <link rel="icon" type="image/png" sizes="16x16 32x32" href="assets/img/logo-icon.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap">
     <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/assets/css/app.css') ?>">
 </head>

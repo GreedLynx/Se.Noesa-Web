@@ -14,6 +14,7 @@ function admin_head(string $title, string $page): void
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | Se.Noesa Admin</title>
+    <link rel="icon" type="image/png" sizes="16x16 32x32" href="../assets/img/logo-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/admin.css?v=<?= filemtime(__DIR__ . '/../assets/admin.css') ?>">
@@ -96,6 +97,7 @@ function admin_head(string $title, string $page): void
 
 function admin_foot(): void
 {
+    $page = $GLOBALS['admin_page'] ?? '';
     ?>
             </div>
             <nav class="mobile-nav">

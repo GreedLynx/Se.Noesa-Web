@@ -514,7 +514,7 @@ const PAGES = {
                     offlineProducts = data.items;
                     $("#offline-menu-capacity").textContent = `Sisa dapur ${Number(data.kitchenRemaining).toLocaleString("id-ID")} porsi`;
                     menuList.innerHTML = offlineProducts.length ? offlineProducts.map((product) =>
-                        `<label class="owner-menu-item"><span><b>${esc(product.nama)}</b><small>${money(product.harga)} Â· sisa ${Number(product.sisa).toLocaleString("id-ID")} Â· minimal ${Number(product.min_pesan)} porsi</small></span>
+                        `<label class="owner-menu-item"><span><b>${esc(product.nama)}</b><small>${money(product.harga)} Â· sisa ${Number(product.sisa).toLocaleString("id-ID")} · minimal ${Number(product.min_pesan)} porsi</small></span>
                         <input type="number" min="0" max="${Number(product.sisa)}" value="0" data-offline-qty data-product-id="${Number(product.id)}" data-price="${Number(product.harga)}" aria-label="Jumlah ${esc(product.nama)}"${Number(product.sisa) <= 0 ? " disabled" : ""}></label>`
                     ).join("") : '<p class="owner-muted">Belum ada menu yang tersedia.</p>';
                     updateTotal();
@@ -588,13 +588,12 @@ const PAGES = {
             return;
         }
         const imageUrl = (value) => /^(https?:\/\/|\/)/i.test(value) ? value : "../" + String(value).replace(/^\.\//, "");
-        const proofUrl = (path) => path ? imageUrl(path) : "";
+        const proofUrl = (path) => path ? `../admin/api/proof.php?order=${id}` : "";
         try {
             const order = await api("api/orders.php?id=" + id);
-            $("#detail-status").outerHTML = statusBadge(order.status);
             const rawProof = order.bukti_bayar || "";
         const proof = rawProof
-            ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan" onerror="this.src='../assets/img/produk/NK-01.png'"></a>`
+            ? `<a class="proof" href="${esc(proofUrl(rawProof))}" target="_blank" rel="noopener"><img src="${esc(proofUrl(rawProof))}" alt="Bukti transfer pelanggan" onerror="this.onerror=null;this.hidden=true;this.parentElement.insertAdjacentHTML('beforeend','<span class=&quot;owner-proof-empty&quot;>Bukti tidak dapat ditampilkan</span>')"></a>`
             : '<div class="owner-proof-empty">Belum ada bukti pembayaran</div>';
         const receipt = `<div class="dbox"><b>Data pembayaran</b>
             <div class="jd"><span>Nama pengirim</span><b>${esc(order.nama_pembayar || "-")}</b></div>
@@ -775,13 +774,13 @@ const PAGES = {
                 `api/products.php?kategori=${k}&q=${encodeURIComponent($("#q").value)}`,
             );
             $("#cs").textContent = d.count.semua;
+            const quotaDate = $('#quota-date')?.value || '';
+            const quotaLabel = quotaDate ? new Date(quotaDate + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta'
+            }) : '';
             if ($('#quota-summary')) {
-                const quotaDate = $('#quota-date')?.value || '';
-                const quotaLabel = quotaDate ? new Date(quotaDate + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
-                    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
-                }) : '';
-                $('#quota-summary').textContent = (quotaLabel ? 'Tanggal ' + quotaLabel + ' Â· ' : '')
-                    + 'Kapasitas dapur ' + d.maxKitchen + ' porsi Â· Terpakai ' + d.kitchenUsed + ' porsi Â· Sisa ' + d.kitchenRemaining + ' porsi';
+                $('#quota-summary').textContent = (quotaLabel ? 'Tanggal ' + quotaLabel + ' · ' : '')
+                    + 'Kapasitas dapur ' + d.maxKitchen + ' porsi · Terpakai ' + d.kitchenUsed + ' porsi · Sisa ' + d.kitchenRemaining + ' porsi';
             }
             $("#ck").textContent = d.count.kritis;
             $("#plist").innerHTML =
@@ -790,7 +789,7 @@ const PAGES = {
                         const pct = p.kuota>0?(p.sisa / p.kuota) * 100:0;
                         const img = p.gambar ? `<img src="../${p.gambar}" alt="${p.nama}" onerror="this.src='../assets/img/produk/NK-01.png'">` : '<img src="../assets/img/produk/NK-01.png" alt="placeholder">';
                         const unavailable = d.tanggal_libur ? "libur" : p.sisa <= 0 ? "habis" : "";
-                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} Â· ${p.sisa}/${p.kuota} porsi${unavailable ? " Â· " + unavailable : ""}</small><div class="meter${!d.tanggal_libur && pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
+                        return `<div class="pr" style="--i:${i}">${img}<span class="kode">${p.kode}</span><div><b>${p.nama}</b><small>${rp(p.harga)} · Kuota ${quotaLabel || 'tanggal pilihan'}: ${p.sisa} dari ${p.kuota} porsi${unavailable ? " · " + unavailable : ""}</small><div class="meter${!d.tanggal_libur && pct <= 20 ? " low" : ""}"><i data-w="${pct}"></i></div></div></div>`;
                     })
                     .join("") || '<p class="empty">Produk tidak ditemukan</p>';
             requestAnimationFrame(() =>
