@@ -608,17 +608,10 @@ async function openHistoryDetail(id) {
             + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
         ).join('') + '</section>'
         : '';
-    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
-        + '" alt="Bukti pembayaran">' : '';
-    let paymentData, paymentError = false;
-    try {
-        paymentData = await api('api/payment-methods.php');
-        if (!Array.isArray(paymentData.items)) throw Error('Metode tidak valid');
-    } catch (err) {
-        paymentError = true;
-        paymentData = {items: []};
-    }
-    const qris = paymentError ? '<section class="detail-section"><h3>Pembayaran</h3><p class="form-error" role="alert">Metode pembayaran belum dapat dimuat. Periksa koneksi lalu muat ulang detail.</p></section>' : paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
+    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="api/proof.php?order=' + Number(d.id)
+        + '" alt="Bukti pembayaran" onerror="this.onerror=null;this.alt=\'Bukti tidak dapat ditampilkan\';this.style.opacity=\'.4\'">' : '';
+    const paymentData = await api('api/payment-methods.php');
+    const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
         return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'
             + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><p class="form-error" role="alert" hidden>Gambar pembayaran belum dapat dimuat. Muat ulang detail atau hubungi Admin sebelum membayar.</p></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
@@ -629,11 +622,30 @@ async function openHistoryDetail(id) {
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
 
+    const adminWhatsapp = (window.snoesaContact && window.snoesaContact.adminWhatsapp || '').trim();
+    const socialUrl = value => {
+        try {
+            const url = new URL(String(value || ''));
+            return url.protocol === 'https:' ? url.href : '';
+        } catch (_) { return ''; }
+    };
+    const whatsappDigits = adminWhatsapp.replace(/\D/g, '');
+    const contactLine = adminWhatsapp && whatsappDigits
+        ? `<a class="admin-wa-text" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">Hubungi Admin via WhatsApp <span>${esc(adminWhatsapp)}</span></a>`
+        : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
+    const socialChannels = [
+        ['Instagram', socialUrl(window.snoesaContact && window.snoesaContact.instagram), '◎'],
+        ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '♪'],
+    ].filter(([, url]) => url);
+    const socialLine = socialChannels.length
+        ? `<div class="admin-socials"><small>Ikuti info Se.Noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} Se.Noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
+        : '';
     const expiredAdminContact = `
         <div class="payment-expired-notice">
             <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
-            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan segera hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
-            <p class="admin-wa-text">Nomor WA Admin: 08123456789</p>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            ${contactLine}
+            ${socialLine}
         </div>
     `;
 

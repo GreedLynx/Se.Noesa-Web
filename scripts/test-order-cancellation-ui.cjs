@@ -17,6 +17,7 @@ const context = {
     setTimeout: () => 0,
     clearTimeout() {},
     paymentExpiryTimer: null,
+    window: { snoesaContact: { adminWhatsapp: '' } },
     Date,
 };
 vm.createContext(context);

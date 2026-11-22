@@ -150,6 +150,7 @@ const fs = require("node:fs"),
       textContent: "",
       dataset: {},
       classList: { remove() {}, add() {}, toggle() {} },
+      dataset: {},
       querySelectorAll: () => [],
     };
   }
@@ -162,8 +163,10 @@ const fs = require("node:fs"),
       addEventListener() {},
       getElementById() { return null; },
       querySelector: (s) => (elements[s] ??= element()),
-      querySelectorAll: s => s === '[data-product]' && testCard ? [testCard] : [],
+      querySelectorAll: () => [],
+      addEventListener() {},
     },
+    window: { snoesaContact: { adminWhatsapp: "" } },
     requestAnimationFrame: (fn) => fn(),
   };
   vm.createContext(context);

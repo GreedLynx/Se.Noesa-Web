@@ -60,6 +60,10 @@ admin_head('Daftar Pesanan', 'orders');
             <button data-tab="dibatalkan">
                 Dibatalkan <b id="cancelled-count">0</b>
             </button>
+            <button class="late-payment-tab" type="button" data-tab="pembayaran_terlambat" title="Lihat daftar pembayaran terlambat">
+                Pembayaran terlambat
+                <b id="late-payment-count">0</b>
+            </button>
         </div>
         <label class="search">
             <span>
@@ -113,6 +117,7 @@ admin_head('Daftar Pesanan', 'orders');
     </div>
     <div class="mobile-order-list" id="mobile-orders">
     </div>
+    <div class="late-payment-view" id="late-payment-view" hidden></div>
 </section>
 <dialog id="offline-order-dialog" class="product-dialog offline-order-dialog">
     <form id="offline-order-form">

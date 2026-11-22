@@ -2057,6 +2057,9 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
 }
 
 .payment-expired-notice .admin-wa-text {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
     margin-top: 8px;
     padding: 8px 10px;
     background: #fff;
@@ -2066,6 +2069,9 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
     font-size: 12px;
     color: var(--green-dark);
 }
-
-#detail-dialog .product-facts > [hidden] { display:none; }
-.payment-load-error { padding-top:30px; }
+.payment-expired-notice a.admin-wa-text:hover {
+    border-color: var(--green-dark);
+    background: var(--green-pale);
+}
+.payment-expired-notice .admin-wa-text span { font-size: 11px; }
+.admin-socials { margin-top: 10px; }.admin-socials > small { color: var(--muted); font-size: 10px; }.admin-socials > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 5px; }.admin-socials a { display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #e7d4ae; border-radius: 99px; background: #fff; color: var(--brown); font-size: 10px; font-weight: 700; }.admin-socials a:hover { border-color: var(--green); color: var(--green-dark); }.admin-socials i { font-size: 13px; font-style: normal; }

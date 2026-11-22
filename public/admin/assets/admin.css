@@ -788,6 +788,22 @@ td small.order-code {
   font-size: 11px;
   white-space: nowrap;
 }
+.tabs .late-payment-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--green-dark);
+  background: var(--green-pale);
+  font-weight: 600;
+}
+.tabs .late-payment-tab:hover,
+.tabs .late-payment-tab:focus-visible {
+  background: #fff;
+  box-shadow: 0 1px 4px #0001;
+  outline: none;
+}
+.tabs .late-payment-tab b { color:inherit; }
+.late-payment-view { overflow:auto; }.late-payment-view table { min-width:680px; }.late-payment-view td { vertical-align:middle; }.late-payment-view .late-payment-meta { display:grid; gap:3px; }.late-payment-view .late-payment-meta small { color:var(--muted); font-size:10px; }.late-payment-view .late-payment-status { display:inline-flex; align-items:center; width:max-content; padding:5px 8px; border-radius:99px; font-size:10px; font-weight:700; }.late-payment-status.pending { color:var(--amber); background:#f7f0df; }.late-payment-status.verified { color:var(--green-dark); background:var(--green-pale); }.late-payment-status.invalid { color:var(--red); background:#f8e9e7; }
 .tabs button.active,
 .filter-chips button.active {
   background: #fff;
@@ -811,6 +827,35 @@ td small.order-code {
   min-width: 230px;
   color: var(--brown);
 }
+.late-page-head { display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.late-page-copy { max-width:600px; }
+.late-page-copy h2 { margin-bottom:7px; }
+.late-process { display:flex; align-items:center; gap:11px; min-width:270px; padding:13px 16px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(135deg,#fff 0%,var(--green-pale) 100%); }
+.late-process-icon { display:grid; place-items:center; flex:0 0 32px; width:32px; height:32px; border-radius:50%; background:var(--green-dark); color:#fff; font-weight:700; }
+.late-process b,.late-process small { display:block; }.late-process b { font-size:12px; }.late-process small { margin-top:3px; font-size:10px; color:var(--muted); }
+.late-record-panel { overflow:hidden; }.late-record-panel::before { content:""; display:block; height:4px; margin:-20px -20px 19px; background:linear-gradient(90deg,var(--green-dark),#a9bfa9 55%,transparent); }
+.late-panel-heading { align-items:flex-start; }.late-panel-heading h2 { margin-top:3px; }.late-panel-heading p { margin:5px 0 0; max-width:580px; font-size:12px; line-height:1.5; color:var(--muted); }
+.late-section-kicker { color:var(--green); font-size:10px; font-weight:700; letter-spacing:1.1px; }
+.late-form { display:grid; gap:16px; width:100%; min-width:0; }
+.late-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 16px; max-width:900px; }
+.late-form label { display:grid; gap:6px; font-size:12px; font-weight:600; min-width:0; color:var(--ink); }
+.late-form label > span { font-weight:400; color:var(--muted); }.late-form label small { font-weight:400; color:var(--muted); font-size:10px; line-height:1.35; }
+.late-field-wide { grid-column:1 / -1; }.late-form input,.late-form select,.late-form textarea { width:100%; min-width:0; max-width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:9px; outline-color:var(--green); background:#fcfdfb; }
+.late-form textarea { resize:vertical; }.late-form input[type="file"] { padding:8px; background:var(--green-pale); border-style:dashed; cursor:pointer; }
+.late-form-footer { display:flex; align-items:center; justify-content:space-between; gap:18px; max-width:900px; padding-top:14px; border-top:1px solid var(--line); }.late-form-footer p { margin:0; max-width:470px; color:var(--muted); font-size:11px; line-height:1.45; }.late-form-footer button { min-height:44px; white-space:nowrap; }.late-form-footer button span { margin-left:6px; font-size:16px; }
+.late-list { overflow:auto; max-width:100%; }
+.late-list table { min-width:520px; }
+.late-list .late-empty { display:grid; place-items:center; min-height:165px; text-align:center; border:1px dashed var(--line); border-radius:14px; background:linear-gradient(135deg,#fff,var(--green-pale)); color:var(--muted); }.late-empty strong { display:block; margin-bottom:5px; color:var(--ink); font-size:13px; }.late-empty span { display:grid; place-items:center; width:38px; height:38px; margin:0 auto 9px; border-radius:50%; background:#fff; color:var(--green-dark); font-size:18px; }
+.late-status { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border-radius:99px; white-space:nowrap; font-size:10px; font-weight:700; }.late-status::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }.late-status.pending { color:var(--amber); background:#f7f0df; }.late-status.verified { color:var(--green-dark); background:var(--green-pale); }.late-status.invalid { color:var(--red); background:#f8e9e7; }
+.late-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); gap:10px; }
+.late-grid > div { display:grid; gap:3px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; min-width:0; overflow-wrap:anywhere; }
+.late-grid b { font-size:10px; color:var(--muted); }
+.late-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.page-head .muted, .late-form label { overflow-wrap:anywhere; }
+.panel-heading h2 { min-width:0; overflow-wrap:anywhere; }
+
+@media (max-width: 700px) { .late-page-head { align-items:stretch; flex-direction:column; gap:13px; }.late-process { min-width:0; }.late-form-grid { grid-template-columns:1fr; gap:12px; }.late-field-wide { grid-column:auto; }.late-form-footer { align-items:stretch; flex-direction:column; gap:12px; }.late-form-footer button { width:100%; }.late-panel-heading { gap:10px; }.late-panel-heading > .button { flex:0 0 auto; } }
+
 .search span {
   font-size: 20px;
   display: inline-flex;
@@ -1453,6 +1498,8 @@ td small {
     position: relative;
     z-index: 1;
     display: flex;
+    flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -1480,6 +1527,13 @@ td small {
   }
   .mobile-nav span {
     font-size: 9px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    .mobile-nav span { font-size: 8px; }
   }
   .top-avatar {
     width: 34px;

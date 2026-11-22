@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../../app/menu-notifications.php';
 if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403);
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
+require_once __DIR__ . '/../../../app/proof-storage.php';
 
 // Fitur reschedule ditambahkan oleh migrasi 022. Jika tabel belum terpasang
 // pada database target, endpoint tetap harus menyajikan daftar/detail pesanan
@@ -195,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
         if (!$id || $id < 1) json(['error' => 'ID pesanan tidak valid'], 422);
         // SELECT memastikan pesanan milik pelanggan yang sedang login sebelum menerima bukti pembayaran.
-        $order = q('SELECT id, status FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
+        $order = q('SELECT id, status, bukti_bayar FROM pesanan WHERE id = ? AND user_id = ?', [$id, $customer['id']])->fetch();
         if (!$order) json(['error' => 'Pesanan tidak ditemukan'], 404);
         if (!in_array($order['status'], ['menunggu_pembayaran', 'menunggu_validasi'], true)) {
             if ($order['status'] === 'dibatalkan') {
@@ -209,30 +210,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $file = $_FILES['proof'] ?? null;
         if (!$file) json(['error' => 'Pilih file bukti pembayaran terlebih dahulu'], 422);
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            json(['error' => in_array($file['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'Ukuran gambar melewati batas PHP. Maksimal 2 MB.' : 'File bukti tidak berhasil diunggah.'], 422);
-        }
-        if ($file['size'] > 2 * 1024 * 1024) json(['error' => 'Ukuran gambar maksimal 2 MB'], 422);
 
         $payerName = trim($_POST['nama_pembayar'] ?? '');
         if ($payerName === '' || strlen($payerName) > 100) json(['error' => 'Nama pembayar wajib diisi (maksimal 100 karakter)'], 422);
 
-        $image = @getimagesize($file['tmp_name']);
-        $types = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-        $mime = $image['mime'] ?? '';
-        if (!isset($types[$mime])) json(['error' => 'Gunakan gambar JPG, PNG, atau WebP'], 422);
-
-        $folder = __DIR__ . '/../../uploads/payments';
-        if (!is_dir($folder) && !mkdir($folder, 0775, true)) json(['error' => 'Folder upload tidak dapat dibuat'], 500);
-
-        $filename = 'payment-' . $id . '-' . bin2hex(random_bytes(12)) . '.' . $types[$mime];
-        if (!move_uploaded_file($file['tmp_name'], $folder . '/' . $filename)) json(['error' => 'Gagal menyimpan gambar'], 500);
-
+        $storedPath = null;
+        $oldPath = (string) ($order['bukti_bayar'] ?? '');
         try {
+            $storedPath = proof_store($file, 'payment-' . $id);
             $db = db();
             $db->beginTransaction();
             // Pisahkan lock dan mutasi agar deadline memakai waktu setelah menunggu lock.
-            q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            $locked = q('SELECT id FROM pesanan WHERE id = ? AND user_id = ? FOR UPDATE', [$id, $customer['id']])->fetch();
+            if (!$locked) throw new DomainException('Pesanan tidak ditemukan');
             if ((bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
                 throw new DomainException('Tawaran jadwal sedang menunggu respons');
             }
@@ -245,19 +235,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     status = 'menunggu_validasi' OR
                     (status = 'menunggu_pembayaran' AND clock_timestamp() < created_at + interval '1 hour')
                 )",
-                ['uploads/payments/' . $filename, $payerName, $id, $customer['id']]
+                [$storedPath, $payerName, $id, $customer['id']]
             )->rowCount();
+            if (!$affected) throw new DomainException('Status pesanan sudah berubah atau tenggat pembayaran satu jam telah berakhir');
             $db->commit();
         } catch (Throwable $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
-            @unlink($folder . '/' . $filename);
-            json(['error' => $e instanceof DomainException ? $e->getMessage() : 'Gagal menyimpan bukti pembayaran'], $e instanceof DomainException ? 409 : 500);
+            if ($storedPath !== null) proof_delete_if_unreferenced($storedPath);
+            json(['error' => $e->getMessage()], $e instanceof DomainException ? 409 : 500);
         }
-        if (!$affected) {
-            @unlink($folder . '/' . $filename);
-            json(['error' => 'Status pesanan sudah berubah atau tenggat pembayaran satu jam telah berakhir'], 409);
-        }
-        json(['ok' => true, 'bukti_bayar' => 'uploads/payments/' . $filename]);
+        if ($oldPath !== '' && $oldPath !== $storedPath) proof_delete_if_unreferenced($oldPath);
+        json(['ok' => true, 'bukti_bayar' => $storedPath]);
     }
 
     $name = trim($request['nama_pemesan'] ?? '');
