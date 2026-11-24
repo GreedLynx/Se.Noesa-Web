@@ -19,7 +19,7 @@ customer_head('Notifikasi Menu', 'notifications'); ?>
     <button type="button" class="customer-button secondary mnc-more" id="mnc-more" hidden>Muat lebih banyak</button>
 </div>
 <dialog id="mnc-detail-dialog" class="customer-dialog mnc-dialog" aria-label="Detail notifikasi menu">
-    <button class="dialog-close" type="button" data-mnc-close aria-label="Tutup">&times;</button>
+    <button class="dialog-close" type="button" data-mnc-close aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
     <div id="mnc-detail"></div>
 </dialog>
 <?php customer_foot(); ?>

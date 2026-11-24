@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Uji ikon Se.Noesa</title>
+  <link rel="stylesheet" href="icons.css">
+  <style>
+    :root { color-scheme:light; font-family:system-ui,sans-serif; color:#2d3a33; background:#edf3ed; }
+    * { box-sizing:border-box; }
+    body { max-width:1200px; margin:0 auto; padding:24px; }
+    h1 { margin:0 0 6px; font-size:28px; }
+    p { margin:0 0 20px; color:#5c705e; }
+    .roles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .role { min-height:300px; padding:20px; border:1px solid #d2e1d3; border-radius:18px; background:#fff; }
+    .role.customer { background:#516b55; color:#fff; }
+    .role h2 { margin:0 0 18px; font-size:19px; }
+    .nav-item { display:flex; align-items:center; gap:12px; min-height:42px; margin:4px 0; padding:8px 10px; border-radius:10px; font-size:14px; }
+    .nav-item .ui-icon { font-size:20px; }
+    .customer .nav-item .ui-icon { font-size:24px; }
+    .nav-item.active { background:#d6e5d7; color:#5a3b24; font-weight:700; }
+    .role:not(.customer) .nav-item.active { background:#e5eee5; color:#3b513e; }
+    .samples { display:flex; flex-wrap:wrap; gap:12px; margin:20px 0; }
+    .sample { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:#fff; font-size:14px; }
+    .sample .ui-icon { font-size:20px; }
+    .sample.danger { color:#a5463b; }
+    .sample.success { color:#3b513e; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(142px,1fr)); gap:8px; }
+    .tile { display:flex; align-items:center; gap:8px; min-height:44px; padding:8px; border:1px solid #d2e1d3; border-radius:9px; background:#fff; font-size:11px; }
+    .tile .ui-icon { font-size:20px; }
+    #result { font-weight:700; }
+    @media(max-width:700px) { body { max-width:390px; margin:0; } .roles { grid-template-columns:1fr; } .role { min-height:0; } }
+  </style>
+</head>
+<body>
+  <h1>Ikon Se.Noesa di website uji</h1>
+  <p id="result" role="status">Memeriksa aset…</p>
+  <div class="roles">
+    <section class="role customer"><h2>Pelanggan</h2>
+      <div class="nav-item active"><span class="ui-icon icon-menu-makanan" aria-hidden="true"></span>Menu</div>
+      <div class="nav-item"><span class="ui-icon icon-riwayat" aria-hidden="true"></span>Riwayat</div>
+      <div class="nav-item"><span class="ui-icon icon-notifikasi" aria-hidden="true"></span>Notifikasi</div>
+      <div class="nav-item"><span class="ui-icon icon-keranjang" aria-hidden="true"></span>Keranjang</div>
+    </section>
+    <section class="role"><h2>Admin</h2>
+      <div class="nav-item active"><span class="ui-icon icon-dashboard" aria-hidden="true"></span>Dashboard</div>
+      <div class="nav-item"><span class="ui-icon icon-pesanan" aria-hidden="true"></span>Pesanan</div>
+      <div class="nav-item"><span class="ui-icon icon-terlambat" aria-hidden="true"></span>Pembayaran Terlambat</div>
+      <div class="nav-item"><span class="ui-icon icon-kapasitas" aria-hidden="true"></span>Kuota</div>
+      <div class="nav-item"><span class="ui-icon icon-kalender" aria-hidden="true"></span>Jadwal</div>
+    </section>
+    <section class="role"><h2>Owner</h2>
+      <div class="nav-item"><span class="ui-icon icon-dashboard" aria-hidden="true"></span>Dashboard</div>
+      <div class="nav-item active"><span class="ui-icon icon-pesanan" aria-hidden="true"></span>Pesanan</div>
+      <div class="nav-item"><span class="ui-icon icon-produk" aria-hidden="true"></span>Produk</div>
+      <div class="nav-item"><span class="ui-icon icon-notifikasi" aria-hidden="true"></span>Notifikasi</div>
+    </section>
+  </div>
+  <div class="samples">
+    <div class="sample"><span class="ui-icon icon-tambah" aria-hidden="true"></span>Tambah</div>
+    <div class="sample"><span class="ui-icon icon-mata" aria-hidden="true"></span>Password</div>
+    <div class="sample success"><span class="ui-icon icon-berhasil" aria-hidden="true"></span>Berhasil</div>
+    <div class="sample danger"><span class="ui-icon icon-peringatan" aria-hidden="true"></span>Peringatan</div>
+  </div>
+  <div class="grid" id="grid" aria-label="Seluruh aset ikon"></div>
+  <script>
+    (async () => {
+      const names = [...document.styleSheets[0].cssRules]
+        .map(rule => /^\.icon-([a-z-]+)\b/.exec(rule.selectorText || '')?.[1])
+        .filter(Boolean);
+      const grid = document.getElementById('grid');
+      grid.innerHTML = names.map(name => `<div class="tile"><span class="ui-icon icon-${name}" aria-hidden="true"></span>${name}</div>`).join('');
+      const loaded = await Promise.all(names.map(name => fetch(`${name}.svg`).then(response => response.ok)));
+      const masks = [...document.querySelectorAll('.tile .ui-icon')].every(icon => getComputedStyle(icon).maskImage !== 'none');
+      const ok = names.length === 46 && loaded.every(Boolean) && masks;
+      document.body.dataset.result = ok ? 'PASS' : 'FAIL';
+      document.getElementById('result').textContent = `${loaded.filter(Boolean).length}/${names.length} SVG termuat · CSS mask ${masks ? 'aktif' : 'gagal'}`;
+    })().catch(error => {
+      document.body.dataset.result = 'FAIL';
+      document.getElementById('result').textContent = error.message;
+    });
+  </script>
+</body>
+</html>

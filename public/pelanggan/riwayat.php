@@ -22,7 +22,7 @@ customer_head('Riwayat Pesanan', 'history'); ?>
     <div class="loading">Memuat riwayat pesanan...</div>
 </section>
 <dialog id="history-dialog" class="customer-dialog history-dialog" aria-label="Detail pesanan">
-    <button class="dialog-close" data-close-history aria-label="Tutup">&times;</button>
+    <button class="dialog-close" data-close-history aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
     <div id="history-detail"></div>
 </dialog>
 <?php customer_foot(); ?>

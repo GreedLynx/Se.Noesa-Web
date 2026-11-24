@@ -18,7 +18,7 @@ admin_head('Daftar Pesanan', 'orders');
         <button type="button" class="button primary" id="new-offline-order">+ Pesanan offline</button>
         <div class="capacity-chip">
             <span class="stat-icon">
-                &#9749;
+                <span class="ui-icon icon-kapasitas" aria-hidden="true"></span>
             </span>
             <span>
                 <b id="orders-capacity">--</b>
@@ -66,12 +66,7 @@ admin_head('Daftar Pesanan', 'orders');
             </button>
         </div>
         <label class="search">
-            <span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"/>
-                    <path d="M16 16l5 5"/>
-                </svg>
-            </span>
+            <span class="ui-icon icon-cari" aria-hidden="true"></span>
             <input id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">
         </label>
     </div>
@@ -126,7 +121,7 @@ admin_head('Daftar Pesanan', 'orders');
                 <p class="eyebrow">PENCATATAN ADMIN</p>
                 <h2>Tambah pesanan offline</h2>
             </div>
-            <button type="button" class="icon-close" data-close-offline-order aria-label="Tutup">&times;</button>
+            <button type="button" class="icon-close" data-close-offline-order aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
         </div>
         <p class="muted">Pesanan langsung berstatus diproses dan mengurangi kuota pada tanggal pengiriman.</p>
         <label>Nama pemesan<input name="nama_pemesan" maxlength="100" required></label>

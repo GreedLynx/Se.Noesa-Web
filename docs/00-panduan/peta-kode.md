@@ -1,5 +1,13 @@
 # Peta Kode
 
+## Ikon komponen dan website uji
+
+- Sumber 46 SVG transparan dan stylesheet CSS mask: `public/assets/component/*.svg`, `public/assets/component/icons.css`. Kelas `ui-icon icon-<nama>` memakai warna `currentColor`.
+- Layout Pelanggan, Admin, dan Owner memuat stylesheet tersebut. Navigasi dan dialog ada di masing-masing `partials/layout.php`; pemilih tanggal bersama ada di `public/assets/js/date-picker.js`.
+- Kontrol keranjang/status Pelanggan ada di `public/pelanggan/assets/customer.js`; ringkasan kapasitas dan status Admin ada di `public/admin/dashboard.php`, `orders.php`, dan `assets/admin.js`; filter/status Owner ada di `public/owner/dashboard.php`, `orders.php`, dan `products.php`.
+- Halaman uji statis di `public/assets/component/preview.html`; katalog, preview, dan laporan uji ada di `docs/04-implementasi/`.
+
+
 ## Identitas, checkout, dan background Pelanggan
 
 - `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari

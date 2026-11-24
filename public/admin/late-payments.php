@@ -9,7 +9,7 @@ admin_head('Pembayaran Terlambat', 'late-payments');
         <p class="muted">Tinjau pembayaran yang masuk setelah pesanan kedaluwarsa, lalu tentukan tindak lanjut yang paling tepat.</p>
     </div>
     <aside class="late-process" aria-label="Alur rekonsiliasi pembayaran">
-        <span class="late-process-icon" aria-hidden="true">&#10003;</span>
+        <span class="late-process-icon" aria-hidden="true"><span class="ui-icon icon-validasi"></span></span>
         <div><b>3 langkah sederhana</b><small>Catat bukti &middot; Verifikasi mutasi &middot; Tindak lanjuti</small></div>
     </aside>
 </section>
@@ -39,13 +39,13 @@ admin_head('Pembayaran Terlambat', 'late-payments');
                 <textarea name="catatan_admin" maxlength="1000" rows="3" placeholder="Contoh: Pelanggan menghubungi melalui WhatsApp pada 18 Nov."></textarea>
             </label>
         </div>
-        <div class="late-form-footer"><p>Pesanan lama tetap dibatalkan. Catatan ini tidak mengubah stok atau kuota.</p><button class="button primary" type="submit">Simpan untuk diverifikasi <span aria-hidden="true">&#8594;</span></button></div>
+        <div class="late-form-footer"><p>Pesanan lama tetap dibatalkan. Catatan ini tidak mengubah stok atau kuota.</p><button class="button primary" type="submit">Simpan untuk diverifikasi <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></button></div>
         <p class="form-error" id="late-record-error" role="alert"></p>
     </form>
 </section>
 
 <section class="panel late-list-panel">
-    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">RIWAYAT</span><h2>Daftar rekonsiliasi</h2><p>Pantau status verifikasi dan tindak lanjut setiap pembayaran terlambat.</p></div><button class="button small secondary" id="late-refresh" type="button">&#8635; Muat ulang</button></div>
+    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">RIWAYAT</span><h2>Daftar rekonsiliasi</h2><p>Pantau status verifikasi dan tindak lanjut setiap pembayaran terlambat.</p></div><button class="button small secondary" id="late-refresh" type="button"><span class="ui-icon icon-segarkan" aria-hidden="true"></span> Muat ulang</button></div>
     <div id="late-list" class="late-list">Memuat…</div>
 </section>
 

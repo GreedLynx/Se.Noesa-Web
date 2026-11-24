@@ -8,6 +8,7 @@ const { pathToFileURL } = require('node:url');
 
 const chrome = process.argv[2];
 const paymentOnly = process.argv.includes('--payment');
+const customerOnly = process.argv.includes('--customer');
 if (!chrome) throw Error('Berikan path Chrome sebagai argumen.');
 const root = process.cwd();
 const output = fs.mkdtempSync(path.join(os.tmpdir(), 'senoesa-revisions-'));
@@ -17,8 +18,9 @@ const stripPhp = html => html.replace(/<\?(?:php|=)[\s\S]*?\?>/g, '');
 const css = files => files.map(file => read(file).replace(/url\((['"]?)(?!data:|https?:)([^)'"\s]+)\1\)/g,
     (_, quote, value) => `url("${url(path.resolve(path.dirname(file), value))}")`)).join('\n');
 const customerCss = css(['public/pelanggan/assets/customer.css', 'public/pelanggan/assets/catalog-mobile.css',
-    'public/pelanggan/assets/quantity-input.css', 'public/pelanggan/assets/menu-notifications.css']);
-const authCss = css(['public/assets/css/app.css']);
+    'public/pelanggan/assets/quantity-input.css', 'public/pelanggan/assets/menu-notifications.css',
+    'public/assets/component/icons.css']);
+const authCss = css(['public/assets/css/app.css', 'public/assets/component/icons.css']);
 const assetBase = url('public/') + '/';
 const customerBase = url('public/pelanggan/') + '/';
 const layout = read('public/pelanggan/partials/layout.php');
@@ -43,7 +45,7 @@ function run(name, page, markup, styles, code, width, height = 900, screenshot =
     console.log(`PASS: ${name} ${width}x${height}`);
 }
 
-for (const page of paymentOnly ? [] : ['login', 'register']) {
+for (const page of paymentOnly || customerOnly ? [] : ['login', 'register']) {
     const source = read(`public/${page}.php`);
     const markup = `<main class="app auth">${stripPhp(source.slice(source.indexOf('<section'), source.lastIndexOf('<?php foot')))}</main>`;
     const checks = `${fail}

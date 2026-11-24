@@ -3,7 +3,7 @@ require __DIR__ . '/partials/layout.php';
 head('Produk & Kuota', 'products');
 topbar('Produk &amp; Kuota');
 ?>
-<label class="search rise">🔍︎<input id="q" placeholder="Cari nama menu atau kode"></label>
+<label class="search rise"><span class="ui-icon icon-cari" aria-hidden="true"></span><input id="q" placeholder="Cari nama menu atau kode"></label>
 <div class="chips rise" id="chips">
     <button data-k="" class="on">Semua <span id="cs">0</span></button>
     <button data-k="makanan">Makanan</button>

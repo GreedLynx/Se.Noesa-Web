@@ -79,6 +79,7 @@ const fs = require("node:fs"),
   });
   const adminContext = {
     console,
+    window: {},
     FormData,
     URL,
     setTimeout: () => {},

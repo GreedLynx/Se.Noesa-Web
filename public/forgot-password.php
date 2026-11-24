@@ -30,11 +30,11 @@ head('Forgot Password', 'forgot-password', true); ?>
         <label class="field"><svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg><input name="password" type="password" placeholder="Password Baru" minlength="8" maxlength="72" autocomplete="new-password" required><button type="button" class="eye" aria-label="Tampilkan password">👁</button></label>
+            </svg><input name="password" type="password" placeholder="Password Baru" minlength="8" maxlength="72" autocomplete="new-password" required><button type="button" class="eye" aria-label="Tampilkan password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button></label>
         <label class="field"><svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="5" y="10" width="14" height="10" rx="2" />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg><input name="confirm" type="password" placeholder="Konfirmasi Password Baru" minlength="8" maxlength="72" autocomplete="new-password" required><button type="button" class="eye" aria-label="Tampilkan password">👁</button></label>
+            </svg><input name="confirm" type="password" placeholder="Konfirmasi Password Baru" minlength="8" maxlength="72" autocomplete="new-password" required><button type="button" class="eye" aria-label="Tampilkan konfirmasi password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button></label>
         <p class="reset-error" id="reset-password-error" role="alert" aria-live="polite"></p>
         <button class="btn-main" type="submit">Simpan Password Baru</button>
         <button class="btn-main reset-secondary-button" id="resend-otp-button" type="button" disabled>Kirim ulang kode (60)</button>

@@ -1,5 +1,7 @@
 # API
 
+Integrasi ikon dari `public/assets/component/` hanya mengubah presentasi halaman; endpoint, parameter, respons JSON, dan aksi tetap sama.
+
 Info pemesanan checkout Pelanggan berada sebelum field tanggal kirim; nama merek
 di UI Pelanggan dan splash ditulis `se.noesa`. Logo login/register dan background
 pola Pelanggan merupakan perubahan presentasi tanpa perubahan endpoint/payload.

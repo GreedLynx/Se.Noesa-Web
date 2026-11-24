@@ -19,7 +19,7 @@ topbar('Dashboard');
         <span class="chip-d" id="growth">0%</span>
     </div>
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
-    <p class="ok">✓ Pesanan Lunas</p>
+    <p class="ok"><span class="ui-icon icon-lunas" aria-hidden="true"></span> Pesanan Lunas</p>
     <div class="stats">
         <div><small>PENDAPATAN /Hari</small><b id="tiket">-</b></div>
         <div><small id="l2">KUANTITAS PAX</small><b id="items">-</b></div>
@@ -32,12 +32,12 @@ topbar('Dashboard');
         <h3>Tren Pesanan</h3>
         <div class="date-filter-pills">
             <button type="button" class="date-pill-btn" id="btn-start">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span class="ui-icon icon-kalender" aria-hidden="true"></span>
                 <span id="lbl-start">-</span>
             </button>
             <span style="font-size: 12px; color: var(--muted);">s/d</span>
             <button type="button" class="date-pill-btn" id="btn-end">
-                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span class="ui-icon icon-kalender" aria-hidden="true"></span>
                 <span id="lbl-end">-</span>
             </button>
         </div>
@@ -76,7 +76,7 @@ topbar('Dashboard');
                 <h2 id="modal-title">Tanggal kuota dapur dan produk</h2>
             </div>
             <button type="button" class="modal-close-btn" id="close-date-modal">
-                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                <span class="ui-icon icon-tutup" aria-hidden="true"></span>
             </button>
         </div>
 

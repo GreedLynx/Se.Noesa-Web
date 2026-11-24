@@ -50,7 +50,7 @@
                         <td>${fmt(r.dicatat_at)}</td>
                         <td><button class="button small secondary" data-late-detail="${Number(r.id)}">Detail</button></td>
                     </tr>`).join('') + '</tbody></table>'
-                : '<div class="late-empty"><div><span aria-hidden="true">&#10003;</span><strong>Belum ada rekonsiliasi</strong><small>Catatan pembayaran terlambat akan muncul di sini.</small></div></div>';
+                : '<div class="late-empty"><div><span class="ui-icon icon-kosong" aria-hidden="true"></span><strong>Belum ada rekonsiliasi</strong><small>Catatan pembayaran terlambat akan muncul di sini.</small></div></div>';
             $$('[data-late-detail]').forEach(b => b.onclick = () => openDetail(Number(b.dataset.lateDetail)));
         } catch (e) { box.innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
     }

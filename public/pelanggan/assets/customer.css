@@ -121,6 +121,10 @@ a {
     stroke-width:1.8;
 }
 
+.rail-logout .ui-icon { font-size:24px; }
+.catalog-search-shortcut .ui-icon { font-size:24px; }
+.cart-icon .ui-icon { font-size:18px; }
+
 .rail-logout small {
     font-size:10px;
 }
