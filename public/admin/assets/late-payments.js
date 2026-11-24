@@ -18,19 +18,23 @@
         return `<span class="late-status ${type}">${label}</span>`;
     };
 
+    let eligibleRequest = 0;
     async function loadEligible() {
         const select = $('#late-order');
         if (!select) return;
+        const request = ++eligibleRequest;
         try {
-            const d = await api('api/late-payments.php?eligible=1');
+            const search = $('#late-order-search')?.value.trim() || '';
+            const d = await api('api/late-payments.php?eligible=1&q=' + encodeURIComponent(search));
+            if (request !== eligibleRequest) return;
             select.innerHTML = (d.items || []).length
                 ? d.items.map(o => {
                     const label = `${o.kode} — ${o.nama_pemesan}`;
                     const detail = `${o.kode} — ${o.nama_pemesan} · ${money(o.total)} · ${fmt(o.created_at)}`;
                     return `<option value="${Number(o.id)}" title="${esc(detail)}">${esc(label)}</option>`;
                 }).join('')
-                : '<option value="">Tidak ada pesanan dibatalkan yang belum dicatat</option>';
-        } catch (e) { toast(e.message); }
+                : '<option value="">Tidak ada pesanan yang cocok dan belum dicatat</option>';
+        } catch (e) { if (request === eligibleRequest) toast(e.message); }
     }
 
     async function loadList() {
@@ -126,8 +130,17 @@
 
     function init() {
         if (!$('#late-record-form')) return;
+        $('#late-order-search').value = new URLSearchParams(location.search).get('q') || '';
         loadEligible();
         loadList();
+        let searchTimer;
+        $('#late-order-search').oninput = () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadEligible, 250);
+        };
+        $('#late-order-search').onkeydown = event => {
+            if (event.key === 'Enter') { event.preventDefault(); clearTimeout(searchTimer); loadEligible(); }
+        };
         $('#late-refresh').onclick = () => { loadList(); loadEligible(); };
         $('#late-close').onclick = () => { $('#late-detail-panel').hidden = true; };
         $('#late-record-form').onsubmit = async e => {

@@ -7,10 +7,11 @@ $returnTo = $_GET['return_to'] ?? '';
 if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
     $parts = parse_url($returnTo);
     if ($parts !== false && count(array_diff(array_keys($parts), ['path', 'query'])) === 0
-        && in_array($parts['path'] ?? '', ['dashboard.php', 'orders.php'], true)) {
+        && in_array($parts['path'] ?? '', ['dashboard.php', 'orders.php', 'schedules.php'], true)) {
         $filters = [];
         $valid = true;
-        $allowed = $parts['path'] === 'orders.php' ? ['tgl_kirim', 'tab', 'review', 'source', 'q'] : ['tgl_kirim'];
+        $allowed = $parts['path'] === 'orders.php' ? ['tgl_kirim', 'tab', 'review', 'source', 'q']
+            : ($parts['path'] === 'dashboard.php' ? ['tgl_kirim'] : []);
         foreach (explode('&', $parts['query'] ?? '') as $pair) {
             if ($pair === '') continue;
             [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
@@ -20,7 +21,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
                 $valid = false;
                 break;
             }
-            if ($key === 'tab' && !in_array($value, ['semua', 'pembayaran', 'validasi', 'proses', 'selesai', 'ditolak', 'dibatalkan'], true)) $valid = false;
+            if ($key === 'tab' && !in_array($value, ['semua', 'pembayaran', 'validasi', 'proses', 'selesai', 'ditolak', 'dibatalkan', 'pembayaran_terlambat'], true)) $valid = false;
             if ($key === 'review' && !in_array($value, ['unreviewed', 'reviewed'], true)) $valid = false;
             if ($key === 'source' && !in_array($value, ['pelanggan', 'otomatis', 'lainnya'], true)) $valid = false;
             if ($key === 'tgl_kirim') {
@@ -38,7 +39,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
 ?>
 <div class="detail-heading">
     <a class="back-link" id="order-back" data-order-back href="<?= htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') ?>">
-        &larr; Kembali <?= str_starts_with($backUrl, 'dashboard.php') ? 'ke Dashboard' : 'ke daftar pesanan' ?>
+        &larr; Kembali <?= str_starts_with($backUrl, 'dashboard.php') ? 'ke Dashboard' : (str_starts_with($backUrl, 'schedules.php') ? 'ke Tanggal Libur' : 'ke daftar pesanan') ?>
     </a>
     <span
         class="status-badge" id="detail-status">

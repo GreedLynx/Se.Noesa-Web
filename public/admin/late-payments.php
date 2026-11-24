@@ -15,12 +15,15 @@ admin_head('Pembayaran Terlambat', 'late-payments');
 </section>
 
 <section class="panel late-record-panel">
-    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">LANGKAH 1 DARI 3</span><h2>Catat bukti terlambat</h2><p>Pilih pesanan yang dibatalkan, lalu lengkapi data transaksi dari pelanggan.</p></div><span class="tag soft">Admin</span></div>
+    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">LANGKAH 1 DARI 3</span><h2>Catat bukti terlambat</h2><p>Cari pesanan yang dibatalkan, lalu lengkapi data transaksi yang dilaporkan pelanggan.</p></div><span class="tag soft">Admin</span></div>
     <form id="late-record-form" class="late-form" enctype="multipart/form-data">
         <div class="late-form-grid">
+            <label class="late-field-wide" for="late-order-search">Cari nama atau kode pesanan
+                <input id="late-order-search" type="search" placeholder="Ketik nama atau kode pesanan" autocomplete="off">
+            </label>
             <label class="late-field-wide">Pesanan dibatalkan
                 <select id="late-order" name="id" required></select>
-                <small>Hanya pesanan kedaluwarsa yang belum memiliki catatan rekonsiliasi.</small>
+                <small>Hanya pesanan dibatalkan yang belum memiliki catatan rekonsiliasi. Pembayaran tetap perlu diverifikasi Admin.</small>
             </label>
             <label>Nominal dilaporkan
                 <input type="number" name="nominal_dilaporkan" min="0" step="1" placeholder="Contoh: 150000" required>

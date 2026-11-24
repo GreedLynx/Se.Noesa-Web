@@ -73,6 +73,7 @@ Rencana dan progress: `docs/rencana-navigasi-kembali-admin.md`.
 |---|---|
 | UI Admin tambah/edit/hapus rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
 | CRUD tanggal libur role Admin | `public/admin/api/holidays.php` |
+| Daftar pesanan aktif terdampak libur dan tautan detail | `public/admin/api/holidays.php`, `public/admin/schedules.php`, `public/admin/assets/admin.js` |
 | Uji form tambah/edit dan validasi API libur tanpa database aplikasi | `scripts/test-holidays.cjs` |
 | Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
 | Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
@@ -94,6 +95,14 @@ mengelola periode PO.
 | Pelanggan menerima/menolak tawaran dan melihat riwayatnya | `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
 | Validasi kuota tujuan saat tawaran diterima | `app/daily-quota.php`, `public/pelanggan/api/orders.php` |
 | Tutup tawaran unpaid saat tenggat pembayaran | `app/order-expiration.php`, `scripts/expire-unpaid-orders.php` |
+
+## Pencarian pembayaran terlambat
+
+| Kebutuhan | File |
+|---|---|
+| Cari pesanan batal yang belum dicatat, sebelum batas 100 hasil | `public/admin/late-payments.php`, `public/admin/assets/late-payments.js`, `public/admin/api/late-payments.php` |
+| Cari rekonsiliasi tercatat dan calon pesanan belum dicatat di tab Pesanan | `public/admin/orders.php`, `public/admin/assets/admin.js`, `public/admin/api/late-payments.php`, `app/late-payment.php` |
+| Uji parameter pencarian, query, dan pemuatan pilihan | `scripts/test-admin-late-payment-search.cjs` |
 
 ## Pembatalan pesanan dan kedaluwarsa pembayaran
 

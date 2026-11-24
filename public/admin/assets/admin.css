@@ -1906,3 +1906,4 @@ input:checked + .slider:before {
   opacity: 1;
   transform: scale(1.1);
 }
+.affected-orders-scroll { overflow-x: auto; }

@@ -82,4 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $rows = q('SELECT id, tanggal_mulai, tanggal_selesai
     FROM tanggal_libur_operasional
     ORDER BY tanggal_mulai DESC, id DESC')->fetchAll();
-json(['items' => $rows]);
+$affected = q("SELECT p.id, p.kode, p.nama_pemesan, p.tgl_kirim, p.status, p.sumber,
+        EXISTS (SELECT 1 FROM penawaran_jadwal_ulang r WHERE r.pesanan_id = p.id
+            AND r.status_tawaran = 'menunggu' AND r.berlaku_sampai > clock_timestamp()) AS reschedule_pending
+    FROM pesanan p
+    WHERE p.status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
+      AND EXISTS (SELECT 1 FROM tanggal_libur_operasional h
+          WHERE (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date BETWEEN h.tanggal_mulai AND h.tanggal_selesai)
+    ORDER BY p.tgl_kirim, p.id")->fetchAll();
+json(['items' => $rows, 'affected_orders' => $affected]);

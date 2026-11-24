@@ -283,13 +283,31 @@ tambahan tanggal mengembalikan satu baris atau null. Seluruh aksi wajib Admin.
 
 Halaman Jadwal mengelola tanggal libur; tanggal operasional lain selalu dianggap
 buka. GET `admin/api/holidays.php` mengembalikan
-`{items:[{id,tanggal_mulai,tanggal_selesai}]}`. POST menerima `action=save`
+`{items:[{id,tanggal_mulai,tanggal_selesai}],affected_orders:[{id,kode,nama_pemesan,tgl_kirim,status,sumber,reschedule_pending}]}`.
+`affected_orders` memuat pesanan aktif pada tanggal libur WIB tanpa duplikasi
+untuk rentang yang tumpang tindih; pesanan offline ditandai untuk tindak lanjut
+manual. POST menerima `action=save`
 (default) dengan `tanggal_mulai` dan `tanggal_selesai` YYYY-MM-DD, atau
 `action=delete` dengan `id`. Rentang inklusif dan harus berurutan. Role wajib
 Admin. `action=save` dengan `id` integer positif memperbarui rentang libur yang
 ada; tanpa `id` menambahkan rentang baru. ID invalid menghasilkan 422 dan ID
 yang sudah tidak ditemukan menghasilkan 404. Rentang tidak mengubah pesanan
 lama atau kuota produk/override tersimpan.
+
+### Pembayaran terlambat Admin
+
+GET `admin/api/late-payments.php?eligible=1&q=...` mencari pesanan
+`dibatalkan` yang belum mempunyai catatan rekonsiliasi menurut nama pemesan
+atau kode, lalu mengembalikan maksimal 100 hasil terbaru. GET
+`admin/api/late-payments.php?q=...` mencari catatan rekonsiliasi yang sudah
+dibuat dengan kriteria sama; tanpa `q` mengembalikan semua catatan. `q`
+harus string, atau respons 422. Pencarian tidak mengubah pesanan dan tidak
+membuktikan dana sudah diterima. POST `action=record`, `verify`, dan
+`follow_up` tetap mengikuti validasi dan audit yang sudah ada. Pencatatan
+bukti memakai multipart/form-data, sedangkan verifikasi memakai JSON.
+Tab Pembayaran terlambat pada daftar Pesanan menampilkan catatan tercatat;
+saat kata kunci diisi, tab juga menampilkan pesanan batal yang belum dicatat
+dengan tautan ke form pencatatan.
 
 ### Katalog dan checkout pelanggan
 

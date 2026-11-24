@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json(['error' => 'Method tidak didukung'], 405);
 
+$search = $_GET['q'] ?? '';
+if (!is_string($search)) json(['error' => 'Pencarian tidak valid'], 422);
+$search = trim($search);
 if (!empty($_GET['eligible'])) {
     if (!late_payment_table_available()) json(['items' => []]);
     json(['items' => q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
@@ -49,7 +52,8 @@ if (!empty($_GET['eligible'])) {
         FROM pesanan p
         WHERE p.status = 'dibatalkan'
           AND NOT EXISTS (SELECT 1 FROM pembayaran_terlambat r WHERE r.pesanan_id = p.id)
-        ORDER BY p.created_at DESC LIMIT 100")->fetchAll()]);
+          AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
+        ORDER BY p.created_at DESC LIMIT 100", ['%' . $search . '%', '%' . $search . '%'])->fetchAll()]);
 }
 
 $id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
@@ -59,4 +63,4 @@ if ($id !== null && $id > 0) {
     $row['bukti_url'] = 'api/proof.php?late=' . (int) $row['id'];
     json(['item' => $row, 'logs' => late_payment_logs($id)]);
 }
-json(['items' => late_payment_list()]);
+json(['items' => late_payment_list($search)]);

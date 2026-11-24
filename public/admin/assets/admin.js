@@ -47,11 +47,12 @@ const csrfHeaders = (options = {}) =>
 async function api(url, options = {}) {
     if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url) && !/[?&]tgl_kirim=/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
+    const multipart = typeof FormData !== "undefined" && options.body instanceof FormData;
     const response = await fetch(url, {
         cache: "no-store",
-        headers: { "Content-Type": "application/json", ...csrfHeaders(options) },
+        headers: { ...(multipart ? {} : { "Content-Type": "application/json" }), ...csrfHeaders(options) },
         ...options,
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        body: multipart ? options.body : options.body ? JSON.stringify(options.body) : undefined,
     });
     const data = await response
         .json()
@@ -232,6 +233,14 @@ async function loadHolidays() {
     </tr>`
     ).join("");
     $("#holiday-rows").innerHTML = rows || '<tr><td colspan="2" class="empty-state">Belum ada tanggal libur.</td></tr>';
+    const affected = d.affected_orders || [];
+    $("#affected-orders-count").textContent = affected.length + " pesanan";
+    $("#affected-order-rows").innerHTML = affected.map(order =>
+        '<tr><td><b>' + esc(order.kode) + '</b><small>' + esc(order.nama_pemesan) + '</small></td>' +
+        '<td>' + dateLabel(order.tgl_kirim, true) + '</td><td>' + badge(order.status) + '</td>' +
+        '<td>' + (order.sumber === 'offline' ? 'Tindak lanjut manual' : order.reschedule_pending ? 'Menunggu jawaban pelanggan' : 'Perlu ditindaklanjuti') +
+        ' <a class="button small secondary" href="' + esc(orderDetailUrl(order.id)) + '">Lihat detail</a></td></tr>'
+    ).join("") || '<tr><td colspan="4" class="empty-state">Tidak ada pesanan aktif pada tanggal libur.</td></tr>';
     $$('[data-edit-holiday]').forEach(btn => {
         btn.onclick = () => editHoliday(d.items.find(holiday => Number(holiday.id) === Number(btn.dataset.editHoliday)));
     });
@@ -478,11 +487,13 @@ let orderTab = "semua",
 let offlineProducts = [];
 
 async function loadOrders() {
-    const query = encodeURIComponent($("#order-search")?.value || "");
+    const searchTerm = $("#order-search")?.value.trim() || "";
+    const query = encodeURIComponent(searchTerm);
     if (orderTab === "pembayaran_terlambat") {
-        const [orders, latePayments] = await Promise.all([
+        const [orders, latePayments, eligible] = await Promise.all([
             api("api/orders.php?tab=semua&q="),
-            api("api/late-payments.php"),
+            api("api/late-payments.php?q=" + query),
+            searchTerm ? api("api/late-payments.php?eligible=1&q=" + query) : { items: [] },
         ]);
         $("#all-count").textContent = orders.counts.total;
         $("#payment-count").textContent = orders.counts.payment;
@@ -494,17 +505,23 @@ async function loadOrders() {
         $("#cancellation-unreviewed-count").textContent = orders.counts.cancellation_unreviewed;
         $("#orders-capacity").textContent = (Number(orders.capacity.pakai) || 0).toLocaleString("id-ID") + " / " + (Number(orders.capacity.kapasitas) || 0).toLocaleString("id-ID") + " porsi";
         const items = latePayments.items || [];
-        $("#late-payment-count").textContent = items.length;
+        const recordedIds = new Set(items.map(item => Number(item.pesanan_id)));
+        const unrecorded = (eligible.items || []).filter(item => !recordedIds.has(Number(item.id)));
+        $("#late-payment-count").textContent = items.length + unrecorded.length;
         const status = value => {
             const states = { menunggu_verifikasi: ["pending", "Menunggu verifikasi"], terverifikasi: ["verified", "Terverifikasi"], tidak_valid: ["invalid", "Tidak valid"] };
             const [type, label] = states[value] || ["pending", "-"];
             return '<span class="late-payment-status ' + type + '">' + label + "</span>";
         };
-        $("#late-payment-view").innerHTML = items.length
+        $("#late-payment-view").innerHTML = items.length || unrecorded.length
             ? '<table><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Nominal</th><th>Status</th><th>Waktu transaksi</th><th></th></tr></thead><tbody>' + items.map(item =>
                 '<tr><td><div class="late-payment-meta"><b>' + esc(item.kode) + '</b><small>Pesanan ' + dateLabel(item.tanggal_pesanan, true) + '</small></div></td><td><div class="late-payment-meta"><b>' + esc(item.nama_pemesan) + '</b><small>' + esc(item.telepon_penerima || "-") + '</small></div></td><td><b>' + money(item.nominal_dilaporkan) + '</b></td><td>' + status(item.status_rekonsiliasi) + '</td><td>' + dateLabel(item.waktu_transaksi, true) + '</td><td><a class="button small secondary" href="late-payments.php">Kelola</a></td></tr>'
+            ).join("") + unrecorded.map(item =>
+                '<tr><td><b>' + esc(item.kode) + '</b></td><td>' + esc(item.nama_pemesan) +
+                '</td><td>-</td><td>Belum dicatat</td><td>-</td><td><a class="button small secondary" href="late-payments.php?q=' +
+                encodeURIComponent(item.kode) + '">Catat bukti</a></td></tr>'
             ).join("") + "</tbody></table>"
-            : '<div class="empty-state">Belum ada pembayaran terlambat yang dicatat.</div>';
+            : '<div class="empty-state">Tidak ada catatan yang cocok. <a href="late-payments.php">Cari pesanan dibatalkan untuk dicatat</a>.</div>';
         return;
     }
     const reviewQuery = orderTab === "dibatalkan" && cancellationReview ? "&review=" + cancellationReview : "";
@@ -597,7 +614,7 @@ function ordersPage() {
         $(".table-wrap").hidden = orderTab === "pembayaran_terlambat";
         $("#mobile-orders").hidden = orderTab === "pembayaran_terlambat";
         $("#late-payment-view").hidden = orderTab !== "pembayaran_terlambat";
-        $("#order-search").closest(".search").hidden = orderTab === "pembayaran_terlambat";
+        $("#order-search").closest(".search").hidden = false;
     };
     syncOrderFilters();
 
@@ -1115,6 +1132,8 @@ async function orderDetail() {
         return;
     }
     const o = await api("api/orders.php?id=" + id);
+    const offer = o.reschedule_offer;
+    const pendingOffer = offer?.status_tawaran === "menunggu";
     $("#detail-status").outerHTML = badge(o.status);
     const raw = o.bukti_bayar || "",
         proofUrl = raw ? "api/proof.php?order=" + Number(id) : "";
@@ -1150,7 +1169,7 @@ async function orderDetail() {
     const menu = menuItems.map((m) =>
         '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
         Number(m.item_id) + '" ' + (isItemChecked(m.sudah_dicek) ? "checked" : "") + " " +
-        (o.status === "diproses" ? "" : "disabled") + "><span><b>" + esc(m.nama) +
+        (o.status === "diproses" && !pendingOffer ? "" : "disabled") + "><span><b>" + esc(m.nama) +
         "</b><small>" + Number(m.qty).toLocaleString("id-ID") + " porsi &times; " +
         money(m.harga) + "</small></span><strong>" + money(m.subtotal) + "</strong></label>"
     ).join("");
@@ -1171,7 +1190,7 @@ async function orderDetail() {
         o.status === "diproses" || o.status === "selesai" || (o.status === "dibatalkan" && sentPhotos.length)
             ? '<article class="panel"><div class="panel-heading"><h2>' + (o.status === "dibatalkan" ? 'Foto pesanan tersimpan' : 'Foto makanan siap kirim') + '</h2><span class="tag soft">Foto kiriman</span></div>' +
                 sentPhotoGallery +
-                (o.status === "diproses"
+                (o.status === "diproses" && !pendingOffer
                     ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
                     : "") +
                   "</article>"
@@ -1248,15 +1267,46 @@ async function orderDetail() {
         ? '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' + proofPending + '</article>'
         : (o.status === "dibatalkan" ? proofPanel + receipt : '');
 
+    const rescheduleInfo = offer
+        ? '<article class="panel"><div class="panel-heading"><h2>Tawaran jadwal pengganti</h2><span class="tag soft">' +
+            esc(offer.status_tawaran) + '</span></div><div class="detail-pair"><span>Tanggal asal</span><b>' + esc(offer.tanggal_asal) +
+            '</b></div><div class="detail-pair"><span>Tanggal usulan</span><b>' + esc(offer.tanggal_usulan) +
+            '</b></div><div class="detail-pair"><span>Alasan</span><b>' + esc(offer.alasan) +
+            '</b></div><div class="detail-pair"><span>Berlaku sampai</span><b>' + dateLabel(offer.berlaku_sampai, true) +
+            '</b></div>' + (pendingOffer ? '<p class="muted">Menunggu jawaban pelanggan. Jeda produksi sampai pelanggan menjawab.</p>' : '') + '</article>'
+        : '';
+
     $("#order-detail").innerHTML = isValidation
-        ? validationView
-        : cancellationInfo + dispatchView + proofSection;
+        ? validationView + rescheduleInfo
+        : cancellationInfo + dispatchView + proofSection + rescheduleInfo;
 
     const actions = $("#detail-actions");
     const rejectionDialog = $("#reject-order-dialog");
     const rejectionForm = $("#reject-order-form");
     const rejectionReason = $("#rejection-reason");
     const rejectionError = $("#rejection-reason-error");
+    const rescheduleDialog = $("#reschedule-order-dialog");
+    const rescheduleForm = $("#reschedule-order-form");
+    $$('[data-cancel-reschedule]').forEach(button => button.onclick = () => rescheduleDialog.close());
+    rescheduleForm.onsubmit = async event => {
+        event.preventDefault();
+        const submit = $('button[type="submit"]', rescheduleForm);
+        submit.disabled = true;
+        $("#reschedule-order-error").textContent = "";
+        try {
+            await api("api/orders.php", { method: "POST", body: {
+                action: "offer_reschedule", id,
+                tanggal_usulan: rescheduleForm.elements.tanggal_usulan.value,
+                alasan: rescheduleForm.elements.alasan.value.trim(),
+            } });
+            rescheduleDialog.close();
+            toast("Tawaran jadwal terkirim");
+            setTimeout(() => location.reload(), 400);
+        } catch (error) {
+            $("#reschedule-order-error").textContent = error.message;
+            submit.disabled = false;
+        }
+    };
     $$("[data-cancel-rejection]").forEach((button) => {
         button.onclick = () => rejectionDialog.close();
     });
@@ -1265,12 +1315,23 @@ async function orderDetail() {
     actionButtons.forEach((btn) => {
         const action = btn.dataset.orderAction;
         btn.hidden = !(
+            (action === "offer_reschedule" && o.can_offer_reschedule === true) ||
             (o.status === "menunggu_validasi" &&
-                (action === "validate" || action === "reject")) ||
-            (o.status === "diproses" && action === "complete") ||
+                !pendingOffer && (action === "validate" || action === "reject")) ||
+            (o.status === "diproses" && !pendingOffer && action === "complete") ||
             (o.status === "dibatalkan" && !o.reviewed_at && action === "review_cancellation")
         );
         btn.onclick = async () => {
+            if (action === "offer_reschedule") {
+                rescheduleForm.reset();
+                rescheduleForm.elements.tanggal_usulan.value = offer?.tanggal_usulan || "";
+                rescheduleForm.elements.alasan.value = offer?.alasan || "";
+                $("#reschedule-payment-note").hidden = o.status !== "menunggu_validasi";
+                $("#reschedule-order-error").textContent = "";
+                $('button[type="submit"]', rescheduleForm).disabled = false;
+                rescheduleDialog.showModal();
+                return;
+            }
             if (action === "review_cancellation") {
                 const confirmed = await confirmDialog(
                     "Tinjau pembatalan",
