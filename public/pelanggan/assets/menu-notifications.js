@@ -226,7 +226,7 @@
                 "Pilihanmu sudah dicatat. Admin akan menindaklanjuti dan menghubungimu. Perubahan menu belum berlaku.";
         } else if (status === "dikonfirmasi") {
             lockMessage =
-                "Admin sudah mengonfirmasi perubahan ini. Terima kasih sudah merespons.";
+                "Admin sudah menyetujui penggantian. Menu pada pesananmu telah diperbarui; menu lama hanya disimpan sebagai riwayat.";
         } else if (status === "selesai") {
             lockMessage =
                 recipient.jenis_penutupan === "penolakan_pengganti"
@@ -235,7 +235,9 @@
                       ? "Pesanan dibatalkan sehingga notifikasi ini ditutup."
                       : recipient.jenis_penutupan === "kedaluwarsa_pesanan"
                         ? "Pembayaran kedaluwarsa sehingga pesanan dibatalkan dan notifikasi ditutup."
-                        : "Perubahan menu untuk pesanan ini sudah selesai diproses.";
+                        : recipient.opsi?.kode_opsi === "menu_pengganti"
+                          ? "Penggantian sudah disetujui dan menu pada pesananmu telah diperbarui. Menu lama di bagian atas hanya ditampilkan sebagai riwayat."
+                          : "Perubahan menu untuk pesanan ini sudah selesai diproses.";
         } else if (status === "menunggu_respons") {
             lockMessage =
                 "Pesanan ini sudah tidak aktif sehingga pilihan tidak dapat dikirim. Hubungi Admin bila perlu bantuan.";
@@ -344,7 +346,7 @@
                 </div>
                 <div class="mnc-meta-grid">
                     <div class="mnc-kv">
-                        <small>Menu lama</small>
+                        <small>Menu sebelumnya (riwayat)</small>
                         <span>${html(oldMenu.nama || "-")} · ${num(oldMenu.qty)} × ${rupiah(oldMenu.harga)} = <b>${rupiah(oldMenu.total)}</b></span>
                     </div>
                     <div class="mnc-kv">
