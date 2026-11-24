@@ -1,12 +1,12 @@
 :root {
-    --green:#516b55;
-    --green-dark:#3b513e;
+    --green:#758d76;
+    --green-dark:#516b55;
     --dark:#516b55;
     --pale:#d6e5d7;
     --soft:#edf3ed;
     --brown:#5a3b24;
     --ink:#252720;
-    --muted:#687067;
+    --muted:#81877f;
     --line:#d2e1d3;
     --red:#a5463b;
     --bg:#f8faf7;
@@ -57,14 +57,26 @@ a {
 
 .customer-logo {
     font:26px Georgia,serif;
-    width:48px;
-    height:48px;
+    width:52px;
+    height:52px;
     border-radius:50%;
-    background:#fff;
+    background:transparent;
     color:var(--brown);
     display:grid;
     place-items:center;
-    margin-bottom:54px
+    flex:none;
+    margin-bottom:40px
+}
+
+.customer-logo { overflow:hidden; }
+.customer-logo img { display:block; width:32px; height:40px; max-width:100%; max-height:100%; object-fit:contain; }
+
+.customer-logo svg {
+    width:32px;
+    height:32px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8
 }
 
 .customer-logo span {
@@ -95,6 +107,29 @@ a {
     color:var(--brown)
 }
 
+.rail-logout {
+    margin-top:auto;
+    flex-shrink:0;
+    cursor:pointer;
+}
+
+.rail-logout svg {
+    width:24px;
+    height:24px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+}
+
+.rail-logout small {
+    font-size:10px;
+}
+
+.rail-logout:hover,.rail-logout:focus-visible {
+    background:var(--pale);
+    color:var(--brown);
+}
+
 .customer-rail nav a span,.rail-logout {
     font-size:24px
 }
@@ -103,17 +138,33 @@ a {
     font-size:9px
 }
 
-.rail-logout {
-    margin-top:auto
+.customer-rail nav a {
+    position:relative
 }
 
 .customer-main {
+    position:relative;
+    isolation:isolate;
     margin-left:82px;
     min-height:100vh;
     padding-bottom:40px
 }
 
+.customer-main::after {
+    content:"";
+    position:absolute;
+    z-index:0;
+    inset:0;
+    background:url('../../assets/img/Pattern_Se.Noesa_Background.png') repeat;
+    background-size:402px auto;
+    opacity:.40;
+    pointer-events:none;
+}
+
 .customer-top {
+    position:sticky;
+    top:0;
+    z-index:10;
     height:82px;
     padding:0 clamp(20px,5vw,70px);
     display:flex;
@@ -124,8 +175,10 @@ a {
 }
 
 .customer-top>div:first-child small {
-    font-size:11px;
-    color:var(--muted)
+    font-size:20px;
+    font-weight:600;
+    color:var(--brown);
+    letter-spacing:-.2px
 }
 
 .customer-top h1 {
@@ -163,10 +216,16 @@ a {
 }
 
 .customer-content {
+    position:relative;
+    z-index:1;
     max-width:1300px;
     margin:auto;
     padding:34px clamp(20px,5vw,70px) 60px
 }
+
+html:has(body[data-page="catalog"]) { scrollbar-gutter:stable; }
+body[data-page="catalog"] .catalog-intro,
+body[data-page="catalog"] .date-panel--delivery { width:100%; min-width:0; }
 
 .catalog-intro {
     display:flex;
@@ -222,12 +281,59 @@ a {
     font-size:17px
 }
 
+/* Tombol tambah pesanan pada halaman riwayat dipindah ke kanan bawah (CUS-17). */
+body[data-page="history"] .history-link {
+    position:fixed;
+    right:max(20px, env(safe-area-inset-right));
+    bottom:calc(26px + env(safe-area-inset-bottom));
+    z-index:20;
+    border-radius:99px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18)
+}
+
+body[data-page="history"] .customer-content {
+    padding-bottom:calc(96px + env(safe-area-inset-bottom))
+}
+
+@media(max-width:700px) {
+    body[data-page="history"] .history-link {
+        right:max(14px, env(safe-area-inset-right));
+        bottom:calc(74px + env(safe-area-inset-bottom));
+        width:54px;
+        height:54px;
+        padding:0;
+        gap:0;
+        justify-content:center;
+        font-size:0;
+        border-radius:50%;
+        background:var(--green);
+        border-color:var(--green);
+        color:#fff
+    }
+    body[data-page="history"] .history-link span {
+        font-size:22px
+    }
+}
+
 .catalog-toolbar {
     display:flex;
     justify-content:space-between;
     align-items:center;
     gap:15px;
     margin:18px 0
+}
+
+.catalog-search-shortcut:not([hidden]) { display:grid; place-items:center; position:fixed; right:max(18px, env(safe-area-inset-right)); bottom:calc(20px + env(safe-area-inset-bottom)); width:48px; height:48px; padding:12px; border:1px solid var(--line); border-radius:50%; background:var(--green); color:#fff; box-shadow:var(--shadow); z-index:7; }
+.catalog-search-shortcut svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; }
+.catalog-search-shortcut:focus-visible { outline:3px solid var(--brown); outline-offset:3px; }
+body.has-cart .catalog-search-shortcut { bottom:calc(116px + env(safe-area-inset-bottom)); }
+
+.catalog-toolbar .category-tabs {
+    flex:1 1 auto;
+}
+
+.catalog-toolbar .customer-search {
+    flex:0 0 auto;
 }
 
 .category-tabs,.history-tabs {
@@ -283,11 +389,6 @@ a {
     background:transparent
 }
 
-.customer-search:focus-within {
-    outline:3px solid #29412d;
-    outline-offset:2px
-}
-
 .menu-grid {
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -310,15 +411,25 @@ a {
     transition:transform .2s,border .2s,box-shadow .2s
 }
 
+.menu-card.stock-nearly-full { border-color:#d8a23b; }
+#daily-quota-hint[data-status="nearly_full"] { color:#8a6216; }
+#daily-quota-hint[data-status="full"], #daily-quota-hint[data-status="closed"] { color:var(--red); }
+.date-panel--delivery .date-panel-hint:not([hidden]) { flex-basis:100%; }
+body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; width:100%; max-width:none; }
+
 .menu-card:hover {
     transform:translateY(-4px);
     border-color:var(--green);
     box-shadow:0 14px 28px #29412d14
 }
 
+.menu-card:focus-visible { outline:3px solid var(--green-dark); outline-offset:3px; }
+
+.menu-photo { width:96px; height:96px; flex:none; }
+
 .menu-image {
-    width:96px;
-    height:96px;
+    width:100%;
+    height:100%;
     border-radius:15px;
     object-fit:cover;
     background:var(--soft);
@@ -354,6 +465,14 @@ a {
     margin-top:4px
 }
 
+.menu-action {
+    display:flex;
+    align-items:center;
+    flex:none
+}
+
+.menu-warning { position:absolute; top:12px; right:12px; z-index:1; display:inline-flex; align-items:center; white-space:nowrap; padding:7px 11px; border-radius:5px; background:#4b554ee0; color:#fff; box-shadow:0 4px 10px #1d2b1f38; font-size:11px; font-weight:700; letter-spacing:.04em; }
+
 .menu-add {
     width:32px;
     height:32px;
@@ -369,7 +488,8 @@ a {
     transition:transform .2s
 }
 
-.menu-add:hover {
+.menu-add:disabled { opacity:.38; cursor:not-allowed; }
+.menu-add:not(:disabled):hover {
     transform:scale(1.1)
 }
 
@@ -494,6 +614,21 @@ a {
     background:#15201880;
     backdrop-filter:blur(4px)
 }
+
+.customer-logout-confirm { width:min(630px,calc(100% - 32px)); padding:38px 32px; border:1px solid var(--line); border-radius:28px; text-align:center; }
+.customer-logout-confirm h2 { max-width:480px; margin:0 auto 32px; color:var(--brown); font-size:clamp(22px,3vw,32px); line-height:1.4; }
+.customer-logout-actions { display:flex; justify-content:center; gap:14px; }
+.customer-logout-actions button { min-width:136px; padding:14px 24px; border:0; border-radius:999px; background:var(--green); color:#fff; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer; }
+.customer-logout-actions [data-cancel] { border:3px solid #151515; background:#eef3ee; color:var(--brown); }
+.customer-logout-actions [data-yes] { background:var(--green); }
+.cancel-order-dialog { width:min(440px,calc(100% - 28px)); text-align:center; }
+.cancel-order-icon { display:grid; place-items:center; width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:#fae8e6; color:var(--red); font-size:34px; font-weight:700; }
+.cancel-order-dialog h2 { margin:0 0 10px; color:var(--ink); font-size:24px; }
+.cancel-order-message { margin:0 auto 24px; max-width:360px; color:var(--muted); font-size:14px; line-height:1.6; }
+.cancel-order-actions { display:flex; justify-content:center; gap:12px; }
+.cancel-order-actions button { flex:1; min-height:52px; border-radius:16px; font-weight:700; }
+.cancel-order-actions [data-confirm] { background:var(--red); color:#fff; }
+.cancel-order-actions [data-confirm]:hover { filter:brightness(.92); }
 
 .dialog-close {
     position:absolute;
@@ -778,6 +913,39 @@ a {
     background:var(--soft);
     border-radius:99px;
     padding:6px 9px
+}
+.status-meta-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:8px
+}
+.status-meta-row .history-date {
+    margin:0;
+    text-align:right
+}
+.payment-countdown {
+    display:grid;
+    gap:5px;
+    margin:16px 0;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--soft);
+    color:var(--green-dark)
+}
+.payment-countdown p,
+.payment-countdown small {
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.5
+}
+.payment-countdown strong {
+    font-size:24px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.04em
 }
 
 .status-label.menunggu_validasi {
@@ -1069,10 +1237,13 @@ a {
         padding:12px 5px
     }
     .customer-logo {
-        width:38px;
-        height:38px;
-        margin-bottom:32px;
+        width:44px;
+        height:44px;
         font-size:21px
+    }
+    .customer-logo svg {
+        width:26px;
+        height:26px
     }
     .customer-rail nav a,.rail-logout {
         width:46px;
@@ -1245,10 +1416,6 @@ a {
     .cart-dialog {
         margin-bottom:80px
     }
-}
-
-.category-toggle,.delivery-title-mobile {
-    display:none
 }
 
 .payment-method-card {
@@ -1709,9 +1876,6 @@ a {
     body.has-cart .customer-content {
         padding-bottom:150px
     }
-    .customer-mobile-nav {
-        z-index:9
-    }
 }
 
 .field-hint {
@@ -1868,6 +2032,15 @@ a {
     font-weight:700
 }
 
+.catalog-policy ul {
+    margin:4px 0 0;
+    padding-left:18px
+}
+
+.catalog-policy li + li {
+    margin-top:4px
+}
+
 @media(max-width:700px) {
     .catalog-policy {
         margin-bottom:11px;
@@ -1891,3 +2064,88 @@ a {
     color:#666;
     text-decoration:line-through;
 }
+
+/* =========================================
+   TAMBAHAN: Tombol Filter Dibatalkan Warna Merah
+   ========================================= */
+.history-tabs button[data-status="dibatalkan"].active {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+}
+.history-tabs button[data-status="dibatalkan"]:hover {
+    border-color: var(--red);
+}
+
+/* =========================================
+   TAMBAHAN: Pemberitahuan Tenggat Pembayaran Habis & WA Admin
+   ========================================= */
+.payment-expired-notice {
+    background: #fff8eb;
+    border: 1px solid #f0d7a8;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--brown);
+}
+
+.payment-expired-notice b {
+    color: var(--red);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.payment-expired-notice p {
+    margin: 4px 0;
+}
+
+.payment-expired-notice .admin-wa-text {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px dashed var(--green);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--green-dark);
+}
+.payment-expired-notice a.admin-wa-text:hover {
+    border-color: var(--green-dark);
+    background: var(--green-pale);
+}
+.payment-expired-notice .admin-wa-text span { font-size: 11px; }
+.admin-socials { margin-top: 10px; }.admin-socials > small { color: var(--muted); font-size: 10px; }.admin-socials > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 5px; }.admin-socials a { display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #e7d4ae; border-radius: 99px; background: #fff; color: var(--brown); font-size: 10px; font-weight: 700; }.admin-socials a:hover { border-color: var(--green); color: var(--green-dark); }.admin-socials i { font-size: 13px; font-style: normal; }
+
+.cancellation-terms {
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--soft);
+    color: var(--brown);
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: left;
+}
+.cancellation-terms summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+.cancellation-terms-content {
+    padding-top: 8px;
+}
+.cancellation-terms-content .admin-wa-text {
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:8px;
+    padding:8px 10px;
+    border:1px dashed var(--green);
+    border-radius:8px;
+    background:#fff;
+    color:var(--green-dark);
+    font-weight:700
+}
+.cancellation-terms-content .admin-socials { margin-top:10px; }

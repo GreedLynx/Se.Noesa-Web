@@ -141,13 +141,16 @@ const fs = require("node:fs"),
     "PASS: Form Admin memakai default, mempertahankan nilai nol, dan mengirim save/reset rentang",
   );
   const elements = {};
+  let testCard;
   function element() {
     return {
       value: "",
       innerHTML: "",
       hidden: false,
       textContent: "",
+      dataset: {},
       classList: { remove() {}, add() {}, toggle() {} },
+      dataset: {},
       querySelectorAll: () => [],
     };
   }
@@ -157,9 +160,13 @@ const fs = require("node:fs"),
     setTimeout: () => {},
     document: {
       body: { dataset: { page: "test" }, classList: { toggle() {} } },
+      addEventListener() {},
+      getElementById() { return null; },
       querySelector: (s) => (elements[s] ??= element()),
       querySelectorAll: () => [],
+      addEventListener() {},
     },
+    window: { snoesaContact: { adminWhatsapp: "" } },
     requestAnimationFrame: (fn) => fn(),
   };
   vm.createContext(context);
@@ -179,8 +186,47 @@ const fs = require("node:fs"),
   assert.equal(vm.runInContext("productCache[1].sisa", context), 0);
   assert.equal(vm.runInContext("cart[1]", context), 4);
   assert.equal(vm.runInContext("cartTotals().total", context), 40000);
+  assert.equal(elements["#delivery-hint"].hidden, true);
+  assert.equal(elements["#daily-quota-hint"].hidden, true);
+  assert.equal(elements["#quota-full-hint"].hidden, true);
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',tanggal_libur:true,dailyStatus:'closed',habis:[],schedule:null})", context);
+  await context.loadCatalog();
+  assert.equal(elements["#delivery-hint"].hidden, false);
+  assert.equal(elements["#daily-quota-hint"].hidden, true);
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',dailyStatus:'nearly_full',dailyCapacity:50,dailyUsed:45,dailyRemaining:5,habis:[{nama:'Menu A'}],schedule:null})", context);
+  await context.loadCatalog();
+  assert.equal(elements["#delivery-hint"].hidden, true);
+  assert.equal(elements["#daily-quota-hint"].hidden, false);
+  assert.equal(elements["#quota-full-hint"].hidden, false);
+  testCard = { dataset: { product: '1' } };
+  vm.runInContext("api=async()=>({items:[{id:1,nama:'Menu A',kode:'A',kategori:'makanan',min_pesan:10,kuota:50,sisa:0,stok_status:'full',available:false,harga:10000,gambar:''}],tanggal:'2030-01-11',habis:[{nama:'Menu A'}],schedule:null})", context);
+  await context.loadCatalog();
+  assert.match(elements["#menu-grid"].innerHTML, /Sisa kuota: 0 porsi/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-warning"/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-warning">Stok habis<\/span><div class="menu-photo">/);
+  assert.doesNotMatch(elements["#menu-grid"].innerHTML, /role="img"/);
+  assert.match(elements["#menu-grid"].innerHTML, /class="menu-add"[^>]* disabled/);
+  assert.match(elements["#menu-grid"].innerHTML, /data-product="1" role="button" tabindex="0" aria-label="[^"]+" style="--i:0"/);
+  vm.runInContext("showProduct = p => { globalThis.openedProduct = p.id; }", context);
+  testCard.onkeydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(context.openedProduct, 1);
+  context.openedProduct = null;
+  testCard.onkeydown({ key: ' ', preventDefault() {} });
+  assert.equal(context.openedProduct, 1);
+  for (const [quota, remaining, visible] of [
+    [50, 26, false], [50, 25, false], [50, 24, true],
+    [80, 40, false], [80, 39, true], [0, 0, false],
+  ]) {
+    testCard = null;
+    vm.runInContext(`api=async()=>({items:[{id:1,nama:'Menu A',kode:'A',kategori:'makanan',min_pesan:4,kuota:${quota},sisa:${remaining},harga:10000,gambar:''}],tanggal:'2030-01-11',schedule:null})`, context);
+    await context.loadCatalog();
+    assert.equal(elements['#menu-grid'].innerHTML.includes('Sisa kuota:'), visible);
+  }
+  vm.runInContext("api=async()=>({items:[],tanggal:'2030-01-11',dailyCapacity:0,dailyUsed:0,dailyRemaining:0,dailyStatus:'full',habis:[],schedule:null})", context);
+  await context.loadCatalog();
+  assert.match(elements["#daily-quota-hint"].textContent, /sisa 0 dari 0 porsi/);
   console.log(
-    "PASS: Pergantian tanggal memeriksa keranjang dan mempertahankan item tidak tersedia agar dapat dihapus pelanggan",
+    "PASS: Pergantian tanggal mempertahankan keranjang dan hanya menampilkan pesan saat ada kendala",
   );
 })().catch((e) => {
   console.error(e);

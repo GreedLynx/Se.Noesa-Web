@@ -9,9 +9,10 @@ head('Login', 'login', true);
 ?>
 <section class="hero">
     <div class="drift"></div>
+    <img class="auth-logo" src="assets/img/logo-icon.png" alt="se.noesa" width="48" height="160">
     <div class="hello rise">
         <h2>Hello!</h2>
-        <p>Welcome to Se.Noesa</p>
+        <p>Welcome to se.noesa</p>
     </div>
 </section>
 <section class="sheet">

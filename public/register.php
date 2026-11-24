@@ -4,6 +4,7 @@ head('Sign Up', 'register', true);
 ?>
 <section class="hero short">
     <div class="drift"></div>
+    <img class="auth-logo" src="assets/img/logo-icon.png" alt="se.noesa" width="48" height="160">
 </section>
 <section class="sheet">
     <a class="back rise" href="login.php">← Back to Login</a>

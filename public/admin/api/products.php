@@ -65,8 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($defaultQuota === false || $defaultQuota < 0 || $defaultQuota > 2147483647) {
         json(['error' => 'Kuota default harus angka 0 sampai 2147483647'], 422);
     }
-    if ($harga === false || $harga < 1 || $minimum === false || $minimum < 4) {
-        json(['error' => 'Harga dan kuota tidak valid'], 422);
+    if ($harga === false || $harga < 1) {
+        json(['error' => 'Harga tidak valid'], 422);
+    }
+    // Sumber kebenaran minimum: constraint DB (min_pesan >= 4) dan snapshot (GREATEST(4, min_pesan)).
+    if ($minimum === false || $minimum < SENOESA_MIN_PACKAGE_QTY) {
+        json(['error' => 'Minimum pemesanan minimal ' . SENOESA_MIN_PACKAGE_QTY . ' porsi'], 422);
     }
 
     $id = (int) ($request['id'] ?? 0);

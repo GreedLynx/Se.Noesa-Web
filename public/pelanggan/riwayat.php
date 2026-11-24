@@ -4,9 +4,8 @@ require __DIR__ . '/partials/layout.php';
 customer_head('Riwayat Pesanan', 'history'); ?>
 <section class="catalog-intro">
     <div>
-        <p class="eyebrow">PESANAN SAYA</p>
-        <h2>Riwayat Pesanan</h2>
-        <p>Lihat perkembangan pesanan dan unggah bukti pembayaran.</p>
+    <p class="eyebrow">PESANAN SAYA</p>
+    <h2>Riwayat Pesanan</h2>
     </div>
     <a class="history-link" href="index.php"><span>+</span> Pesan menu</a>
 </section>
@@ -17,6 +16,7 @@ customer_head('Riwayat Pesanan', 'history'); ?>
     <button data-status="diproses">Diproses</button>
     <button data-status="selesai">Selesai</button>
     <button data-status="ditolak">Ditolak</button>
+    <button data-status="dibatalkan">Dibatalkan</button> <!-- Tombol Baru Ditambahkan -->
 </div>
 <section class="history-list" id="history-list">
     <div class="loading">Memuat riwayat pesanan...</div>

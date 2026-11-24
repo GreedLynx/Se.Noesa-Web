@@ -29,13 +29,36 @@ Aplikasi web manajemen operasional dan pemesanan *pre-order* (PO) makanan untuk 
 
 ## Arsitektur Basis Data
 
-Sistem menggunakan tabel utama PostgreSQL berikut:
+Database menggunakan PostgreSQL bernama `senoesa`. Aplikasi mengaksesnya
+melalui PDO dan prepared statements. Skema mencakup tabel inti dan tabel
+pendukung berikut:
 
-1. `users` — akun pelanggan, admin, dan owner beserta otorisasi peran.
-2. `produk` — katalog menu, harga, dan minimal pesan 4 porsi.
-3. `jadwal_po` — jadwal pembukaan pre-order, status aktif, dan kapasitas jadwal.
-4. `pesanan` — transaksi pemesanan pelanggan.
-5. `detail_pesanan` — rincian produk dalam pesanan.
+| Tabel | Fungsi |
+|---|---|
+| `users` | Akun dan role `pelanggan`, `admin`, atau `owner`. Registrasi publik hanya membuat pelanggan. |
+| `produk` | Katalog, harga, kategori, minimum porsi, dan kuota harian default. Minimum dasar 4 porsi. |
+| `jadwal_po` | Referensi jadwal PO yang masih dipakai pesanan. Kalender operasional/libur menggunakan tabel tersendiri. |
+| `kuota_harian` | Override kuota produk untuk tanggal tertentu; jika tidak ada override, sistem memakai default produk. |
+| `tanggal_libur_operasional` | Rentang tanggal libur inklusif. Kuota efektif pada rentang ini menjadi 0 tanpa menghapus kuota tersimpan. |
+| `pesanan` | Header pesanan, pemesan, alamat/pengiriman, total, pembayaran, status, sumber online/offline, dan metadata pembatalan. Kolom lama `pax` tetap dipakai sampai migrasi disetujui. |
+| `detail_pesanan` | Item produk, jumlah porsi, snapshot harga, dan checklist dispatch. |
+| `pesanan_foto_kiriman` | Galeri foto pengiriman; kolom foto lama dipertahankan untuk kompatibilitas. |
+| `penawaran_jadwal_ulang` | Satu tawaran tanggal pengganti per pesanan beserta alasan, status, dan tenggat jawaban. |
+| `pemberitahuan_perubahan_menu*` | Pemberitahuan perubahan menu, pilihan respons, snapshot item/harga, audit konfirmasi, dan tindak lanjut. |
+| `password_resets`, `password_reset_otps` | Token dan OTP pemulihan akun. Pengaktifan email tetap mengikuti keputusan tim tentang PIC dan metode. |
+
+VIEW PostgreSQL menyediakan agregat kuota dan laporan, termasuk
+`v_kuota_harian`, `v_rekap_produksi_harian`, dan `v_pembatalan_pesanan`.
+Kapasitas dapur per tanggal adalah 80% dari total kuota produk efektif.
+Pesanan berstatus `ditolak` atau `dibatalkan` tidak memakai kuota.
+
+Perubahan skema dilakukan melalui file baru di `database/migrations/` dan
+dicatat oleh `scripts/migrate.php`. Nama file migrasi memiliki beberapa nomor
+seri yang sama dari pengembangan paralel; jangan menyimpulkan bahwa nomor
+tertinggi saja berarti seluruh migrasi sebelumnya sudah diterapkan. Gunakan
+ledger migrasi dan periksa urutan/prasyarat sebelum deploy. `database/schema.sql`
+adalah initializer untuk database kosong dan melakukan `DROP TABLE`; jangan
+jalankan pada database berisi data.
 
 ## Aturan Git dan Branching Strategy
 
@@ -100,6 +123,7 @@ public/
 6. Untuk membatalkan pesanan yang belum dibayar tepat waktu, jadwalkan
    `php scripts/expire-unpaid-orders.php --apply` setiap menit setelah inventaris
    dan dry-run. Rincian aktivasi, argumen Task Scheduler, dan cron ada di bawah.
+7. cara migrasi ke supabase dengan ketik di terminal: `php scripts/migrate.php`.
 
 ## Alur Fitur Utama
 
@@ -118,12 +142,12 @@ tidak mengubah pesanan. Pesanan yang dibatalkan tidak lagi memakai kuota.
 
 Admin mengatur kuota produk untuk setiap tanggal pengiriman. Pelanggan hanya dapat memesan produk yang masih memiliki sisa kuota pada tanggal yang dipilih. Sistem juga membatasi total pesanan hingga 80% dari akumulasi kuota produk pada tanggal tersebut.
 
-Rincian teknis database dan endpoint tersedia di `docs/database.md` dan `docs/api.md`.
+Rincian teknis database dan endpoint tersedia di `docs/01-spesifikasi/database.md` dan `docs/01-spesifikasi/api.md`.
 
 ## Lupa Password
 
 Halaman login menyediakan alur reset password menggunakan OTP enam digit yang dikirim ke email terdaftar. OTP berlaku 10 menit, maksimal lima kali percobaan, dan permintaan ulang dibatasi satu kali per akun setiap 60 detik. Untuk mengaktifkannya, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, dan `SMTP_FROM_EMAIL` pada `.env`. Gmail memerlukan Verifikasi 2 Langkah dan App Password; jangan gunakan atau bagikan password login Gmail. Jalankan `composer install` dan `php scripts/migrate.php` pada database yang sudah ada. Migrasi reset password berada di `012_password_resets.sql` dan `013_password_reset_otps.sql` setelah migrasi kuota.
-Panduan konsistensi penulisan tersedia di `docs/gaya-kode.md`.
+Panduan konsistensi penulisan tersedia di `docs/00-panduan/gaya-kode.md`.
 
 ## Pembatalan dan aktivasi job pembayaran
 
@@ -192,3 +216,10 @@ User uji default `postgres`; bila perlu isi `SENOESA_TEST_PGUSER` dan
 menjalankan migrasi/endpoint/dua koneksi/job dan tes kuota yang ada, lalu
 menghapus fixture uji. Perpindahan file HTTP disimulasikan hanya pada harness CLI;
 upload browser dan scheduler lingkungan target perlu diverifikasi saat aktivasi.
+
+## Dokumentasi lengkap
+
+Indeks seluruh dokumentasi proyek (panduan, spesifikasi, revisi, audit,
+implementasi, keputusan bisnis, dan persiapan rilis) ada di
+[`docs/README.md`](docs/README.md). File `.md` dikelompokkan per peran di
+subfolder `docs/`; dokumen dependency tetap berada di `vendor/`.
