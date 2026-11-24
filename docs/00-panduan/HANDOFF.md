@@ -1,5 +1,11 @@
 # Handoff Se.Noesa-Web
 
+## Penyederhanaan tawaran dan informasi refund pelanggan (24 November 2026)
+- Commit terakhir `a1122a9 fix: surface holiday orders and late payment search` berisi 19 file: peringatan/pratinjau pesanan terdampak libur dan UI tawaran Admin, pencarian pesanan belum dicatat serta rekonsiliasi pembayaran terlambat, transport FormData, dokumentasi, dan fixture UI. Commit itu tidak berisi perubahan UI refund terbaru.
+- Pengguna mengonfirmasi kontak WhatsApp dan kanal sosial harus tampil pada bagian Refund setelah pelanggan menolak tawaran jadwal. Panel tawaran aktif diringkas menjadi batas respons, catatan singkat transfer, dan tombol keputusan; kontak lengkap ditempatkan setelah penolakan.
+- `customer.js` mengenali tawaran `ditolak` pada pesanan `dibatalkan` dan memakai pola `payment-expired-notice` untuk kode pesanan, bukti transfer, WhatsApp Admin, dan kanal sosial. Pesan tenggat unggah bukti tidak dipakai pada kondisi penolakan tawaran. Nomor kontak tetap berasal dari konfigurasi layout, tidak di-hardcode. CSS hanya mengatur jarak dan teks ringkas.
+- Perubahan UI refund, pratinjau libur berbentuk pil, serta pembaruan docs/handoff setelah commit masih di working tree branch `fix/fitur-admin`. Branch saat ini ahead 1 dan behind 3 dari `origin/dev`; belum sinkron, commit lanjutan, merge, atau push. `node --check public/pelanggan/assets/customer.js` dan `git diff --check` lulus; render browser belum diperiksa. `.env` tidak dibaca atau diubah.
+
 ## Implementasi bug Admin: libur dan pembayaran terlambat (24 November 2026)
 - Branch aktif `fix/fitur-admin` dibuat dari `origin/dev` 8470f13; rencana ada di `docs/rencana-bug-libur-pesanan.md`. Perubahan plan/handoff lokal dari sesi sebelumnya dipertahankan. Belum merge/push.
 - GET `admin/api/holidays.php` kini memuat pesanan aktif yang tanggal kirim WIB-nya berada dalam rentang libur. Halaman Jadwal menampilkan antrean dan tautan detail, termasuk pesanan offline untuk tindak lanjut manual. Detail Admin menampilkan status tawaran, mengirim satu tanggal/alasan lewat dialog, dan menjeda kontrol produksi saat tawaran menunggu. Navigasi kembali dari detail ke Jadwal diizinkan.

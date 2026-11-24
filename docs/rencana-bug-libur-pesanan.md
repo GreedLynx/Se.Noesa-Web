@@ -29,7 +29,7 @@ Ketika Admin menutup tanggal pengiriman yang sudah memiliki pesanan, setiap pesa
 ### Pekerjaan
 
 1. Baca ulang `docs/00-panduan/peta-kode.md`, `docs/01-spesifikasi/aturan-bisnis.md` bagian Tanggal libur, `docs/01-spesifikasi/api.md` bagian Tanggal libur/checkout/tawaran, `docs/01-spesifikasi/database.md` bagian migrasi 019/022, dan handoff sebelum implementasi.
-2. Dengan fixture atau PostgreSQL terisolasi, buat pesanan aktif pada tanggal buka, lalu simpan libur yang mencakup tanggal tersebut. Catat bahwa pesanan tetap ada, tidak muncul sebagai antrean khusus pada halaman Jadwal, dan tombol tawaran Admin belum berfungsi. Ulangi urutan serentak checkout–penyimpanan libur untuk memastikan lock menolak checkout yang kalah balapan.
+2. Dengan fixture atau PostgreSQL terisolasi, buat pesanan aktif pada tanggal buka, lalu pratinjau dan simpan libur yang mencakup tanggal tersebut. Pastikan konfirmasi merinci pesanan itu dan penyimpanan tidak mengubah statusnya. Ulangi urutan serentak checkout–penyimpanan libur untuk memastikan lock menolak checkout yang kalah balapan.
 3. Periksa status migrasi lewat ledger migrasi tanpa membaca `.env` atau mengubah database aplikasi. Identifikasi apakah branch implementasi memiliki skema, API, dan UI tawaran yang sama.
 
 ### Verifikasi
@@ -40,23 +40,23 @@ Ketika Admin menutup tanggal pengiriman yang sudah memiliki pesanan, setiap pesa
 
 - Jangan membatalkan pesanan lama otomatis atau mengubah kuota tersimpan ketika libur dibuat.
 
-## Phase 1 — Tampilkan pesanan terdampak pada Jadwal Admin
+## Phase 1 — Peringatkan pesanan terdampak sebelum menyimpan libur
 
 **How this serves the primary goal:** Admin langsung mengetahui pesanan mana yang perlu dihubungi setelah menyimpan atau mengedit tanggal libur.
 
 ### Pekerjaan
 
-1. Perluas GET `public/admin/api/holidays.php` dengan daftar pesanan aktif yang tanggal kirim WIB-nya berada dalam salah satu rentang libur. Ambil ID, kode, tanggal, status, dan status tawaran yang diperlukan dari database dengan satu query terikat, lalu tampilkan pada `public/admin/schedules.php` dan `public/admin/assets/admin.js` sebagai antrean dengan tautan ke detail pesanan.
-2. Muat ulang antrean setelah tambah, edit, atau hapus libur. Urutkan tanggal kirim terdekat dahulu. Tampilkan pesan kosong jika tidak ada pesanan terdampak dan penanda jika tawaran sedang menunggu jawaban.
-3. Pertahankan pemeriksaan `require_role('admin')`; tampilkan hanya data yang dibutuhkan untuk tindak lanjut. Gunakan pola `loadHolidays()` dan tautan detail yang sudah ada, tanpa tabel baru.
+1. Sebelum konfirmasi simpan, minta pratinjau pesanan aktif dalam rentang baru dan tampilkan kode, nama, tanggal kirim, serta statusnya di dialog konfirmasi.
+2. Nyatakan dengan jelas bahwa pesanan terdampak tidak berubah otomatis dan Admin perlu menindaklanjuti memakai alur pada `docs/rencana-penolakan-reschedule.md`.
+3. Jika pratinjau gagal atau rentang tidak valid, tahan penyimpanan dan tampilkan error di form.
 
 ### Verifikasi
 
-- Pesanan aktif di dalam rentang muncul; di luar rentang dan status `ditolak`/`dibatalkan` tidak muncul. Rentang tumpang tindih tidak menggandakan pesanan. Edit/hapus memperbarui antrean.
+- Konfirmasi memuat semua pesanan aktif di dalam rentang; status `ditolak`/`dibatalkan` dikecualikan. Jika tidak ada hasil, dialog menyatakan kondisi kosong.
 
 ### Guard
 
-- Jangan mengubah status pesanan atau membuat tawaran otomatis dari GET maupun saat menyimpan libur.
+- Jangan mengubah status pesanan atau membuat tawaran otomatis ketika menyimpan libur. Ikuti detail tawaran dalam plan reschedule yang menjadi sumber utama.
 
 ## Phase 2 — Sambungkan tindakan tawaran pada detail Admin
 
@@ -82,7 +82,7 @@ Ketika Admin menutup tanggal pengiriman yang sudah memiliki pesanan, setiap pesa
 
 ### Pekerjaan
 
-1. Jalankan uji PHP/Node yang relevan: `scripts/test-holidays.cjs`, `scripts/test-admin-order-detail.cjs`, `scripts/test-order-cancellation-ui.cjs`, dan `scripts/test-daily-quota.php`; tambahkan uji kecil untuk antrean libur dan handler tawaran. Uji PostgreSQL terisolasi untuk migrasi 022, role, dua Admin/tawaran, accept ketika tanggal tujuan berubah libur atau penuh, reject, dan expiry unpaid. Terapkan migrasi ke database aplikasi hanya setelah prasyarat dan persetujuan skema tim terpenuhi.
+1. Jalankan uji PHP/Node yang relevan: `scripts/test-holidays.cjs`, `scripts/test-admin-order-detail.cjs`, `scripts/test-order-cancellation-ui.cjs`, dan `scripts/test-daily-quota.php`; tambahkan uji kecil untuk pratinjau pesanan dan handler tawaran. Uji PostgreSQL terisolasi untuk migrasi 022, role, dua Admin/tawaran, accept ketika tanggal tujuan berubah libur atau penuh, reject, dan expiry unpaid. Terapkan migrasi ke database aplikasi hanya setelah prasyarat dan persetujuan skema tim terpenuhi.
 2. Periksa halaman Jadwal, Detail Admin, dan Detail Riwayat Pelanggan pada desktop dan mobile; verifikasi status sesudah simpan libur, tawaran, terima/tolak, dan refresh.
 3. Setelah kode berubah, sinkronkan `docs/00-panduan/peta-kode.md`, `docs/01-spesifikasi/api.md`, `docs/01-spesifikasi/database.md`, aturan bisnis bila perilaku berubah, dan `docs/00-panduan/HANDOFF.md`. Minta review `reviewer` untuk checkout, pembayaran, kuota, dan hak akses. Centang `.opencode/revisi.md` hanya bila file tersedia dan fitur lulus uji.
 

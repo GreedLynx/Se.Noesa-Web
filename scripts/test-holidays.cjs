@@ -55,9 +55,7 @@ function callApi(payload, missing = false, method = 'POST') {
 }
 const listing = callApi({}, false, 'GET');
 assert.equal(listing.status, 200);
-assert.match(listing.queries[1].sql, /FROM pesanan p[\s\S]*p.status IN[\s\S]*EXISTS \(SELECT 1 FROM tanggal_libur_operasional h/);
-assert.match(listing.queries[1].sql, /AT TIME ZONE 'Asia\/Jakarta'/);
-assert.deepEqual(listing.data.affected_orders, []);
+assert.equal(listing.queries.length, 1, 'GET only returns holiday ranges; reschedule details stay on order API');
 const edit = { action: 'save', id: 7, tanggal_mulai: '2030-11-20', tanggal_selesai: '2030-11-23' };
 const saved = callApi(edit);
 assert.equal(saved.status, 200);
@@ -96,19 +94,21 @@ const editButton = { dataset: { editHoliday: '7' } };
 const dom = {
     '#holiday-form': form, '#holiday-dialog': dialog, '#holiday-form-title': {},
     '#holiday-error': {}, '#holiday-rows': {}, '#new-holiday': {},
-    '#affected-orders-count': {}, '#affected-order-rows': {},
 };
 let request, fail = false;
+let confirmationText = '';
 const context = {
     $: selector => dom[selector],
     $$: selector => selector === '[data-edit-holiday]' ? [editButton] : [],
     esc: value => String(value).replaceAll('<', '&lt;'), toast() {},
     dateLabel: value => value, badge: value => value,
-    confirmDialog: async () => true,
+    confirmDialog: async (_title, message) => { confirmationText = message; return true; },
     orderDetailUrl: id => `order-detail.php?id=${id}&return_to=schedules.php`,
     api: async (url, options) => {
-        if (!options) return { items: [holiday], affected_orders: [{ id: 42, kode: 'ORD-42', nama_pemesan: '<Nama>',
-            tgl_kirim: '2030-11-20', status: 'diproses', sumber: 'online', reschedule_pending: false }] };
+        if (!options) {
+            if (url.includes('preview_start=')) return { items: [{ kode: 'ORD-42', nama_pemesan: 'Siti', tanggal_kirim: '2030-11-21', status: 'diproses' }] };
+            return { items: [holiday] };
+        }
         request = JSON.parse(JSON.stringify(options.body));
         if (fail) throw new Error('Tanggal libur tidak ditemukan');
         return { ok: true };
@@ -121,10 +121,6 @@ vm.runInContext(source.slice(source.indexOf('async function loadHolidays()'), so
     await context.schedulesPage();
     await context.loadHolidays();
     assert.match(dom['#holiday-rows'].innerHTML, /data-edit-holiday="7"/);
-    assert.equal(dom['#affected-orders-count'].textContent, '1 pesanan');
-    assert.match(dom['#affected-order-rows'].innerHTML, /ORD-42/);
-    assert.match(dom['#affected-order-rows'].innerHTML, /&lt;Nama>/);
-    assert.match(dom['#affected-order-rows'].innerHTML, /return_to=schedules.php/);
     editButton.onclick();
     assert.equal(elements.id.value, 7);
     assert.equal(elements.tanggal_mulai.value, holiday.tanggal_mulai);
@@ -133,6 +129,8 @@ vm.runInContext(source.slice(source.indexOf('async function loadHolidays()'), so
     elements.tanggal_selesai.value = '2030-11-24';
     await form.onsubmit({ preventDefault() {} });
     assert.deepEqual(request, { ...edit, tanggal_selesai: '2030-11-24' });
+    assert.match(confirmationText, /ORD-42.*Siti.*2030-11-21.*diproses/);
+    assert.match(confirmationText, /Pesanan tidak berubah otomatis/);
     assert.equal(dialog.open, false);
     dom['#new-holiday'].onclick();
     assert.equal(elements.id.value, '');

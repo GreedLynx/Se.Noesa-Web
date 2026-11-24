@@ -283,10 +283,11 @@ tambahan tanggal mengembalikan satu baris atau null. Seluruh aksi wajib Admin.
 
 Halaman Jadwal mengelola tanggal libur; tanggal operasional lain selalu dianggap
 buka. GET `admin/api/holidays.php` mengembalikan
-`{items:[{id,tanggal_mulai,tanggal_selesai}],affected_orders:[{id,kode,nama_pemesan,tgl_kirim,status,sumber,reschedule_pending}]}`.
-`affected_orders` memuat pesanan aktif pada tanggal libur WIB tanpa duplikasi
-untuk rentang yang tumpang tindih; pesanan offline ditandai untuk tindak lanjut
-manual. POST menerima `action=save`
+`{items:[{id,tanggal_mulai,tanggal_selesai}]}`. Dengan query
+`preview_start` dan `preview_end` bertanggal YYYY-MM-DD, endpoint mengembalikan
+`{items:[{id,kode,nama_pemesan,tanggal_kirim,status}]}` berisi pesanan aktif
+dalam rentang tersebut. UI menampilkan hasil ini pada konfirmasi sebelum libur
+disimpan. POST menerima `action=save`
 (default) dengan `tanggal_mulai` dan `tanggal_selesai` YYYY-MM-DD, atau
 `action=delete` dengan `id`. Rentang inklusif dan harus berurutan. Role wajib
 Admin. `action=save` dengan `id` integer positif memperbarui rentang libur yang
@@ -530,5 +531,9 @@ dan mengubah `menunggu_validasi` menjadi `diproses`. Reject membatalkan pesanan
 serta mencatat sumber/status asal pembatalan; refund yang sudah dibayar tetap
 ditangani Admin di luar aplikasi. Versi lama, tawaran kedaluwarsa, atau status
 pesanan yang berubah menghasilkan HTTP 409. Endpoint GET hanya membaca tawaran.
+Detail pelanggan menampilkan arahan ringkas selama tawaran menunggu. Setelah
+pelanggan menolak, bagian Refund menunjukkan kode pesanan dan kanal kontak Admin
+yang sudah dikonfigurasi; tampilan ini tidak mengubah respons API atau status
+pembayaran.
 
 Background pola Pelanggan memakai aset statis `public/assets/img/Pattern_Se.Noesa_Background.png`; perubahan ini tidak mengubah kontrak endpoint API.

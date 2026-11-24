@@ -73,7 +73,7 @@ Rencana dan progress: `docs/rencana-navigasi-kembali-admin.md`.
 |---|---|
 | UI Admin tambah/edit/hapus rentang libur inklusif | `public/admin/schedules.php`, `public/admin/assets/admin.js` |
 | CRUD tanggal libur role Admin | `public/admin/api/holidays.php` |
-| Daftar pesanan aktif terdampak libur dan tautan detail | `public/admin/api/holidays.php`, `public/admin/schedules.php`, `public/admin/assets/admin.js` |
+| Pratinjau pesanan aktif terdampak pada konfirmasi rentang libur | `public/admin/api/holidays.php`, `public/admin/assets/admin.js` |
 | Uji form tambah/edit dan validasi API libur tanpa database aplikasi | `scripts/test-holidays.cjs` |
 | Overlay kuota efektif semua produk menjadi 0 | `app/daily-quota.php`, `database/migrations/019_operational_holidays.sql` |
 | Peringatan tanggal libur dan blokir checkout pelanggan | `public/pelanggan/api/catalog.php`, `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
@@ -93,6 +93,7 @@ mengelola periode PO.
 | Migrasi tabel tawaran satu baris per pesanan | `database/migrations/022_order_reschedule_offer.sql`, `database/schema.sql` |
 | Admin membuat/memperbarui tawaran dan menampilkan statusnya | `public/admin/api/orders.php`, `public/admin/order-detail.php`, `public/admin/assets/admin.js`, `public/admin/assets/admin.css` |
 | Pelanggan menerima/menolak tawaran dan melihat riwayatnya | `public/pelanggan/api/orders.php`, `public/pelanggan/assets/customer.js` |
+| Arahan ringkas saat tawaran aktif dan kontak Admin/refund setelah ditolak | `public/pelanggan/assets/customer.js`, `public/pelanggan/assets/customer.css`, `public/pelanggan/partials/layout.php` |
 | Validasi kuota tujuan saat tawaran diterima | `app/daily-quota.php`, `public/pelanggan/api/orders.php` |
 | Tutup tawaran unpaid saat tenggat pembayaran | `app/order-expiration.php`, `scripts/expire-unpaid-orders.php` |
 

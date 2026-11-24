@@ -2153,3 +2153,5 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
     font-weight:700
 }
 .cancellation-terms-content .admin-socials { margin-top:10px; }
+.reschedule-deadline { margin: 12px 0 8px; }
+.reschedule-payment-help { margin: 10px 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }

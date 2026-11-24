@@ -113,7 +113,7 @@ if ($('#quota-date')) $('#quota-date').onchange = () => {
 };
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
-function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
+function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary", messageHtml = null) {
     return new Promise((resolve) => {
         const dialog = $("#app-confirm-dialog");
         if (!dialog) return resolve(confirm(message));
@@ -124,7 +124,7 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
         const iconEl = $("#confirm-icon");
 
         titleEl.textContent = title;
-        msgEl.textContent = message;
+        msgEl.innerHTML = messageHtml ?? esc(message);
         btnYes.textContent = confirmLabel;
 
         btnYes.className = "button " + type;
@@ -233,14 +233,6 @@ async function loadHolidays() {
     </tr>`
     ).join("");
     $("#holiday-rows").innerHTML = rows || '<tr><td colspan="2" class="empty-state">Belum ada tanggal libur.</td></tr>';
-    const affected = d.affected_orders || [];
-    $("#affected-orders-count").textContent = affected.length + " pesanan";
-    $("#affected-order-rows").innerHTML = affected.map(order =>
-        '<tr><td><b>' + esc(order.kode) + '</b><small>' + esc(order.nama_pemesan) + '</small></td>' +
-        '<td>' + dateLabel(order.tgl_kirim, true) + '</td><td>' + badge(order.status) + '</td>' +
-        '<td>' + (order.sumber === 'offline' ? 'Tindak lanjut manual' : order.reschedule_pending ? 'Menunggu jawaban pelanggan' : 'Perlu ditindaklanjuti') +
-        ' <a class="button small secondary" href="' + esc(orderDetailUrl(order.id)) + '">Lihat detail</a></td></tr>'
-    ).join("") || '<tr><td colspan="4" class="empty-state">Tidak ada pesanan aktif pada tanggal libur.</td></tr>';
     $$('[data-edit-holiday]').forEach(btn => {
         btn.onclick = () => editHoliday(d.items.find(holiday => Number(holiday.id) === Number(btn.dataset.editHoliday)));
     });
@@ -275,11 +267,28 @@ async function schedulesPage() {
         const isEdit = Boolean(form.elements.id.value);
         const start = form.elements.tanggal_mulai.value;
         const end = form.elements.tanggal_selesai.value;
+        $("#holiday-error").textContent = "";
+        let affected;
+        try {
+            const preview = await api("api/holidays.php?preview_start=" + encodeURIComponent(start) + "&preview_end=" + encodeURIComponent(end));
+            affected = preview.items || [];
+        } catch (err) {
+            $("#holiday-error").textContent = err.message;
+            return;
+        }
+        const orderWarning = affected.length
+            ? `<section class="holiday-impact" aria-label="${affected.length} pesanan terdampak"><b>${affected.length} pesanan terdampak</b><div class="holiday-impact-pills">${affected.map(order =>
+                `<span class="holiday-impact-pill"><strong>${esc(order.kode)}</strong><span>${esc(order.nama_pemesan)}</span></span>`
+            ).join("")}</div><p>Pesanan tidak berubah otomatis. Tindak lanjuti melalui detail pesanan.</p></section>`
+            : '<p class="holiday-impact-empty">Tidak ada pesanan aktif pada rentang ini.</p>';
+        const message = `Terapkan tanggal libur ${start} s/d ${end}? Pelanggan tidak dapat memesan pada rentang ini.`;
+        const messageHtml = `<span>${esc(message)}</span>${orderWarning}`;
         const confirmed = await confirmDialog(
             isEdit ? "Simpan Perubahan Libur" : "Simpan Tanggal Libur",
-            `Terapkan tanggal libur operasional ${start} s/d ${end}? Pelanggan tidak dapat memesan pada rentang tanggal ini.`,
+            message,
             "Ya, Simpan",
-            "primary"
+            "primary",
+            messageHtml
         );
         if (!confirmed) return;
 

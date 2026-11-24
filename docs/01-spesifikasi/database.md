@@ -325,7 +325,9 @@ menandai tawarannya kedaluwarsa.
 Admin dapat memperbarui tawaran selama belum dijawab; `dibuat_at` diperbarui
 sebagai token versi agar pelanggan tidak dapat mengirim jawaban dari halaman
 tawaran lama. Penolakan pelanggan mengalihkan pesanan ke `dibatalkan` dengan
-metadata sumber pelanggan yang sudah tersedia pada migrasi 021.
+metadata sumber pelanggan yang sudah tersedia pada migrasi 021. Informasi
+kontak dan arahan refund ditampilkan dari konfigurasi serta status tawaran yang
+sudah ada, tanpa kolom atau migrasi baru.
 
 ## Pencarian rekonsiliasi pembayaran terlambat
 

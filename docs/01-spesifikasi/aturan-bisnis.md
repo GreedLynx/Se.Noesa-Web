@@ -40,6 +40,9 @@
 - Pesanan yang sudah ada tidak berubah otomatis ketika libur ditambahkan.
   Kebijakan yang disepakati: Admin menolaknya satu per satu dengan alasan dan
   tawaran penjadwalan ulang; alur Admin tersebut menjadi implementasi terpisah.
+- Sebelum rentang libur disimpan, Admin mendapat peringatan yang merinci pesanan
+  aktif terdampak. Admin menindaklanjutinya memakai alur tawaran pada plan
+  penolakan dan reschedule; penyimpanan libur tidak mengubah pesanan otomatis.
 - Halaman Jadwal menampilkan pesanan aktif yang tanggal kirimnya tertutup agar
   Admin dapat membuka detail dan menawari jadwal pengganti. Pesanan offline
   memerlukan tindak lanjut manual karena tidak mempunyai respons pelanggan.

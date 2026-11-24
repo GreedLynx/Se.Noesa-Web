@@ -37,13 +37,6 @@ admin_head('Tanggal Libur', 'schedules');
         </tbody>
     </table>
 </section>
-<section class="panel products-panel" aria-labelledby="affected-orders-title">
-    <div class="panel-heading"><div><h2 id="affected-orders-title">Pesanan terdampak libur</h2>
-        <p class="muted">Periksa setiap pesanan. Pesanan online dapat ditawari tanggal pengganti pada halaman detail.</p></div>
-        <span class="tag soft" id="affected-orders-count">0 pesanan</span></div>
-    <div class="affected-orders-scroll"><table><thead><tr><th>Pesanan</th><th>Tanggal kirim</th><th>Status</th><th>Tindak lanjut</th></tr></thead>
-        <tbody id="affected-order-rows"><tr><td colspan="4">Memuat pesanan...</td></tr></tbody></table></div>
-</section>
 <dialog id="holiday-dialog" class="product-dialog" aria-labelledby="holiday-form-title">
     <form id="holiday-form">
         <input type="hidden" name="id">
