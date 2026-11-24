@@ -75,13 +75,13 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
             btnYes.style.color = "#fff";
             iconEl.style.background = "#f8e4e1";
             iconEl.style.color = "#a5463b";
-            iconEl.innerHTML = "&#9888;";
+            iconEl.innerHTML = '<span class="ui-icon icon-peringatan" aria-hidden="true"></span>';
         } else {
             btnYes.style.background = ""; // default (var(--g))
             btnYes.style.color = "#fff";
             iconEl.style.background = "var(--gl)";
             iconEl.style.color = "var(--gd)";
-            iconEl.innerHTML = "&#10003;";
+            iconEl.innerHTML = '<span class="ui-icon icon-berhasil" aria-hidden="true"></span>';
         }
 
         dialog.showModal();
@@ -155,6 +155,9 @@ $$(".eye").forEach(
         (b.onclick = () => {
             const i = b.previousElementSibling;
             i.type = i.type === "password" ? "text" : "password";
+            b.setAttribute("aria-label", (i.type === "text" ? "Sembunyikan " : "Tampilkan ") + (i.name === "confirm" ? "konfirmasi password" : "password"));
+            b.querySelector(".ui-icon")?.classList.toggle("icon-mata", i.type === "password");
+            b.querySelector(".ui-icon")?.classList.toggle("icon-mata-tutup", i.type === "text");
         }),
 );
 

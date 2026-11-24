@@ -314,8 +314,8 @@ function showProduct(product) {
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
         + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan se.noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
         + productMinimum + ' porsi</b></span><span id="detail-stock"' + (showRemainingStock(product, sisaAfter) ? '' : ' hidden') + '>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
-        + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
-        + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
+        + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi"><span class="ui-icon icon-kurang" aria-hidden="true"></span></button><input id="quantity-value" type="number" min="'
+        + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah"><span class="ui-icon icon-tambah" aria-hidden="true"></span></button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
     function setQuantity(value, normalize = false) {
         if (value === '' && !normalize) {
@@ -407,7 +407,7 @@ function openCart() {
         const p = productCache[id];
         const min = Math.max(MIN_ORDER_QTY, Number(p?.min_pesan || 0));
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '>&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (orderFull || qty >= Number(p.sisa) ? ' disabled' : '') + '>+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '><span class="ui-icon icon-kurang" aria-hidden="true"></span></button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (orderFull || qty >= Number(p.sisa) ? ' disabled' : '') + '><span class="ui-icon icon-tambah" aria-hidden="true"></span></button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua"><span class="ui-icon icon-hapus" aria-hidden="true"></span></button></div>': ''
     }).join('');
     $$('[data-dec]').forEach(b => b.onclick = () => {
         const id = b.dataset.dec;
@@ -579,10 +579,10 @@ async function loadHistory() {
             (o.status === 'ditolak' && o.alasan_penolakan
                 ? '<p class="history-rejection-reason"><b>Alasan penolakan:</b> ' + esc(o.alasan_penolakan) + '</p>'
                 : '') + '<div class="history-products">' + (first.gambar ? '<img src="'
-            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan se.noesa')
+            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon"><span class="ui-icon icon-kosong" aria-hidden="true"></span></span>') + '<span><b>' + esc(first.nama || 'Pesanan se.noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
             + '</small></span></div>' + (o.reschedule_pending ? '<p class="history-rejection-reason">Menunggu konfirmasi jadwal</p>' : '')
-            + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
+            + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></span></div></button>'
     }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
@@ -654,7 +654,7 @@ async function openHistoryDetail(id) {
         : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
     const socialChannels = [
         ['Instagram', socialUrl(window.snoesaContact && window.snoesaContact.instagram), '◎'],
-        ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '♪'],
+        ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '<span class="ui-icon icon-musik-sosial" aria-hidden="true"></span>'],
     ].filter(([, url]) => url);
     const socialLine = socialChannels.length
         ? `<div class="admin-socials"><small>Ikuti info Se.Noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} Se.Noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
@@ -983,7 +983,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alertBox.style.background = '#fff3cd';
                 alertBox.style.borderColor = '#ffeeba';
                 alertBox.style.color = '#856404';
-                alertBox.innerHTML = '<b>⚠️ Tanggal Libur</b><br>se.noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                alertBox.innerHTML = '<b><span class="ui-icon icon-peringatan" aria-hidden="true"></span> Tanggal Libur</b><br>se.noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
                 return;
             }
 
@@ -991,7 +991,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alertBox.style.background = '#e0f2fe';
                 alertBox.style.borderColor = '#bae6fd';
                 alertBox.style.color = '#0369a1';
-                alertBox.innerHTML = '<b>ℹ️ Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
+                alertBox.innerHTML = '<b><span class="ui-icon icon-informasi" aria-hidden="true"></span> Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
                 return;
             }
 
@@ -1007,19 +1007,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (!produk) {
                     hasError = true;
-                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
                     continue;
                 }
 
                 const sisa = Number(produk.sisa ?? produk.kuota ?? 0);
                 if (sisa <= 0) {
                     hasError = true;
-                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
                 } else if (qty > sisa) {
                     hasError = true;
-                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span>❌</span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
                 } else {
-                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span>✅</span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
+                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span class="ui-icon icon-berhasil" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
                 }
             }
             listHtml += '</ul>';
@@ -1032,7 +1032,7 @@ document.addEventListener("DOMContentLoaded", function () {
             alertBox.style.background = '#fef2f2';
             alertBox.style.borderColor = '#fecaca';
             alertBox.style.color = '#991b1b';
-            alertBox.innerHTML = `❌ Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
+            alertBox.innerHTML = `<span class="ui-icon icon-gagal" aria-hidden="true"></span> Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
         }
     }
 

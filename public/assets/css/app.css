@@ -399,6 +399,13 @@ body:is([data-page="login"], [data-page="register"]) .auth-logo {
 .nav a.on svg {
   transform: translateY(-1px);
 }
+.nav a .ui-icon { font-size:22px; }
+.nav a.on .ui-icon { transform:translateY(-1px); }
+.top .btn-ic .ui-icon { font-size:20px; }
+.owner-signout .ui-icon { font-size:18px; }
+.search .ui-icon { font-size:20px; }
+.date-pill-btn .ui-icon,
+.modal-close-btn .ui-icon { font-size:16px; color:var(--green-dark); }
 /* cards */
 .greet {
   font-size: 23px;

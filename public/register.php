@@ -30,7 +30,7 @@ head('Sign Up', 'register', true);
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg>
             <input name="password" type="password" placeholder="Password" required>
-            <button type="button" class="eye">👁</button>
+            <button type="button" class="eye" aria-label="Tampilkan password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button>
         </label>
         <label class="field">
             <svg viewBox="0 0 24 24">
@@ -38,7 +38,7 @@ head('Sign Up', 'register', true);
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg>
             <input name="confirm" type="password" placeholder="Konfirmasi Password" required>
-            <button type="button" class="eye">👁</button>
+            <button type="button" class="eye" aria-label="Tampilkan konfirmasi password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button>
         </label>
         <label class="field">
             <svg viewBox="0 0 24 24">

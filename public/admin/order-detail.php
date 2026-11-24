@@ -78,7 +78,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
                 <p class="eyebrow">PENOLAKAN PEMBAYARAN</p>
                 <h2>Berikan alasan</h2>
             </div>
-            <button type="button" class="icon-close" data-cancel-rejection aria-label="Tutup">&times;</button>
+            <button type="button" class="icon-close" data-cancel-rejection aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
         </div>
         <p class="muted">Alasan ini akan ditampilkan kepada pelanggan pada detail pesanan.</p>
         <label for="rejection-reason">Alasan penolakan
@@ -99,7 +99,7 @@ if (is_string($returnTo) && !preg_match('/[\x00-\x20\x7f\\\\#]/', $returnTo)) {
                 <p class="eyebrow">JADWAL PENGGANTI</p>
                 <h2 id="reschedule-order-title">Tawarkan tanggal baru</h2>
             </div>
-            <button type="button" class="icon-close" data-cancel-reschedule aria-label="Tutup">&times;</button>
+            <button type="button" class="icon-close" data-cancel-reschedule aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
         </div>
         <p class="muted">Kuota tanggal baru akan diperiksa kembali ketika pelanggan menerima tawaran.</p>
         <p id="reschedule-payment-note" class="muted" hidden>Mengirim tawaran ini menyatakan pembayaran sudah valid. Jika pelanggan menerima, pesanan langsung berstatus Diproses.</p>

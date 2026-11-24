@@ -71,6 +71,9 @@
     cursor: pointer;
 }
 .date-trigger svg { width: 24px; height: 24px; flex-shrink: 0; color: var(--date-sage); }
+.date-trigger > .ui-icon { font-size:24px; color:var(--date-sage); }
+.date-trigger-action .ui-icon { font-size:12px; margin-left:6px; }
+.date-icon-button .ui-icon { font-size:20px; }
 .date-trigger-value { flex: 1; font-size: 15px; font-weight: 600; }
 .date-trigger-action { margin-left: auto; color: var(--date-sage); font-size: 12px; white-space: nowrap; }
 .date-trigger-action span { margin-left: 6px; }

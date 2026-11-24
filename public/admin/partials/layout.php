@@ -18,6 +18,7 @@ function admin_head(string $title, string $page): void
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="assets/admin.css?v=<?= filemtime(__DIR__ . '/../assets/admin.css') ?>">
+    <link rel="stylesheet" href="../assets/component/icons.css?v=<?= filemtime(__DIR__ . '/../../assets/component/icons.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
     <link rel="stylesheet" href="../assets/css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
@@ -32,35 +33,30 @@ function admin_head(string $title, string $page): void
             <div class="side-label"></div>
             <nav class="side-nav">
                 <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>Dashboard
+                    <span class="nav-icon"><span class="ui-icon icon-dashboard" aria-hidden="true"></span></span>Dashboard
                 </a>
                 <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>Pesanan <i id="pending-badge"></i>
+                    <span class="nav-icon"><span class="ui-icon icon-pesanan" aria-hidden="true"></span></span>Pesanan <i id="pending-badge"></i>
                 </a>
                 <a href="late-payments.php" class="<?= $page === 'late-payments' ? 'active' : '' ?>">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7h18v10H3z"/><path d="M3 7l9 6 9-6"/></svg></span>Pembayaran Terlambat
+                    <span class="nav-icon"><span class="ui-icon icon-terlambat" aria-hidden="true"></span></span>Pembayaran Terlambat
                 </a>
                 <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></span>Produk &amp; Kuota
+                    <span class="nav-icon"><span class="ui-icon icon-produk" aria-hidden="true"></span></span>Produk &amp; Kuota
                 </a>
-                <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>"><span class="nav-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M12 7v5l3 3"/>
-                        </svg>
-                    </span>Jadwal
+                <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>"><span class="nav-icon"><span class="ui-icon icon-kalender" aria-hidden="true"></span></span>Jadwal
                 </a>
                 <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>">
-                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></span>Notifikasi
+                    <span class="nav-icon"><span class="ui-icon icon-notifikasi" aria-hidden="true"></span></span>Notifikasi
                 </a>
             </nav>
             <div class="sidebar-bottom">
-                <button class="signout" data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4"/></svg> Keluar</button>
+                <button class="signout" data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span> Keluar</button>
             </div>
         </aside>
         <main class="main-panel">
             <header class="topbar">
-                <button class="menu-toggle" aria-label="Buka menu">&#9776;</button>
+                <button class="menu-toggle" aria-label="Buka menu"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
                 <div class="top-copy">
                     <small>Se.Noesa / Admin</small>
                     <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
@@ -97,19 +93,16 @@ function admin_foot(?string $page = null): void
     ?>
             </div>
             <nav class="mobile-nav">
-                <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></a>
-                <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Pesanan</span></a>
-                <a href="late-payments.php" class="<?= ($GLOBALS['admin_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7h18v10H3z"/><path d="M3 7l9 6 9-6"/></svg><span>Terlambat</span></a>
-                <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg><span>Produk</span></a>
+                <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><span class="ui-icon icon-dashboard" aria-hidden="true"></span><span>Dashboard</span></a>
+                <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><span class="ui-icon icon-pesanan" aria-hidden="true"></span><span>Pesanan</span></a>
+                <a href="late-payments.php" class="<?= ($GLOBALS['admin_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><span class="ui-icon icon-terlambat" aria-hidden="true"></span><span>Terlambat</span></a>
+                <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><span class="ui-icon icon-produk" aria-hidden="true"></span><span>Produk</span></a>
                 <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 3"/>
-                    </svg>
+                    <span class="ui-icon icon-kalender" aria-hidden="true"></span>
                     <span>Jadwal</span>
                 </a>
-                <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>Notifikasi</span></a>
-                <button data-logout><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true"><path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4"/></svg><span>Keluar</span></button>
+                <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>"><span class="ui-icon icon-notifikasi" aria-hidden="true"></span><span>Notifikasi</span></a>
+                <button data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span><span>Keluar</span></button>
             </nav>
         </main>
     </div>
@@ -117,7 +110,7 @@ function admin_foot(?string $page = null): void
     <!-- DIALOG KONFIRMASI CUSTOM (MODERN) -->
     <dialog id="app-confirm-dialog" class="product-dialog confirm-dialog">
         <div class="confirm-content">
-            <div class="confirm-icon" id="confirm-icon">&#10003;</div>
+            <div class="confirm-icon" id="confirm-icon"><span class="ui-icon icon-berhasil" aria-hidden="true"></span></div>
             <h2 id="confirm-title" style="text-align:center; font-size: 24px; margin: 15px 0 10px; color: var(--ink);">Konfirmasi</h2>
             <p class="muted" id="confirm-message" style="text-align:center; font-size: 14px; line-height: 1.6; margin-bottom: 25px;">Apakah Anda yakin?</p>
         </div>

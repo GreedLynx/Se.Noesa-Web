@@ -45,7 +45,7 @@ $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->forma
             <small>NOTIFIKASI BARU</small>
             <h2 id="mn-create-title">Kirim notifikasi perubahan menu</h2>
         </div>
-        <button type="button" class="mn-close" data-mn-close aria-label="Tutup">&times;</button>
+        <button type="button" class="mn-close" data-mn-close aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
     </div>
     <form id="mn-create-form">
         <div class="mn-form-grid">
@@ -107,7 +107,7 @@ $today = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta')))->forma
             <small>DETAIL NOTIFIKASI</small>
             <h2 id="mn-detail-title">Respons pelanggan</h2>
         </div>
-        <button type="button" class="mn-close" data-mn-close aria-label="Tutup">&times;</button>
+        <button type="button" class="mn-close" data-mn-close aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
     </div>
     <div data-mn-detail-body>
         <p class="mn-list-empty">Memuat detail…</p>

@@ -32,7 +32,7 @@ head('Login', 'login', true);
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg>
             <input name="password" type="password" placeholder="Password" required>
-            <button type="button" class="eye" aria-label="Tampilkan password">👁</button>
+            <button type="button" class="eye" aria-label="Tampilkan password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button>
         </label>
         <p class="err" id="err"></p>
         <button class="btn-main">Login</button>

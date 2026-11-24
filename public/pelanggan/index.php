@@ -32,23 +32,20 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
     </div>
     <label class="customer-search">
         <input id="catalog-search" type="search" placeholder="Cari menu" aria-label="Cari menu">
-        <span><svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="10.8" cy="10.8" r="6.8" />
-                <path d="m16 16 5 5" />
-            </svg></span>
+        <span class="ui-icon icon-cari" aria-hidden="true"></span>
     </label>
 </div>
 <section class="menu-grid" id="menu-grid" aria-live="polite"></section>
 <button type="button" class="catalog-search-shortcut" aria-label="Kembali ke pencarian menu" hidden>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+    <span class="ui-icon icon-cari" aria-hidden="true"></span>
 </button>
 <div class="cart-bar" id="cart-bar" hidden>
-    <div class="cart-icon">&#128722;<b id="cart-count">0</b></div>
+    <div class="cart-icon"><span class="ui-icon icon-keranjang" aria-hidden="true"></span><b id="cart-count">0</b></div>
     <span><strong id="cart-total">Rp 0</strong><small id="cart-summary">0 menu dipilih</small></span>
-    <button id="checkout-button" class="customer-button primary">Lihat pesanan <span>&rarr;</span></button>
+    <button id="checkout-button" class="customer-button primary">Lihat pesanan <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></button>
 </div>
 <dialog id="cart-dialog" class="customer-dialog cart-dialog" aria-labelledby="cart-title">
-    <button class="dialog-close" data-close-cart aria-label="Tutup">&times;</button>
+    <button class="dialog-close" data-close-cart aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
     <p class="eyebrow">ISI KERANJANG</p> <!-- TEKS SUDAH DIUBAH -->
     <h2 id="cart-title">Menu pilihan</h2>
     <div id="cart-lines"></div>

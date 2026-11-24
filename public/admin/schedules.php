@@ -50,7 +50,7 @@ admin_head('Tanggal Libur', 'schedules');
                 </h2>
             </div>
             <button type="button" class="icon-close" data-close-dialog aria-label="Tutup">
-                &times;
+                <span class="ui-icon icon-tutup" aria-hidden="true"></span>
             </button>
         </div>
         <div class="form-row">

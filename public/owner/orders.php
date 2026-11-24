@@ -14,7 +14,7 @@ topbar('Pesanan');
         <h3>Kapasitas dapur</h3>
         <p id="orders-capacity">Memuat kapasitas...</p>
     </div>
-    <span class="capacity-icon" aria-hidden="true">&#9749;</span>
+    <span class="capacity-icon" aria-hidden="true"><span class="ui-icon icon-kapasitas"></span></span>
 </section>
 <div class="seg order-tabs rise" id="order-tabs" role="tablist" aria-label="Filter status pesanan">
     <button class="on" type="button" data-tab="semua">Semua <b id="all-count">0</b></button>
@@ -25,7 +25,7 @@ topbar('Pesanan');
     <button type="button" data-tab="ditolak">Ditolak <b id="rejected-count">0</b></button>
 </div>
 <label class="search rise">
-    <span aria-hidden="true">&#9906;</span>
+    <span class="ui-icon icon-cari" aria-hidden="true"></span>
     <input id="order-search" type="search" placeholder="Cari pemesan atau kode pesanan">
 </label>
 <div id="order-list" aria-live="polite">

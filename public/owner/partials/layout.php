@@ -23,6 +23,7 @@ function head(string $title, string $page, bool $auth = false)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="<?= $assetPrefix ?>css/app.css?v=<?= filemtime(__DIR__ . '/../../assets/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= $assetPrefix ?>component/icons.css?v=<?= filemtime(__DIR__ . '/../../assets/component/icons.css') ?>">
     <link rel="stylesheet" href="<?= $assetPrefix ?>css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
     <link rel="stylesheet" href="<?= $assetPrefix ?>css/menu-notifications.css?v=<?= filemtime(__DIR__ . '/../../assets/css/menu-notifications.css') ?>">
 </head>
@@ -43,7 +44,7 @@ function topbar(string $title, bool $back = false)
             <div class="row">
                 <?php if ($back): ?>
                     <a class="btn-ic" href="orders.php" aria-label="Kembali ke pesanan">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6M9 12h12" /></svg>
+                        <span class="ui-icon icon-panah-kiri" aria-hidden="true"></span>
                     </a>
                 <?php endif; ?>
                 <div>
@@ -82,10 +83,10 @@ function nav(string $on)
 {
     $u = me();
     $i = [
-        'dashboard' => ['Dashboard', '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>'],
-        'orders' => ['Pesanan', '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21zM10 8h4M10 12h4"/>'],
-        'products' => ['Produk', '<path d="M4 7h16v3H4zM5 10v9h14v-9M10 14h4"/>'],
-        'notifications' => ['Notifikasi', '<path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/>']
+        'dashboard' => ['Dashboard', 'dashboard'],
+        'orders' => ['Pesanan', 'pesanan'],
+        'products' => ['Produk', 'produk'],
+        'notifications' => ['Notifikasi', 'notifikasi']
     ];
     ?>
         <nav class="nav">
@@ -94,9 +95,9 @@ function nav(string $on)
                 <span>Se.Noesa<small>OWNER PANEL</small></span>
             </a>
             <span class="pill" id="pill"></span>
-            <?php foreach ($i as $k => [$l, $p]): ?>
+            <?php foreach ($i as $k => [$l, $icon]): ?>
                 <a href="<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>">
-                    <svg viewBox="0 0 24 24"><?= $p ?></svg>
+                    <span class="ui-icon icon-<?= $icon ?>" aria-hidden="true"></span>
                     <span><?= $l ?></span>
                 </a>
             <?php endforeach; ?>
@@ -106,9 +107,7 @@ function nav(string $on)
                     <span><b><?= htmlspecialchars($u['username'] ?? 'Owner', ENT_QUOTES, 'UTF-8') ?></b><small>Owner</small></span>
                 </div>
                 <button class="owner-signout" type="button" data-logout>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4" />
-                    </svg>
+                    <span class="ui-icon icon-keluar" aria-hidden="true"></span>
                     <span>Keluar</span>
                 </button>
             </div>
@@ -125,7 +124,7 @@ function foot()
     <!-- DIALOG KONFIRMASI CUSTOM -->
     <dialog id="app-confirm-dialog" class="confirm-dialog">
         <div class="confirm-content">
-            <div class="confirm-icon" id="confirm-icon">&#10003;</div>
+            <div class="confirm-icon" id="confirm-icon"><span class="ui-icon icon-berhasil" aria-hidden="true"></span></div>
             <h2 id="confirm-title" style="text-align:center; font-size: 22px; margin: 15px 0 10px; color: var(--gd);">Konfirmasi</h2>
             <p class="muted" id="confirm-message" style="text-align:center; font-size: 13px; line-height: 1.5; margin-bottom: 25px;">Apakah Anda yakin?</p>
         </div>

@@ -23,6 +23,7 @@ function customer_head(string $title, string $page): array
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/customer.css?v=<?= $css('customer.css') ?>">
+    <link rel="stylesheet" href="../assets/component/icons.css?v=<?= filemtime(__DIR__ . '/../../assets/component/icons.css') ?>">
     <link rel="stylesheet" href="assets/quantity-input.css?v=<?= $css('quantity-input.css') ?>">
     <link rel="stylesheet" href="assets/catalog-mobile.css?v=<?= $css('catalog-mobile.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
@@ -32,34 +33,34 @@ function customer_head(string $title, string $page): array
 <body data-page="<?= htmlspecialchars($page) ?>">
     <div class="customer-shell">
         <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
-            <button class="customer-sidebar-close" type="button" aria-label="Tutup menu">&times;</button>
+            <button class="customer-sidebar-close" type="button" aria-label="Tutup menu"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
             <a class="customer-logo" href="index.php" aria-label="se.noesa — kembali ke katalog">
                 <img src="../assets/img/logo-icon.png" alt="" width="32" height="40">
             </a>
             <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
                 <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">
-                    <span>◯</span>
+                    <span class="ui-icon icon-menu-makanan" aria-hidden="true"></span>
                     <small>Menu</small>
                 </a>
                 <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
-                    <span>☰</span>
+                    <span class="ui-icon icon-riwayat" aria-hidden="true"></span>
                     <small>Riwayat</small>
                 </a>
                 <a class="<?= $page === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php">
-                    <span>✉</span>
+                    <span class="ui-icon icon-notifikasi" aria-hidden="true"></span>
                     <small>Notifikasi</small>
                     <b class="customer-notif-count desktop" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
                 </a>
             </nav>
             <button class="rail-logout" type="button" data-logout aria-label="Keluar dari akun">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+                <span class="ui-icon icon-keluar" aria-hidden="true"></span>
                 <small>Keluar</small>
             </button>
         </aside>
         <button class="customer-sidebar-backdrop" type="button" aria-label="Tutup menu" hidden></button>
         <main class="customer-main">
             <header class="customer-top">
-                <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false">&#9776;</button>
+                <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
                 <div><small>se.noesa / Pelanggan</small></div>
                 <div class="customer-user">
                     <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
@@ -78,11 +79,11 @@ function customer_foot(): void
             </div>
         </main>
         <dialog id="detail-dialog" class="customer-dialog" aria-label="Detail menu">
-            <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
+            <button class="dialog-close" data-close-detail aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
             <div id="detail-content"></div>
         </dialog>
         <dialog id="checkout-dialog" class="customer-dialog checkout-dialog" aria-labelledby="checkout-title">
-            <button class="dialog-close" data-close-checkout aria-label="Tutup">&times;</button>
+            <button class="dialog-close" data-close-checkout aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
             <div class="dialog-heading">
                 <p class="eyebrow">KONFIRMASI</p>
                 <h2 id="checkout-title">Data pemesanan</h2>

@@ -8,7 +8,7 @@ Seluruh dokumentasi proyek dikelompokkan ke tujuh kategori berdasarkan perannya.
 | [`01-spesifikasi/`](01-spesifikasi/) | Spesifikasi teknis aplikasi | `api.md`, `database.md`, `aturan-bisnis.md` |
 | [`02-revisi-tugas/`](02-revisi-tugas/) | Sumber revisi, prompt, dan task board | `REVISI-LANJUTAN-SE.NOESA.md`, `revisi-senoesa.md`, `TASKS-IMPLEMENTASI-SE.NOESA.md`, `PROMPT-EKSEKUSI-SE.NOESA.md`, `rencana-kuota-default-override.md`, `rencana-pembatalan-pesanan.md`, `rencana-visibilitas-pembatalan-admin.md` |
 | [`03-audit/`](03-audit/) | Hasil audit & verifikasi | `audit-2026-11-13.md`, `AUDIT-REVISI-TAHAP-2.md`, `AUDIT-REVISI-TAHAP-2-CORRECTION.md`, `AUDIT-CONCURRENCY-KUOTA.md`, `ringkasan-sesi-2026-11-06.md`, `verifikasi-notifikasi-menu-2026-11-16.md` |
-| [`04-implementasi/`](04-implementasi/) | Catatan eksekusi & bukti test | `PROGRESS-IMPLEMENTASI-SE.NOESA.md`, `CHANGELOG-IMPLEMENTASI-SE.NOESA.md`, `TEST-REPORT-SE.NOESA.md`, `TEST-MATRIX-PEMBAYARAN.md` |
+| [`04-implementasi/`](04-implementasi/) | Catatan eksekusi & bukti test | `PROGRESS-IMPLEMENTASI-SE.NOESA.md`, `CHANGELOG-IMPLEMENTASI-SE.NOESA.md`, `TEST-REPORT-SE.NOESA.md`, `TEST-MATRIX-PEMBAYARAN.md`, `katalog-ikon.md`, `laporan-uji-ikon-2026-11-24.md` |
 | [`05-keputusan-bisnis/`](05-keputusan-bisnis/) | Register & review keputusan pemilik | `KEPUTUSAN-BISNIS-SE.NOESA.md`, `REVIEW-KEPUTUSAN-BISNIS-SE.NOESA.md` |
 | [`06-rilis/`](06-rilis/) | Review task, rencana test, kesiapan rilis | `REVIEW-BLOCKED-TASKS-SE.NOESA.md`, `TEST-PLAN-RELEASE-SE.NOESA.md`, `RELEASE-READINESS-SE.NOESA.md` |
 

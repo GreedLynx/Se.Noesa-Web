@@ -116,6 +116,10 @@ button {
 .signout svg {
   vertical-align: middle;
 }
+.signout .ui-icon { font-size:18px; vertical-align:middle; }
+.nav-icon .ui-icon { font-size:20px; }
+.mobile-nav .ui-icon { font-size:20px; overflow:visible; }
+.search .ui-icon { font-size:20px; }
 .side-nav i {
   font-style: normal;
   margin-left: auto;

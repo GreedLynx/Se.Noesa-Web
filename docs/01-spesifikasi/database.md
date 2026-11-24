@@ -1,5 +1,7 @@
 # Database
 
+Penerapan ikon SVG pada website uji tidak mengubah tabel, kolom, VIEW, migrasi, atau data tersimpan.
+
 Urutan info checkout, penulisan merek, logo autentikasi, dan pola background
 Pelanggan tidak memerlukan perubahan skema atau migrasi. Background memakai
 salinan aset `foto/Pattern_Se.Noesa_Background.png` di `public/assets/img/Pattern_Se.Noesa_Background.png`;

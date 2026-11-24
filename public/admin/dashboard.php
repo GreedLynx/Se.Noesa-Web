@@ -24,7 +24,7 @@ admin_head('Dashboard', 'dashboard');
 <section class="stats-grid" id="admin-stats" aria-live="polite">
     <article class="stat-card">
         <span class="stat-icon">
-            &#9776;
+            <span class="ui-icon icon-pesanan" aria-hidden="true"></span>
         </span>
         <span class="stat-label">
             Pesanan hari
@@ -39,7 +39,7 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            &#10003;
+            <span class="ui-icon icon-validasi" aria-hidden="true"></span>
         </span>
         <span class="stat-label">
             Perlu
@@ -55,7 +55,7 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            &#9749;
+            <span class="ui-icon icon-kapasitas" aria-hidden="true"></span>
         </span>
         <span class="stat-label">
             Kapasitas
@@ -75,7 +75,7 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            &#9888;
+            <span class="ui-icon icon-kritis" aria-hidden="true"></span>
         </span>
         <span class="stat-label">
             Produk kritis

@@ -52,12 +52,7 @@ admin_head('Produk & Kuota', 'products');
         </div>
         <label
             class="search">
-            <span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"/>
-                    <path d="M16 16l5 5"/>
-                </svg>
-            </span>
+            <span class="ui-icon icon-cari" aria-hidden="true"></span>
             <input id="product-search" type="search"
                 placeholder="Cari nama menu atau kode">
         </label>
@@ -80,7 +75,7 @@ admin_head('Produk & Kuota', 'products');
                 </h2>
             </div>
             <button type="button" class="icon-close" data-close-dialog aria-label="Tutup">
-                &times;
+                <span class="ui-icon icon-tutup" aria-hidden="true"></span>
             </button>
         </div>
         <input type="hidden" name="id">

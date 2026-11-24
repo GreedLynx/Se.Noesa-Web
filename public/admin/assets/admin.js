@@ -128,7 +128,9 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
 
         btnYes.className = "button " + type;
         iconEl.className = "confirm-icon " + type;
-        iconEl.innerHTML = type === "danger" ? "&#9888;" : "&#10003;";
+        iconEl.innerHTML = type === "danger"
+            ? '<span class="ui-icon icon-peringatan" aria-hidden="true"></span>'
+            : '<span class="ui-icon icon-berhasil" aria-hidden="true"></span>';
 
         dialog.showModal();
 
