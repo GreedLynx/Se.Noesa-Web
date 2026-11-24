@@ -620,6 +620,7 @@ body[data-page="catalog"] .date-panel--delivery .date-field { flex:1 1 100%; wid
 }
 
 .customer-logout-confirm { width:min(630px,calc(100% - 32px)); padding:38px 32px; border:1px solid var(--line); border-radius:28px; text-align:center; }
+.customer-logout-confirm .cancel-order-message { margin-bottom:28px; }
 .customer-logout-confirm h2 { max-width:480px; margin:0 auto 32px; color:var(--brown); font-size:clamp(22px,3vw,32px); line-height:1.4; }
 .customer-logout-actions { display:flex; justify-content:center; gap:14px; }
 .customer-logout-actions button { min-width:136px; padding:14px 24px; border:0; border-radius:999px; background:var(--green); color:#fff; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer; }

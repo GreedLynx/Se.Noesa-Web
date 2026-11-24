@@ -35,4 +35,6 @@ Thumbs.db
 .idea/
 !/public/uploads/products/
 !/public/uploads/products/.gitkeep
+!/public/uploads/payment-methods/
+!/public/uploads/payment-methods/.gitkeep
 AGENTS.md

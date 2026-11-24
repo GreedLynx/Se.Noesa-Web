@@ -50,6 +50,25 @@ function toast(message) {
     setTimeout(() => el.classList.remove('show'), 2600)
 }
 
+function confirmDialog(title, message, confirmLabel = 'Ya, Lanjutkan') {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'customer-dialog customer-logout-confirm';
+        dialog.setAttribute('aria-labelledby', 'customer-confirm-title');
+        dialog.innerHTML = '<div class="cancel-order-icon" aria-hidden="true">?</div><h2 id="customer-confirm-title"></h2><p class="cancel-order-message"></p><div class="customer-logout-actions"><button type="button" data-cancel>Batal</button><button type="button" data-confirm></button></div>';
+        dialog.querySelector('#customer-confirm-title').textContent = title;
+        dialog.querySelector('.cancel-order-message').textContent = message;
+        dialog.querySelector('[data-confirm]').textContent = confirmLabel;
+        const done = value => { dialog.close(); dialog.remove(); resolve(value); };
+        dialog.querySelector('[data-cancel]').onclick = () => done(false);
+        dialog.querySelector('[data-confirm]').onclick = () => done(true);
+        dialog.oncancel = event => { event.preventDefault(); done(false); };
+        dialog.onclick = event => { if (event.target === dialog) done(false); };
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    });
+}
+
 function confirmCancelOrder(message) {
     return new Promise(resolve => {
         const dialog = document.createElement('dialog');
@@ -69,23 +88,14 @@ function confirmCancelOrder(message) {
 
 function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
+        const confirmed = await confirmDialog(
+            'Keluar Akun',
+            'Apakah Anda yakin ingin keluar dari akun pelanggan Se.Noesa?',
+            'Ya, Keluar',
+            'primary'
+        );
+        if (!confirmed) return;
         b.disabled = true;
-        const confirmed = await new Promise(resolve => {
-            const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog customer-logout-confirm';
-            dialog.setAttribute('aria-labelledby', 'customer-logout-title');
-            dialog.innerHTML = '<h2 id="customer-logout-title">Yakin ingin keluar dari akun se.noesa?</h2><div class="customer-logout-actions"><button type="button" data-cancel>Batal</button><button type="button" data-yes>Ya, Keluar</button></div>';
-            const yes = dialog.querySelector('[data-yes]');
-            const no = dialog.querySelector('[data-cancel]');
-            const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
-            yes.onclick = () => done(true);
-            no.onclick = () => done(false);
-            dialog.oncancel = (event) => { event.preventDefault(); done(false); };
-            dialog.onclick = (e) => { if (e.target === dialog) done(false); };
-            document.body.appendChild(dialog);
-            dialog.showModal();
-        });
-        if (!confirmed) { b.disabled = false; return; }
         try {
             await api('../api/auth.php?a=logout');
             location.href = '../login.php'

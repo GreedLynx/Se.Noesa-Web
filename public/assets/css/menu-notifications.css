@@ -398,6 +398,13 @@
   font-weight: 700;
   white-space: nowrap;
 }
+.mn-owner-intro .eyebrow,
+.mn-owner-heading .eyebrow { margin: 0 0 5px; }
+.mn-owner-intro h2 { margin: 0 0 6px; }
+.mn-owner-history { margin-top: 16px; }
+.mn-owner-heading { align-items: center; margin-bottom: 12px; }
+.mn-owner-heading h3 { margin: 0; color: var(--gd); }
+.mn-owner-refresh { width: auto; min-height: 38px; padding: 8px 14px; }
 .mn-error {
   min-height: 15px;
   margin: 0;

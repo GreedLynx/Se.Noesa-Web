@@ -83,10 +83,11 @@ function nav(string $on)
 {
     $u = me();
     $i = [
-        'dashboard' => ['Dashboard', 'dashboard'],
-        'orders' => ['Pesanan', 'pesanan'],
-        'products' => ['Produk', 'produk'],
-        'notifications' => ['Notifikasi', 'notifikasi']
+        'dashboard' => ['Dashboard', 'dashboard', 'dashboard.php'],
+        'orders' => ['Pesanan', 'pesanan', 'orders.php'],
+        'products' => ['Produk', 'produk', 'products.php'],
+        'notifications' => ['Notifikasi', 'notifikasi', 'menu-notifications.php'],
+        'payments' => ['Metode Pembayaran', 'pembayaran', 'payments.php']
     ];
     ?>
         <nav class="nav">
@@ -95,8 +96,8 @@ function nav(string $on)
                 <span>Se.Noesa<small>OWNER PANEL</small></span>
             </a>
             <span class="pill" id="pill"></span>
-            <?php foreach ($i as $k => [$l, $icon]): ?>
-                <a href="<?= $k ?>.php" class="<?= $on === $k ? 'on' : '' ?>">
+            <?php foreach ($i as $k => [$l, $icon, $href]): ?>
+                <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="<?= $on === $k ? 'on' : '' ?>">
                     <span class="ui-icon icon-<?= $icon ?>" aria-hidden="true"></span>
                     <span><?= $l ?></span>
                 </a>
