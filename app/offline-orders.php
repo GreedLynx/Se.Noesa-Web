@@ -125,6 +125,8 @@ function create_offline_order(array $request): array
         $scheduleId = q('SELECT id FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1 FOR UPDATE')->fetchColumn();
         $code = 'SN-' . (new DateTimeImmutable('now', $zone))->format('ymd')
             . '-OF-' . strtoupper(bin2hex(random_bytes(3)));
+        
+        // Tidak ada kolom jenis_pesanan di query ini
         $orderId = (int) q(
             "INSERT INTO pesanan
                 (kode, jadwal_id, nama_pemesan, keterangan, pax, total, status, sumber,
@@ -140,7 +142,7 @@ function create_offline_order(array $request): array
                 $total,
                 $delivery->format('Y-m-d H:i:sP'),
                 $address,
-                $phone,
+                $phone
             ]
         )->fetchColumn();
 
