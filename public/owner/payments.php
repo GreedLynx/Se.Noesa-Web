@@ -21,8 +21,8 @@ topbar('Metode Pembayaran');
         </label>
         <label>
             Gambar pembayaran
-            <input name="gambar" type="file" accept="image/jpeg,image/png,image/webp">
-            <small>JPG, PNG, atau WebP ? maksimal 2 MB</small>
+            <input name="gambar" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required>
+            <small>JPG, PNG, atau WebP · maksimal 2 MB</small>
         </label>
         <label class="payment-active">
             <input name="aktif" type="checkbox" checked> Tampilkan kepada pelanggan
@@ -40,7 +40,8 @@ topbar('Metode Pembayaran');
         <div class="card center">Memuat metode pembayaran...</div>
     </section>
 </section>
-<script defer src="../assets/js/payments.js?v=<?= filemtime(__DIR__ . '/../assets/js/payments.js') ?>"></script>
 <?php
 nav('payments');
 foot();
+?>
+<script defer src="../assets/js/payments.js?v=<?= filemtime(__DIR__ . '/../assets/js/payments.js') . '-' . filemtime(__DIR__ . '/api/payments.php') ?>"></script>

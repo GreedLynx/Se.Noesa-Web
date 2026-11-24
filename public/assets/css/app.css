@@ -1304,6 +1304,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .payment-method-form label:not(.payment-active) { display: grid; gap: 7px; margin: 16px 0; color: var(--br); font-size: 13px; font-weight: 600; }
 .payment-method-form input:not([type=checkbox]) { width: 100%; min-height: 46px; border: 1px solid var(--gl); border-radius: 12px; padding: 10px 12px; font: inherit; background: #fff; }
 .payment-method-form input[type=file] { padding: 9px; font-size: 12px; }
+.payment-method-form input[type=file]::file-selector-button { min-height: 38px; margin-right: 10px; padding: 7px 14px; border: 1px solid var(--gl); border-radius: 999px; background: #fff; color: var(--gd); font: inherit; font-weight: 600; cursor: pointer; }
 .payment-method-form label small { color: #7d867e; font-weight: 400; }
 .payment-active { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gd); }
 .payment-preview { display: grid; place-items: center; min-height: 180px; max-height: 320px; margin: 16px 0; padding: 14px; overflow: hidden; border: 1px dashed var(--g); border-radius: 16px; background: #f2f6f1; color: #7d867e; font-size: 13px; }
