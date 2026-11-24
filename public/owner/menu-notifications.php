@@ -3,14 +3,14 @@ require __DIR__ . '/partials/layout.php';
 head('Notifikasi Perubahan Menu', 'notifications');
 topbar('Notifikasi Perubahan Menu');
 ?>
-<a class="owner-back-link" href="dashboard.php">‹ Kembali ke dashboard</a>
 <div id="mn-page" data-mode="owner" data-api="../admin/api/menu-notifications.php" data-today="">
-    <section class="owner-orders-intro rise">
+    <section class="owner-orders-intro rise mn-owner-intro">
         <div>
+            <p class="eyebrow">KOMUNIKASI PELANGGAN</p>
             <h2>Notifikasi perubahan menu</h2>
             <p class="owner-muted">
-                Pantau pemberitahuan menu yang dikirim Admin, daftar pelanggan terdampak, dan respons
-                mereka. Penggantian menu baru berlaku setelah Admin menyetujui.
+                Pantau pemberitahuan menu yang dikirim Admin, daftar pelanggan terdampak, dan respons mereka.
+                Penggantian menu baru berlaku setelah Admin menyetujui.
             </p>
         </div>
         <span class="mn-readonly">Hanya baca</span>
@@ -18,13 +18,13 @@ topbar('Notifikasi Perubahan Menu');
 
     <section class="mn-stats" id="mn-stats" aria-live="polite"></section>
 
-    <section class="card rise">
-        <div class="owner-row-between" style="margin-bottom:12px">
+    <section class="card rise mn-owner-history">
+        <div class="owner-row-between mn-owner-heading">
             <div>
-                <small class="owner-muted">RIWAYAT</small>
+                <p class="eyebrow">RIWAYAT</p>
                 <h3>Notifikasi terkirim</h3>
             </div>
-            <button type="button" class="owner-secondary" id="mn-refresh">Muat ulang</button>
+            <button type="button" class="owner-secondary mn-owner-refresh" id="mn-refresh">Muat ulang</button>
         </div>
         <div class="mn-list" id="mn-list">
             <p class="mn-list-empty">Memuat notifikasi…</p>
@@ -50,3 +50,4 @@ topbar('Notifikasi Perubahan Menu');
 <?php
 nav('notifications');
 foot();
+?>
