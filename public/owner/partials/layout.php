@@ -52,6 +52,10 @@ function topbar(string $title, bool $back = false)
                 </div>
             </div>
             <div class="row">
+                <a class="owner-header-notifications" href="menu-notifications.php" aria-label="Buka notifikasi">
+                    <span class="ui-icon icon-notifikasi" aria-hidden="true"></span>
+                    <span>Notifikasi</span>
+                </a>
                 <span class="today-label" id="today-label"><?= htmlspecialchars($todayText, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
         </header>
@@ -97,11 +101,16 @@ function nav(string $on)
             </a>
             <span class="pill" id="pill"></span>
             <?php foreach ($i as $k => [$l, $icon, $href]): ?>
+                <?php if ($k === 'notifications') continue; ?>
                 <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="<?= $on === $k ? 'on' : '' ?>">
                     <span class="ui-icon icon-<?= $icon ?>" aria-hidden="true"></span>
                     <span><?= $l ?></span>
                 </a>
             <?php endforeach; ?>
+            <button class="owner-mobile-logout" type="button" data-logout aria-label="Keluar dari akun owner">
+                <span class="ui-icon icon-keluar" aria-hidden="true"></span>
+                <span>Keluar</span>
+            </button>
             <div class="owner-sidebar-bottom">
                 <div class="owner-profile">
                     <span class="avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'O', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
