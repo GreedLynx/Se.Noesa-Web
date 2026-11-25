@@ -45,10 +45,21 @@
                 }).join('');
                 select.disabled = false;
                 if (d.items.length === 1) select.value = String(d.items[0].id);
-                if (message) message.textContent = `${d.items.length} pesanan cocok. Pastikan kode dan nama pelanggan sesuai.`;
+                if (message) message.textContent = `${d.items.length} pesanan dapat dipilih. Pastikan kode dan nama pelanggan sesuai.` + (d.matched_count > d.items.length ? ` ${d.matched_count - d.items.length} pesanan lain tidak memenuhi syarat.` : '');
             } else {
-                select.innerHTML = '<option value="">Tidak ada pesanan yang cocok</option>';
-                if (message) message.textContent = 'Kode tidak ditemukan, atau pesanan sudah memiliki catatan rekonsiliasi.';
+                select.innerHTML = '<option value="">Tidak ada pesanan yang dapat dipilih</option>';
+                if (message) {
+                    if (!d.matched_count) {
+                        message.textContent = 'Kode pesanan tidak ditemukan. Periksa kembali kode dari pelanggan.';
+                    } else if (d.already_recorded === d.matched_count) {
+                        message.textContent = 'Pesanan ditemukan, tetapi sudah memiliki catatan rekonsiliasi.';
+                    } else {
+                        const statuses = Object.keys(d.other_statuses || {}).join(', ');
+                        message.textContent = statuses
+                            ? `Pesanan ditemukan dengan status ${statuses}. Rekonsiliasi hanya tersedia untuk pesanan dibatalkan atau ditolak.`
+                            : 'Pesanan ditemukan, tetapi sudah memiliki catatan rekonsiliasi.';
+                    }
+                }
             }
         } catch (e) {
             select.innerHTML = '<option value="">Pencarian gagal</option>';

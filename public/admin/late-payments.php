@@ -24,7 +24,7 @@ admin_head('Pembayaran Terlambat', 'late-payments');
                     <input id="late-order-code" type="search" maxlength="50" autocomplete="off" placeholder="Contoh: SN-261124-DA3141" required>
                     <button class="button secondary" id="late-order-search-button" type="button">Cari pesanan</button>
                 </div>
-                <small>Masukkan kode pesanan. Hasil hanya menampilkan pesanan dibatalkan/ditolak yang belum direkonsiliasi.</small>
+                <small>Masukkan minimal 3 karakter kode. Hasil menampilkan pesanan dibatalkan/ditolak yang belum direkonsiliasi; sebagian kode juga bisa dicari.</small>
                 <p id="late-order-search-result" class="muted" aria-live="polite"></p>
                 <label for="late-order">Hasil pencarian</label>
                 <select id="late-order" name="id" required disabled><option value="">Cari kode pesanan terlebih dahulu</option></select>

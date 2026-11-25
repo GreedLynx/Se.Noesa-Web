@@ -47,16 +47,34 @@ if (!is_string($search)) json(['error' => 'Pencarian tidak valid'], 422);
 $search = trim($search);
 if (!empty($_GET['eligible'])) {
     if (!late_payment_table_available()) json(['items' => [], 'feature_available' => false]);
-    $search = trim((string) ($_GET['q'] ?? ''));
     if (strlen($search) < 3) json(['items' => [], 'feature_available' => true, 'search_required' => true]);
     if (strlen($search) > 50) json(['error' => 'Kode pesanan maksimal 50 karakter'], 422);
-    json(['items' => q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
-            p.created_at, p.tgl_kirim, p.status
+    $matches = q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
+            p.created_at, p.tgl_kirim, p.status, r.id rekonsiliasi_id
         FROM pesanan p
-        WHERE p.status IN ('dibatalkan', 'ditolak')
-          AND UPPER(p.kode) = UPPER(?)
-          AND NOT EXISTS (SELECT 1 FROM pembayaran_terlambat r WHERE r.pesanan_id = p.id)
-        ORDER BY p.created_at DESC LIMIT 20", [$search])->fetchAll(), 'feature_available' => true]);
+        LEFT JOIN pembayaran_terlambat r ON r.pesanan_id = p.id
+        WHERE strpos(UPPER(p.kode), UPPER(?)) > 0
+        ORDER BY p.created_at DESC LIMIT 50", [$search])->fetchAll();
+    $eligible = [];
+    $alreadyRecorded = 0;
+    $otherStatuses = [];
+    foreach ($matches as $match) {
+        if ($match['rekonsiliasi_id'] !== null) {
+            $alreadyRecorded++;
+        } elseif (in_array($match['status'], ['dibatalkan', 'ditolak'], true)) {
+            unset($match['rekonsiliasi_id']);
+            $eligible[] = $match;
+        } else {
+            $otherStatuses[$match['status']] = ($otherStatuses[$match['status']] ?? 0) + 1;
+        }
+    }
+    json([
+        'items' => $eligible,
+        'matched_count' => count($matches),
+        'already_recorded' => $alreadyRecorded,
+        'other_statuses' => $otherStatuses,
+        'feature_available' => true,
+    ]);
 }
 
 $id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
