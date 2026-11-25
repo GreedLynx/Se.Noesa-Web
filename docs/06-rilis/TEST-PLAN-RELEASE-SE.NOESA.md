@@ -1,9 +1,9 @@
-# Test Plan Release — Se.Noesa
+# Test Plan Release — se.noesa
 
 - Tanggal: 2026-11-18
 - Branch / HEAD: `feature/full-stack` / `43da86d`
 - Sifat dokumen: **RENCANA**. Belum ada test yang dijalankan pada tahap ini.
-- Tujuan: menutup celah pengujian yang masih terbuka pada `docs/04-implementasi/TEST-REPORT-SE.NOESA.md` dan `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md`.
+- Tujuan: menutup celah pengujian yang masih terbuka pada `docs/04-implementasi/TEST-REPORT-se.noesa.md` dan `docs/06-rilis/RELEASE-READINESS-se.noesa.md`.
 
 ## Aturan lingkungan (wajib)
 

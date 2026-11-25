@@ -1,6 +1,6 @@
 {
   "name": "senoesa/web",
-  "description": "Se.Noesa catering pre-order management application",
+  "description": "se.noesa catering pre-order management application",
   "license": "proprietary",
   "require": {
     "php": "^8.1",

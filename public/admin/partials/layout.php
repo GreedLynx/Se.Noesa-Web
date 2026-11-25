@@ -13,7 +13,7 @@ function admin_head(string $title, string $page): void
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | Se.Noesa Admin</title>
+    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | se.noesa Admin</title>
     <link rel="icon" type="image/png" sizes="16x16 32x32" href="../assets/img/logo-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
@@ -25,10 +25,10 @@ function admin_head(string $title, string $page): void
 
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES, 'UTF-8') ?>">
     <div class="admin-shell">
-        <aside class="sidebar">
+        <aside class="sidebar" id="admin-sidebar" aria-label="Navigasi admin">
             <a class="brand" href="dashboard.php">
-                <span class="brand-mark">S</span>
-                <span>Se.Noesa<small>ADMIN PANEL</small></span>
+                <span class="brand-mark"><img src="../assets/img/logo-icon.png" alt="" aria-hidden="true"></span>
+                <span>se.noesa<small>ADMIN PANEL</small></span>
             </a>
             <div class="side-label"></div>
             <nav class="side-nav">
@@ -54,11 +54,12 @@ function admin_head(string $title, string $page): void
                 <button class="signout" data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span> Keluar</button>
             </div>
         </aside>
+        <button type="button" class="sidebar-backdrop" aria-label="Tutup menu" tabindex="-1"></button>
         <main class="main-panel">
             <header class="topbar">
-                <button class="menu-toggle" aria-label="Buka menu"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
+                <button class="menu-toggle" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="admin-sidebar"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
                 <div class="top-copy">
-                    <small>Se.Noesa / Admin</small>
+                    <small>se.noesa / Admin</small>
                     <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
                 </div>
                 <div class="top-actions">
@@ -92,18 +93,6 @@ function admin_foot(?string $page = null): void
     $page = $GLOBALS['__admin_current_page'] ?? '';
     ?>
             </div>
-            <nav class="mobile-nav">
-                <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><span class="ui-icon icon-dashboard" aria-hidden="true"></span><span>Dashboard</span></a>
-                <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><span class="ui-icon icon-pesanan" aria-hidden="true"></span><span>Pesanan</span></a>
-                <a href="late-payments.php" class="<?= ($GLOBALS['__admin_current_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><span class="ui-icon icon-terlambat" aria-hidden="true"></span><span>Terlambat</span></a>
-                <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><span class="ui-icon icon-produk" aria-hidden="true"></span><span>Produk</span></a>
-                <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>">
-                    <span class="ui-icon icon-kalender" aria-hidden="true"></span>
-                    <span>Jadwal</span>
-                </a>
-                <a href="menu-notifications.php" class="<?= $page === 'menu-notifications' ? 'active' : '' ?>"><span class="ui-icon icon-notifikasi" aria-hidden="true"></span><span>Notifikasi</span></a>
-                <button data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span><span>Keluar</span></button>
-            </nav>
         </main>
     </div>
 

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (DomainException $e) {
         json(['error' => $e->getMessage()], 422);
     } catch (Throwable $e) {
-        error_log('[Se.Noesa late payment] ' . $e->getMessage());
+        error_log('[se.noesa late payment] ' . $e->getMessage());
         json(['error' => 'Rekonsiliasi gagal disimpan. Coba lagi.'], 500);
     }
 }
@@ -44,12 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') json(['error' => 'Method tidak didukun
 
 if (!empty($_GET['eligible'])) {
     if (!late_payment_table_available()) json(['items' => [], 'feature_available' => false]);
+    $search = trim((string) ($_GET['q'] ?? ''));
+    if (strlen($search) < 3) json(['items' => [], 'feature_available' => true, 'search_required' => true]);
+    if (strlen($search) > 50) json(['error' => 'Kode pesanan maksimal 50 karakter'], 422);
     json(['items' => q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
             p.created_at, p.tgl_kirim, p.status
         FROM pesanan p
-        WHERE p.status = 'dibatalkan'
+        WHERE p.status IN ('dibatalkan', 'ditolak')
+          AND UPPER(p.kode) = UPPER(?)
           AND NOT EXISTS (SELECT 1 FROM pembayaran_terlambat r WHERE r.pesanan_id = p.id)
-        ORDER BY p.created_at DESC LIMIT 100")->fetchAll(), 'feature_available' => true]);
+        ORDER BY p.created_at DESC LIMIT 20", [$search])->fetchAll(), 'feature_available' => true]);
 }
 
 $id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;

@@ -1,4 +1,4 @@
-# Koreksi Audit Revisi Tahap 2 — Se.Noesa-Web
+# Koreksi Audit Revisi Tahap 2 — se.noesa-Web
 
 - Tanggal koreksi: 2026-11-17
 - Task: TASK-00 — Rekonsiliasi laporan audit
@@ -44,7 +44,7 @@ Total angka lama untuk ID revisi: 38 + 18 + 22 = **78**, sedangkan jumlah ID uni
 | ID di bagian 9 yang tidak ada di bagian 3 | **Tidak ada** |
 | Status bertentangan antara bagian 3 dan bagian 9 | **Tidak ada** |
 | Entri placeholder | Ada: `IMG-CUS-? (none)` pada baris PARTIAL bagian 9 — **dihapus** karena bukan ID valid dan menyesatkan. |
-| Status "NEEDS CONFIRMATION" | Bukan status ID revisi; merupakan 14 pertanyaan keputusan bisnis pada bagian 7 / `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md` bagian 10. Dipisahkan dari rekap ID. |
+| Status "NEEDS CONFIRMATION" | Bukan status ID revisi; merupakan 14 pertanyaan keputusan bisnis pada bagian 7 / `docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md` bagian 10. Dipisahkan dari rekap ID. |
 
 **Kesimpulan:** daftar ID dan status di bagian 3 sudah konsisten dengan daftar yang diuraikan di bagian 9. Yang tidak konsisten hanyalah **angka ringkasan** di bagian 9, sehingga tidak ada status yang perlu diubah berdasarkan perkiraan. Sesuai instruksi TASK-00 langkah 4, status individu tidak diubah.
 
@@ -52,7 +52,7 @@ Total angka lama untuk ID revisi: 38 + 18 + 22 = **78**, sedangkan jumlah ID uni
 
 ## 3. Jejak perubahan
 
-1. `docs/03-audit/AUDIT-REVISI-TAHAP-2.md` bagian 9 — angka dan daftar status diperbarui menjadi 47 / 22 / 20, ditambah catatan bahwa 14 NEEDS CONFIRMATION adalah keputusan bisnis (bukan ID revisi) dan merujuk ke `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md`.
+1. `docs/03-audit/AUDIT-REVISI-TAHAP-2.md` bagian 9 — angka dan daftar status diperbarui menjadi 47 / 22 / 20, ditambah catatan bahwa 14 NEEDS CONFIRMATION adalah keputusan bisnis (bukan ID revisi) dan merujuk ke `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md`.
 2. `docs/03-audit/AUDIT-REVISI-TAHAP-2.md` bagian 9 — placeholder `IMG-CUS-? (none)` dihapus.
 3. Dokumen koreksi ini dibuat sebagai catatan tetap (`docs/03-audit/AUDIT-REVISI-TAHAP-2-CORRECTION.md`).
 4. Tidak ada file kode aplikasi, migration, schema, atau konfigurasi yang diubah.

@@ -9,7 +9,7 @@ set_error_handler(static function (int $severity, string $message, string $file,
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 set_exception_handler(static function (Throwable $error): void {
-    error_log('[Se.Noesa schedules API] ' . $error);
+    error_log('[se.noesa schedules API] ' . $error);
     if (!headers_sent()) {
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');

@@ -513,4 +513,4 @@ serta mencatat sumber/status asal pembatalan; refund yang sudah dibayar tetap
 ditangani Admin di luar aplikasi. Versi lama, tawaran kedaluwarsa, atau status
 pesanan yang berubah menghasilkan HTTP 409. Endpoint GET hanya membaca tawaran.
 
-Background pola Pelanggan memakai aset statis `public/assets/img/Pattern_Se.Noesa_Background.png`; perubahan ini tidak mengubah kontrak endpoint API.
+Background pola Pelanggan memakai aset statis `public/assets/img/Pattern_se.noesa_Background.png`; perubahan ini tidak mengubah kontrak endpoint API.

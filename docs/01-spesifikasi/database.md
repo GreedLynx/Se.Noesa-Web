@@ -4,7 +4,7 @@ Penerapan ikon SVG pada website uji tidak mengubah tabel, kolom, VIEW, migrasi, 
 
 Urutan info checkout, penulisan merek, logo autentikasi, dan pola background
 Pelanggan tidak memerlukan perubahan skema atau migrasi. Background memakai
-salinan aset `foto/Pattern_Se.Noesa_Background.png` di `public/assets/img/Pattern_Se.Noesa_Background.png`;
+salinan aset `foto/Pattern_se.noesa_Background.png` di `public/assets/img/Pattern_se.noesa_Background.png`;
 opacity dekorasi 40% hanya diterapkan lewat CSS, tanpa state database baru.
 Pembesaran dan pemusatan logo login/register desktop serta animasi pattern juga hanya perubahan CSS.
 

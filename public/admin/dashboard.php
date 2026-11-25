@@ -11,7 +11,7 @@ admin_head('Dashboard', 'dashboard');
             Selamat datang, <?= htmlspecialchars(me()['username'], ENT_QUOTES, 'UTF-8') ?>!
         </h2>
         <p class="muted">
-            Ringkasan pesanan, kapasitas dapur, dan produk Se.Noesa.
+            Ringkasan pesanan, kapasitas dapur, dan produk se.noesa.
         </p>
     </div>
     <a class="button primary" href="orders.php">

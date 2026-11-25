@@ -14,7 +14,7 @@ Pelanggan mendapat pemberitahuan yang jelas saat proses pembayaran bermasalah, d
 - Klarifikasi F7 dari teman pengguna: jika ada error saat proses pembayaran, tampilkan notifikasi/pemberitahuan. F7 kini aktif dan berarti penanganan error pembayaran, bukan indikator tahapan pesanan.
 - Cakupan F7: pemuatan detail/metode pembayaran dan gambar QRIS, upload/ganti bukti, serta penyegaran status setelah upload. Aplikasi menerima bukti transfer; tidak mendeteksi transaksi bank atau memproses uang.
 - H6 logo dan H9 galeri foto sudah tersedia di kode; tidak perlu dibuat ulang.
-- H7 menggunakan aset `foto/Pattern_Se.Noesa_Background.png`, sudah ditemukan dan diperiksa visualnya. Gambar berpola hijau; tidak perlu generator gambar atau dependency baru.
+- H7 menggunakan aset `foto/Pattern_se.noesa_Background.png`, sudah ditemukan dan diperiksa visualnya. Gambar berpola hijau; tidak perlu generator gambar atau dependency baru.
 - Asumsi kerja H7: pola pada area latar konten semua halaman Pelanggan (katalog, riwayat, notifikasi), opacity awal 0.06; sesuaikan sekitar 0.04–0.08 setelah pemeriksaan desktop/mobile. Kartu, header, sidebar, form, dan dialog mempertahankan permukaan solid.
 - H4 mencakup teks merek yang ditulis aplikasi pada halaman Pelanggan dan splash bersama. Tidak mengganti nama produk, data pengguna, nama file, logo raster, atau tampilan khusus Admin/Owner.
 - F13: pindahkan blok info yang sama ke tepat sebelum field Tanggal kirim dalam dialog checkout. Tidak membuat halaman pembayaran baru atau menambah blok duplikat.
@@ -50,7 +50,7 @@ Allowed APIs/pola:
 - Produk katalog memakai `product.kuota` sebagai kapasitas efektif tanggal pilihan, bukan konstanta 50/100 atau default produk.
 - Tetap gunakan `showProduct(product)`, `setQuantity(value, normalize = false)`, serta elemen `#detail-sisa` yang sudah ada. `setQuantity` harus tetap dapat memperbarui elemen ketika angkanya disembunyikan.
 - CSS background pada pseudo-element area konten dengan `pointer-events: none`, opacity hanya pada lapisan dekorasi; gunakan stacking context lokal agar tidak menutup konten atau hilang di belakang body.
-- Salin aset saat implementasi ke `public/assets/img/Pattern_Se.Noesa_Background.png`; dari `public/pelanggan/assets/customer.css` URL-nya `../../assets/img/Pattern_Se.Noesa_Background.png`.
+- Salin aset saat implementasi ke `public/assets/img/Pattern_se.noesa_Background.png`; dari `public/pelanggan/assets/customer.css` URL-nya `../../assets/img/Pattern_se.noesa_Background.png`.
 - Pakai token CSS yang sudah ada; tidak menambah library UI atau menganggap Bootstrap tersedia.
 - F7 memakai `#proof-error[role="alert"]`, `textContent`, `toast()`, dan handler yang ada. Periksa seluruh pemanggil sebelum mengubah helper `api()` bersama; utamakan penanganan lokal bila cukup.
 
@@ -142,7 +142,7 @@ Referensi: `partials/layout.php:19,35,62,127-136`, `index.php:13`, `customer.js:
 
 Verifikasi:
 
-- Pencarian terarah variasi `Se.Noesa`/`SE.NOESA` pada file cakupan; bedakan teks merek dengan path aset dan konten milik pengguna.
+- Pencarian terarah variasi `se.noesa`/`se.noesa` pada file cakupan; bedakan teks merek dengan path aset dan konten milik pengguna.
 - Render checkout memastikan hanya satu blok info dan urutannya info → tanggal → bagian berikutnya.
 - PHP lint file PHP yang berubah, `node --check` bila JS berubah.
 - Render login/register di 320, 390, 759, 760, dan 1280px serta landscape pendek: tepat satu logo per halaman, gambar berhasil dimuat, proporsi benar, tidak tertutup/menimpa teks dan form, tidak ada overflow. Bandingkan mobile dengan dua referensi; desktop mempertahankan pola dua kolom existing.
@@ -154,7 +154,7 @@ Anti-pattern: jangan melakukan global replace seluruh repo, mengubah struktur fo
 
 **How this serves the primary goal:** mengisi latar kosong dengan identitas se.noesa tanpa mengurangi kenyamanan membaca atau mengakses tombol.
 
-Status: implementasi selesai. Aset `Pattern_Se.Noesa_Background.png` disalin ke public. Lapisan aktual `.customer-main::after` memakai opacity 0.40, background berulang 402px, dan pointer-events none. `.customer-content` berada di atas dekorasi; main terisolasi agar pola mencakup tinggi halaman kosong/panjang. Verifikasi browser perlu dilakukan.
+Status: implementasi selesai. Aset `Pattern_se.noesa_Background.png` disalin ke public. Lapisan aktual `.customer-main::after` memakai opacity 0.40, background berulang 402px, dan pointer-events none. `.customer-content` berada di atas dekorasi; main terisolasi agar pola mencakup tinggi halaman kosong/panjang. Verifikasi browser perlu dilakukan.
 
 Implementasi:
 
@@ -163,7 +163,7 @@ Implementasi:
 3. Pastikan CSS mobile tidak menutup lapisan pola dengan latar lain. Pertahankan kartu/form/dialog solid serta sticky header, sidebar, backdrop, dan tombol mengambang tetap di atas dekorasi.
 4. Tidak menambah kontrol opacity, animasi pola, atau library. Jangan menaruh opacity pada body/main karena akan memudarkan teks dan tombol.
 
-Referensi: aset `foto/Pattern_Se.Noesa_Background.png`, `customer.css:1-24` dan layout `.customer-main`/`.customer-content`, `catalog-mobile.css`, `partials/layout.php`.
+Referensi: aset `foto/Pattern_se.noesa_Background.png`, `customer.css:1-24` dan layout `.customer-main`/`.customer-content`, `catalog-mobile.css`, `partials/layout.php`.
 
 Verifikasi: aset berhasil dimuat; pola terlihat lembut pada ruang kosong katalog, riwayat, dan notifikasi di lebar 320/390/1280. Cek halaman panjang/kosong, tidak ada horizontal overflow, tombol tetap dapat diklik, serta kontras teks biasa minimal 4.5:1. Screenshot diperiksa setelah render, bukan sekadar memastikan CSS terpasang.
 

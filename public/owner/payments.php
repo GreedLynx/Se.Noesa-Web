@@ -17,7 +17,7 @@ topbar('Metode Pembayaran');
         <input type="hidden" name="id">
         <label>
             Nama metode
-            <input name="nama" maxlength="80" placeholder="Contoh: QRIS Se.Noesa" required>
+            <input name="nama" maxlength="80" placeholder="Contoh: QRIS se.noesa" required>
         </label>
         <label>
             Gambar pembayaran

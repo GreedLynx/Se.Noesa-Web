@@ -1,4 +1,4 @@
-# Release Readiness — Se.Noesa
+# Release Readiness — se.noesa
 
 - Tanggal: 2026-11-18
 - Task: TASK-23 (draft sesuai master prompt §10)
@@ -22,13 +22,13 @@ Alasan utama: masih ada **7 task BLOCKED** menunggu keputusan bisnis/migration, 
 | TODO | 2 | TASK-22, TASK-23 (keduanya terblokir dependency) |
 | FAILED | 0 | — |
 
-Rincian status dan alasan ada di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`.
+Rincian status dan alasan ada di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`.
 
 ## 2. Blocker rilis
 
 | Blocker | Dampak | Status |
 |---|---|---|
-| #1 Refund, #2 H-2, #3/#4 kuota 0, #5 pengingat bukti, #6 WA, #8/#9/#10 manual/dine-in, #11 kuota dapur, #12 status final, #13 metrik Owner, #14 branding | Mengunci TASK-03, 08, 09, 10, 15, 19 dan sebagian TASK-20 | PENDING — lihat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` |
+| #1 Refund, #2 H-2, #3/#4 kuota 0, #5 pengingat bukti, #6 WA, #8/#9/#10 manual/dine-in, #11 kuota dapur, #12 status final, #13 metrik Owner, #14 branding | Mengunci TASK-03, 08, 09, 10, 15, 19 dan sebagian TASK-20 | PENDING — lihat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md` |
 | DECISION-NEW-01 (snapshot produk/nonaktif) | Mengunci TASK-13; diperlukan migration + definisi bisnis | PENDING |
 | TASK-20 PARTIAL | Metrik Owner dan QA visual belum selesai | Terbuka |
 | TASK-22 regression | Dependency "semua task implementasi selesai" belum terpenuhi | BLOCKED |
@@ -78,7 +78,7 @@ Setiap checkpoint dapat dibatalkan dengan `git revert <hash>` (jangan `reset --h
 | `671e1da` | TASK-20 (PARTIAL) | `git revert 671e1da` |
 | `a378cec` | TASK-21 | `git revert a378cec` |
 
-Checkpoint dokumentasi akhir (progress/changelog/test report/readiness) dibuat pada commit terakhir setelah tabel ini disusun; hash-nya dicatat di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`.
+Checkpoint dokumentasi akhir (progress/changelog/test report/readiness) dibuat pada commit terakhir setelah tabel ini disusun; hash-nya dicatat di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`.
 
 ## 6. Rekomendasi sebelum GO
 

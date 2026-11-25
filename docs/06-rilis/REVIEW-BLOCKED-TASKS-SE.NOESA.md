@@ -1,9 +1,9 @@
-# Review Task BLOCKED & Audit Lanjutan TASK-20 — Se.Noesa
+# Review Task BLOCKED & Audit Lanjutan TASK-20 — se.noesa
 
 - Tanggal: 2026-11-18
 - Branch / HEAD: `feature/full-stack` / `43da86d`
 - Sifat dokumen: **REVIEW ONLY**. Status task tidak diubah; tidak ada kode/migration/database yang disentuh.
-- Sumber: `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md`, `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`, `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md`, dan inspeksi kode statis.
+- Sumber: `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md`, `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`, `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md`, dan inspeksi kode statis.
 
 ---
 
@@ -93,7 +93,7 @@
 ### TASK-23 — Release readiness
 
 - **Dependency:** TASK-22.
-- **Dependency aktual:** TASK-22 belum bisa dijalankan penuh. Dokumen `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` sudah dibuat sebagai **draft NO-GO** sesuai master prompt §10, tetapi keputusan final perlu diulang setelah TASK-22.
+- **Dependency aktual:** TASK-22 belum bisa dijalankan penuh. Dokumen `docs/06-rilis/RELEASE-READINESS-se.noesa.md` sudah dibuat sebagai **draft NO-GO** sesuai master prompt §10, tetapi keputusan final perlu diulang setelah TASK-22.
 - **Jenis hambatan:** dependency.
 - **Yang bisa dikerjakan tanpa keputusan:** pemutakhiran draft readiness dengan hasil regression terbatas (sudah ada).
 

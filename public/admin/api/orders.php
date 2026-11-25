@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (DomainException $error) {
             json(['error' => $error->getMessage()], 422);
         } catch (Throwable $error) {
-            error_log('[Se.Noesa offline order] ' . $error);
+            error_log('[se.noesa offline order] ' . $error);
             json(['error' => 'Pesanan offline gagal disimpan. Coba beberapa saat lagi.'], 500);
         }
     }

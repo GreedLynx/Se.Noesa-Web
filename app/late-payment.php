@@ -1,6 +1,7 @@
 <?php
+require_once __DIR__ . '/daily-quota.php';
 // Admin Reconciliation untuk pembayaran QRIS terlambat.
-// Batasan: tidak mengubah pesanan lama, status pesanan, kuota, stok, atau checkout normal.
+// Pesanan lama hanya diaktifkan kembali setelah konfirmasi pelanggan dan validasi kuota terbaru.
 
 require_once __DIR__ . '/proof-storage.php';
 
@@ -92,8 +93,8 @@ function late_payment_record(int $orderId, array $post, array $file, int $adminI
     try {
         $order = q('SELECT id, status FROM pesanan WHERE id = ? FOR UPDATE', [$orderId])->fetch();
         if (!$order) throw new DomainException('Pesanan tidak ditemukan.');
-        if ($order['status'] !== 'dibatalkan') {
-            throw new DomainException('Rekonsiliasi hanya untuk pesanan dibatalkan/kedaluwarsa.');
+        if (!in_array($order['status'], ['dibatalkan', 'ditolak'], true)) {
+            throw new DomainException('Rekonsiliasi hanya untuk pesanan dibatalkan atau ditolak Admin.');
         }
         if (q('SELECT 1 FROM pembayaran_terlambat WHERE pesanan_id = ?', [$orderId])->fetchColumn()) {
             throw new DomainException('Pesanan ini sudah memiliki catatan rekonsiliasi.');
@@ -163,17 +164,28 @@ function late_payment_follow_up(int $id, array $post, int $adminId): array
 {
     if (!late_payment_table_available()) throw new DomainException('Fitur rekonsiliasi belum tersedia pada database ini.');
     $type = (string) ($post['tindak_lanjut'] ?? '');
-    if (!in_array($type, ['pesanan_baru', 'refund'], true)) {
+    if (!in_array($type, ['lanjutkan_pesanan', 'pesanan_baru', 'refund'], true)) {
         throw new DomainException('Jenis tindak lanjut tidak valid.');
     }
+    if (!filter_var($post['konfirmasi_pelanggan'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+        throw new DomainException('Konfirmasi pelanggan melalui WhatsApp wajib dicatat.');
+    }
     $note = trim((string) ($post['tindak_lanjut_catatan'] ?? ''));
-    if (strlen($note) > 1000) throw new DomainException('Catatan maksimal 1000 karakter.');
+    if (strlen($note) > 900) throw new DomainException('Catatan maksimal 900 karakter.');
+    $note = 'Pelanggan mengonfirmasi melalui WhatsApp.' . ($note !== '' ? ' ' . $note : '');
 
     $db = db();
     $ownsTransaction = !$db->inTransaction();
     if ($ownsTransaction) $db->beginTransaction();
     try {
-        $row = q('SELECT id, status_rekonsiliasi, tindak_lanjut, pesanan_id FROM pembayaran_terlambat WHERE id = ? FOR UPDATE', [$id])->fetch();
+        // Ikuti urutan lock checkout sebelum mengunci order agar kuota tidak terjual ganda.
+        if ($type === 'lanjutkan_pesanan') daily_quota_lock_tables();
+
+        $row = q('SELECT r.id, r.status_rekonsiliasi, r.tindak_lanjut, r.pesanan_id, r.bukti_path,
+                p.status status_pesanan, p.tgl_kirim
+            FROM pembayaran_terlambat r
+            JOIN pesanan p ON p.id = r.pesanan_id
+            WHERE r.id = ? FOR UPDATE OF r, p', [$id])->fetch();
         if (!$row) throw new DomainException('Catatan rekonsiliasi tidak ditemukan.');
         if ($row['status_rekonsiliasi'] !== 'terverifikasi') {
             throw new DomainException('Tindak lanjut hanya untuk pembayaran terverifikasi.');
@@ -189,17 +201,50 @@ function late_payment_follow_up(int $id, array $post, int $adminId): array
         if ($type === 'pesanan_baru') {
             $orderId = filter_var($post['tindak_lanjut_order_id'] ?? null, FILTER_VALIDATE_INT);
             if (!$orderId || $orderId < 1 || $orderId === (int) $row['pesanan_id']) {
-                throw new DomainException('Pesanan baru harus berupa pesanan berbeda yang dibuat lewat checkout normal.');
+                throw new DomainException('Pesanan baru harus berbeda dari pesanan lama dan sudah dibuat setelah konfirmasi WhatsApp.');
             }
             if (!q('SELECT 1 FROM pesanan WHERE id = ?', [$orderId])->fetchColumn()) {
                 throw new DomainException('Pesanan baru tidak ditemukan.');
             }
-        } else {
+        } elseif ($type === 'refund') {
             $refundNominal = filter_var($post['refund_nominal'] ?? null, FILTER_VALIDATE_INT);
             if ($refundNominal === false || $refundNominal < 0) throw new DomainException('Nominal refund tidak valid.');
             $refundDate = late_payment_parse_datetime($post['refund_tanggal'] ?? '');
             $refundRef = trim((string) ($post['refund_referensi'] ?? ''));
             if (strlen($refundRef) > 100) throw new DomainException('Referensi refund maksimal 100 karakter.');
+        } else {
+            if (!in_array($row['status_pesanan'], ['dibatalkan', 'ditolak'], true)) {
+                throw new DomainException('Status pesanan sudah berubah dan tidak dapat dilanjutkan.');
+            }
+            if (empty($row['tgl_kirim'])) {
+                throw new DomainException('Tanggal kirim tidak tersedia. Hubungi pelanggan melalui WhatsApp untuk menyepakati pesanan baru.');
+            }
+            $zone = new DateTimeZone('Asia/Jakarta');
+            $deliveryDate = (new DateTimeImmutable($row['tgl_kirim']))->setTimezone($zone)->format('Y-m-d');
+            $today = (string) q("SELECT (clock_timestamp() AT TIME ZONE 'Asia/Jakarta')::date")->fetchColumn();
+            if ($deliveryDate <= $today) {
+                throw new DomainException('Tanggal kirim pesanan lama sudah lewat. Hubungi pelanggan melalui WhatsApp untuk menawarkan tanggal/menu lain atau membuat pesanan baru.');
+            }
+
+            $quantities = [];
+            foreach (q('SELECT produk_id, SUM(qty) qty FROM detail_pesanan WHERE pesanan_id = ? GROUP BY produk_id ORDER BY produk_id',
+                [(int) $row['pesanan_id']])->fetchAll() as $item) {
+                $quantities[(int) $item['produk_id']] = (int) $item['qty'];
+            }
+            if (!$quantities) throw new DomainException('Rincian menu pesanan tidak tersedia. Hubungi pelanggan melalui WhatsApp untuk membuat pesanan baru.');
+            try {
+                daily_quota_validate(daily_quota_snapshot($deliveryDate), $quantities);
+            } catch (DomainException $error) {
+                throw new DomainException($error->getMessage() . ' Hubungi pelanggan melalui WhatsApp untuk menawarkan tanggal/menu lain atau membuat pesanan baru.');
+            }
+
+            $orderId = (int) $row['pesanan_id'];
+            $updated = q("UPDATE pesanan
+                SET status = 'diproses', status_updated_at = clock_timestamp(),
+                    bukti_bayar = ?, alasan_penolakan = NULL
+                WHERE id = ? AND status IN ('dibatalkan', 'ditolak')",
+                [$row['bukti_path'], $orderId])->rowCount();
+            if ($updated !== 1) throw new DomainException('Status pesanan sudah berubah. Muat ulang lalu periksa kembali.');
         }
 
         q('UPDATE pembayaran_terlambat
@@ -207,10 +252,10 @@ function late_payment_follow_up(int $id, array $post, int $adminId): array
                 refund_nominal = ?, refund_tanggal = ?, refund_referensi = ?,
                 tindak_lanjut_oleh = ?, tindak_lanjut_at = clock_timestamp()
             WHERE id = ?',
-            [$type, $orderId, $note !== '' ? $note : null,
+            [$type, $orderId, $note,
              $refundNominal, $refundDate, $refundRef !== '' ? $refundRef : null, $adminId, $id]);
         late_payment_log($id, 'tindak_lanjut', $row['status_rekonsiliasi'],
-            $row['status_rekonsiliasi'], $note !== '' ? $note : $type, $adminId);
+            $row['status_rekonsiliasi'], $note, $adminId);
         if ($ownsTransaction) $db->commit();
         return late_payment_get($id) ?? ['id' => $id];
     } catch (Throwable $e) {
