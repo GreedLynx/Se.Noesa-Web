@@ -1348,6 +1348,28 @@ td small {
     margin-left: 0;
     padding-bottom: 32px;
   }
+  .sidebar {
+    height: 100vh;
+    height: 100dvh;
+  }
+  .sidebar-bottom {
+    display: block;
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 14px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    background: #fff;
+  }
+  .sidebar-bottom .signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid #ead9d3;
+    background: #fbf5f2;
+    font-weight: 600;
+  }
   .topbar {
     height: 74px;
     padding: 0 17px;
