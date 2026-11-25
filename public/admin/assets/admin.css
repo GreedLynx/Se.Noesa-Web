@@ -1914,32 +1914,13 @@ input:checked + .slider:before {
   transform: scale(1.1);
 }
 
-/* Logo dan identitas ADMIN */
-.brand {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    color: var(--brown);
-    font-size: 18px;
-    font-weight: 700;
-    padding: 4px 9px 30px;
-}
-
-.brand small {
-    display: block;
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    color: var(--green);
-    margin-top: 3px;
-}
-
 /* Logo ADMIN */
 .brand .admin-brand-mark {
     width: 40px;
     height: 40px;
     min-width: 40px;
     border-radius: 13px;
-    background: var(--green);
+    background: #758d76;
     color: #fff;
     display: grid;
     place-items: center;
