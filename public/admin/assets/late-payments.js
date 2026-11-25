@@ -23,7 +23,9 @@
         if (!select) return;
         try {
             const d = await api('api/late-payments.php?eligible=1');
-            select.innerHTML = (d.items || []).length
+            select.innerHTML = d.feature_available === false
+                ? '<option value="">Fitur belum siap: periksa koneksi database dan migrasi 026</option>'
+                : (d.items || []).length
                 ? d.items.map(o => {
                     const label = `${o.kode} — ${o.nama_pemesan}`;
                     const detail = `${o.kode} — ${o.nama_pemesan} · ${money(o.total)} · ${fmt(o.created_at)}`;
@@ -39,7 +41,9 @@
         try {
             const d = await api('api/late-payments.php');
             const items = d.items || [];
-            box.innerHTML = items.length
+            box.innerHTML = d.feature_available === false
+                ? '<div class="late-empty"><div><strong>Fitur rekonsiliasi belum tersedia</strong><small>Periksa koneksi database dan pastikan migrasi 026 sudah diterapkan.</small></div></div>'
+                : items.length
                 ? '<table><thead><tr><th>ID</th><th>Pesanan</th><th>Pelanggan</th><th>Kontak</th><th>Tanggal pesanan</th><th>Kirim</th><th>Total</th><th>Status pesanan</th><th>Status rekonsiliasi</th><th>Waktu transaksi</th><th>Dicatat</th><th></th></tr></thead><tbody>'
                     + items.map(r => `<tr>
                         <td>${Number(r.id)}</td><td>${esc(r.kode)}</td>

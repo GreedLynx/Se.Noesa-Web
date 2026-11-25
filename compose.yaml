@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "80"
+
+  payment-expiration-worker:
+    build: .
+    command: ["php", "scripts/expire-unpaid-orders-worker.php"]
