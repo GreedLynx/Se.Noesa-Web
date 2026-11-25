@@ -678,7 +678,8 @@ async function openHistoryDetail(id) {
         </div>
     `;
 
-    const isPaymentExpiredWithoutProof = !hasProof && (
+    const rejectedReschedule = d.status === 'dibatalkan' && d.reschedule_offer?.status_tawaran === 'ditolak';
+    const isPaymentExpiredWithoutProof = !rejectedReschedule && !hasProof && (
         (d.status === 'menunggu_pembayaran' && !canUploadProof) ||
         d.status === 'dibatalkan'
     );
@@ -718,7 +719,9 @@ async function openHistoryDetail(id) {
         + '</h3><p><b>Alasan:</b> ' + esc(offer.alasan) + '</p><div class="detail-schedule"><span>Tanggal sebelumnya<b>'
         + dateLabel(offer.tanggal_asal) + '</b></span><span>Tanggal usulan<b>' + dateLabel(offer.tanggal_usulan)
         + '</b></span></div>' + (offer.status_tawaran === 'menunggu'
-            ? '<p>Tanggapi sebelum ' + dateLabel(offer.berlaku_sampai, true) + ' WIB. Untuk pesanan yang menunggu pembayaran, tenggat pembayaran satu jam tetap berlaku.</p>'
+            ? '<p class="reschedule-deadline">Jawab sebelum <b>' + dateLabel(offer.berlaku_sampai, true) + ' WIB</b>.'
+                + (d.status === 'menunggu_pembayaran' ? ' Tenggat pembayaran satu jam tetap berlaku.' : '') + '</p>'
+                + '<p class="reschedule-payment-help">Sudah transfer? Simpan bukti pembayaran. Jika menolak jadwal, hubungi Admin untuk pemeriksaan dan refund.</p>'
                 + '<button type="button" class="customer-button primary" id="accept-reschedule">Terima jadwal</button> '
                 + '<button type="button" class="customer-button danger" id="reject-reschedule">Tolak jadwal</button><p class="form-error" id="reschedule-error" role="alert"></p>'
             : '<p>Status tawaran: ' + esc(offer.status_tawaran) + '</p>') + '</section>' : '';
@@ -759,6 +762,12 @@ async function openHistoryDetail(id) {
                 </div>
             `;
         }
+    } else if (rejectedReschedule) {
+        cancelSection = '<section class="detail-section"><h3>Refund</h3><div class="payment-expired-notice">'
+            + '<b>Tawaran jadwal ditolak. Pesanan telah dibatalkan.</b>'
+            + '<p>Jika sudah membayar, siapkan bukti transfer dan hubungi Admin dengan kode pesanan <b>' + esc(d.kode)
+            + '</b>. Admin akan memeriksa pembayaran dan mengurus refund di luar aplikasi.</p>'
+            + contactLine + socialLine + '</div></section>';
     } else if (d.status === 'dibatalkan' && hasProof) {
         cancelSection = '<section class="detail-section"><h3>Refund</h3><p>' + refundNotice + '</p></section>';
     }

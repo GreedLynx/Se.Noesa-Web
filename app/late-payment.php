@@ -60,16 +60,18 @@ function late_payment_get(int $id): ?array
     return $row ?: null;
 }
 
-function late_payment_list(): array
+function late_payment_list(string $search = ''): array
 {
     if (!late_payment_table_available()) return [];
+    $term = '%' . trim($search) . '%';
     return q('SELECT r.id, r.pesanan_id, r.nominal_dilaporkan, r.waktu_transaksi,
             r.status_rekonsiliasi, r.dicatat_at, r.diverifikasi_at, r.tindak_lanjut,
             p.kode, p.nama_pemesan, p.telepon_penerima, p.total, p.status status_pesanan,
             p.tgl_kirim, p.created_at tanggal_pesanan
         FROM pembayaran_terlambat r
         JOIN pesanan p ON p.id = r.pesanan_id
-        ORDER BY r.dicatat_at DESC, r.id DESC')->fetchAll();
+        WHERE p.nama_pemesan ILIKE ? OR p.kode ILIKE ?
+        ORDER BY r.dicatat_at DESC, r.id DESC', [$term, $term])->fetchAll();
 }
 
 function late_payment_logs(int $id): array

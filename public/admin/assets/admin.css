@@ -1819,6 +1819,13 @@ input:checked + .slider:before {
 .schedules-panel .table-wrap {
   overflow-x: auto;
 }
+.holiday-impact { margin: 16px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface, #fff); text-align: left; }
+.holiday-impact > b { display: block; margin-bottom: 10px; color: var(--brown); }
+.holiday-impact-pills { display: flex; flex-wrap: wrap; gap: 8px; max-height: 176px; overflow-y: auto; padding: 2px; }
+.holiday-impact-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; max-width: 100%; padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; background: #f4f6f1; color: var(--brown); font-size: 13px; line-height: 1.35; }
+.holiday-impact-pill strong { white-space: nowrap; }
+.holiday-impact-pill span { overflow-wrap: anywhere; }
+.holiday-impact > p, .holiday-impact-empty { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .schedules-panel table {
   width: 100%;
   border-collapse: collapse;

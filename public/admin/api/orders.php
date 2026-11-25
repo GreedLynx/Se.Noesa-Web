@@ -12,16 +12,18 @@ require_once __DIR__ . '/../../../app/daily-quota.php';
 require_once __DIR__ . '/../../../app/order-cancellation.php';
 require_once __DIR__ . '/../../../app/offline-orders.php';
 require_once __DIR__ . '/../../../app/menu-notifications.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require();
     if (($_POST['action'] ?? '') === 'upload_dispatch') {
         $id = (int) ($_POST['id'] ?? 0);
-        // SELECT memastikan pesanan berstatus diproses sebelum foto pengiriman disimpan.
-        $order = q("SELECT id
-            FROM pesanan
-            WHERE id = ? AND status = 'diproses'", [$id])->fetch();
+        // Ambil keterangan untuk mengecek Dine-in
+        $order = q("SELECT id, keterangan FROM pesanan WHERE id = ? AND status = 'diproses'", [$id])->fetch();
         if (!$order) {
             json(['error' => 'Pesanan tidak sedang diproses'], 409);
+        }
+        if (str_starts_with($order['keterangan'] ?? '', '[Dine-in]')) {
+            json(['error' => 'Pesanan Dine-in tidak memerlukan foto makanan'], 422);
         }
         $file = $_FILES['foto_kiriman'] ?? null;
         if (!$file || !isset($file['name'], $file['error'], $file['tmp_name'], $file['size'])) {
@@ -68,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $db = db();
             $db->beginTransaction();
-            // Kunci status sebelum menambahkan galeri agar pembatalan tidak tertimpa.
             $order = q("SELECT id FROM pesanan WHERE id = ? AND status = 'diproses' FOR UPDATE", [$id])->fetch();
             if (!$order || (bool) q("SELECT CASE WHEN EXISTS(SELECT 1 FROM penawaran_jadwal_ulang WHERE pesanan_id = ? AND status_tawaran = 'menunggu' AND berlaku_sampai > clock_timestamp()) THEN 1 ELSE 0 END", [$id])->fetchColumn()) {
                 throw new DomainException('Status pesanan sudah berubah');
@@ -76,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($savedPaths as $path) {
                 q('INSERT INTO pesanan_foto_kiriman (pesanan_id, path) VALUES (?, ?)', [$id, $path]);
             }
-            // Pertahankan nilai kolom lama sebagai foto pertama untuk kompatibilitas.
             q('UPDATE pesanan SET foto_kiriman = COALESCE(foto_kiriman, ?) WHERE id = ?', [$savedPaths[0], $id]);
             $db->commit();
         } catch (Throwable $e) {
@@ -106,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($order['status'] !== 'dibatalkan') {
                 throw new DomainException('Hanya pembatalan pesanan yang dapat ditinjau');
             }
-            // Tinjauan ulang tidak mengubah peninjau pertama atau waktu pembatalan.
             q('UPDATE pesanan
                 SET pembatalan_ditinjau_at = clock_timestamp(), pembatalan_ditinjau_oleh = ?
                 WHERE id = ? AND pembatalan_ditinjau_at IS NULL', [(int) me()['id'], $id]);
@@ -151,7 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $db = db();
             $db->beginTransaction();
-            // Gunakan urutan lock checkout agar kuota tujuan tidak berubah saat tawaran diperiksa.
             q('LOCK TABLE produk IN SHARE ROW EXCLUSIVE MODE');
             q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
             q('LOCK TABLE tanggal_libur_operasional IN SHARE ROW EXCLUSIVE MODE');
@@ -272,7 +270,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db = db();
         $db->beginTransaction();
         try {
-            // FOR UPDATE mengunci pesanan agar validasi status penolakan tidak berbenturan dengan request lain.
             $current = q("SELECT id
                 FROM pesanan
                 WHERE id = ? AND status = 'menunggu_validasi'
@@ -285,7 +282,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->rollBack();
                 json(['error' => 'Tawaran jadwal sedang menunggu jawaban pelanggan'], 409);
             }
-            // UPDATE mengubah status dan timestamp penolakan dalam transaksi yang sama.
             q("UPDATE pesanan
                 SET status = 'ditolak', status_updated_at = now(), alasan_penolakan = ?
                 WHERE id = ?", [$rejectionReason, $current['id']]);
@@ -307,7 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new DomainException('Tawaran jadwal sedang menunggu jawaban pelanggan');
         }
         if (($request['action'] ?? '') === 'complete') {
-            // COUNT memastikan seluruh detail pesanan sudah dicek sebelum pesanan diselesaikan.
             $unchecked = (int) q("SELECT COUNT(*)
                 FROM detail_pesanan
                 WHERE pesanan_id = ? AND sudah_dicek = FALSE", [(int) ($request['id'] ?? 0)])->fetchColumn();
@@ -315,17 +310,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->rollBack();
                 json(['error' => 'Centang semua menu yang sudah disiapkan terlebih dahulu'], 409);
             }
-            // SELECT mengambil foto kiriman hanya untuk pesanan yang masih diproses.
-            $photo = q("SELECT foto_kiriman
+            // PERUBAHAN: Cek dari kolom keterangan, bukan jenis_pesanan
+            $photo = q("SELECT foto_kiriman, keterangan
                 FROM pesanan
                 WHERE id = ? AND status = 'diproses'", [(int) ($request['id'] ?? 0)])->fetch();
-            if (empty($photo['foto_kiriman'])) {
+            
+            $isDineIn = str_starts_with($photo['keterangan'] ?? '', '[Dine-in]');
+            
+            if ($photo && !$isDineIn && empty($photo['foto_kiriman'])) {
                 $db->rollBack();
                 json(['error' => 'Unggah foto makanan yang akan dikirim terlebih dahulu'], 409);
             }
         }
         if (($request['action'] ?? '') === 'validate') {
-            // SELECT memeriksa bukti pembayaran sebelum status pesanan divalidasi.
             $proof = q("SELECT bukti_bayar
                 FROM pesanan
                 WHERE id = ? AND status = 'menunggu_validasi'", [(int) ($request['id'] ?? 0)])->fetch();
@@ -338,7 +335,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 json(['error' => 'Pelanggan belum mengunggah bukti pembayaran'], 409);
             }
         }
-        // UPDATE status bersyarat: status lama harus cocok agar transisi tidak menimpa perubahan terbaru.
         $affectedRows = q("UPDATE pesanan
             SET status = ?, status_updated_at = now()
             WHERE id = ? AND status = ?", [$transition[1], $current['id'], $transition[0]])->rowCount();
@@ -352,7 +348,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     json(['ok' => true, 'status' => $transition[1]]);
 }
 if (isset($_GET['id'])) {
-    // LEFT JOIN menampilkan nama akun jika terhubung; jika tidak, nama pemesan tetap tersedia.
     $order = q("SELECT p.*, COALESCE(u.username, p.nama_pemesan) akun_pemesan, u.phone,
         c.cancellation_source, c.status_before_cancel, c.cancelled_at, c.reviewed_at,
         c.reviewed_by, c.reviewed_by_name, c.needs_payment_review, c.production_stop_required
@@ -364,7 +359,6 @@ if (isset($_GET['id'])) {
     if (!$order) {
         json(['error' => 'Pesanan tidak ditemukan'], 404);
     }
-    // JOIN detail dan produk untuk menyajikan menu, harga, dan status checklist per item.
     $order['menu'] = q("SELECT pr.nama, pr.gambar, d.id item_id, d.sudah_dicek, d.qty, d.harga, d.qty * d.harga subtotal
         FROM detail_pesanan d
         JOIN produk pr
@@ -424,7 +418,6 @@ $orderBy = $tab === 'dibatalkan' ? 'p.status_updated_at DESC NULLS LAST, p.id DE
         CASE WHEN p.status = 'selesai' THEN COALESCE(p.status_updated_at, p.created_at) END DESC,
         p.created_at DESC";
 $search = '%' . trim($_GET['q'] ?? '') . '%';
-// SELECT memfilter pesanan menurut tab/status dan kata kunci nama atau kode, lalu mengurutkan hasil.
 $items = q("SELECT p.id, p.kode, p.nama_pemesan, p.keterangan, p.pax, p.total, p.status, p.sumber, p.status_updated_at, p.tgl_kirim, p.created_at,
         EXISTS (SELECT 1 FROM penawaran_jadwal_ulang r WHERE r.pesanan_id = p.id
             AND r.status_tawaran = 'menunggu' AND r.berlaku_sampai > clock_timestamp()) AS reschedule_pending,
@@ -439,7 +432,6 @@ $items = array_map(static function (array $item): array {
     $item['reschedule_pending'] = in_array($item['reschedule_pending'] ?? null, [true, 1, '1', 't'], true);
     return $item;
 }, $items);
-// Satu query COUNT dengan FILTER menghitung total dan jumlah untuk setiap status.
 $count = q("SELECT COUNT(*) total, COUNT(*) FILTER (WHERE status = 'menunggu_pembayaran') payment, COUNT(*) FILTER (WHERE status = 'menunggu_validasi') pending, COUNT(*) FILTER (WHERE status = 'diproses') processing, COUNT(*) FILTER (WHERE status = 'selesai') completed, COUNT(*) FILTER (WHERE status = 'ditolak') rejected, COUNT(*) FILTER (WHERE status = 'dibatalkan') cancelled,
         COUNT(*) FILTER (WHERE status = 'dibatalkan' AND pembatalan_ditinjau_at IS NULL) cancellation_unreviewed
     FROM pesanan")->fetch();

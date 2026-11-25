@@ -18,6 +18,7 @@
         return `<span class="late-status ${type}">${label}</span>`;
     };
 
+    let eligibleRequest = 0;
     async function loadEligible() {
         const select = $('#late-order');
         const query = $('#late-order-code')?.value.trim() || '';

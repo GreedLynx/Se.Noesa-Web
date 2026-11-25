@@ -40,6 +40,12 @@
 - Pesanan yang sudah ada tidak berubah otomatis ketika libur ditambahkan.
   Kebijakan yang disepakati: Admin menolaknya satu per satu dengan alasan dan
   tawaran penjadwalan ulang; alur Admin tersebut menjadi implementasi terpisah.
+- Sebelum rentang libur disimpan, Admin mendapat peringatan yang merinci pesanan
+  aktif terdampak. Admin menindaklanjutinya memakai alur tawaran pada plan
+  penolakan dan reschedule; penyimpanan libur tidak mengubah pesanan otomatis.
+- Halaman Jadwal menampilkan pesanan aktif yang tanggal kirimnya tertutup agar
+  Admin dapat membuka detail dan menawari jadwal pengganti. Pesanan offline
+  memerlukan tindak lanjut manual karena tidak mempunyai respons pelanggan.
 - Dashboard Admin merangkum jumlah porsi per menu untuk tanggal kirim terpilih.
   Hitungan mencakup pesanan selain `ditolak` dan `dibatalkan`; tautan membuka
   detail pesanan yang sudah menyediakan checklist dan tindakan status.
@@ -67,6 +73,10 @@ tetap pulih otomatis ketika tanggal libur dihapus.
   diikuti pembatalan yang sah sampai H-2, dengan ketentuan refund di atas.
 - Job CLI berjalan setiap menit, terpisah dari batas H-2. Kuota dilepas setelah
   status diubah job; keterlambatan sekitar satu siklus saat scheduler sehat.
+- Jika pelanggan melaporkan transfer tanpa sempat mengunggah bukti, Admin mencari
+  pesanan yang sudah dibatalkan untuk mencatat bukti rekonsiliasi. Catatan itu
+  dapat dicari lagi menurut nama atau kode; pencatatan tidak memverifikasi
+  transfer atau menghidupkan kembali pesanan lama.
 - Pesanan lama mengikuti tenggat asli setelah inventaris dan dry-run sebelum
   aktivasi. Unpaid dengan waktu NULL atau bukti tersimpan dilaporkan untuk
   pemeriksaan manual dan tidak dibatalkan job.

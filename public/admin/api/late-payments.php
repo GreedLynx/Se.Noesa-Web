@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json(['error' => 'Method tidak didukung'], 405);
 
+$search = $_GET['q'] ?? '';
+if (!is_string($search)) json(['error' => 'Pencarian tidak valid'], 422);
+$search = trim($search);
 if (!empty($_GET['eligible'])) {
     if (!late_payment_table_available()) json(['items' => [], 'feature_available' => false]);
     $search = trim((string) ($_GET['q'] ?? ''));

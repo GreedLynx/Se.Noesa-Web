@@ -80,9 +80,11 @@ const cases = [
     ['orders.php?tgl_kirim=2030-11-20%00', 'orders.php'],
     [['orders.php'], 'orders.php'],
     ['dashboard.php?tgl_kirim=2030-11-20', 'dashboard.php?tgl_kirim=2030-11-20'],
+    ['schedules.php', 'schedules.php'],
+    ['orders.php?tab=pembayaran_terlambat&q=Baru', 'orders.php?tab=pembayaran_terlambat&q=Baru'],
     ['orders.php?tab=dibatalkan&review=reviewed&q=A%26%22B', 'orders.php?tab=dibatalkan&review=reviewed&q=A%26%22B'],
     ['orders.php?tab=selesai&review=reviewed', 'orders.php?tab=selesai'],
-    ...['https://evil.test/orders.php', '//evil.test/orders.php', '../owner/orders.php', '/demo/admin/orders.php', 'api/orders.php', 'order-detail.php?id=1', 'orders.php?tab[]=semua', 'orders.php?tab=semua&tab=selesai', 'orders.php?return_to=dashboard.php', 'dashboard.php?tab=semua', 'orders.php?tgl_kirim=2030-02-30', 'orders.php?tab=invalid', 'orders.php?review=invalid', 'orders.php#fragment', 'orders.php\\evil', 'javascript:alert(1)'].map(value => [value, 'orders.php']),
+    ...['https://evil.test/orders.php', '//evil.test/orders.php', '../owner/orders.php', '/demo/admin/orders.php', 'api/orders.php', 'order-detail.php?id=1', 'orders.php?tab[]=semua', 'orders.php?tab=semua&tab=selesai', 'orders.php?return_to=dashboard.php', 'dashboard.php?tab=semua', 'schedules.php?q=foo', 'orders.php?tgl_kirim=2030-02-30', 'orders.php?tab=invalid', 'orders.php?review=invalid', 'orders.php#fragment', 'orders.php\\evil', 'javascript:alert(1)'].map(value => [value, 'orders.php']),
 ];
 const payload = Buffer.from(JSON.stringify(cases)).toString('base64');
 const php = '<?php $cases = json_decode(base64_decode("' + payload + '"), true); $results = []; foreach ($cases as $case) { $_GET = ["return_to" => $case[0]]; ' + validation + ' $results[] = $backUrl; } echo json_encode($results);';
@@ -90,7 +92,7 @@ const result = spawnSync('php', [], { input: php, encoding: 'utf8' });
 assert.equal(result.status, 0, result.stderr);
 assert.deepEqual(JSON.parse(result.stdout), cases.map(([, expected]) => expected));
 assert.match(markup, /data-order-back href="<\?= htmlspecialchars\(\$backUrl/);
-assert.equal((source.match(/esc\(orderDetailUrl\((?:order|o)\.id\)\)/g) || []).length, 6);
+assert.equal((source.match(/esc\(orderDetailUrl\((?:order|o)\.id\)\)/g) || []).length, 7);
 assert.match(source, /location\.href = orderDetailUrl\(result\.id\)/);
 assert.match(source, /esc\(\$\('#order-back'\)\.getAttribute\('href'\)\)/);
 console.log('PASS: origin/filter round-trip, debounce, six entry links/offline, click modifiers, and PHP fallback/URL validation without DB');

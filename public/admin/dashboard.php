@@ -24,7 +24,9 @@ admin_head('Dashboard', 'dashboard');
 <section class="stats-grid" id="admin-stats" aria-live="polite">
     <article class="stat-card">
         <span class="stat-icon">
-            <span class="ui-icon icon-pesanan" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
         </span>
         <span class="stat-label">
             Pesanan hari
@@ -39,7 +41,9 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            <span class="ui-icon icon-validasi" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5"/>
+            </svg>
         </span>
         <span class="stat-label">
             Perlu
@@ -55,7 +59,10 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            <span class="ui-icon icon-kapasitas" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                <path d="M6 1v3M10 1v3M14 1v3"/>
+            </svg>
         </span>
         <span class="stat-label">
             Kapasitas
@@ -75,7 +82,11 @@ admin_head('Dashboard', 'dashboard');
     </article>
     <article class="stat-card">
         <span class="stat-icon">
-            <span class="ui-icon icon-kritis" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <path d="M12 9v4"/>
+                <path d="M12 17h.01"/>
+            </svg>
         </span>
         <span class="stat-label">
             Produk kritis

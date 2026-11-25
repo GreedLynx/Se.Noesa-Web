@@ -37,7 +37,6 @@ function bindOrderBack() {
         location.replace(link.href);
     });
 }
-// Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.content || "";
 const csrfHeaders = (options = {}) =>
@@ -47,11 +46,12 @@ const csrfHeaders = (options = {}) =>
 async function api(url, options = {}) {
     if (!options.method && $('#quota-date') && /^api\/(products|orders|dashboard)\.php/.test(url) && !/[?&]tgl_kirim=/.test(url))
         url += (url.includes('?') ? '&' : '?') + 'tgl_kirim=' + encodeURIComponent($('#quota-date').value);
+    const multipart = typeof FormData !== "undefined" && options.body instanceof FormData;
     const response = await fetch(url, {
         cache: "no-store",
-        headers: { "Content-Type": "application/json", ...csrfHeaders(options) },
+        headers: { ...(multipart ? {} : { "Content-Type": "application/json" }), ...csrfHeaders(options) },
         ...options,
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        body: multipart ? options.body : options.body ? JSON.stringify(options.body) : undefined,
     });
     const data = await response
         .json()
@@ -112,7 +112,7 @@ if ($('#quota-date')) $('#quota-date').onchange = () => {
 };
 
 // --- FUNGSI CUSTOM CONFIRM DIALOG (MODERN) ---
-function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary") {
+function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "primary", messageHtml = null) {
     return new Promise((resolve) => {
         const dialog = $("#app-confirm-dialog");
         if (!dialog) return resolve(confirm(message));
@@ -123,14 +123,14 @@ function confirmDialog(title, message, confirmLabel = "Ya, Lanjutkan", type = "p
         const iconEl = $("#confirm-icon");
 
         titleEl.textContent = title;
-        msgEl.textContent = message;
+        msgEl.innerHTML = messageHtml ?? esc(message);
         btnYes.textContent = confirmLabel;
 
         btnYes.className = "button " + type;
         iconEl.className = "confirm-icon " + type;
         iconEl.innerHTML = type === "danger"
-            ? '<span class="ui-icon icon-peringatan" aria-hidden="true"></span>'
-            : '<span class="ui-icon icon-berhasil" aria-hidden="true"></span>';
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
 
         dialog.showModal();
 
@@ -266,11 +266,28 @@ async function schedulesPage() {
         const isEdit = Boolean(form.elements.id.value);
         const start = form.elements.tanggal_mulai.value;
         const end = form.elements.tanggal_selesai.value;
+        $("#holiday-error").textContent = "";
+        let affected;
+        try {
+            const preview = await api("api/holidays.php?preview_start=" + encodeURIComponent(start) + "&preview_end=" + encodeURIComponent(end));
+            affected = preview.items || [];
+        } catch (err) {
+            $("#holiday-error").textContent = err.message;
+            return;
+        }
+        const orderWarning = affected.length
+            ? `<section class="holiday-impact" aria-label="${affected.length} pesanan terdampak"><b>${affected.length} pesanan terdampak</b><div class="holiday-impact-pills">${affected.map(order =>
+                `<span class="holiday-impact-pill"><strong>${esc(order.kode)}</strong><span>${esc(order.nama_pemesan)}</span></span>`
+            ).join("")}</div><p>Pesanan tidak berubah otomatis. Tindak lanjuti melalui detail pesanan.</p></section>`
+            : '<p class="holiday-impact-empty">Tidak ada pesanan aktif pada rentang ini.</p>';
+        const message = `Terapkan tanggal libur ${start} s/d ${end}? Pelanggan tidak dapat memesan pada rentang ini.`;
+        const messageHtml = `<span>${esc(message)}</span>${orderWarning}`;
         const confirmed = await confirmDialog(
             isEdit ? "Simpan Perubahan Libur" : "Simpan Tanggal Libur",
-            `Terapkan tanggal libur operasional ${start} s/d ${end}? Pelanggan tidak dapat memesan pada rentang tanggal ini.`,
+            message,
             "Ya, Simpan",
-            "primary"
+            "primary",
+            messageHtml
         );
         if (!confirmed) return;
 
@@ -457,11 +474,13 @@ let orderTab = "semua",
 let offlineProducts = [];
 
 async function loadOrders() {
-    const query = encodeURIComponent($("#order-search")?.value || "");
+    const searchTerm = $("#order-search")?.value.trim() || "";
+    const query = encodeURIComponent(searchTerm);
     if (orderTab === "pembayaran_terlambat") {
-        const [orders, latePayments] = await Promise.all([
+        const [orders, latePayments, eligible] = await Promise.all([
             api("api/orders.php?tab=semua&q="),
-            api("api/late-payments.php"),
+            api("api/late-payments.php?q=" + query),
+            searchTerm ? api("api/late-payments.php?eligible=1&q=" + query) : { items: [] },
         ]);
         $("#all-count").textContent = orders.counts.total;
         $("#payment-count").textContent = orders.counts.payment;
@@ -473,17 +492,23 @@ async function loadOrders() {
         $("#cancellation-unreviewed-count").textContent = orders.counts.cancellation_unreviewed;
         $("#orders-capacity").textContent = (Number(orders.capacity.pakai) || 0).toLocaleString("id-ID") + " / " + (Number(orders.capacity.kapasitas) || 0).toLocaleString("id-ID") + " porsi";
         const items = latePayments.items || [];
-        $("#late-payment-count").textContent = items.length;
+        const recordedIds = new Set(items.map(item => Number(item.pesanan_id)));
+        const unrecorded = (eligible.items || []).filter(item => !recordedIds.has(Number(item.id)));
+        $("#late-payment-count").textContent = items.length + unrecorded.length;
         const status = value => {
             const states = { menunggu_verifikasi: ["pending", "Menunggu verifikasi"], terverifikasi: ["verified", "Terverifikasi"], tidak_valid: ["invalid", "Tidak valid"] };
             const [type, label] = states[value] || ["pending", "-"];
             return '<span class="late-payment-status ' + type + '">' + label + "</span>";
         };
-        $("#late-payment-view").innerHTML = items.length
+        $("#late-payment-view").innerHTML = items.length || unrecorded.length
             ? '<table><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Nominal</th><th>Status</th><th>Waktu transaksi</th><th></th></tr></thead><tbody>' + items.map(item =>
                 '<tr><td><div class="late-payment-meta"><b>' + esc(item.kode) + '</b><small>Pesanan ' + dateLabel(item.tanggal_pesanan, true) + '</small></div></td><td><div class="late-payment-meta"><b>' + esc(item.nama_pemesan) + '</b><small>' + esc(item.telepon_penerima || "-") + '</small></div></td><td><b>' + money(item.nominal_dilaporkan) + '</b></td><td>' + status(item.status_rekonsiliasi) + '</td><td>' + dateLabel(item.waktu_transaksi, true) + '</td><td><a class="button small secondary" href="late-payments.php">Kelola</a></td></tr>'
+            ).join("") + unrecorded.map(item =>
+                '<tr><td><b>' + esc(item.kode) + '</b></td><td>' + esc(item.nama_pemesan) +
+                '</td><td>-</td><td>Belum dicatat</td><td>-</td><td><a class="button small secondary" href="late-payments.php?q=' +
+                encodeURIComponent(item.kode) + '">Catat bukti</a></td></tr>'
             ).join("") + "</tbody></table>"
-            : '<div class="empty-state">Belum ada pembayaran terlambat yang dicatat.</div>';
+            : '<div class="empty-state">Tidak ada catatan yang cocok. <a href="late-payments.php">Cari pesanan dibatalkan untuk dicatat</a>.</div>';
         return;
     }
     const reviewQuery = orderTab === "dibatalkan" && cancellationReview ? "&review=" + cancellationReview : "";
@@ -497,7 +522,6 @@ async function loadOrders() {
     document.querySelector("#completed-count").textContent = d.counts.completed;
     $("#rejected-count").textContent = d.counts.rejected;
     $("#cancelled-count").textContent = d.counts.cancelled;
-    $("#late-payment-count").textContent = $("#late-payment-count").textContent || "0";
     $("#cancellation-unreviewed-count").textContent = d.counts.cancellation_unreviewed;
     $("#orders-capacity").textContent =
         (Number(d.capacity.pakai) || 0).toLocaleString("id-ID") +
@@ -557,7 +581,7 @@ const rows = d.items
 
 function ordersPage() {
     const params = new URLSearchParams(location.search);
-    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan", "pembayaran_terlambat"];
+    const tabs = ["semua", "pembayaran", "validasi", "proses", "selesai", "ditolak", "dibatalkan"];
     orderTab = tabs.includes(params.get("tab")) ? params.get("tab") : "semua";
 
     cancellationReview = ["unreviewed", "reviewed"].includes(params.get("review")) ? params.get("review") : "";
@@ -576,7 +600,7 @@ function ordersPage() {
         $(".table-wrap").hidden = orderTab === "pembayaran_terlambat";
         $("#mobile-orders").hidden = orderTab === "pembayaran_terlambat";
         $("#late-payment-view").hidden = orderTab !== "pembayaran_terlambat";
-        $("#order-search").closest(".search").hidden = orderTab === "pembayaran_terlambat";
+        $("#order-search").closest(".search").hidden = false;
     };
     syncOrderFilters();
 
@@ -622,7 +646,7 @@ function ordersPage() {
     const deliveryDateLabel = $("#offline-date-label");
     const deliveryTimeLabel = $("#offline-time-label");
 
-    const isDineIn = () => (orderTypeSelect?.value || "dine_in") === "dine_in";
+    const isDineIn = () => true;
 
     let recipientEdited = false;
     recipientNameInput?.addEventListener("input", () => {
@@ -645,11 +669,10 @@ function ordersPage() {
     const todayValue = today.year + "-" + today.month + "-" + today.day;
 
     const renderOfflineProducts = () => {
-        const dineIn = isDineIn();
         productList.innerHTML = offlineProducts.length
             ? offlineProducts.map((product) => {
-                const minQty = dineIn ? 1 : Number(product.min_pesan || 4);
-                const minText = dineIn ? "tanpa minimal porsi (Dine-in)" : `minimal ${minQty} porsi`;
+                const minQty = 1;
+                const minText = "tanpa minimal porsi (Dine-in)";
                 return '<label class="offline-menu-item"><span><b>' + esc(product.nama) + '</b><small>' +
                     money(product.harga) + ' · sisa ' + Number(product.sisa).toLocaleString("id-ID") +
                     ' · ' + minText + '</small></span><input type="number" min="0" max="' +
@@ -664,17 +687,16 @@ function ordersPage() {
     };
 
     const syncOrderTypeUI = () => {
-        const dineIn = isDineIn();
-        if (addressField) addressField.hidden = dineIn;
+        if (addressField) addressField.hidden = true;
         if (addressInput) {
-            addressInput.required = !dineIn;
-            if (dineIn) addressInput.value = "";
+            addressInput.required = false;
+            addressInput.value = "";
         }
         if (deliveryDateLabel) {
-            deliveryDateLabel.textContent = dineIn ? "Tanggal Dine-in / Acara" : "Tanggal Pengiriman";
+            deliveryDateLabel.textContent = "Tanggal Dine-in / Acara";
         }
         if (deliveryTimeLabel) {
-            deliveryTimeLabel.textContent = dineIn ? "Jam Sajian / Kedatangan" : "Jam Pengiriman";
+            deliveryTimeLabel.textContent = "Jam Sajian / Kedatangan";
         }
         if (offlineProducts.length) renderOfflineProducts();
     };
@@ -706,10 +728,6 @@ function ordersPage() {
         }
     };
 
-    if (orderTypeSelect) {
-        orderTypeSelect.onchange = syncOrderTypeUI;
-    }
-
     $("#new-offline-order").onclick = () => {
         form.reset();
         recipientEdited = false;
@@ -730,7 +748,6 @@ function ordersPage() {
     form.onsubmit = async (event) => {
         event.preventDefault();
         const button = $("#save-offline-order");
-        const dineIn = isDineIn();
         const rawItems = $$("[data-offline-qty]", productList)
             .map((input) => ({
                 id: Number(input.dataset.productId),
@@ -745,25 +762,10 @@ function ordersPage() {
             return;
         }
 
-        if (!dineIn) {
-            const belowMin = rawItems.find((item) => item.qty < item.min);
-            if (belowMin) {
-                $("#offline-order-error").textContent =
-                    `Pesanan diantar untuk "${belowMin.name}" minimal ${belowMin.min} porsi.`;
-                return;
-            }
-            if (!addressInput?.value.trim()) {
-                $("#offline-order-error").textContent = "Alamat pengiriman wajib diisi untuk pesanan diantar.";
-                addressInput?.focus();
-                return;
-            }
-        }
-
         const items = rawItems.map(({ id, qty }) => ({ id, qty }));
-        const tipeLabel = dineIn ? "Dine-in" : "Delivery / Diantar";
         const confirmed = await confirmDialog(
-            `Simpan Pesanan ${tipeLabel}`,
-            `Buat pesanan ${tipeLabel} atas nama "${form.elements.nama_pemesan.value.trim()}" untuk tanggal ${deliveryDate.value} pukul ${form.elements.waktu_kirim.value} WIB (Total ${$("#offline-order-total").textContent})? Kuota produk akan langsung terpotong.`,
+            `Simpan Pesanan Dine-in`,
+            `Buat pesanan Dine-in atas nama "${form.elements.nama_pemesan.value.trim()}" untuk tanggal ${deliveryDate.value} pukul ${form.elements.waktu_kirim.value} WIB (Total ${$("#offline-order-total").textContent})? Kuota produk akan langsung terpotong.`,
             "Ya, Simpan Pesanan",
             "primary"
         );
@@ -773,10 +775,8 @@ function ordersPage() {
         $("#offline-order-error").textContent = "";
         try {
             const values = Object.fromEntries(new FormData(form));
-            if (dineIn) {
-                values.alamat = "Dine-in di tempat";
-            }
-            values.jenis_pesanan = dineIn ? "dine_in" : "delivery";
+            values.alamat = "Dine-in di tempat";
+            values.jenis_pesanan = "dine_in";
             const result = await api("api/orders.php", {
                 method: "POST",
                 body: { ...values, action: "create_offline", items },
@@ -1094,23 +1094,31 @@ async function orderDetail() {
         return;
     }
     const o = await api("api/orders.php?id=" + id);
+    const offer = o.reschedule_offer;
+    const pendingOffer = offer?.status_tawaran === "menunggu";
+    const isDineIn = String(o.keterangan || '').startsWith('[Dine-in]');
+    const scheduleLabel = isDineIn ? 'Jadwal Dine-in' : 'Jadwal pengiriman';
+    const recipientLabel = isDineIn ? 'Nama tamu' : 'Nama penerima';
     $("#detail-status").outerHTML = badge(o.status);
     const raw = o.bukti_bayar || "",
-        proofUrl = raw ? "api/proof.php?order=" + Number(id) : "";
+        proofUrl = raw
+            ? /^https?:\/\//.test(raw) || raw.startsWith("/")
+                ? raw
+                : "../" + raw.replace(/^\.\//, "")
+            : "";
     const delivery = o.tgl_kirim ? dateLabel(o.tgl_kirim, true) : "-";
+
+    const proofEmptyIcon = '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>';
     const proof = raw
-        ? '<a class="proof-image" href="' +
-            esc(proofUrl) +
-            '" target="_blank" rel="noopener"><img src="' +
-            esc(proofUrl) +
-            '" alt="Bukti transfer pelanggan" onerror="this.onerror=null;this.hidden=true;var s=this.nextElementSibling;if(s)s.hidden=false"><span class="proof-empty" hidden>Bukti tidak dapat ditampilkan</span></a>'
-        : '<div class="proof-empty"><span>?</span><b>Belum ada bukti pembayaran</b></div>';
+        ? '<a class="proof-image" href="' + esc(proofUrl) + '" target="_blank" rel="noopener"><img src="' + esc(proofUrl) + '" alt="Bukti transfer pelanggan"></a>'
+        : '<div class="proof-empty">' + proofEmptyIcon + '<b>Belum ada bukti pembayaran</b></div>';
     const proofPending = raw
         ? proof
-        : '<div class="proof-empty"><span>?</span><b>Tidak ada bukti pembayaran</b>' +
+        : '<div class="proof-empty">' + proofEmptyIcon + '<b>Tidak ada bukti pembayaran</b>' +
           '<p class="muted">Pelanggan belum mengunggah bukti transfer untuk pesanan ini. ' +
           'Pesanan akan otomatis dibatalkan bila bukti tidak diunggah dalam 1 jam.</p></div>';
     const proofPanel = '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti transfer pelanggan</h2><span class="tag soft">QRIS</span></div>' + proof + '</article>';
+
     const receipt =
         '<article class="panel"><div class="panel-heading"><h2>Data pada pembayaran</h2><span class="tag soft">QRIS</span></div><div class="detail-pair"><span>Nama pengirim</span><b>' +
         esc(o.nama_pembayar || "-") +
@@ -1120,19 +1128,21 @@ async function orderDetail() {
         money(o.total) +
         '</b></div><div class="detail-pair"><span>Total pesanan</span><b>' +
         money(o.total) +
-        '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        '</b></div><div class="detail-pair"><span>' + scheduleLabel + '</span><b>' +
         delivery +
         "</b></div></article>";
+
     const menuItems = Array.isArray(o.menu) ? o.menu : [];
     const menuCount = Array.isArray(o.menu) ? menuItems.length + " jenis" : "Tidak tersedia";
     const isItemChecked = (val) => val === true || val === 1 || val === "1" || val === "t";
     const menu = menuItems.map((m) =>
         '<label class="dispatch-item"><input type="checkbox" data-item-check="' +
         Number(m.item_id) + '" ' + (isItemChecked(m.sudah_dicek) ? "checked" : "") + " " +
-        (o.status === "diproses" ? "" : "disabled") + "><span><b>" + esc(m.nama) +
+        (o.status === "diproses" && !pendingOffer ? "" : "disabled") + "><span><b>" + esc(m.nama) +
         "</b><small>" + Number(m.qty).toLocaleString("id-ID") + " porsi &times; " +
         money(m.harga) + "</small></span><strong>" + money(m.subtotal) + "</strong></label>"
     ).join("");
+
     const sentPhotos = Array.isArray(o.foto_kiriman_list)
         ? o.foto_kiriman_list
         : o.foto_kiriman ? [o.foto_kiriman] : [];
@@ -1146,15 +1156,19 @@ async function orderDetail() {
                 esc(photoUrl) + '" alt="Foto makanan yang akan dikirim"></a>';
         }).join("") + "</div>"
         : '<p class="muted">Belum ada foto makanan yang diunggah.</p>';
-    const dispatch =
-        o.status === "diproses" || o.status === "selesai" || (o.status === "dibatalkan" && sentPhotos.length)
-            ? '<article class="panel"><div class="panel-heading"><h2>' + (o.status === "dibatalkan" ? 'Foto pesanan tersimpan' : 'Foto makanan siap kirim') + '</h2><span class="tag soft">Foto kiriman</span></div>' +
-                sentPhotoGallery +
-                (o.status === "diproses"
-                    ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
-                    : "") +
-                  "</article>"
-            : "";
+    const showDispatchPanel = !isDineIn && (
+        o.status === "diproses" ||
+        o.status === "selesai" ||
+        (o.status === "dibatalkan" && sentPhotos.length > 0)
+    );
+    const dispatch = showDispatchPanel
+        ? '<article class="panel"><div class="panel-heading"><h2>' + (o.status === "dibatalkan" ? 'Foto pesanan tersimpan' : 'Foto makanan siap kirim') + '</h2><span class="tag soft">Foto kiriman</span></div>' +
+            sentPhotoGallery +
+             (o.status === "diproses" && !pendingOffer
+                ? '<form id="dispatch-photo-form" class="dispatch-upload"><label for="dispatch-photo">Tambah foto makanan yang akan dikirim</label><input id="dispatch-photo" name="foto_kiriman[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required><small>Pilih satu atau beberapa foto JPG, PNG, atau WebP. Maksimal 2 MB per foto.</small><button class="button secondary">Simpan foto</button><span id="dispatch-photo-error" class="form-error"></span></form>'
+                : "") +
+            "</article>"
+        : "";
     const checklist =
         '<article class="panel"><div class="panel-heading"><h2>Daftar menu</h2><span class="tag soft">' +
         menuCount + '</span></div>' +
@@ -1162,31 +1176,36 @@ async function orderDetail() {
             ? '<p class="muted">' + (o.status === "dibatalkan" ? 'Daftar menu disimpan sebagai riwayat pesanan.' : 'Centang setiap menu setelah jumlah dan jenis makanan dipastikan sesuai.') + '</p>'
             : '<p class="form-error" role="alert">Data daftar menu tidak tersedia. Muat ulang atau hubungi administrator.</p>') +
         menu + "</article>";
+
     const isValidation = o.status === "menunggu_validasi";
     const isPendingPayment = o.status === "menunggu_pembayaran";
+
+    const orderTypeRow = '<div class="detail-pair"><span>Jenis Pesanan</span><b>' +
+        (isDineIn ? "Dine-in (Makan di tempat)" : "Delivery / Diantar") + '</b></div>';
+
     const validationView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">VALIDASI QRIS</p><h2>' +
         esc(o.kode) + '</h2></div><span class="tag soft">' + dateLabel(o.created_at, true) +
-        '</span></div><div class="detail-pair"><span>Waktu status</span><b>' +
+        '</span></div>' + orderTypeRow + '<div class="detail-pair"><span>Waktu status</span><b>' +
         (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
-        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' + esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>' + recipientLabel + '</span><b>' + esc(o.nama_pemesan) +
         '</b></div><div class="detail-pair"><span>Nomor HP penerima</span><b>' +
-        esc(o.telepon_penerima || o.phone || "-") + '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
-        esc(o.alamat_pengiriman || "-") + '</b></div><div class="detail-pair"><span>Catatan pesanan</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") + '</b></div>' + (isDineIn ? '' : '<div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") + '</b></div>') + '<div class="detail-pair"><span>Catatan pesanan</span><b>' +
         esc(o.keterangan || "-") + '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
         money(o.total) + '</b></div></article>' + proofPanel + receipt;
 
     const pendingPaymentView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">MENUNGGU PEMBAYARAN</p><h2>' +
         esc(o.kode) + "</h2></div>" + badge(o.status) +
-        '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+        '</div>' + orderTypeRow + '<div class="detail-pair"><span>Waktu status</span><b>' +
         (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
         '</b></div><div class="detail-pair"><span>Sumber pesanan</span><b>' +
         (o.sumber === "offline" ? "Offline (dicatat Admin)" : "Online") +
-        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' + esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>' + recipientLabel + '</span><b>' + esc(o.nama_pemesan) +
         '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
-        esc(o.telepon_penerima || o.phone || "-") + '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
-        esc(o.alamat_pengiriman || "-") + '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") + '</b></div>' + (isDineIn ? '' : '<div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") + '</b></div>') + '<div class="detail-pair"><span>' + scheduleLabel + '</span><b>' +
         delivery + '</b></div><div class="detail-pair total-row"><span>Total tagihan</span><b>' +
         money(o.total) + '</b></div></article>' +
         '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' +
@@ -1195,14 +1214,14 @@ async function orderDetail() {
     const dispatchView =
         '<article class="panel order-summary"><div class="panel-heading"><div><p class="eyebrow">DETAIL PESANAN</p><h2>' +
         esc(o.kode) + "</h2></div>" + (o.status === "dibatalkan" ? "" : badge(o.status)) +
-        '</div><div class="detail-pair"><span>Waktu status</span><b>' +
+        '</div>' + orderTypeRow + '<div class="detail-pair"><span>Waktu status</span><b>' +
         (o.status_updated_at ? dateLabel(o.status_updated_at, true) : "Belum tercatat") +
         '</b></div><div class="detail-pair"><span>Sumber pesanan</span><b>' +
         (o.sumber === "offline" ? "Offline (dicatat Admin)" : "Online") +
-        '</b></div><div class="detail-pair"><span>Nama penerima</span><b>' + esc(o.nama_pemesan) +
+        '</b></div><div class="detail-pair"><span>' + recipientLabel + '</span><b>' + esc(o.nama_pemesan) +
         '</b></div><div class="detail-pair"><span>Kontak penerima</span><b>' +
-        esc(o.telepon_penerima || o.phone || "-") + '</b></div><div class="detail-pair"><span>Alamat pengiriman</span><b>' +
-        esc(o.alamat_pengiriman || "-") + '</b></div><div class="detail-pair"><span>Jadwal pengiriman</span><b>' +
+        esc(o.telepon_penerima || o.phone || "-") + '</b></div>' + (isDineIn ? '' : '<div class="detail-pair"><span>Alamat pengiriman</span><b>' +
+        esc(o.alamat_pengiriman || "-") + '</b></div>') + '<div class="detail-pair"><span>' + scheduleLabel + '</span><b>' +
         delivery + '</b></div><div class="detail-pair total-row"><span>Total pesanan</span><b>' +
         money(o.total) + "</b></div></article>" +
         (o.status === "ditolak" && o.alasan_penolakan
@@ -1227,15 +1246,46 @@ async function orderDetail() {
         ? '<article class="panel proof-panel"><div class="panel-heading"><h2>Bukti pembayaran pelanggan</h2><span class="tag soft">QRIS</span></div>' + proofPending + '</article>'
         : (o.status === "dibatalkan" ? proofPanel + receipt : '');
 
+    const rescheduleInfo = offer
+        ? '<article class="panel"><div class="panel-heading"><h2>Tawaran jadwal pengganti</h2><span class="tag soft">' +
+            esc(offer.status_tawaran) + '</span></div><div class="detail-pair"><span>Tanggal asal</span><b>' + esc(offer.tanggal_asal) +
+            '</b></div><div class="detail-pair"><span>Tanggal usulan</span><b>' + esc(offer.tanggal_usulan) +
+            '</b></div><div class="detail-pair"><span>Alasan</span><b>' + esc(offer.alasan) +
+            '</b></div><div class="detail-pair"><span>Berlaku sampai</span><b>' + dateLabel(offer.berlaku_sampai, true) +
+            '</b></div>' + (pendingOffer ? '<p class="muted">Menunggu jawaban pelanggan. Jeda produksi sampai pelanggan menjawab.</p>' : '') + '</article>'
+        : '';
+
     $("#order-detail").innerHTML = isValidation
-        ? validationView
-        : cancellationInfo + dispatchView + proofSection;
+        ? validationView + rescheduleInfo
+        : cancellationInfo + dispatchView + proofSection + rescheduleInfo;
 
     const actions = $("#detail-actions");
     const rejectionDialog = $("#reject-order-dialog");
     const rejectionForm = $("#reject-order-form");
     const rejectionReason = $("#rejection-reason");
     const rejectionError = $("#rejection-reason-error");
+    const rescheduleDialog = $("#reschedule-order-dialog");
+    const rescheduleForm = $("#reschedule-order-form");
+    $$('[data-cancel-reschedule]').forEach(button => button.onclick = () => rescheduleDialog.close());
+    rescheduleForm.onsubmit = async event => {
+        event.preventDefault();
+        const submit = $('button[type="submit"]', rescheduleForm);
+        submit.disabled = true;
+        $("#reschedule-order-error").textContent = "";
+        try {
+            await api("api/orders.php", { method: "POST", body: {
+                action: "offer_reschedule", id,
+                tanggal_usulan: rescheduleForm.elements.tanggal_usulan.value,
+                alasan: rescheduleForm.elements.alasan.value.trim(),
+            } });
+            rescheduleDialog.close();
+            toast("Tawaran jadwal terkirim");
+            setTimeout(() => location.reload(), 400);
+        } catch (error) {
+            $("#reschedule-order-error").textContent = error.message;
+            submit.disabled = false;
+        }
+    };
     $$("[data-cancel-rejection]").forEach((button) => {
         button.onclick = () => rejectionDialog.close();
     });
@@ -1244,12 +1294,23 @@ async function orderDetail() {
     actionButtons.forEach((btn) => {
         const action = btn.dataset.orderAction;
         btn.hidden = !(
+            (action === "offer_reschedule" && o.can_offer_reschedule === true) ||
             (o.status === "menunggu_validasi" &&
-                (action === "validate" || action === "reject")) ||
-            (o.status === "diproses" && action === "complete") ||
+                !pendingOffer && (action === "validate" || action === "reject")) ||
+            (o.status === "diproses" && !pendingOffer && action === "complete") ||
             (o.status === "dibatalkan" && !o.reviewed_at && action === "review_cancellation")
         );
         btn.onclick = async () => {
+            if (action === "offer_reschedule") {
+                rescheduleForm.reset();
+                rescheduleForm.elements.tanggal_usulan.value = offer?.tanggal_usulan || "";
+                rescheduleForm.elements.alasan.value = offer?.alasan || "";
+                $("#reschedule-payment-note").hidden = o.status !== "menunggu_validasi";
+                $("#reschedule-order-error").textContent = "";
+                $('button[type="submit"]', rescheduleForm).disabled = false;
+                rescheduleDialog.showModal();
+                return;
+            }
             if (action === "review_cancellation") {
                 const confirmed = await confirmDialog(
                     "Tinjau pembatalan",
@@ -1299,9 +1360,12 @@ async function orderDetail() {
                 if (!confirmed) return;
             }
             if (action === "complete") {
+                const confirmMsg = isDineIn
+                    ? "Pesanan Dine-in akan ditandai selesai. Pastikan semua menu sudah disajikan dan dicek."
+                    : "Pesanan akan ditandai selesai dan siap dikirim. Pastikan semua menu sudah dicek dan foto makanan sudah diunggah.";
                 const confirmed = await confirmDialog(
                     "Selesaikan Pesanan",
-                    "Pesanan akan ditandai selesai dan siap dikirim. Pastikan semua menu sudah dicek dan foto makanan sudah diunggah.",
+                    confirmMsg,
                     "Ya, Selesaikan",
                     "primary"
                 );

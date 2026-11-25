@@ -70,6 +70,9 @@ Edit tanggal libur memperbarui rentang berdasarkan ID dalam transaksi dengan
 lock tabel yang sama seperti tambah/hapus dan checkout. Tidak memerlukan
 perubahan skema; tanggal yang keluar dari rentang kembali memakai kuota asal
 kecuali masih tercakup rentang libur lain.
+GET daftar libur membaca pesanan aktif yang tanggal kirim WIB-nya tertutup
+melalui `EXISTS`, sehingga rentang tumpang tindih tidak menggandakan pesanan.
+Daftar ini tidak mengubah status atau kuota dan tidak memerlukan migrasi baru.
 
 ## Rekap produksi harian
 
@@ -322,4 +325,15 @@ menandai tawarannya kedaluwarsa.
 Admin dapat memperbarui tawaran selama belum dijawab; `dibuat_at` diperbarui
 sebagai token versi agar pelanggan tidak dapat mengirim jawaban dari halaman
 tawaran lama. Penolakan pelanggan mengalihkan pesanan ke `dibatalkan` dengan
-metadata sumber pelanggan yang sudah tersedia pada migrasi 021.
+metadata sumber pelanggan yang sudah tersedia pada migrasi 021. Informasi
+kontak dan arahan refund ditampilkan dari konfigurasi serta status tawaran yang
+sudah ada, tanpa kolom atau migrasi baru.
+
+## Pencarian rekonsiliasi pembayaran terlambat
+
+Migrasi `026_late_payment_reconciliation.sql` tetap menjadi sumber tabel
+`pembayaran_terlambat`. Pencarian calon pesanan dilakukan pada `pesanan`
+berstatus `dibatalkan` yang belum tercatat, sebelum `LIMIT 100`. Pencarian
+catatan yang sudah ada memakai JOIN ke `pesanan`; keduanya memfilter nama
+pemesan atau kode melalui parameter PDO. Tidak ada perubahan skema, status
+pesanan, kuota, atau audit log untuk pencarian ini.
