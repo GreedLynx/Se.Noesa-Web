@@ -13,7 +13,7 @@ function admin_head(string $title, string $page): void
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | Se.Noesa Admin</title>
+    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?> | se.noesa Admin</title>
     <link rel="icon" type="image/png" sizes="16x16 32x32" href="../assets/img/logo-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
@@ -28,7 +28,7 @@ function admin_head(string $title, string $page): void
         <aside class="sidebar">
             <a class="brand" href="dashboard.php">
                 <span class="brand-mark">S</span>
-                <span>Se.Noesa<small>ADMIN PANEL</small></span>
+                <span>se.noesa<small>ADMIN PANEL</small></span>
             </a>
             <div class="side-label"></div>
             <nav class="side-nav">
@@ -58,7 +58,7 @@ function admin_head(string $title, string $page): void
             <header class="topbar">
                 <button class="menu-toggle" aria-label="Buka menu"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
                 <div class="top-copy">
-                    <small>Se.Noesa / Admin</small>
+                    <small>se.noesa / Admin</small>
                     <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
                 </div>
                 <div class="top-actions">
