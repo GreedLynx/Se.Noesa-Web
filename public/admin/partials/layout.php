@@ -89,13 +89,13 @@ function admin_head(string $title, string $page): void
 
 function admin_foot(?string $page = null): void
 {
-    $page = $GLOBALS['admin_page'] ?? '';
+    $page = $GLOBALS['__admin_current_page'] ?? '';
     ?>
             </div>
             <nav class="mobile-nav">
                 <a href="dashboard.php" class="<?= $page === 'dashboard' ? 'active' : '' ?>"><span class="ui-icon icon-dashboard" aria-hidden="true"></span><span>Dashboard</span></a>
                 <a href="orders.php" class="<?= in_array($page, ['orders', 'order-detail'], true) ? 'active' : '' ?>"><span class="ui-icon icon-pesanan" aria-hidden="true"></span><span>Pesanan</span></a>
-                <a href="late-payments.php" class="<?= ($GLOBALS['admin_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><span class="ui-icon icon-terlambat" aria-hidden="true"></span><span>Terlambat</span></a>
+                <a href="late-payments.php" class="<?= ($GLOBALS['__admin_current_page'] ?? '') === 'late-payments' ? 'active' : '' ?>"><span class="ui-icon icon-terlambat" aria-hidden="true"></span><span>Terlambat</span></a>
                 <a href="products.php" class="<?= $page === 'products' ? 'active' : '' ?>"><span class="ui-icon icon-produk" aria-hidden="true"></span><span>Produk</span></a>
                 <a href="schedules.php" class="<?= $page === 'schedules' ? 'active' : '' ?>">
                     <span class="ui-icon icon-kalender" aria-hidden="true"></span>
@@ -122,7 +122,7 @@ function admin_foot(?string $page = null): void
 
     <div class="toast" id="toast"></div>
     <script src="assets/admin.js?v=<?= filemtime(__DIR__ . '/../assets/admin.js') ?>"></script>
-    <?php if (($GLOBALS['admin_page'] ?? '') === 'late-payments'): ?>
+    <?php if (($GLOBALS['__admin_current_page'] ?? '') === 'late-payments'): ?>
     <script src="assets/late-payments.js?v=<?= filemtime(__DIR__ . '/../assets/late-payments.js') ?>"></script>
     <?php endif; ?>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>
