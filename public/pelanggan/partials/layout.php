@@ -17,11 +17,13 @@ function customer_head(string $title, string $page): array
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title) ?> · Se.Noesa</title>
+    <title><?= htmlspecialchars($title) ?> · se.noesa</title>
+    <link rel="icon" type="image/png" sizes="16x16 32x32" href="../assets/img/logo-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/customer.css?v=<?= $css('customer.css') ?>">
+    <link rel="stylesheet" href="../assets/component/icons.css?v=<?= filemtime(__DIR__ . '/../../assets/component/icons.css') ?>">
     <link rel="stylesheet" href="assets/quantity-input.css?v=<?= $css('quantity-input.css') ?>">
     <link rel="stylesheet" href="assets/catalog-mobile.css?v=<?= $css('catalog-mobile.css') ?>">
     <link rel="stylesheet" href="../assets/css/date-picker.css?v=<?= filemtime(__DIR__ . '/../../assets/css/date-picker.css') ?>">
@@ -30,76 +32,38 @@ function customer_head(string $title, string $page): array
 
 <body data-page="<?= htmlspecialchars($page) ?>">
     <div class="customer-shell">
-        <aside class="customer-rail">
-            <button type="button" class="rail-logout" data-logout aria-label="Keluar" title="Keluar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10" />
-                </svg></button>
-            <a class="customer-logo" href="riwayat.php" aria-label="Profil pelanggan"><svg viewBox="0 0 24 24"
-                    aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.3" />
-                    <path d="M5.5 19c.7-3.1 3.1-4.8 6.5-4.8s5.8 1.7 6.5 4.8" />
-                    <circle cx="12" cy="12" r="10" />
-                </svg></a>
+        <aside class="customer-rail" id="customer-sidebar" tabindex="-1" aria-label="Menu pelanggan">
+            <button class="customer-sidebar-close" type="button" aria-label="Tutup menu"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
+            <a class="customer-logo" href="index.php" aria-label="se.noesa — kembali ke katalog">
+                <img src="../assets/img/logo-icon.png" alt="" width="32" height="40">
+            </a>
             <nav class="customer-page-nav" aria-label="Navigasi pelanggan">
                 <a class="<?= $page === 'catalog' ? 'active' : '' ?>" href="index.php">
-                    <span>◯</span>
+                    <span class="ui-icon icon-menu-makanan" aria-hidden="true"></span>
                     <small>Menu</small>
                 </a>
                 <a class="<?= $page === 'history' ? 'active' : '' ?>" href="riwayat.php">
-                    <span>☰</span>
+                    <span class="ui-icon icon-riwayat" aria-hidden="true"></span>
                     <small>Riwayat</small>
                 </a>
                 <a class="<?= $page === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php">
-                    <span>✉</span>
+                    <span class="ui-icon icon-notifikasi" aria-hidden="true"></span>
                     <small>Notifikasi</small>
+                    <b class="customer-notif-count desktop" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
                 </a>
             </nav>
-            <?php if ($page === 'catalog'): ?>
-                <nav class="customer-category-rail" id="category-rail" aria-label="Kategori menu">
-                    <button type="button" data-category="" aria-label="Semua menu" aria-pressed="true" title="Semua menu">
-                        <svg viewBox="0 0 24 24">
-                            <rect x="3" y="3" width="7" height="7" rx="1" />
-                            <rect x="14" y="3" width="7" height="7" rx="1" />
-                            <rect x="3" y="14" width="7" height="7" rx="1" />
-                            <rect x="14" y="14" width="7" height="7" rx="1" />
-                        </svg>
-                    </button>
-                    <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false" title="Makanan">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M3 4v6M6 4v6M9 4v6M6 10v10M17 4v16M17 4c-3 2-3 7 0 8" />
-                            <circle cx="6" cy="8" r="5" />
-                        </svg>
-                    </button>
-                    <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false" title="Minuman">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M6 8h12l-1.5 12h-9zM9 8l2-6h8M10 12h5" />
-                        </svg>
-                    </button>
-                    <button type="button" data-category="snack" aria-label="Snack" aria-pressed="false" title="Snack">
-                        <svg viewBox="0 0 24 24">
-                            <path d="m4 15 11-11a3 3 0 0 1 4 4L8 19a3 3 0 0 1-4-4zM7 17l10-10M3 20l2-2" />
-                        </svg>
-                    </button>
-                </nav>
-            <?php endif; ?>
-            <?php if (in_array($page, ['catalog', 'history', 'notifications'], true)): ?>
-                <div class="customer-bottom-user" aria-label="<?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?>" hidden>
-                    <?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></div>
-            <?php endif; ?>
+            <button class="rail-logout" type="button" data-logout aria-label="Keluar dari akun">
+                <span class="ui-icon icon-keluar" aria-hidden="true"></span>
+                <small>Keluar</small>
+            </button>
         </aside>
+        <button class="customer-sidebar-backdrop" type="button" aria-label="Tutup menu" hidden></button>
         <main class="customer-main">
             <header class="customer-top">
-                <div style="display: flex; align-items: center; height: 100%;">
-                    <small style="font-size: 20px; font-weight: 600; color: var(--brown); margin: 0; letter-spacing: 0.3px;">Se.Noesa / Pelanggan</small>
-                </div>
+                <button class="customer-sidebar-toggle" type="button" aria-label="Buka menu" aria-controls="customer-sidebar" aria-expanded="false"><span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span></button>
+                <div><small>se.noesa / Pelanggan</small></div>
                 <div class="customer-user">
-                    <a class="customer-notif-link" href="menu-notifications.php" aria-label="Notifikasi menu">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-                        </svg>
-                        <b class="customer-notif-count" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
-                    </a>
+                    <span class="user-icon"><?= htmlspecialchars(strtoupper(substr($customer['username'] ?? 'P', 0, 1))) ?></span>
                     <span class="user-name"><?= htmlspecialchars($customer['username'] ?? 'Pelanggan') ?></span>
                 </div>
             </header>
@@ -114,40 +78,12 @@ function customer_foot(): void
 ?>
             </div>
         </main>
-        <nav class="customer-mobile-nav" aria-label="Navigasi pelanggan">
-            <a class="<?= $GLOBALS['customer_page'] === 'catalog' ? 'active' : '' ?>" href="index.php" aria-label="Menu">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M4 12h16" />
-                </svg>
-                <span>Menu</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'history' ? 'active' : '' ?>" href="riwayat.php" aria-label="Riwayat">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M5 6h14M5 12h14M5 18h14" />
-                </svg>
-                <span>Riwayat</span>
-            </a>
-            <a class="<?= $GLOBALS['customer_page'] === 'notifications' ? 'active' : '' ?>" href="menu-notifications.php" aria-label="Notifikasi">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-                </svg>
-                <span>Notifikasi</span>
-                <b class="customer-notif-count mobile" data-notif-count<?= $unreadNotifications > 0 ? '' : ' hidden' ?>><?= $unreadNotifications ?></b>
-            </a>
-            <button type="button" data-logout aria-label="Keluar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M14 4h5v16h-5M3 12h12m-4-4 4 4-4 4" />
-                </svg>
-                <span>Keluar</span>
-            </button>
-        </nav>
         <dialog id="detail-dialog" class="customer-dialog" aria-label="Detail menu">
-            <button class="dialog-close" data-close-detail aria-label="Tutup">&times;</button>
+            <button class="dialog-close" data-close-detail aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
             <div id="detail-content"></div>
         </dialog>
         <dialog id="checkout-dialog" class="customer-dialog checkout-dialog" aria-labelledby="checkout-title">
-            <button class="dialog-close" data-close-checkout aria-label="Tutup">&times;</button>
+            <button class="dialog-close" data-close-checkout aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
             <div class="dialog-heading">
                 <p class="eyebrow">KONFIRMASI</p>
                 <h2 id="checkout-title">Data pemesanan</h2>
@@ -190,11 +126,16 @@ function customer_foot(): void
                         <input id="checkout-default-address" type="checkbox" name="jadikan_default" value="1"> Jadikan alamat default
                     </label>
                 </div>
+                <div class="catalog-policy" style="margin-top:10px">
+                    <ul>
+                        <li>Pastikan tanggal kirim dan jumlah porsi sesuai kebutuhan acara.</li>
+                        <li>Kuota menu mengikuti tanggal pengiriman yang dipilih.</li>
+                    </ul>
+                </div>
                 <label for="checkout-date">
                     Tanggal kirim
                     <input id="checkout-date" name="tgl_kirim" type="date" required>
                 </label>
-                <div class="catalog-policy" style="margin-top:10px">Info pemesanan: Pastikan tanggal dan jumlah porsi sesuai kebutuhan acara sebelum mengirimkan pesanan.</div>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>
@@ -208,6 +149,11 @@ function customer_foot(): void
         </dialog>
         <div id="customer-toast" class="toast" role="status" aria-live="polite"></div>
     </div>
+    <script>window.snoesaContact = <?= json_encode([
+        'adminWhatsapp' => cfg()['contact']['admin_whatsapp'] ?? '',
+        'instagram' => cfg()['contact']['instagram'] ?? '',
+        'tiktok' => cfg()['contact']['tiktok'] ?? '',
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;</script>
     <script src="assets/customer.js?v=<?= filemtime(__DIR__ . '/../assets/customer.js') ?>"></script>
     <script src="assets/menu-notifications.js?v=<?= filemtime(__DIR__ . '/../assets/menu-notifications.js') ?>"></script>
     <script src="../assets/js/date-picker.js?v=<?= filemtime(__DIR__ . '/../../assets/js/date-picker.js') ?>"></script>

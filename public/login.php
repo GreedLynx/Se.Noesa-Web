@@ -9,9 +9,10 @@ head('Login', 'login', true);
 ?>
 <section class="hero">
     <div class="drift"></div>
+    <img class="auth-logo" src="assets/img/logo-icon.png" alt="se.noesa" width="48" height="160">
     <div class="hello rise">
         <h2>Hello!</h2>
-        <p>Welcome to Se.Noesa</p>
+        <p>Welcome to se.noesa</p>
     </div>
 </section>
 <section class="sheet">
@@ -31,7 +32,7 @@ head('Login', 'login', true);
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg>
             <input name="password" type="password" placeholder="Password" required>
-            <button type="button" class="eye" aria-label="Tampilkan password">👁</button>
+            <button type="button" class="eye" aria-label="Tampilkan password"><span class="ui-icon icon-mata" aria-hidden="true"></span></button>
         </label>
         <p class="err" id="err"></p>
         <button class="btn-main">Login</button>

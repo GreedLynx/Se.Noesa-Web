@@ -1,0 +1,57 @@
+.ui-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  vertical-align: -0.125em;
+  background: currentColor;
+  -webkit-mask: var(--ui-icon) center / contain no-repeat;
+  mask: var(--ui-icon) center / contain no-repeat;
+}
+.icon-menu-makanan { --ui-icon: url("./menu-makanan.svg"); }
+.icon-riwayat { --ui-icon: url("./riwayat.svg"); }
+.icon-notifikasi { --ui-icon: url("./notifikasi.svg"); }
+.icon-dashboard { --ui-icon: url("./dashboard.svg"); }
+.icon-pesanan { --ui-icon: url("./pesanan.svg"); }
+.icon-terlambat { --ui-icon: url("./terlambat.svg"); }
+.icon-produk { --ui-icon: url("./produk.svg"); }
+.icon-kalender { --ui-icon: url("./kalender.svg"); }
+.icon-cari { --ui-icon: url("./cari.svg"); }
+.icon-keranjang { --ui-icon: url("./keranjang.svg"); }
+.icon-profil { --ui-icon: url("./profil.svg"); }
+.icon-pembayaran { --ui-icon: url("./pembayaran.svg"); }
+.icon-laporan { --ui-icon: url("./laporan.svg"); }
+.icon-alamat { --ui-icon: url("./alamat.svg"); }
+.icon-keluar { --ui-icon: url("./keluar.svg"); }
+.icon-kapasitas { --ui-icon: url("./kapasitas.svg"); }
+.icon-dapur { --ui-icon: url("./dapur.svg"); }
+.icon-detail { --ui-icon: url("./detail.svg"); }
+.icon-menu-navigasi { --ui-icon: url("./menu-navigasi.svg"); }
+.icon-musik-sosial { --ui-icon: url("./musik-sosial.svg"); }
+.icon-panah-kanan { --ui-icon: url("./panah-kanan.svg"); }
+.icon-panah-kiri { --ui-icon: url("./panah-kiri.svg"); }
+.icon-chevron-kanan { --ui-icon: url("./chevron-kanan.svg"); }
+.icon-chevron-kiri { --ui-icon: url("./chevron-kiri.svg"); }
+.icon-chevron-atas { --ui-icon: url("./chevron-atas.svg"); }
+.icon-chevron-bawah { --ui-icon: url("./chevron-bawah.svg"); }
+.icon-tutup { --ui-icon: url("./tutup.svg"); }
+.icon-tambah { --ui-icon: url("./tambah.svg"); }
+.icon-kurang { --ui-icon: url("./kurang.svg"); }
+.icon-hapus { --ui-icon: url("./hapus.svg"); }
+.icon-mata { --ui-icon: url("./mata.svg"); }
+.icon-mata-tutup { --ui-icon: url("./mata-tutup.svg"); }
+.icon-centang { --ui-icon: url("./centang.svg"); }
+.icon-validasi { --ui-icon: url("./validasi.svg"); }
+.icon-edit { --ui-icon: url("./edit.svg"); }
+.icon-unggah { --ui-icon: url("./unggah.svg"); }
+.icon-segarkan { --ui-icon: url("./segarkan.svg"); }
+.icon-filter { --ui-icon: url("./filter.svg"); }
+.icon-informasi { --ui-icon: url("./informasi.svg"); }
+.icon-peringatan { --ui-icon: url("./peringatan.svg"); }
+.icon-gagal { --ui-icon: url("./gagal.svg"); }
+.icon-berhasil { --ui-icon: url("./berhasil.svg"); }
+.icon-menunggu { --ui-icon: url("./menunggu.svg"); }
+.icon-kritis { --ui-icon: url("./kritis.svg"); }
+.icon-kosong { --ui-icon: url("./kosong.svg"); }
+.icon-lunas { --ui-icon: url("./lunas.svg"); }
+

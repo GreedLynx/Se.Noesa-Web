@@ -12,13 +12,21 @@ yarn-debug.log*
 # Uploads Lokal (Agar foto dummy saat testing tidak mengotori Git)
 /public/uploads/*
 !/public/uploads/.gitkeep
+# Aturan deny untuk bukti lama harus tetap ikut version control
+!/public/uploads/payments/
+/public/uploads/payments/*
+!/public/uploads/payments/.htaccess
+!/public/uploads/payments/web.config
+# Bukti pembayaran baru disimpan di luar public dan tidak boleh masuk Git
+/storage/payments/*
+!/storage/payments/.gitkeep
 .opencode/docs/
 .opencode/*
 .codex/*
 .repomixignore
 repomix-output.xml
 repomix.config.json
-HANDOFF.md
+docs/00-panduan/HANDOFF.md
 
 # System & IDE Files
 .DS_Store
@@ -27,4 +35,6 @@ Thumbs.db
 .idea/
 !/public/uploads/products/
 !/public/uploads/products/.gitkeep
+!/public/uploads/payment-methods/
+!/public/uploads/payment-methods/.gitkeep
 AGENTS.md

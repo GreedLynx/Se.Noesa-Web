@@ -60,7 +60,7 @@
 
     const orderLabels = {
         menunggu_pembayaran: "Menunggu pembayaran",
-        menunggu_validasi: "Menunggu validasi",
+        menunggu_validasi: "Menunggu verifikasi",
         diproses: "Diproses",
         selesai: "Selesai",
         ditolak: "Ditolak",

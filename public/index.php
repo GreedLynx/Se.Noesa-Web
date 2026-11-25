@@ -8,15 +8,16 @@ $go = $user ? (['admin' => 'admin/dashboard.php', 'pelanggan' => 'pelanggan/inde
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Se.Noesa</title>
+    <title>se.noesa</title>
+    <link rel="icon" type="image/png" sizes="16x16 16x16" href="assets/img/logo-icon.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap">
-    <link rel="stylesheet" href="assets/css/app.css">
+    <link rel="stylesheet" href="assets/css/app.css?v=<?= filemtime(__DIR__ . '/assets/css/app.css') ?>">
 </head>
 
 <body data-page="splash" data-next="<?= htmlspecialchars($go, ENT_QUOTES, 'UTF-8') ?>">
     <main class="app splash">
         <div class="drift"></div>
-        <img class="logo-pop" src="assets/img/logo-full.png" alt="se.noesa">
+        <img class="logo-pop" src="assets/img/logo-icon.png" alt="se.noesa" width="48" height="260">
     </main>
     <script src="assets/js/app.js"></script>
 </body>

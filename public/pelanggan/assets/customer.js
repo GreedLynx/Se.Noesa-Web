@@ -1,3 +1,5 @@
+const MIN_ORDER_QTY = 4, MAX_ORDER_QTY = 50;
+const cartTotalQty = () => Object.values(cart).reduce((sum, qty) => sum + Number(qty || 0), 0);
 const $ = (s, r = document) => r.querySelector(s),
     $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const money = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -27,12 +29,14 @@ async function api(url, options = {}) {
             ? options.body
             : options.body ? JSON.stringify(options.body) : undefined
     });
-    const data = await response.json().catch(() => ({error: 'Respons server tidak valid'}));
     if (response.status === 401) {
         location.href = '../login.php';
-        throw Error('Sesi berakhir')
+        throw Object.assign(Error('Sesi berakhir. Silakan masuk kembali.'), {status: 401})
     }
-    if (!response.ok) throw Error(data.error || 'Terjadi kesalahan');
+    const data = await response.json().catch(() => {
+        throw Object.assign(Error('Respons server tidak valid. Silakan muat ulang.'), {status: response.status, uncertain: true})
+    });
+    if (!response.ok) throw Object.assign(Error(data.error || 'Terjadi kesalahan'), {status: response.status});
 
     return data
 }
@@ -46,23 +50,52 @@ function toast(message) {
     setTimeout(() => el.classList.remove('show'), 2600)
 }
 
+function confirmDialog(title, message, confirmLabel = 'Ya, Lanjutkan') {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'customer-dialog customer-logout-confirm';
+        dialog.setAttribute('aria-labelledby', 'customer-confirm-title');
+        dialog.innerHTML = '<div class="cancel-order-icon" aria-hidden="true">?</div><h2 id="customer-confirm-title"></h2><p class="cancel-order-message"></p><div class="customer-logout-actions"><button type="button" data-cancel>Batal</button><button type="button" data-confirm></button></div>';
+        dialog.querySelector('#customer-confirm-title').textContent = title;
+        dialog.querySelector('.cancel-order-message').textContent = message;
+        dialog.querySelector('[data-confirm]').textContent = confirmLabel;
+        const done = value => { dialog.close(); dialog.remove(); resolve(value); };
+        dialog.querySelector('[data-cancel]').onclick = () => done(false);
+        dialog.querySelector('[data-confirm]').onclick = () => done(true);
+        dialog.oncancel = event => { event.preventDefault(); done(false); };
+        dialog.onclick = event => { if (event.target === dialog) done(false); };
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    });
+}
+
+function confirmCancelOrder(message) {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'customer-dialog cancel-order-dialog';
+        dialog.setAttribute('aria-labelledby', 'cancel-order-title');
+        dialog.innerHTML = '<div class="cancel-order-icon" aria-hidden="true">!</div><h2 id="cancel-order-title">Batalkan Pesanan</h2><p class="cancel-order-message"></p><div class="cancel-order-actions"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button" data-confirm>Ya, Batalkan</button></div>';
+        dialog.querySelector('.cancel-order-message').textContent = message;
+        const done = value => { dialog.close(); dialog.remove(); resolve(value); };
+        dialog.querySelector('[data-cancel]').onclick = () => done(false);
+        dialog.querySelector('[data-confirm]').onclick = () => done(true);
+        dialog.oncancel = event => { event.preventDefault(); done(false); };
+        dialog.onclick = event => { if (event.target === dialog) done(false); };
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    });
+}
+
 function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
+        const confirmed = await confirmDialog(
+            'Keluar Akun',
+            'Apakah Anda yakin ingin keluar dari akun pelanggan Se.Noesa?',
+            'Ya, Keluar',
+            'primary'
+        );
+        if (!confirmed) return;
         b.disabled = true;
-        const confirmed = await new Promise(resolve => {
-            const dialog = document.createElement('dialog');
-            dialog.className = 'customer-dialog';
-            dialog.innerHTML = '<div style="padding:26px"><p style="margin:0 0 18px">Yakin ingin keluar dari akun Se.Noesa?</p><div style="display:flex;gap:10px"><button type="button" class="customer-button secondary" data-cancel>Batal</button><button type="button" class="customer-button primary" data-yes>Ya, Keluar</button></div></div>';
-            const yes = dialog.querySelector('[data-yes]');
-            const no = dialog.querySelector('[data-cancel]');
-            const done = (v) => { dialog.close(); dialog.remove(); resolve(v); };
-            yes.onclick = () => done(true);
-            no.onclick = () => done(false);
-            dialog.onclick = (e) => { if (e.target === dialog) done(false); };
-            document.body.appendChild(dialog);
-            dialog.showModal();
-        });
-        if (!confirmed) { b.disabled = false; return; }
         try {
             await api('../api/auth.php?a=logout');
             location.href = '../login.php'
@@ -85,17 +118,22 @@ let catalog = [], productCache = {
 }, category = '', schedule = null, catalogClosed = false, cart = {
 }, activeProduct = null, activeQty = 1, searchTimer, savedAddresses = [];
 function catalogPage() {
-    wireLogout();
+    const shortcut = document.querySelector('.catalog-search-shortcut');
+    const searchField = document.querySelector('.customer-search');
+    if (shortcut && searchField && 'IntersectionObserver' in window) {
+        const header = document.querySelector('.customer-top');
+        const observer = new IntersectionObserver(([entry]) => {
+            shortcut.hidden = entry.boundingClientRect.bottom > entry.rootBounds.top;
+        }, { rootMargin: `-${header.getBoundingClientRect().height}px 0px 0px 0px`, threshold: [0, 1] });
+        observer.observe(searchField);
+        shortcut.onclick = () => {
+            const input = document.querySelector('#catalog-search');
+            input.focus({ preventScroll: true });
+            input.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
+        };
+    }
     const search = $('#catalog-search'),
-        filters = $$('.customer-category-rail [data-category]'),
-        categoryToggle = $('[data-category-toggle]'),
-        rail = $('.customer-rail');
-    const setCategoryRail = open => {
-        rail.classList.toggle('is-open', open);
-        categoryToggle.setAttribute('aria-expanded', open);
-        categoryToggle.setAttribute('aria-label', open ? 'Tutup kategori' : 'Buka kategori');
-    };
-    if (categoryToggle) categoryToggle.onclick = () => setCategoryRail(!rail.classList.contains('is-open'));
+        filters = $$('#catalog-category-tabs [data-category]');
     const syncFilters = () => filters.forEach(x => {
         const active = x.dataset.category === category;
         x.classList.toggle('active', active);
@@ -104,21 +142,17 @@ function catalogPage() {
 
     syncFilters();
     filters.forEach(b => b.onclick = () => {
-        if (category === b.dataset.category) {
-            if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
-            return;
-        }
+        if (category === b.dataset.category) return;
 
         category = b.dataset.category;
         syncFilters();
-        if (categoryToggle && matchMedia('(max-width: 700px)').matches) setCategoryRail(false);
         $('#menu-grid').scrollTo({top: 0, behavior: 'smooth'});
-        refreshCatalog(true);
+        refreshCatalog();
     });
 
     search.oninput = () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => refreshCatalog(true), 200)
+        searchTimer = setTimeout(refreshCatalog, 200)
     };
     $('#checkout-button').onclick = openCart;
     $('#continue-checkout').onclick = () => {
@@ -129,14 +163,24 @@ function catalogPage() {
     $$('[data-close-detail]').forEach(b => b.onclick = () => $('#detail-dialog').close());
 
     const detailDialog = $('#detail-dialog'),
-        detailContent = $('#detail-content');
+        detailContent = $('#detail-content'),
+        cartDialog = $('#cart-dialog'),
+        checkoutDialog = $('#checkout-dialog');
     detailContent.addEventListener('click', e => {
         if (e.target.closest('.quantity-control')) e.stopPropagation()
     });
+    // Pola yang sama dengan detail/history dialog: klik backdrop menutup,
+    // klik di dalam konten tidak menutup. Escape/fokus tetap ditangani native <dialog>.
     detailDialog.addEventListener('click', e => {
         if (e.target === detailDialog) detailDialog.close()
     });
-    $$('[data-close-checkout]').forEach(b => b.onclick = () => $('#checkout-dialog').close());
+    cartDialog.addEventListener('click', e => {
+        if (e.target === cartDialog) cartDialog.close()
+    });
+    checkoutDialog.addEventListener('click', e => {
+        if (e.target === checkoutDialog) checkoutDialog.close()
+    });
+    $$('[data-close-checkout]').forEach(b => b.onclick = () => checkoutDialog.close());
     $('#address-select').onchange = () => toggleAddressFields();
     $('#checkout-form').onsubmit = submitOrder;
     $('#catalog-delivery-date').onchange = () => refreshCatalog();
@@ -156,26 +200,54 @@ function catalogPage() {
 
     refreshCatalog();
 }
-async function refreshCatalog(animate = false) {
+async function refreshCatalog() {
     try {
-        await loadCatalog(animate);
+        await loadCatalog();
     } catch (err) {
         const grid = $('#menu-grid');
         grid.innerHTML = '<div class="empty-state catalog-error"><p>' + esc(err.message) + '</p><button type="button" class="customer-button secondary" data-retry-catalog>Coba lagi</button></div>';
-        $('[data-retry-catalog]').onclick = () => refreshCatalog(animate);
+        $('[data-retry-catalog]').onclick = refreshCatalog;
     }
 }
-async function loadCatalog(animate = false) {
+async function loadCatalog() {
     const grid = $('#menu-grid');
-    grid.classList.remove('category-transition');
     const day = $('#catalog-delivery-date').value;
     const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(day));
     if (day !== $('#catalog-delivery-date').value) return;
     catalogClosed = Boolean(d.tanggal_libur);
-    $('#delivery-hint').textContent = catalogClosed
-        ? 'Tanggal ini merupakan hari libur. Semua kuota menu ditutup; silakan pilih tanggal pengiriman lain.'
-        : 'Pilih tanggal untuk melihat menu yang tersedia. Pengiriman paling awal 7 hari dari hari ini.';
+    const deliveryHint = $('#delivery-hint');
+    deliveryHint.textContent = catalogClosed ? 'Tanggal ini libur. Pilih tanggal lain.' : '';
+    deliveryHint.hidden = !catalogClosed;
+    const fullHint = $('#quota-full-hint');
+    if (fullHint) {
+        const full = Array.isArray(d.habis) ? d.habis : [];
+        if (full.length && !catalogClosed) {
+            const label = new Date(d.tanggal + 'T00:00:00+07:00').toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
+            });
+            fullHint.textContent = 'Beberapa menu habis pada ' + label + '. Pilih menu atau tanggal lain.';
+            fullHint.hidden = false;
+        } else {
+            fullHint.textContent = '';
+            fullHint.hidden = true;
+        }
+    }
     $('#checkout-button').disabled = catalogClosed;
+    const dailyHint = $('#daily-quota-hint');
+    if (dailyHint) {
+        const capacity = Number(d.dailyCapacity ?? 0);
+        const used = Number(d.dailyUsed ?? 0);
+        const remaining = Number(d.dailyRemaining ?? Math.max(0, capacity - used));
+        const label = d.dailyStatus === 'closed' ? 'Tanggal libur'
+            : d.dailyStatus === 'full' ? 'Kuota harian penuh'
+            : d.dailyStatus === 'nearly_full' ? 'Kuota harian hampir penuh'
+            : 'Kuota harian tersedia';
+        const hasIssue = !catalogClosed && ['full', 'nearly_full'].includes(d.dailyStatus);
+        dailyHint.textContent = hasIssue
+            ? label + ': sisa ' + remaining + ' dari ' + capacity + ' porsi.' : '';
+        dailyHint.hidden = !hasIssue;
+        dailyHint.dataset.status = catalogClosed ? 'closed' : (d.dailyStatus || 'available');
+    }
 
     const previous = productCache;
     productCache = Object.fromEntries(d.items.map(p => [p.id, p]));
@@ -194,47 +266,66 @@ async function loadCatalog(animate = false) {
     );
     schedule = d.schedule;
     grid.innerHTML = catalog.length ? catalog.map((p, i) => {
-        const pSisa = Number(p.sisa), pKuota = Number(p.kuota);
-        const showStock = pKuota > 0 && pSisa < pKuota * 0.5;
-        return '<article class="menu-card" data-product="' + Number(p.id)
-            + '" style="--i:' + i + '"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
-            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="menu-card-copy"><span class="category-pill">'
-            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.min_pesan) + ' porsi' + (showStock ? ' · Sisa ' + pSisa + ' porsi' : '')
-            + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><button class="menu-add" data-add="'
-            + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '">+</button></article>';
-    }).join(''): '<div class="empty-state">Menu tidak ditemukan atau stoknya habis.</div>';
+        const pSisa = Number(p.sisa);
+        const state = p.stok_status || (pSisa <= 0 ? 'full' : 'available');
+        const available = p.available !== false && state !== 'full' && state !== 'closed';
+        return '<article class="menu-card stock-' + esc(state) + (available ? '' : ' menu-unavailable')
+            + '" data-product="' + Number(p.id) + '"' + (available ? '' : ' role="button" tabindex="0" aria-label="Lihat detail ' + esc(p.nama) + ', sisa kuota ' + pSisa + ' porsi"')
+            + ' style="--i:' + i + '">'
+            + (pSisa <= 0 ? '<span class="menu-warning">Stok habis</span>' : '')
+            + '<div class="menu-photo"><img class="menu-image" data-open-product="' + Number(p.id) + '" src="' + esc(imagePath(p.gambar))
+            + '" alt="' + esc(p.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div><div class="menu-card-copy"><span class="category-pill">'
+            + esc(p.kategori) + '</span><h3>' + esc(p.nama) + '</h3><p>Min. ' + Number(p.minimum || Math.max(MIN_ORDER_QTY, Number(p.min_pesan))) + ' porsi'
+            + (showRemainingStock(p, pSisa) ? ' · Sisa kuota: ' + pSisa + ' porsi' : '') + '</p><strong class="menu-price">' + money(p.harga) + '</strong></div><div class="menu-action">'
+            + '<button class="menu-add" data-add="' + Number(p.id) + '" aria-label="Lihat ' + esc(p.nama) + '"' + (available ? '' : ' disabled') + '>+</button></div></article>';
+    }).join(''): '<div class="empty-state">Menu tidak ditemukan.</div>';
 
-    $$('[data-product]').forEach(card => card.onclick = e => {
-        if (e.target.closest('[data-add]')) return;
-        showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)))
+    $$('[data-product]').forEach(card => {
+        const open = () => showProduct(catalog.find(p => Number(p.id) === Number(card.dataset.product)));
+        card.onclick = e => {
+            if (!e.target.closest('[data-add]')) open();
+        };
+        card.onkeydown = e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+            }
+        };
     });
     $$('[data-add]').forEach(b => b.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(b.dataset.add)))
+        if (b.disabled) return;
+        const product = catalog.find(p => Number(p.id) === Number(b.dataset.add));
+        if (product) showProduct(product)
     });
     $$('[data-open-product]').forEach(image => image.onclick = e => {
         e.stopPropagation();
-        showProduct(catalog.find(p => Number(p.id) === Number(image.dataset.openProduct)))
+        const product = catalog.find(p => Number(p.id) === Number(image.dataset.openProduct));
+        if (product) showProduct(product)
     });
     renderCart();
-    if (animate) requestAnimationFrame(() => {
-        grid.classList.add('category-transition');
-        setTimeout(() => grid.classList.remove('category-transition'), 750)
-    })
+}
+function showRemainingStock(product, remaining) {
+    const quota = Number(product.kuota);
+    return Number.isFinite(quota) && quota > 0 && Number.isFinite(remaining) && remaining < quota * 0.5;
 }
 function showProduct(product) {
     if (!product) return;
     activeProduct = product;
-    const minimum = Number(product.min_pesan), maximum = Number(product.sisa);
-    activeQty = Math.min(maximum, Math.max(1, minimum));
-    const sisaAfter = maximum - activeQty;
-    const showSisa = Number(product.kuota) > 0 && sisaAfter < Number(product.kuota) * 0.5;
+    const inCart = Number(cart[product.id] || 0);
+    const productMinimum = Math.max(MIN_ORDER_QTY, Number(product.min_pesan));
+    const minimum = Math.max(1, productMinimum - inCart);
+    const available = Math.max(0, Number(product.sisa) - inCart);
+    const orderRoom = Math.max(0, MAX_ORDER_QTY - cartTotalQty());
+    const maximum = Math.min(available, orderRoom);
+    activeQty = Math.min(maximum, minimum);
+    const sisaAfter = available - activeQty;
     $('#detail-content').innerHTML = '<div class="detail-product detail-compact"><div class="detail-compact-hero"><img class="detail-compact-image" src="'
         + esc(imagePath(product.gambar)) + '" alt="' + esc(product.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"><div class="detail-compact-copy"><span class="category-pill">'
-        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan Se.Noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
-        + minimum + ' porsi</b></span><span>Jumlah<b id="detail-qty">' + activeQty + ' porsi</b></span>' + (showSisa ? '<span>Sisa Porsi<b id="detail-sisa">' + sisaAfter + ' porsi</b></span>' : '') + '</div></div><div class="detail-compact-price">' + money(product.harga)
-        + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi">&minus;</button><input id="quantity-value" type="number" min="'
-        + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah">+</button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
+        + esc(product.kategori) + '</span><h2>' + esc(product.nama) + '</h2><b>Deskripsi</b><p>Menu pilihan se.noesa, dibuat segar untuk menemani acara dan waktu makan Anda.</p></div><div class="product-facts"><span>Min. Pesan<b>'
+        + productMinimum + ' porsi</b></span><span id="detail-stock"' + (showRemainingStock(product, sisaAfter) ? '' : ' hidden') + '>Sisa kuota<b id="detail-sisa">' + sisaAfter + ' porsi</b></span></div></div><div class="detail-compact-price">' + money(product.harga)
+        + ' / porsi</div><div class="quantity-line"><label for="quantity-value">Atur jumlah porsi</label><div class="quantity-control"><button type="button" data-qty="minus" aria-label="Kurangi"><span class="ui-icon icon-kurang" aria-hidden="true"></span></button><input id="quantity-value" type="number" min="'
+        + minimum + '" max="' + maximum + '" step="1" inputmode="numeric" value="' + activeQty + '" aria-label="Jumlah porsi"><button type="button" data-qty="plus" aria-label="Tambah"><span class="ui-icon icon-tambah" aria-hidden="true"></span></button></div></div><button class="customer-button primary detail-add" id="add-to-cart">Pesan Sekarang</button></div>';
     const input = $('#quantity-value'), add = $('#add-to-cart'), sisaEl = $('#detail-sisa');
     function setQuantity(value, normalize = false) {
         if (value === '' && !normalize) {
@@ -255,17 +346,9 @@ function showProduct(product) {
         }
         activeQty = quantity;
         input.value = quantity;
-        $('#detail-qty').textContent = quantity + ' porsi';
-        const remaining = maximum - quantity;
-        const shouldShow = Number(product.kuota) > 0 && remaining < Number(product.kuota) * 0.5;
-        if (sisaEl) {
-            if (shouldShow) {
-                sisaEl.textContent = remaining + ' porsi';
-                sisaEl.closest('span').style.display = '';
-            } else {
-                sisaEl.closest('span').style.display = 'none';
-            }
-        }
+        const remaining = available - quantity;
+        sisaEl.textContent = remaining + ' porsi';
+        $('#detail-stock').hidden = !showRemainingStock(product, remaining);
         add.textContent = 'Pesan Sekarang';
         add.disabled = false
     }
@@ -281,10 +364,17 @@ function showProduct(product) {
     if (maximum < minimum) {
         input.disabled = true;
         add.disabled = true;
-        add.textContent = 'Stok kurang dari minimal pesanan'
+        add.textContent = catalogClosed ? 'Tanggal ini libur'
+            : orderRoom < minimum ? 'Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi'
+            : inCart ? 'Kuota tidak cukup untuk menambah porsi'
+            : Number(product.sisa) <= 0 ? 'Kuota habis' : 'Stok kurang dari minimal pesanan';
     }
     add.onclick = () => {
         if (add.disabled) return;
+        if (cartTotalQty() + activeQty > MAX_ORDER_QTY) {
+            toast('Satu pesanan maksimal ' + MAX_ORDER_QTY + ' porsi.');
+            return;
+        }
         cart[product.id] = (cart[product.id] || 0) + activeQty;
         $('#detail-dialog').close();
         renderCart();
@@ -322,27 +412,27 @@ function openCart() {
         return;
     }
     const lines = $('#cart-lines');
+    const orderFull = cartTotalQty() >= MAX_ORDER_QTY;
     lines.innerHTML = Object.entries(cart).map(([id, qty]) => {
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
+        const min = Math.max(MIN_ORDER_QTY, Number(p?.min_pesan || 0));
         return p ? '<div class="cart-line"><img src="' + esc(imagePath(p.gambar)) + '" alt=""><span><b>' + esc(p.nama) + '</b><small>'
-            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi">&minus;</button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah">+</button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button data-remove="' + Number(id) + '" aria-label="Hapus semua">&times;</button></div>': ''
+            + Number(qty) + ' × ' + money(p.harga) + '</small></span><div class="cart-qty-control"><button type="button" data-dec="' + Number(id) + '" aria-label="Kurangi"' + (qty <= min ? ' disabled' : '') + '><span class="ui-icon icon-kurang" aria-hidden="true"></span></button><span>' + Number(qty) + '</span><button type="button" data-inc="' + Number(id) + '" aria-label="Tambah"' + (orderFull || qty >= Number(p.sisa) ? ' disabled' : '') + '><span class="ui-icon icon-tambah" aria-hidden="true"></span></button></div><strong>' + money(Number(qty) * Number(p.harga)) + '</strong><button type="button" data-remove="' + Number(id) + '" aria-label="Hapus semua"><span class="ui-icon icon-hapus" aria-hidden="true"></span></button></div>': ''
     }).join('');
     $$('[data-dec]').forEach(b => b.onclick = () => {
         const id = b.dataset.dec;
         const p = productCache[id];
-        const min = Number(p?.min_pesan || 4);
-        if (cart[id] > min) cart[id] -= min;
-        else delete cart[id];
+        const min = Math.max(MIN_ORDER_QTY, Number(p?.min_pesan || 0));
+        if (cart[id] <= min) return;
+        cart[id] -= 1;
         renderCart();
         openCart()
     });
     $$('[data-inc]').forEach(b => b.onclick = () => {
         const id = b.dataset.inc;
         const p = productCache[id];
-        const max = Number(p?.sisa || 0);
-        if ((cart[id] || 0) + Number(p?.min_pesan || 4) <= max) cart[id] = (cart[id] || 0) + Number(p?.min_pesan || 4);
-        else toast('Kuota tidak mencukupi');
+        if (cart[id] >= Number(p?.sisa || 0) || cartTotalQty() >= MAX_ORDER_QTY) return;
+        cart[id] += 1;
         renderCart();
         openCart()
     });
@@ -355,7 +445,8 @@ function openCart() {
         $('#cart-dialog').close();
         return
     }
-    $('#cart-dialog').showModal()
+    const dialog = $('#cart-dialog');
+    if (!dialog.open) dialog.showModal();
 }
 
 function toggleAddressFields() {
@@ -455,13 +546,20 @@ function statusProgress(status) {
         + '">' + s + '</span>').join('') + '</div>'
 }
 
-let historyStatus = '', historyTimer;
+let historyStatus = '', historyTimer, paymentExpiryTimer = null, paymentCountdownInterval = null;
 function historyPage() {
-    wireLogout();
     const dialog = $('#history-dialog');
-    $$('[data-close-history]').forEach(b => b.onclick = () => dialog.close());
+    $$('[data-close-history]').forEach(b => b.onclick = () => {
+        clearTimeout(paymentExpiryTimer);
+        clearInterval(paymentCountdownInterval);
+        dialog.close();
+    });
     dialog.addEventListener('click', e => {
-        if (e.target === dialog) dialog.close()
+        if (e.target === dialog) {
+            clearTimeout(paymentExpiryTimer);
+            clearInterval(paymentCountdownInterval);
+            dialog.close();
+        }
     });
     $$('#history-tabs button').forEach(b => b.onclick = () => {
         $$('#history-tabs button').forEach(x => x.classList.toggle('active', x === b));
@@ -474,7 +572,13 @@ function historyPage() {
 }
 
 async function loadHistory() {
-    const d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
+    let d;
+    try {
+        d = await api('api/orders.php' + (historyStatus ? '?status=' + encodeURIComponent(historyStatus): ''));
+    } catch (err) {
+        $('#history-list').innerHTML = '<div class="empty-state" role="alert">Riwayat pesanan belum dapat dimuat. ' + esc(err.message) + '</div>';
+        return;
+    }
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
         return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
@@ -485,9 +589,10 @@ async function loadHistory() {
             (o.status === 'ditolak' && o.alasan_penolakan
                 ? '<p class="history-rejection-reason"><b>Alasan penolakan:</b> ' + esc(o.alasan_penolakan) + '</p>'
                 : '') + '<div class="history-products">' + (first.gambar ? '<img src="'
-            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon">&#9634;</span>') + '<span><b>' + esc(first.nama || 'Pesanan Se.Noesa')
+            + esc(imagePath(first.gambar)) + '" alt="">': '<span class="history-icon"><span class="ui-icon icon-kosong" aria-hidden="true"></span></span>') + '<span><b>' + esc(first.nama || 'Pesanan se.noesa')
             + '</b><small>' + Number(first.qty || o.pax) + ' porsi' + (o.items.length > 1 ? ' + ' + (o.items.length - 1) + ' menu lainnya' : '')
-            + '</small></span></div><div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail &rarr;</span></div></button>'
+            + '</small></span></div>' + (o.reschedule_pending ? '<p class="history-rejection-reason">Menunggu konfirmasi jadwal</p>' : '')
+            + '<div class="history-total"><span><small>TOTAL</small><strong>' + money(o.total) + '</strong></span><span class="open-detail">Detail <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></span></div></button>'
     }).join(''): '<div class="empty-state">Belum ada pesanan pada kategori ini.</div>';
     $$('[data-order]').forEach(card => card.onclick = () => openHistoryDetail(Number(card.dataset.order)))
 }
@@ -503,10 +608,16 @@ function dateLabel(value, withTime = false) {
 }
 
 async function openHistoryDetail(id) {
-    const d = await api('api/orders.php?id=' + id);
-    // Handle case where items might be undefined (order exists but has no detail items,
-    // or API response structure differs from expected). This prevents
-    // "Cannot read properties of undefined (reading 'map')" error.
+    let d;
+    try {
+        d = await api('api/orders.php?id=' + id);
+        if (!d || typeof d !== 'object' || !d.id) throw Error('Detail tidak valid');
+    } catch (err) {
+        $('#history-detail').innerHTML = '<div class="payment-load-error"><p class="form-error" role="alert">Detail pesanan belum dapat dimuat. Periksa koneksi lalu coba lagi.</p><button type="button" class="customer-button secondary" id="retry-payment">Muat ulang detail</button></div>';
+        $('#retry-payment').onclick = () => openHistoryDetail(id);
+        if (!$('#history-dialog').open) $('#history-dialog').showModal();
+        return false;
+    }
     const itemsArray = Array.isArray(d.items) ? d.items : [];
     const items = itemsArray.map(i => '<div class="detail-menu-line"><span><b>' + esc(i.nama !== undefined && i.nama !== null ? i.nama : 'Menu') + '</b><small>' + Number(i.qty)
         + ' porsi × ' + money(i.harga !== undefined && i.harga !== null ? Number(i.harga) : 0) + '</small></span><strong>' + money(i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : 0) + '</strong></div>').join('');
@@ -526,12 +637,12 @@ async function openHistoryDetail(id) {
             + Number(notice.id) + '">Lihat dan tindak lanjuti</a></div>'
         ).join('') + '</section>'
         : '';
-    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="../' + esc(d.bukti_bayar).replace(/^\/+/, '')
-        + '" alt="Bukti pembayaran">' : '';
+    const proof = d.bukti_bayar ? '<img class="uploaded-proof" src="api/proof.php?order=' + Number(d.id)
+        + '" alt="Bukti pembayaran" onerror="this.onerror=null;this.alt=\'Bukti tidak dapat ditampilkan\';this.style.opacity=\'.4\'">' : '';
     const paymentData = await api('api/payment-methods.php');
     const qris = paymentData.items.length ? '<section class="detail-section"><h3>Pembayaran</h3>' + paymentData.items.map(method => {
         return '<div class="payment-method-card"><span>' + esc(method.nama) + '</span><div class="qris-display"><img src="'
-            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.src=\'../assets/img/produk/NK-01.png\'"></div></div>'
+            + esc(imagePath(method.gambar)) + '" alt="' + esc(method.nama) + '" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><p class="form-error" role="alert" hidden>Gambar pembayaran belum dapat dimuat. Muat ulang detail atau hubungi Admin sebelum membayar.</p></div></div>'
     }).join('') + '</section>': '<section class="detail-section"><h3>Pembayaran</h3><div class="payment-method-card"><span>Metode Pembayaran</span><div class="qris-display"><div class="qris-placeholder"><strong>Belum tersedia</strong><small>Silakan hubungi owner untuk informasi pembayaran.</small></div></div></div></section>';
     const canUploadProof = d.can_upload_proof === true, hasProof = !!d.bukti_bayar;
     const proofForm = canUploadProof ? '<form class="proof-upload" id="proof-form" ' + (hasProof ? 'hidden': '') + '><label for="payer-name">Atas nama</label><input id="payer-name" name="nama_pembayar" type="text" maxlength="100" value="'
@@ -539,11 +650,51 @@ async function openHistoryDetail(id) {
         + (hasProof ? 'Pilih bukti pembayaran baru': 'Upload bukti transfer') + '</label><input id="proof-file" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required><small class="upload-hint">Format JPG, PNG, WebP · Maksimal 2 MB</small><input type="hidden" name="id" value="'
         + Number(d.id) + '"><input type="hidden" name="action" value="upload_proof"><button class="customer-button primary">'
         + (hasProof ? 'Kirim bukti baru': 'Kirim bukti pembayaran') + '</button><p class="form-error" id="proof-error" role="alert"></p></form>': '';
-    const proofSection = canUploadProof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + (hasProof ? '<div class="proof-display-row">'
-        + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>': proof)
-        + (d.status === 'menunggu_pembayaran' ? '<p class="muted">Unggah bukti transfer sebelum ' + dateLabel(d.payment_expires_at, true) + ' WIB. Pesanan tanpa bukti akan dibatalkan otomatis.</p>': '')
-        + proofForm + '</section>': (proof ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>':
-            (d.status === 'menunggu_pembayaran' ? '<p class="muted">Tenggat pembayaran telah berakhir. Pesanan menunggu pembatalan otomatis.</p>' : ''));
+
+    const adminWhatsapp = (window.snoesaContact && window.snoesaContact.adminWhatsapp || '').trim();
+    const socialUrl = value => {
+        try {
+            const url = new URL(String(value || ''));
+            return url.protocol === 'https:' ? url.href : '';
+        } catch (_) { return ''; }
+    };
+    const whatsappDigits = adminWhatsapp.replace(/\D/g, '');
+    const contactLine = adminWhatsapp && whatsappDigits
+        ? `<a class="admin-wa-text" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">Hubungi Admin via WhatsApp <span>${esc(adminWhatsapp)}</span></a>`
+        : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
+    const socialChannels = [
+        ['Instagram', socialUrl(window.snoesaContact && window.snoesaContact.instagram), '◎'],
+        ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '<span class="ui-icon icon-musik-sosial" aria-hidden="true"></span>'],
+    ].filter(([, url]) => url);
+    const socialLine = socialChannels.length
+        ? `<div class="admin-socials"><small>Ikuti info Se.Noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} Se.Noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
+        : '';
+    const expiredAdminContact = `
+        <div class="payment-expired-notice">
+            <b>Tenggat waktu upload bukti pembayaran telah berakhir.</b>
+            <p>Jika Anda sudah melakukan pembayaran namun belum sempat mengunggah bukti transfer, silakan hubungi Admin dengan menyertakan kode pesanan <b>${esc(d.kode)}</b> dan bukti transfer Anda.</p>
+            ${contactLine}
+            ${socialLine}
+        </div>
+    `;
+
+    const rejectedReschedule = d.status === 'dibatalkan' && d.reschedule_offer?.status_tawaran === 'ditolak';
+    const isPaymentExpiredWithoutProof = !rejectedReschedule && !hasProof && (
+        (d.status === 'menunggu_pembayaran' && !canUploadProof) ||
+        d.status === 'dibatalkan'
+    );
+
+    const proofSection = canUploadProof
+        ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>'
+            + (hasProof
+                ? '<div class="proof-display-row">' + proof + '<button type="button" class="customer-button secondary replace-proof" id="replace-proof">Ganti Bukti</button></div>'
+                : proof)
+            + proofForm + '</section>'
+        : (proof
+            ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + proof + '</section>'
+            : (isPaymentExpiredWithoutProof
+                ? '<section class="detail-section"><h3>Bukti Pembayaran</h3>' + expiredAdminContact + '</section>'
+                : ''));
 
     const deliveryPhotos = Array.isArray(d.foto_kiriman_list)
         ? d.foto_kiriman_list
@@ -561,7 +712,20 @@ async function openHistoryDetail(id) {
         : '';
 
     const refundNotice = 'Jika sudah mentransfer, refund penuh ditangani Admin di luar aplikasi. Hubungi Admin untuk mengurus refund.';
-    const isStatusCancellable = ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
+    const offer = d.reschedule_offer;
+    const offerPending = d.can_respond_reschedule === true;
+    const offerPanel = offer ? '<section class="detail-section reschedule-offer" role="status"><h3>'
+        + (offer.status_tawaran === 'menunggu' ? 'Tawaran jadwal pengganti' : 'Riwayat tawaran jadwal')
+        + '</h3><p><b>Alasan:</b> ' + esc(offer.alasan) + '</p><div class="detail-schedule"><span>Tanggal sebelumnya<b>'
+        + dateLabel(offer.tanggal_asal) + '</b></span><span>Tanggal usulan<b>' + dateLabel(offer.tanggal_usulan)
+        + '</b></span></div>' + (offer.status_tawaran === 'menunggu'
+            ? '<p class="reschedule-deadline">Jawab sebelum <b>' + dateLabel(offer.berlaku_sampai, true) + ' WIB</b>.'
+                + (d.status === 'menunggu_pembayaran' ? ' Tenggat pembayaran satu jam tetap berlaku.' : '') + '</p>'
+                + '<p class="reschedule-payment-help">Sudah transfer? Simpan bukti pembayaran. Jika menolak jadwal, hubungi Admin untuk pemeriksaan dan refund.</p>'
+                + '<button type="button" class="customer-button primary" id="accept-reschedule">Terima jadwal</button> '
+                + '<button type="button" class="customer-button danger" id="reject-reschedule">Tolak jadwal</button><p class="form-error" id="reschedule-error" role="alert"></p>'
+            : '<p>Status tawaran: ' + esc(offer.status_tawaran) + '</p>') + '</section>' : '';
+    const isStatusCancellable = !offerPending && ['menunggu_pembayaran', 'menunggu_validasi', 'diproses'].includes(d.status);
     const cancelLimitDate = d.cancel_before ? new Date(new Date(d.cancel_before).getTime() - 1) : null;
     const cancelLimitLabel = cancelLimitDate ? cancelLimitDate.toLocaleDateString('id-ID', {
         day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta'
@@ -575,13 +739,17 @@ async function openHistoryDetail(id) {
             cancelSection = `
                 <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); text-align:center;">
                     <button type="button" class="customer-button danger" id="cancel-order-btn" style="width:100%; background:var(--red); color:#fff; border:0; margin-bottom:12px;">Batalkan Pesanan</button>
-                    <div style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; line-height:1.5; color:var(--brown); text-align:left;">
-                        <b>Syarat Pembatalan:</b><br>
+                    <details class="cancellation-terms">
+                        <summary>Syarat Pembatalan</summary>
+                        <div class="cancellation-terms-content">
                         Pesanan hanya dapat dibatalkan maksimal <b>2 hari (H-2)</b> sebelum tanggal pengiriman.<br>
                         Batas akhir pembatalan: <b>${cancelLimitLabel}, akhir hari WIB</b>.<br>
                         Sisa waktu Anda untuk membatalkan: <b>${daysLeftToCancel} hari lagi</b>.<br>
                         ${refundNotice}
-                    </div>
+                        ${contactLine}
+                        ${socialLine}
+                        </div>
+                    </details>
                 </div>
             `;
         } else {
@@ -594,6 +762,12 @@ async function openHistoryDetail(id) {
                 </div>
             `;
         }
+    } else if (rejectedReschedule) {
+        cancelSection = '<section class="detail-section"><h3>Refund</h3><div class="payment-expired-notice">'
+            + '<b>Tawaran jadwal ditolak. Pesanan telah dibatalkan.</b>'
+            + '<p>Jika sudah membayar, siapkan bukti transfer dan hubungi Admin dengan kode pesanan <b>' + esc(d.kode)
+            + '</b>. Admin akan memeriksa pembayaran dan mengurus refund di luar aplikasi.</p>'
+            + contactLine + socialLine + '</div></section>';
     } else if (d.status === 'dibatalkan' && hasProof) {
         cancelSection = '<section class="detail-section"><h3>Refund</h3><p>' + refundNotice + '</p></section>';
     }
@@ -601,26 +775,97 @@ async function openHistoryDetail(id) {
     const rejectionNotice = d.status === 'ditolak' && d.alasan_penolakan
         ? '<section class="rejection-notice" role="alert"><b>Pesanan ditolak</b><p>Alasan: ' + esc(d.alasan_penolakan) + '</p></section>'
         : '';
+    const hasPaymentWindow = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status)
+        && canUploadProof && d.payment_expires_at;
+    const paymentTimerBox = hasPaymentWindow
+        ? '<section class="payment-countdown" role="status"><b>Batas waktu pembayaran</b><p>Anda dapat mengirim atau mengganti bukti pembayaran selama waktu ini.</p><strong id="payment-countdown" data-expires="' + esc(d.payment_expires_at) + '">Menghitung sisa waktu…</strong><small>Jika belum ada bukti saat waktu habis, pesanan akan dibatalkan otomatis.</small></section>'
+        : '';
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
-        + '</h2><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
+        + '</h2><div class="status-meta-row"><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
-        + '</p>' + statusProgress(d.status) + rejectionNotice + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
+        + '</p></div>' + statusProgress(d.status) + rejectionNotice + offerPanel + paymentTimerBox + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
         + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
         + menuNoticeSection
+        + '<p id="payment-status" class="form-error" role="alert" tabindex="-1"></p><button type="button" id="retry-payment" class="customer-button secondary" hidden>Muat ulang status pembayaran</button>'
         + proofSection 
         + deliveryPhotoSection 
         + cancelSection 
         + '</div>';
         
-    $('#history-dialog').showModal();
+    if (!$('#history-dialog').open) $('#history-dialog').showModal();
+    const paymentNotice = (message, retry = false) => {
+        const notice = $('#payment-status');
+        notice.textContent = message;
+        notice.focus?.();
+        notice.scrollIntoView?.({block: 'nearest'});
+        $('#retry-payment').hidden = !retry;
+    };
+    $('#retry-payment').onclick = () => openHistoryDetail(id);
+
+    // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
+    clearTimeout(paymentExpiryTimer);
+    if (hasPaymentWindow) {
+        const countdown = $('#payment-countdown');
+        const expiresAt = new Date(d.payment_expires_at).getTime();
+        const renderCountdown = () => {
+            const remainingMs = expiresAt - Date.now();
+            if (remainingMs <= 0) {
+                countdown.textContent = 'Waktu pembayaran telah habis';
+                return;
+            }
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            countdown.textContent = [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+        };
+        renderCountdown();
+        clearInterval(paymentCountdownInterval);
+        paymentCountdownInterval = setInterval(renderCountdown, 1000);
+        const remainingMs = expiresAt - Date.now();
+        if (remainingMs > 0) {
+            paymentExpiryTimer = setTimeout(() => {
+                clearInterval(paymentCountdownInterval);
+                if ($('#history-dialog')?.open) {
+                    openHistoryDetail(id);
+                    loadHistory();
+                }
+            }, remainingMs + 500);
+        }
+    }
+    // -----------------------------------------------
+    for (const decision of ['accept', 'reject']) {
+        const button = $('#'+ decision + '-reschedule');
+        if (!button) continue;
+        button.onclick = async () => {
+            const accepted = decision === 'accept';
+            if (!confirm(accepted
+                ? 'Terima jadwal pengiriman pengganti ini? Ketersediaan akan diperiksa ulang.'
+                : 'Tolak jadwal ini dan batalkan pesanan? ' + (hasProof ? refundNotice : ''))) return;
+            button.disabled = true;
+            try {
+                await api('api/orders.php', { method: 'POST', body: {
+                    action: 'respond_reschedule', id: d.id, decision,
+                    offer_version: offer.dibuat_at
+                }});
+                toast(accepted ? 'Jadwal pengiriman diperbarui' : 'Pesanan dibatalkan');
+                await openHistoryDetail(id);
+                loadHistory();
+            } catch (err) {
+                const error = $('#reschedule-error');
+                if (error) error.textContent = err.message;
+                button.disabled = false;
+            }
+        };
+    }
     
     // --- EVENT LISTENER UNTUK TOMBOL BATAL ---
     const cancelBtn = $('#cancel-order-btn');
     if (cancelBtn) {
         cancelBtn.onclick = async () => {
-            if (!confirm('Batalkan pesanan ini? Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
+            if (!await confirmCancelOrder('Tindakan ini tidak dapat dikembalikan. ' + refundNotice)) return;
             
             cancelBtn.disabled = true;
             cancelBtn.textContent = 'Membatalkan...';
@@ -647,21 +892,177 @@ async function openHistoryDetail(id) {
     if (form) form.onsubmit = async e => {
         e.preventDefault();
         const button = form.querySelector('button');
+        if (button.disabled) return;
         button.disabled = true;
+        $('#proof-error').textContent = '';
         try {
             const body = new FormData(form);
-            await api('api/orders.php', { method: 'POST', body });
-            toast('Bukti pembayaran berhasil dikirim');
-            await openHistoryDetail(id);
-            loadHistory()
+            const result = await api('api/orders.php', { method: 'POST', body });
+            if (result.ok !== true) throw Object.assign(Error('Hasil upload belum dapat dipastikan.'), {uncertain: true});
         } catch (err) {
-            $('#proof-error').textContent = err.message;
-            button.disabled = false
+            if (err.status === 401) return;
+            const uncertain = !err.status || err.uncertain;
+            const message = uncertain
+                ? 'Hasil pengiriman bukti belum dapat dipastikan. Muat ulang status sebelum mencoba mengirim lagi.'
+                : err.status === 409 ? 'Status pesanan atau tenggat pembayaran berubah. Muat ulang status untuk melanjutkan.'
+                : err.status >= 500 ? 'Server belum dapat menyimpan bukti pembayaran. Silakan coba lagi.'
+                : err.message;
+            $('#proof-error').textContent = message;
+            paymentNotice(message, uncertain || err.status === 409);
+            button.disabled = uncertain || err.status === 409;
+            if (err.status === 409) {
+                if (await openHistoryDetail(id)) paymentNotice(message, true);
+            }
+            return;
         }
+        // Bukti sudah tersimpan; kegagalan refresh tidak boleh menawarkan upload ulang.
+        form.hidden = true;
+        if ($('#replace-proof')) $('#replace-proof').hidden = true;
+        toast('Bukti pembayaran berhasil dikirim');
+        const refreshed = await openHistoryDetail(id);
+        if (!refreshed) {
+            $('#history-detail').insertAdjacentHTML('afterbegin', '<p role="status">Bukti pembayaran berhasil dikirim. Status terbaru belum dapat dimuat; muat ulang detail tanpa mengirim bukti lagi.</p>');
+        }
+        loadHistory();
     };
+    return true;
 }
 
 const page = document.body.dataset.page;
+(() => {
+    const sidebar = document.getElementById('customer-sidebar');
+    const toggle = document.querySelector('.customer-sidebar-toggle');
+    const close = document.querySelector('.customer-sidebar-close');
+    const backdrop = document.querySelector('.customer-sidebar-backdrop');
+    if (!sidebar || !toggle || !close || !backdrop) return;
+    const mobile = window.matchMedia('(max-width: 700px)');
+    function setOpen(open, restoreFocus = false) {
+        const visible = open && mobile.matches;
+        sidebar.classList.toggle('is-open', visible);
+        sidebar.inert = mobile.matches && !visible;
+        toggle.setAttribute('aria-expanded', String(visible));
+        backdrop.hidden = !visible;
+        if (visible) close.focus();
+        else if (restoreFocus) toggle.focus();
+    }
+    toggle.addEventListener('click', () => setOpen(true));
+    close.addEventListener('click', () => setOpen(false, true));
+    backdrop.addEventListener('click', () => setOpen(false, true));
+    document.addEventListener('keydown', event => {
+        if (backdrop.hidden || document.querySelector('dialog[open]')) return;
+        if (event.key === 'Escape') setOpen(false, true);
+        if (event.key === 'Tab') {
+            const controls = [...sidebar.querySelectorAll('a[href], button:not([disabled])')];
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+    });
+    mobile.addEventListener('change', () => setOpen(false));
+    setOpen(false);
+})();
+wireLogout();
 if (page === 'catalog') catalogPage();
 if (page === 'history') historyPage();
 
+/* ==========================================================================
+   FITUR CEK KETERSEDIAAN MENU DI CHECKOUT
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", function () {
+    const checkoutForm = $('#checkout-form');
+    const checkoutDateInput = checkoutForm?.elements?.tgl_kirim || document.getElementById('checkout-date');
+    if (!checkoutDateInput) return;
+
+    const scheduleNote = document.getElementById('schedule-note');
+    if (scheduleNote) scheduleNote.style.display = 'none';
+
+    let alertBox = document.getElementById('checkout-quota-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'checkout-quota-alert';
+        alertBox.style.cssText = 'display:none; margin:10px 0 15px; padding:12px 14px; border-radius:12px; font-size:12px; line-height:1.5; border:1px solid transparent;';
+        const dateLabel = checkoutDateInput.closest('label') || checkoutDateInput;
+        dateLabel.parentNode.insertBefore(alertBox, dateLabel.nextSibling);
+    }
+
+    async function cekKetersediaanMenu(selectedDate) {
+        const cartIds = Object.keys(cart).filter(id => Number(cart[id]) > 0);
+        if (!selectedDate) return;
+
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#f7f8f7';
+        alertBox.style.borderColor = '#e4ece5';
+        alertBox.style.color = '#666';
+        alertBox.innerHTML = '⏳ Memeriksa ketersediaan menu...';
+
+        try {
+            const d = await api('api/catalog.php?tgl_kirim=' + encodeURIComponent(selectedDate));
+
+            if (d.tanggal_libur) {
+                alertBox.style.background = '#fff3cd';
+                alertBox.style.borderColor = '#ffeeba';
+                alertBox.style.color = '#856404';
+                alertBox.innerHTML = '<b><span class="ui-icon icon-peringatan" aria-hidden="true"></span> Tanggal Libur</b><br>se.noesa tidak beroperasi pada tanggal ini. Silakan ganti tanggal pengiriman.';
+                return;
+            }
+
+            if (cartIds.length === 0) {
+                alertBox.style.background = '#e0f2fe';
+                alertBox.style.borderColor = '#bae6fd';
+                alertBox.style.color = '#0369a1';
+                alertBox.innerHTML = '<b><span class="ui-icon icon-informasi" aria-hidden="true"></span> Informasi</b><br>Keranjang masih kosong. Silakan pilih menu terlebih dahulu.';
+                return;
+            }
+
+            const items = Array.isArray(d.items) ? d.items : [];
+            let hasError = false;
+            let listHtml = '<div style="font-weight:600; margin-bottom:6px; color:#333;">Status Menu di Keranjang:</div>';
+            listHtml += '<ul style="margin:0; padding:0; list-style:none; display:grid; gap:6px;">';
+
+            for (const id of cartIds) {
+                const qty = Number(cart[id]);
+                const produk = items.find(p => String(p.id) === String(id));
+                const fallbackName = productCache[id]?.nama || 'Menu #' + id;
+
+                if (!produk) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(fallbackName)}</b> tidak tersedia di tanggal ini.</span></li>`;
+                    continue;
+                }
+
+                const sisa = Number(produk.sisa ?? produk.kuota ?? 0);
+                if (sisa <= 0) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> (Habis)</span></li>`;
+                } else if (qty > sisa) {
+                    hasError = true;
+                    listHtml += `<li style="display:flex; gap:6px; color:#dc3545;"><span class="ui-icon icon-gagal" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> sisa ${sisa} porsi (Anda pesan ${qty}).</span></li>`;
+                } else {
+                    listHtml += `<li style="display:flex; gap:6px; color:#155724;"><span class="ui-icon icon-berhasil" aria-hidden="true"></span><span><b>${esc(produk.nama)}</b> tersedia (Sisa: ${sisa} porsi).</span></li>`;
+                }
+            }
+            listHtml += '</ul>';
+
+            alertBox.style.background = hasError ? '#fff5f5' : '#f0fdf4';
+            alertBox.style.borderColor = hasError ? '#feb2b2' : '#bbf7d0';
+            alertBox.style.color = hasError ? '#c53030' : '#276749';
+            alertBox.innerHTML = listHtml;
+        } catch (error) {
+            alertBox.style.background = '#fef2f2';
+            alertBox.style.borderColor = '#fecaca';
+            alertBox.style.color = '#991b1b';
+            alertBox.innerHTML = `<span class="ui-icon icon-gagal" aria-hidden="true"></span> Gagal memeriksa menu: <b>${esc(error.message)}</b>.`;
+        }
+    }
+
+    checkoutDateInput.addEventListener('change', () => cekKetersediaanMenu(checkoutDateInput.value));
+
+    const checkoutDialog = document.getElementById('checkout-dialog');
+    if (checkoutDialog) {
+        new MutationObserver(() => {
+            if (checkoutDialog.hasAttribute('open') && checkoutDateInput.value) {
+                cekKetersediaanMenu(checkoutDateInput.value);
+            }
+        }).observe(checkoutDialog, { attributes: true, attributeFilter: ['open'] });
+    }
+});

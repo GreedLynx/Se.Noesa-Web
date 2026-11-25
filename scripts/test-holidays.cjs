@@ -7,6 +7,7 @@ const { execFileSync } = require('node:child_process');
 const phpHarness = `
 $payload = json_decode($argv[1], true);
 $missing = $argv[2] === 'missing';
+$method = $argv[3] ?? 'POST';
 $queries = [];
 $connection = new class {
     public bool $active = false;
@@ -35,6 +36,7 @@ function q($sql, $params = []) {
     $GLOBALS['queries'][] = ['sql' => $sql, 'params' => $params];
     return new class {
         function rowCount() { return $GLOBALS['missing'] ? 0 : 1; }
+        function fetchAll() { return []; }
     };
 }
 function json($data, $status = 200) {
@@ -43,14 +45,17 @@ function json($data, $status = 200) {
     exit;
 }
 $_SERVER['HTTP_X_CSRF_TOKEN'] = 'test-token';
-$_SERVER['REQUEST_METHOD'] = 'POST';
+$_SERVER['REQUEST_METHOD'] = $method;
 $source = file_get_contents('public/admin/api/holidays.php');
 $source = preg_replace('/^require __DIR__ .*;\\R/m', '', $source);
 eval('?>' . $source);
 `;
-function callApi(payload, missing = false) {
-    return JSON.parse(execFileSync('php', ['-r', phpHarness, JSON.stringify(payload), missing ? 'missing' : 'found'], { encoding: 'utf8' }));
+function callApi(payload, missing = false, method = 'POST') {
+    return JSON.parse(execFileSync('php', ['-r', phpHarness, JSON.stringify(payload), missing ? 'missing' : 'found', method], { encoding: 'utf8' }));
 }
+const listing = callApi({}, false, 'GET');
+assert.equal(listing.status, 200);
+assert.equal(listing.queries.length, 1, 'GET only returns holiday ranges; reschedule details stay on order API');
 const edit = { action: 'save', id: 7, tanggal_mulai: '2030-11-20', tanggal_selesai: '2030-11-23' };
 const saved = callApi(edit);
 assert.equal(saved.status, 200);
@@ -91,12 +96,19 @@ const dom = {
     '#holiday-error': {}, '#holiday-rows': {}, '#new-holiday': {},
 };
 let request, fail = false;
+let confirmationText = '';
 const context = {
     $: selector => dom[selector],
     $$: selector => selector === '[data-edit-holiday]' ? [editButton] : [],
-    esc: String, toast() {},
+    esc: value => String(value).replaceAll('<', '&lt;'), toast() {},
+    dateLabel: value => value, badge: value => value,
+    confirmDialog: async (_title, message) => { confirmationText = message; return true; },
+    orderDetailUrl: id => `order-detail.php?id=${id}&return_to=schedules.php`,
     api: async (url, options) => {
-        if (!options) return { items: [holiday] };
+        if (!options) {
+            if (url.includes('preview_start=')) return { items: [{ kode: 'ORD-42', nama_pemesan: 'Siti', tanggal_kirim: '2030-11-21', status: 'diproses' }] };
+            return { items: [holiday] };
+        }
         request = JSON.parse(JSON.stringify(options.body));
         if (fail) throw new Error('Tanggal libur tidak ditemukan');
         return { ok: true };
@@ -117,6 +129,8 @@ vm.runInContext(source.slice(source.indexOf('async function loadHolidays()'), so
     elements.tanggal_selesai.value = '2030-11-24';
     await form.onsubmit({ preventDefault() {} });
     assert.deepEqual(request, { ...edit, tanggal_selesai: '2030-11-24' });
+    assert.match(confirmationText, /ORD-42.*Siti.*2030-11-21.*diproses/);
+    assert.match(confirmationText, /Pesanan tidak berubah otomatis/);
     assert.equal(dialog.open, false);
     dom['#new-holiday'].onclick();
     assert.equal(elements.id.value, '');

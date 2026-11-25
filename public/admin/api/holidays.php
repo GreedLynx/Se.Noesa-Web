@@ -82,4 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $rows = q('SELECT id, tanggal_mulai, tanggal_selesai
     FROM tanggal_libur_operasional
     ORDER BY tanggal_mulai DESC, id DESC')->fetchAll();
+if (isset($_GET['preview_start']) || isset($_GET['preview_end'])) {
+    $start = $_GET['preview_start'] ?? '';
+    $end = $_GET['preview_end'] ?? '';
+    if (!valid_holiday_date($start) || !valid_holiday_date($end) || $start > $end) {
+        json(['error' => 'Rentang pratinjau libur tidak valid'], 422);
+    }
+    $affected = q("SELECT id, kode, nama_pemesan,
+            (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date AS tanggal_kirim, status
+        FROM pesanan
+        WHERE status IN ('menunggu_pembayaran', 'menunggu_validasi', 'diproses')
+          AND (tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date BETWEEN ? AND ?
+        ORDER BY tgl_kirim, id", [$start, $end])->fetchAll();
+    json(['items' => $affected]);
+}
 json(['items' => $rows]);

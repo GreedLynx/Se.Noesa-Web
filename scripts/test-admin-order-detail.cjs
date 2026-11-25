@@ -18,7 +18,13 @@ assert.notEqual(uploadStart, -1, 'uploadDispatchPhoto function exists');
 assert.notEqual(uploadEnd, -1, 'uploadDispatchPhoto function boundary exists');
 
 const elements = new Map();
-const element = () => ({ innerHTML: '', outerHTML: '', hidden: false });
+const element = () => ({ innerHTML: '', outerHTML: '', hidden: false, style: {} });
+const rescheduleFields = { tanggal_usulan: { value: '' }, alasan: { value: '' } };
+const rescheduleForm = { elements: rescheduleFields, reset() {
+    rescheduleFields.tanggal_usulan.value = '';
+    rescheduleFields.alasan.value = '';
+} };
+const rescheduleDialog = { open: false, showModal() { this.open = true; }, close() { this.open = false; } };
 let uploadForm = null;
 let fileInput = { files: [] };
 let uploadHandler;
@@ -26,7 +32,7 @@ const uploadedPhotos = [];
 const postedActions = [];
 const timers = [];
 let reviewFails = false, confirmed = true, confirmation = '', reloaded = 0;
-const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false }));
+const actionButtons = ['reject', 'validate', 'complete', 'review_cancellation', 'offer_reschedule'].map(orderAction => ({ dataset: { orderAction }, hidden: false, disabled: false, style: {} }));
 const orderResponse = {
     id: 42,
     kode: 'ORD-42',
@@ -38,6 +44,8 @@ const context = {
     location: { search: '?id=42', reload() { reloaded++; } },
     $: (selector) => {
         if (selector === '#dispatch-photo-form') return uploadForm;
+        if (selector === '#reschedule-order-form') return rescheduleForm;
+        if (selector === '#reschedule-order-dialog') return rescheduleDialog;
         if (selector === 'button') return { disabled: false };
         if (selector === 'input[type="file"]') return fileInput;
         if (!elements.has(selector)) elements.set(selector, element());
@@ -131,7 +139,7 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(cancelled, /class="panel-heading"[^]*<\/div><div class="cancellation-meta">/);
     assert.doesNotMatch(cancelled.slice(cancelled.indexOf('class="panel-heading"'), cancelled.indexOf('class="cancellation-meta"')), /class="detail-pair"/);
     assert.doesNotMatch(cancelled.slice(cancelled.indexOf('class="order-summary"')), /<span>Selesai<\/span>/, 'canceled status is not repeated inside the order summary');
-    assert.match(cancelled, /kept\.png/);
+    assert.match(cancelled, /api\/proof\.php\?order=42/, 'proof is loaded through authenticated proxy');
     assert.match(cancelled, /Foto pesanan tersimpan/);
     assert.match(cancelled, /Daftar menu disimpan sebagai riwayat/);
     assert.match(cancelled, /data-item-check="1"[^>]*disabled/);
@@ -179,6 +187,34 @@ vm.runInContext(source.slice(start, end), context);
     assert.match(rejectedDetail, /Alasan penolakan/);
     assert.match(rejectedDetail, /&lt;script&gt;/);
     assert.doesNotMatch(rejectedDetail, /<script>/);
+
+    orderResponse.status = 'diproses';
+    orderResponse.menu = [{ nama: 'Menu uji', qty: 2, harga: 10, subtotal: 20, item_id: 1, sudah_dicek: false }];
+    orderResponse.reschedule_offer = { status_tawaran: 'menunggu', status_asal: 'diproses', tanggal_asal: '2030-11-20',
+        tanggal_usulan: '2030-11-22', alasan: 'Tanggal lama ditutup', dibuat_at: '2030-11-18T10:00:00+07:00', berlaku_sampai: '2030-11-19T10:00:00+07:00' };
+    orderResponse.can_offer_reschedule = true;
+    await context.orderDetail();
+    const pendingOfferDetail = elements.get('#order-detail').innerHTML;
+    assert.match(pendingOfferDetail, /Jeda produksi/);
+    assert.match(pendingOfferDetail, /data-item-check="1"[^>]*disabled/);
+    assert.doesNotMatch(pendingOfferDetail, /id="dispatch-photo-form"/);
+    assert.equal(actionButtons.find(button => button.dataset.orderAction === 'complete').hidden, true);
+    const offerButton = actionButtons.find(button => button.dataset.orderAction === 'offer_reschedule');
+    assert.equal(offerButton.hidden, false);
+    await offerButton.onclick();
+    assert.equal(rescheduleDialog.open, true);
+    assert.equal(rescheduleFields.tanggal_usulan.value, '2030-11-22');
+    rescheduleFields.tanggal_usulan.value = '2030-11-23';
+    rescheduleFields.alasan.value = 'Tanggal lama libur';
+    await rescheduleForm.onsubmit({ preventDefault() {} });
+    assert.deepEqual(postedActions.at(-1), { action: 'offer_reschedule', id: 42,
+        tanggal_usulan: '2030-11-23', alasan: 'Tanggal lama libur' });
+    assert.equal(rescheduleDialog.open, false);
+    timers.at(-1)();
+    assert.equal(reloaded, 2);
+    orderResponse.can_offer_reschedule = false;
+    await context.orderDetail();
+    assert.equal(offerButton.hidden, true);
 
     const formEntries = [];
     let responseText = '<br /><b>Warning</b>: POST Content-Length exceeded {"ok":true}';

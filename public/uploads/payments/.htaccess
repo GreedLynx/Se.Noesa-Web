@@ -1,0 +1,2 @@
+# Bukti pembayaran hanya boleh diakses lewat endpoint PHP berautentikasi.
+Require all denied

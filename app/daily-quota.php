@@ -1,5 +1,62 @@
 <?php
 // Dipakai setelah bootstrap.php. Seluruh pemakaian dihitung dari transaksi.
+
+// Minimum per menu dan maksimum per pesanan tidak menentukan kapasitas dapur harian.
+const SENOESA_MIN_PACKAGE_QTY = 4;
+const SENOESA_MAX_ORDER_QTY = 50;
+
+/** Minimum efektif untuk satu produk pada snapshot kuota. */
+function daily_product_min_qty(array $product): int
+{
+    return max(SENOESA_MIN_PACKAGE_QTY, (int) ($product['min_pesan'] ?? 0));
+}
+
+/**
+ * Satu-satunya aturan ketersediaan produk: sisa stok harus mencapai minimum
+ * efektif. Dipakai katalog, availability, dan validasi agar tidak ada logika
+ * ganda di frontend/API.
+ */
+function daily_product_available(array $product, bool $holiday = false): bool
+{
+    if ($holiday) {
+        return false;
+    }
+    return (int) ($product['sisa'] ?? 0) >= daily_product_min_qty($product);
+}
+
+function daily_capacity_status(int $remaining, int $capacity, bool $holiday = false): string
+{
+    if ($holiday) return 'closed';
+    if ($remaining <= 0 || $capacity <= 0) return 'full';
+    return $remaining * 5 <= $capacity * 2 ? 'nearly_full' : 'available';
+}
+
+function daily_kitchen_capacity(array $items): int
+{
+    return intdiv((int) array_sum(array_column($items, 'kuota')) * 4, 5);
+}
+
+function daily_calendar_status(array $snapshot, int $availableItems): string
+{
+    $status = daily_capacity_status((int) $snapshot['dailyRemaining'], (int) $snapshot['dailyCapacity'], !empty($snapshot['tanggal_libur']));
+    if ($status === 'closed' || $status === 'full') return $status;
+    if ($availableItems === 0) return 'menu_empty';
+    return $status;
+}
+
+/**
+ * Klaim SQL untuk pesanan yang masih memakai kapasitas.
+ * Menunggu pembayaran hanya menahan kuota selama tenggat 1 jam masih aktif;
+ * ditolak/dibatalkan (termasional hasil expire) tidak menahan kuota.
+ */
+function daily_reserved_clause(string $alias = 'p'): string
+{
+    return "($alias.status IN ('menunggu_validasi', 'diproses', 'selesai') "
+        . "OR ($alias.status = 'menunggu_pembayaran' "
+        . "AND NULLIF(BTRIM($alias.bukti_bayar), '') IS NULL "
+        . "AND $alias.created_at + interval '1 hour' > now()))";
+}
+
 function daily_quota_snapshot($date, bool $report = false): array
 {
     if (!is_string($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date) || substr($date, 0, 4) === '0000') {
@@ -17,7 +74,8 @@ function daily_quota_snapshot($date, bool $report = false): array
         WHERE tanggal_mulai <= ? AND tanggal_selesai >= ?
     ) THEN 1 ELSE 0 END', [$date, $date])->fetchColumn();
 
-    $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, GREATEST(4, pr.min_pesan) AS min_pesan, pr.kuota_harian AS kuota_default';
+    $fields = 'pr.id, pr.kode, pr.nama, pr.kategori, pr.harga, pr.gambar, '
+        . 'GREATEST(' . SENOESA_MIN_PACKAGE_QTY . ', pr.min_pesan) AS min_pesan, pr.kuota_harian AS kuota_default';
     if ($report) {
         // LEFT JOIN menjaga semua produk tetap tampil, termasuk yang belum memiliki konfigurasi kuota.
         $items = q(
@@ -30,7 +88,9 @@ function daily_quota_snapshot($date, bool $report = false): array
             [$date]
         )->fetchAll();
     } else {
-        // Pesanan ditolak atau dibatalkan tidak lagi menahan kuota.
+        // Pesanan yang masih aktif menahan stok menu; dibatalkan/ditolak dan
+        // unpaid yang sudah lewat tenggat tidak lagi menahan kuota.
+        $reserved = daily_reserved_clause('p');
         $items = q(
             "SELECT $fields, COALESCE(k.kuota, pr.kuota_harian) AS kuota_harian,
                 COALESCE(k.kuota, pr.kuota_harian) AS kuota, COALESCE(used.qty, 0) AS terpakai,
@@ -41,7 +101,7 @@ function daily_quota_snapshot($date, bool $report = false): array
                 SELECT d.produk_id, SUM(d.qty) AS qty
                 FROM detail_pesanan d
                 JOIN pesanan p ON p.id = d.pesanan_id
-                WHERE p.tgl_kirim >= ? AND p.tgl_kirim < ? AND p.status NOT IN ('ditolak', 'dibatalkan')
+                WHERE p.tgl_kirim >= ? AND p.tgl_kirim < ? AND $reserved
                 GROUP BY d.produk_id
             ) used ON used.produk_id = pr.id
             ORDER BY pr.id",
@@ -58,15 +118,20 @@ function daily_quota_snapshot($date, bool $report = false): array
         unset($item);
     }
 
-    $capacity = 0;
-    $used = 0;
-    foreach ($items as $item) {
-        $capacity += max(0, (int) $item['kuota_harian']);
-        // Pesanan produk yang kemudian dinonaktifkan tetap memakai kapasitas.
-        $used += (int) $item['terpakai'];
-    }
+    // Kuota efektif sudah menimpa default dengan override dan nol saat libur.
+    $maximum = daily_kitchen_capacity($items);
+    $rangeParams = [$start->format('Y-m-d H:i:sP'), $start->modify('+1 day')->format('Y-m-d H:i:sP')];
+    $dailyUsed = $isHoliday ? 0 : (int) q(
+        "SELECT COALESCE(SUM(d.qty), 0)
+        FROM detail_pesanan d
+        JOIN pesanan p ON p.id = d.pesanan_id
+        WHERE p.tgl_kirim >= ? AND p.tgl_kirim < ? AND " . daily_reserved_clause('p'),
+        $rangeParams
+    )->fetchColumn();
 
-    $maximum = intdiv($capacity * 4, 5);
+    $used = $dailyUsed;
+    $dailyRemaining = max(0, $maximum - $used);
+    $dailyStatus = daily_capacity_status($dailyRemaining, $maximum, $isHoliday);
 
     return [
         'tanggal' => $date,
@@ -74,7 +139,11 @@ function daily_quota_snapshot($date, bool $report = false): array
         'items' => $items,
         'maxKitchen' => $maximum,
         'kitchenUsed' => $used,
-        'kitchenRemaining' => max(0, $maximum - $used),
+        'kitchenRemaining' => $dailyRemaining,
+        'dailyCapacity' => $maximum,
+        'dailyUsed' => $used,
+        'dailyRemaining' => $dailyRemaining,
+        'dailyStatus' => $dailyStatus,
     ];
 }
 
@@ -84,6 +153,20 @@ function daily_quota_validate(array $snapshot, array $quantities): array
         throw new DomainException('Tanggal pengiriman ini merupakan hari libur. Silakan pilih tanggal lain.');
     }
 
+    $total = array_sum($quantities);
+    if ($total < SENOESA_MIN_PACKAGE_QTY) {
+        throw new DomainException('Minimal pesanan adalah ' . SENOESA_MIN_PACKAGE_QTY . ' porsi.');
+    }
+    if ($total > SENOESA_MAX_ORDER_QTY) {
+        throw new DomainException('Satu pesanan maksimal ' . SENOESA_MAX_ORDER_QTY . ' porsi.');
+    }
+
+    $capacity = (int) ($snapshot['dailyCapacity'] ?? $snapshot['maxKitchen'] ?? 0);
+    $used = (int) ($snapshot['dailyUsed'] ?? $snapshot['kitchenUsed'] ?? 0);
+    if ($used + $total > $capacity) {
+        throw new DomainException('Kuota harian untuk tanggal ini tidak mencukupi. Sisa ' . max(0, $capacity - $used) . ' porsi.');
+    }
+
     $products = array_column($snapshot['items'], null, 'id');
     $lines = [];
     foreach ($quantities as $id => $qty) {
@@ -91,18 +174,13 @@ function daily_quota_validate(array $snapshot, array $quantities): array
         if (!$product || (int) $product['kuota_harian'] <= 0) {
             throw new DomainException('Salah satu menu sudah tidak tersedia.');
         }
-        // Periksa sisa lebih dahulu agar kekurangan kuota tetap informatif.
         if ($qty > (int) $product['sisa']) {
-            throw new DomainException('Kuota harian ' . $product['nama'] . ' tidak mencukupi. Sisa kuota: ' . (int) $product['sisa'] . ' porsi.');
+            throw new DomainException('Stok ' . $product['nama'] . ' tidak mencukupi. Sisa ' . (int) $product['sisa'] . ' porsi.');
         }
         if ($qty < (int) $product['min_pesan']) {
             throw new DomainException($product['nama'] . ' minimal dipesan ' . $product['min_pesan'] . ' porsi.');
         }
         $lines[] = ['product' => $product, 'qty' => $qty];
-    }
-
-    if ($snapshot['kitchenUsed'] + array_sum($quantities) > $snapshot['maxKitchen']) {
-        throw new DomainException('Kuota operasional dapur untuk tanggal pengiriman telah mencapai batas maksimal (80%).');
     }
 
     return $lines;

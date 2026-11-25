@@ -14,20 +14,57 @@ try {
 
 $category = $_GET['kategori'] ?? '';
 $query = trim($_GET['q'] ?? '');
-$items = array_values(array_filter($snapshot['items'], static function ($product) use ($category, $query) {
-    return (int) $product['sisa'] > 0
-        && (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
+$matchesView = static function (array $product) use ($category, $query): bool {
+    return (!in_array($category, ['makanan', 'minuman', 'snack'], true) || $product['kategori'] === $category)
         && ($query === '' || stripos($product['nama'], $query) !== false || stripos($product['kode'], $query) !== false);
-}));
+};
+$holiday = !empty($snapshot['tanggal_libur']);
+$stockState = static function (array $product) use ($holiday): string {
+    if ($holiday) return 'closed';
+    if (!daily_product_available($product, $holiday)) return 'full';
+    $sisa = (int) $product['sisa'];
+    $kuota = (int) $product['kuota'];
+    if ($kuota > 0 && $sisa <= intdiv($kuota, 5)) return 'nearly_full';
+    return 'available';
+};
+$decorate = static function (array $product) use ($stockState, $holiday): array {
+    // $stockState diteruskan eksplisit agar closure tidak bergantung pada scope luar.
+    $product['stok_status'] = $stockState($product);
+    $product['minimum'] = daily_product_min_qty($product);
+    $product['available'] = daily_product_available($product, $holiday);
+    return $product;
+};
+$items = array_map($decorate, array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView) {
+    return $matchesView($product);
+})));
+// Daftar terpisah ini dipakai untuk peringatan menu yang tidak dapat dipesan.
+$habis = array_map(static function (array $product) use ($stockState): array {
+    return [
+        'id' => (int) $product['id'],
+        'nama' => $product['nama'],
+        'kode' => $product['kode'],
+        'sisa' => (int) $product['sisa'],
+        'stok_status' => $stockState($product),
+        'minimum' => daily_product_min_qty($product),
+        'available' => false,
+    ];
+}, array_values(array_filter($snapshot['items'], static function ($product) use ($matchesView, $holiday) {
+    return !daily_product_available($product, $holiday) && $matchesView($product);
+})));
 // SELECT memilih satu jadwal PO aktif yang tanggal bukanya paling awal.
 $schedule = q('SELECT id, tgl_buka, tgl_tutup, nama FROM jadwal_po WHERE aktif ORDER BY tgl_buka LIMIT 1')->fetch();
 
 json([
     'items' => $items,
+    'habis' => $habis,
     'schedule' => $schedule,
     'tanggal' => $snapshot['tanggal'],
     'tanggal_libur' => $snapshot['tanggal_libur'],
     'maxKitchen' => $snapshot['maxKitchen'],
     'kitchenUsed' => $snapshot['kitchenUsed'],
     'kitchenRemaining' => $snapshot['kitchenRemaining'],
+    'dailyCapacity' => $snapshot['dailyCapacity'],
+    'dailyUsed' => $snapshot['dailyUsed'],
+    'dailyRemaining' => $snapshot['dailyRemaining'],
+    'dailyStatus' => $snapshot['dailyStatus'],
 ]);

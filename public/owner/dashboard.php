@@ -9,8 +9,8 @@ topbar('Dashboard');
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 
 <section class="rise">
-    <h2 class="greet">Selamat Pagi, <span id="nama"><?= ucfirst(me()['username']) ?></span></h2>
-    <p class="sub">Pantauan performa operasional &amp; kapasitas dapur Se.Noesa.</p>
+    <h2 class="greet">Selamat Pagi, <span id="nama">Owner</span></h2>
+    <p class="sub">Pantauan performa operasional &amp; kapasitas dapur se.noesa.</p>
 </section>
 
 <section class="hero-card rise">
@@ -19,9 +19,9 @@ topbar('Dashboard');
         <span class="chip-d" id="growth">0%</span>
     </div>
     <div class="big">Rp <b id="omzet" data-count="0">0</b></div>
-    <p class="ok">✓ Pesanan Lunas</p>
+    <p class="ok"><span class="ui-icon icon-lunas" aria-hidden="true"></span> Pesanan Lunas</p>
     <div class="stats">
-        <div><small>RATA-RATA PESANAN</small><b id="tiket">-</b></div>
+        <div><small>PENDAPATAN /Hari</small><b id="tiket">-</b></div>
         <div><small id="l2">KUANTITAS PAX</small><b id="items">-</b></div>
         <div><small>STATUS LUNAS</small><b>100% Lunas</b></div>
     </div>
@@ -30,19 +30,28 @@ topbar('Dashboard');
 <section class="card rise">
     <div class="row between dashboard-header" style="align-items: center; margin-bottom: 10px;">
         <h3>Tren Pesanan</h3>
-        <div class="seg" id="period">
-            <button data-p="today" class="on">Hari</button>
-            <button data-p="week">Minggu</button>
-            <button data-p="month">Bulan</button>
+        <div class="date-filter-pills">
+            <button type="button" class="date-pill-btn" id="btn-start">
+                <span class="ui-icon icon-kalender" aria-hidden="true"></span>
+                <span id="lbl-start">-</span>
+            </button>
+            <span style="font-size: 12px; color: var(--muted);">s/d</span>
+            <button type="button" class="date-pill-btn" id="btn-end">
+                <span class="ui-icon icon-kalender" aria-hidden="true"></span>
+                <span id="lbl-end">-</span>
+            </button>
         </div>
+    </div>
+
+    <div class="chart-wrap" id="chart-wrap">
         <div class="chart-tip" id="chart-tip"></div>
+        <div class="chart-container" id="bars"></div>
     </div>
 </section>
 
 <section class="card rise">
     <div class="row between">
         <h3>Pesanan Masuk</h3>
-        <span class="ic">▤</span>
     </div>
     <div class="num" id="orders">0 Pesanan</div>
     <div class="row between meta"><span id="tot">Total Periode</span><b>100% Lunas</b></div>
@@ -51,7 +60,6 @@ topbar('Dashboard');
 <section class="card rise">
     <div class="row between">
         <h3>Rincian Kategori</h3>
-        <span class="ic">◔</span>
     </div>
     <div id="kat"></div>
 </section>
@@ -59,51 +67,44 @@ topbar('Dashboard');
 <h3 class="sec rise">Produk Terlaris</h3>
 <div id="top"></div>
 
-<!-- MODAL KALENDER SESUAI FOTO -->
+<!-- MODAL KALENDER -->
 <dialog id="date-modal" class="custom-date-dialog">
     <div class="date-modal-content">
-        
-        <!-- Header Modal -->
         <div class="date-modal-header">
             <div>
                 <p class="eyebrow">PILIH TANGGAL</p>
                 <h2 id="modal-title">Tanggal kuota dapur dan produk</h2>
             </div>
             <button type="button" class="modal-close-btn" id="close-date-modal">
-                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                <span class="ui-icon icon-tutup" aria-hidden="true"></span>
             </button>
         </div>
 
-        <!-- Kalender Mount -->
         <div id="calendar-mount"></div>
 
-        <!-- Footer Modal -->
         <div class="date-modal-footer">
             <span class="today-indicator"><i></i> Hari ini</span>
             <button type="button" class="btn-today" id="btn-today">Ke hari ini</button>
         </div>
-
     </div>
 </dialog>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
-    const dateModal   = document.getElementById('date-modal');
-    const btnStart    = document.getElementById('btn-start');
-    const btnEnd      = document.getElementById('btn-end');
-    const lblStart    = document.getElementById('lbl-start');
-    const lblEnd      = document.getElementById('lbl-end');
-    const modalTitle  = document.getElementById('modal-title');
-    const closeBtn    = document.getElementById('close-date-modal');
-    const btnToday    = document.getElementById('btn-today');
+    const dateModal     = document.getElementById('date-modal');
+    const btnStart      = document.getElementById('btn-start');
+    const btnEnd        = document.getElementById('btn-end');
+    const lblStart      = document.getElementById('lbl-start');
+    const lblEnd        = document.getElementById('lbl-end');
+    const modalTitle    = document.getElementById('modal-title');
+    const closeBtn      = document.getElementById('close-date-modal');
+    const btnToday      = document.getElementById('btn-today');
     const calendarMount = document.getElementById('calendar-mount');
 
-    // State
     const now = new Date();
     let startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     let endDate   = new Date(now);
-    let activeTarget = 'start'; // 'start' atau 'end'
+    let activeTarget = 'start';
     let picker = null;
     let ignoreChange = false;
 
@@ -116,27 +117,23 @@ document.addEventListener('DOMContentLoaded', function() {
         lblEnd.textContent   = fmtShort(endDate);
     }
 
-    // Inisialisasi Flatpickr secara Inline
     function initPicker() {
         if (picker) return picker;
-        
         picker = flatpickr(calendarMount, {
             locale: "id",
             inline: true,
             disableMobile: true,
-            monthSelectorType: 'static', // Bulan dan tahun sejajar
+            monthSelectorType: 'static',
             dateFormat: 'Y-m-d',
             onChange: function(selectedDates) {
                 if (ignoreChange || !selectedDates[0]) return;
                 const d = selectedDates[0];
-                
                 if (activeTarget === 'start') {
                     startDate = d;
                     if (endDate < startDate) endDate = startDate;
                 } else {
                     endDate = d;
                 }
-                
                 updateLabels();
                 dateModal.close();
                 fetchDashboardData();
@@ -145,17 +142,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return picker;
     }
 
-    // Buka Modal
     function openModal(target) {
         activeTarget = target;
         modalTitle.textContent = target === 'start' ? 'Pilih Tanggal Mulai' : 'Pilih Tanggal Selesai';
-        
         dateModal.showModal();
         const p = initPicker();
-        
         ignoreChange = true;
         p.set('maxDate', 'today');
-        
         if (target === 'start') {
             p.set('minDate', null);
             p.setDate(startDate, false);
@@ -166,14 +159,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ignoreChange = false;
     }
 
-    // Events
     btnStart.addEventListener('click', () => openModal('start'));
     btnEnd.addEventListener('click', () => openModal('end'));
-    
-    closeBtn.addEventListener('click', () => {
-        dateModal.close();
-    });
-
+    closeBtn.addEventListener('click', () => dateModal.close());
     dateModal.addEventListener('click', (e) => {
         if (e.target === dateModal) dateModal.close();
     });
@@ -183,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ignoreChange = true;
         picker.setDate(today, false);
         ignoreChange = false;
-        
         if (activeTarget === 'start') {
             startDate = today;
             if (endDate < startDate) endDate = startDate;
@@ -195,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchDashboardData();
     });
 
-    // Tooltip grafik: satu elemen di luar area scroll
     const chartWrap = document.getElementById('chart-wrap');
     const chartTip  = document.getElementById('chart-tip');
     let activeCol = null;
@@ -229,13 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('#bars .chart-col').forEach(col => {
             col.addEventListener('mouseenter', () => showTip(col));
             col.addEventListener('mouseleave', hideTip);
-            col.addEventListener('click', (e) => { e.stopPropagation(); showTip(col); }); // sentuh di HP
+            col.addEventListener('click', (e) => { e.stopPropagation(); showTip(col); });
         });
     }
     document.addEventListener('click', hideTip);
-    document.getElementById('bars').addEventListener('scroll', hideTip, { passive: true });
 
-    // Fetch Data Dashboard
     async function fetchDashboardData() {
         const start = ymd(startDate);
         const end   = ymd(endDate);
@@ -258,19 +242,20 @@ document.addEventListener('DOMContentLoaded', function() {
             growthEl.style.background = growthVal < 0 ? '#f8e4e1' : (growthVal > 0 ? '#e4efe5' : '#f0f0f0');
             growthEl.style.color      = growthVal < 0 ? '#a5463b' : (growthVal > 0 ? '#3b513e' : '#687067');
 
-            // Chart
             if (!data.chart || data.chart.length === 0) {
                 barsEl.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;padding:20px;">Tidak ada data pada rentang ini.</div>';
             } else {
                 const maxVal = Math.max(...data.chart.map(x => Number(x.v)), 1);
-                barsEl.innerHTML = data.chart.map((item) => {
+                const lastIdx = data.chart.length - 1;
+                barsEl.innerHTML = data.chart.map((item, idx) => {
                     const val    = Number(item.v);
                     const isZero = val === 0;
-                    // 0 => 6px (pil abu). Ada nilai => proporsional, minimal 10px agar tetap terlihat.
-                    const height = isZero ? '6px' : `max(10px, ${(val / maxVal) * 100}%)`;
+                    const isLast = idx === lastIdx;
+                    // Nilai 0 tetap jadi pil kecil (10px) kecuali item terakhir yang kosong/0 seperti pada gambar kiri
+                    const height = (isZero && isLast) ? '0px' : (isZero ? '10px' : `max(18px, ${(val / maxVal) * 100}%)`);
 
                     return `
-                        <div class="chart-col" data-val="${val}" data-label="${item.l}">
+                        <div class="chart-col ${isLast ? 'is-last' : ''}" data-val="${val}" data-label="${item.l}">
                             <div class="bar-wrapper">
                                 <div class="chart-bar ${isZero ? 'zero' : ''}" style="height:${height};"></div>
                             </div>
@@ -280,7 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 bindChartTooltip();
             }
 
-            // Kategori
             const kat = document.getElementById('kat');
             if (!data.kategori || data.kategori.length === 0) {
                 kat.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0;">Belum ada data.</div>';
@@ -295,7 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>`).join('');
             }
 
-            // Top produk
             const top = document.getElementById('top');
             if (!data.top || data.top.length === 0) {
                 top.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0;">Belum ada data.</div>';
@@ -317,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Init
     updateLabels();
     fetchDashboardData();
 });

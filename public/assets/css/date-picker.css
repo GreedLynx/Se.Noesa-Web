@@ -71,6 +71,9 @@
     cursor: pointer;
 }
 .date-trigger svg { width: 24px; height: 24px; flex-shrink: 0; color: var(--date-sage); }
+.date-trigger > .ui-icon { font-size:24px; color:var(--date-sage); }
+.date-trigger-action .ui-icon { font-size:12px; margin-left:6px; }
+.date-icon-button .ui-icon { font-size:20px; }
 .date-trigger-value { flex: 1; font-size: 15px; font-weight: 600; }
 .date-trigger-action { margin-left: auto; color: var(--date-sage); font-size: 12px; white-space: nowrap; }
 .date-trigger-action span { margin-left: 6px; }
@@ -90,6 +93,11 @@
     box-shadow: 0 24px 80px #1f382b33;
 }
 .date-calendar::backdrop { background: #1e302a66; backdrop-filter: blur(4px); }
+.date-calendar[open] { animation: date-open .2s ease-out; }
+.date-calendar[open]::backdrop { animation: date-backdrop .2s ease-out; }
+@keyframes date-open { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
+@keyframes date-backdrop { from { opacity:0; } to { opacity:1; } }
+@media (prefers-reduced-motion: reduce) { .date-calendar[open], .date-calendar[open]::backdrop { animation:none; } }
 .date-calendar-heading, .date-month-nav, .date-calendar-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .date-calendar-heading h2 { margin: 5px 0 0; font-size: 18px; line-height: 1.4; color: var(--date-wood); }
 .date-calendar .date-icon-button {
@@ -124,8 +132,29 @@
 }
 .date-calendar button:hover:not(:disabled) { background: var(--date-soft); }
 .date-calendar .date-days button[aria-pressed="true"] { color: #fff; background: var(--date-sage); font-weight: 700; }
-.date-days button[aria-current="date"]::after { content: ''; position: absolute; bottom: 4px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.date-days button[aria-current="date"]::before { content: ''; position: absolute; top: 4px; right: 4px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 .date-calendar button:disabled { color: #9aa39b; background: transparent; cursor: default; }
+.date-calendar .date-days button.date-available::after,
+.date-calendar .date-days button.date-nearly-full::after,
+.date-calendar .date-days button.date-full::after,
+.date-calendar .date-days button.date-menu-empty::after,
+.date-calendar .date-days button.date-closed::after { content:''; position:absolute; bottom:3px; left:calc(50% - 3px); width:6px; height:6px; border-radius:50%; background:var(--status-color); box-shadow:0 0 0 1px #fff; }
+.date-calendar .date-days button.date-available { --status-color:var(--date-sage); }
+.date-calendar .date-days button.date-nearly-full { --status-color:#d8a23b; }
+.date-calendar .date-days button.date-full { --status-color:#a5463b; }
+.date-calendar .date-days button.date-menu-empty { --status-color:#8c6a4f; }
+.date-calendar .date-days button.date-closed { --status-color:#9aa39b; }
+.date-calendar .date-days button.date-nearly-full { border-color: #d8a23b; color: #8a6216; }
+.date-calendar .date-days button.date-full,
+.date-calendar .date-days button.date-menu-empty,
+.date-calendar .date-days button.date-closed { text-decoration: line-through; }
+.date-availability-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--date-line); font-size: 10px; color: var(--date-muted); }
+.date-availability-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.date-availability-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--date-sage); }
+.date-availability-legend i.date-nearly-full { background: #d8a23b; }
+.date-availability-legend i.date-full { background: #a5463b; }
+.date-availability-legend i.date-menu-empty { background: #8c6a4f; }
+.date-availability-legend i.date-closed { background: #9aa39b; }
 .date-calendar-footer { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--date-line); color: var(--date-muted); font-size: 12px; }
 .date-calendar-footer i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--date-sage); }
 .date-calendar .date-first-button { min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--date-soft); color: var(--date-sage); font: inherit; font-weight: 600; cursor: pointer; }

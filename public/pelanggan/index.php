@@ -8,50 +8,45 @@ $firstDelivery = (new DateTimeImmutable('now', new DateTimeZone('Asia/Jakarta'))
 ?>
 <section class="catalog-intro">
     <div>
-        <p class="eyebrow">MENU SE.NOESA</p>
+        <p class="eyebrow">MENU se.noesa</p>
         <h2>Pilih Menu</h2>
         <p class="catalog-description">Pilih menu favorit untuk pesanan berikutnya.</p>
     </div>
-    <button type="button" class="category-toggle" data-category-toggle aria-controls="category-rail" aria-expanded="false" aria-label="Buka kategori">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" /></svg>
-    </button>
-    <a class="history-link" href="riwayat.php" aria-label="Riwayat pesanan">
-        <span><svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 3h12v18l-6-3-6 3V3zM9 8h6M9 12h6" />
-            </svg></span>
-        <b>Riwayat pesanan</b>
-    </a>
 </section>
-<section class="date-panel date-panel--delivery" aria-labelledby="delivery-title">
-    <div>
-        <span class="date-eyebrow">RENCANAKAN PESANANMU</span>
-        <h2 class="date-panel-title" id="delivery-title"><span class="delivery-title-desktop">Mau dikirim kapan?</span><span class="delivery-title-mobile">Tanggal pengiriman</span></h2>
-        <p class="date-panel-hint" id="delivery-hint">Pilih tanggal untuk melihat menu yang tersedia.<br>Pengiriman paling awal 7 hari dari hari ini.</p>
-    </div>
+<section class="date-panel date-panel--delivery" aria-label="Pilih tanggal pengiriman">
     <div class="date-field">
-        <label for="catalog-delivery-date"></label>
+        <label for="catalog-delivery-date">Tanggal pengiriman</label>
         <input class="form-control" id="catalog-delivery-date" type="date" min="<?= $firstDelivery ?>" value="<?= $firstDelivery ?>"
-            aria-label="Tanggal pengiriman" aria-describedby="delivery-hint" data-date-picker required>
+            aria-describedby="delivery-hint quota-full-hint daily-quota-hint" data-date-picker data-availability-url="api/availability.php" required>
     </div>
+    <p class="date-panel-hint" id="delivery-hint" role="status" hidden></p>
+    <p class="date-panel-hint" id="quota-full-hint" role="status" hidden></p>
+    <p class="date-panel-hint" id="daily-quota-hint" role="status" hidden></p>
 </section>
 <div class="catalog-toolbar">
+    <div class="category-tabs" id="catalog-category-tabs" aria-label="Filter kategori">
+        <button type="button" class="active" data-category="" aria-label="Semua menu" aria-pressed="true">Semua</button>
+        <button type="button" data-category="makanan" aria-label="Makanan" aria-pressed="false">Makanan</button>
+        <button type="button" data-category="minuman" aria-label="Minuman" aria-pressed="false">Minuman</button>
+        <button type="button" data-category="snack" aria-label="Snack" aria-pressed="false">Snack</button>
+    </div>
     <label class="customer-search">
         <input id="catalog-search" type="search" placeholder="Cari menu" aria-label="Cari menu">
-        <span><svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="10.8" cy="10.8" r="6.8" />
-                <path d="m16 16 5 5" />
-            </svg></span>
+        <span class="ui-icon icon-cari" aria-hidden="true"></span>
     </label>
 </div>
 <section class="menu-grid" id="menu-grid" aria-live="polite"></section>
+<button type="button" class="catalog-search-shortcut" aria-label="Kembali ke pencarian menu" hidden>
+    <span class="ui-icon icon-cari" aria-hidden="true"></span>
+</button>
 <div class="cart-bar" id="cart-bar" hidden>
-    <div class="cart-icon">&#128722;<b id="cart-count">0</b></div>
+    <div class="cart-icon"><span class="ui-icon icon-keranjang" aria-hidden="true"></span><b id="cart-count">0</b></div>
     <span><strong id="cart-total">Rp 0</strong><small id="cart-summary">0 menu dipilih</small></span>
-    <button id="checkout-button" class="customer-button primary">Lihat pesanan <span>&rarr;</span></button>
+    <button id="checkout-button" class="customer-button primary">Lihat pesanan <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></button>
 </div>
 <dialog id="cart-dialog" class="customer-dialog cart-dialog" aria-labelledby="cart-title">
-    <button class="dialog-close" data-close-cart aria-label="Tutup">&times;</button>
-    <p class="eyebrow">ISI KERANJANG</p>
+    <button class="dialog-close" data-close-cart aria-label="Tutup"><span class="ui-icon icon-tutup" aria-hidden="true"></span></button>
+    <p class="eyebrow">ISI KERANJANG</p> <!-- TEKS SUDAH DIUBAH -->
     <h2 id="cart-title">Menu pilihan</h2>
     <div id="cart-lines"></div>
     <div class="cart-total-row"><span>Total sementara</span><b id="cart-dialog-total">Rp 0</b></div>

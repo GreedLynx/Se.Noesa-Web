@@ -52,9 +52,7 @@ admin_head('Produk & Kuota', 'products');
         </div>
         <label
             class="search">
-            <span>
-                &#9906;
-            </span>
+            <span class="ui-icon icon-cari" aria-hidden="true"></span>
             <input id="product-search" type="search"
                 placeholder="Cari nama menu atau kode">
         </label>
@@ -77,7 +75,7 @@ admin_head('Produk & Kuota', 'products');
                 </h2>
             </div>
             <button type="button" class="icon-close" data-close-dialog aria-label="Tutup">
-                &times;
+                <span class="ui-icon icon-tutup" aria-hidden="true"></span>
             </button>
         </div>
         <input type="hidden" name="id">
