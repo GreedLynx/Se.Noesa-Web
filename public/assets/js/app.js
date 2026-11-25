@@ -167,7 +167,7 @@ $$("[data-logout]").forEach(
         (b.onclick = async () => {
             const confirmed = await confirmDialog(
                 "Keluar Akun",
-                "Apakah Anda yakin ingin keluar dari panel owner Se.Noesa?",
+                "Apakah Anda yakin ingin keluar dari panel owner se.noesa?",
                 "Ya, Keluar",
                 "primary"
             );

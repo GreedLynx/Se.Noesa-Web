@@ -351,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['error' => $e->getMessage()], 422);
     } catch (Throwable $e) {
         if (db()->inTransaction()) db()->rollBack();
-        error_log('[Se.Noesa order] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+        error_log('[se.noesa order] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         json(['error' => 'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'], 500);
     }
 }

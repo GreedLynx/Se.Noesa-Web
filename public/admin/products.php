@@ -5,7 +5,7 @@ admin_head('Produk & Kuota', 'products');
 <section class="page-intro">
     <div>
         <p class="eyebrow">
-            KATALOG SE.NOESA
+            KATALOG se.noesa
         </p>
         <h2>
             Produk &amp; Kuota

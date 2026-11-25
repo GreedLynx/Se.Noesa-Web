@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (DomainException $e) {
         json(['error' => $e->getMessage()], 422);
     } catch (Throwable $e) {
-        error_log('[Se.Noesa late payment] ' . $e->getMessage());
+        error_log('[se.noesa late payment] ' . $e->getMessage());
         json(['error' => 'Rekonsiliasi gagal disimpan. Coba lagi.'], 500);
     }
 }
@@ -46,14 +46,17 @@ $search = $_GET['q'] ?? '';
 if (!is_string($search)) json(['error' => 'Pencarian tidak valid'], 422);
 $search = trim($search);
 if (!empty($_GET['eligible'])) {
-    if (!late_payment_table_available()) json(['items' => []]);
+    if (!late_payment_table_available()) json(['items' => [], 'feature_available' => false]);
+    $search = trim((string) ($_GET['q'] ?? ''));
+    if (strlen($search) < 3) json(['items' => [], 'feature_available' => true, 'search_required' => true]);
+    if (strlen($search) > 50) json(['error' => 'Kode pesanan maksimal 50 karakter'], 422);
     json(['items' => q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
             p.created_at, p.tgl_kirim, p.status
         FROM pesanan p
-        WHERE p.status = 'dibatalkan'
+        WHERE p.status IN ('dibatalkan', 'ditolak')
+          AND UPPER(p.kode) = UPPER(?)
           AND NOT EXISTS (SELECT 1 FROM pembayaran_terlambat r WHERE r.pesanan_id = p.id)
-          AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
-        ORDER BY p.created_at DESC LIMIT 100", ['%' . $search . '%', '%' . $search . '%'])->fetchAll()]);
+        ORDER BY p.created_at DESC LIMIT 20", [$search])->fetchAll(), 'feature_available' => true]);
 }
 
 $id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
@@ -63,4 +66,5 @@ if ($id !== null && $id > 0) {
     $row['bukti_url'] = 'api/proof.php?late=' . (int) $row['id'];
     json(['item' => $row, 'logs' => late_payment_logs($id)]);
 }
-json(['items' => late_payment_list($search)]);
+$available = late_payment_table_available();
+json(['items' => $available ? late_payment_list() : [], 'feature_available' => $available]);

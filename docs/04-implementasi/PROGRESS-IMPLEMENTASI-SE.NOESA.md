@@ -1,4 +1,4 @@
-# Progress Implementasi Se.Noesa
+# Progress Implementasi se.noesa
 
 - Last updated: 2026-11-18 02:30 WIB
 - Current branch: feature/full-stack
@@ -41,13 +41,13 @@
 | TASK-20 | PARTIAL | 671e1da | lolos (1/1 unit tanggal) | OWN-20/17/10 selesai; OWN-09/11 metrik & OWN-02/03 visual menunggu #13/QA |
 | TASK-21 | DONE | a378cec | lolos (lint + cek statis) | Username lebih menonjol, nav aktif, ikon SVG seragam, profil ganda hilang |
 | TASK-22 | BLOCKED | - | lint menyeluruh hanya | Dependency tidak terpenuhi (7 BLOCKED, 1 PARTIAL); regression penuh belum dapat dijalankan |
-| TASK-23 | BLOCKED | - | - | Terblokir oleh TASK-22; dokumen `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` disusun sebagai laporan akhir (NO-GO) |
+| TASK-23 | BLOCKED | - | - | Terblokir oleh TASK-22; dokumen `docs/06-rilis/RELEASE-READINESS-se.noesa.md` disusun sebagai laporan akhir (NO-GO) |
 
 ## Task aktif
 - Tidak ada task eligible. Eksekusi selesai dengan status BLOCKED.
 - Terakhir dikerjakan: TASK-21 (DONE, `a378cec`).
 - TASK-22 & TASK-23: BLOCKED oleh dependency.
-- Laporan akhir: `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` (NO-GO).
+- Laporan akhir: `docs/06-rilis/RELEASE-READINESS-se.noesa.md` (NO-GO).
 
 ## Ringkasan eksekusi
 - Task DONE: 14; PARTIAL: 1; BLOCKED: 9; FAILED: 0.
@@ -117,8 +117,8 @@
 - **Kondisi awal terverifikasi:** branch `feature/full-stack`, HEAD `43da86d` (sesuai checkpoint terakhir), working tree bersih, lokal ahead 18 / behind 20 terhadap `origin/feature/full-stack`. Tidak ada pull/merge/rebase/reset/push.
 - **Dokumen dibaca:** `PROGRESS`, `CHANGELOG`, `TEST-REPORT`, `RELEASE-READINESS`, `KEPUTUSAN-BISNIS`, `TASKS-IMPLEMENTASI`. `AGENTS.md`, `PRD.md`, `DESIGN.md` tetap tidak ditemukan.
 - **Dokumen baru:**
-  - `docs/05-keputusan-bisnis/REVIEW-KEPUTUSAN-BISNIS-SE.NOESA.md` — review 15 keputusan PENDING (14 + DECISION-NEW-01), lengkap dengan opsi, dampak DB/backend/frontend/operasional, dan rekomendasi **bukan keputusan**.
-  - `docs/06-rilis/REVIEW-BLOCKED-TASKS-SE.NOESA.md` — analisis 9 task BLOCKED + lampiran audit lanjutan TASK-20 (metrik, konsistensi angka, query mahal, QA visual, prosedur DB isolat).
-  - `docs/06-rilis/TEST-PLAN-RELEASE-SE.NOESA.md` — 8 paket pengujian yang belum dijalankan, masing-masing memuat prasyarat, langkah, hasil diharapkan, risiko, dan bukti.
+  - `docs/05-keputusan-bisnis/REVIEW-KEPUTUSAN-BISNIS-se.noesa.md` — review 15 keputusan PENDING (14 + DECISION-NEW-01), lengkap dengan opsi, dampak DB/backend/frontend/operasional, dan rekomendasi **bukan keputusan**.
+  - `docs/06-rilis/REVIEW-BLOCKED-TASKS-se.noesa.md` — analisis 9 task BLOCKED + lampiran audit lanjutan TASK-20 (metrik, konsistensi angka, query mahal, QA visual, prosedur DB isolat).
+  - `docs/06-rilis/TEST-PLAN-RELEASE-se.noesa.md` — 8 paket pengujian yang belum dijalankan, masing-masing memuat prasyarat, langkah, hasil diharapkan, risiko, dan bukti.
 - **Status task tidak berubah:** 14 DONE, 1 PARTIAL, 9 BLOCKED, 0 FAILED. Release tetap **NO-GO**.
 - **HEAD setelah review:** tidak berubah (`43da86d`) sampai checkpoint dokumentasi review dibuat.

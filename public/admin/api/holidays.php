@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-        error_log('[Se.Noesa holidays API] ' . $error->getMessage());
+        error_log('[se.noesa holidays API] ' . $error->getMessage());
         json(['error' => 'Tanggal libur belum dapat disimpan'], 500);
     }
 }

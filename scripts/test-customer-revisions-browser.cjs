@@ -88,7 +88,7 @@ for (const page of paymentOnly ? ['history'] : ['catalog','history','notificatio
     window.addEventListener('load',()=>setTimeout(async()=>{try{
         if(!${paymentOnly}){
         const area=document.querySelector('.customer-content');
-        const pattern=[document.querySelector('.customer-main'),area].flatMap(e=>['::before','::after'].map(p=>getComputedStyle(e,p))).find(s=>s.backgroundImage.includes('Pattern_Se.Noesa.png'));
+        const pattern=[document.querySelector('.customer-main'),area].flatMap(e=>['::before','::after'].map(p=>getComputedStyle(e,p))).find(s=>s.backgroundImage.includes('Pattern_se.noesa.png'));
         check(pattern&&Number(pattern.opacity)>0&&Number(pattern.opacity)<=.08,'Pola rendah opacity tersedia');
         check(pattern.pointerEvents==='none','Pola tidak menghalangi interaksi');
         const policy=document.querySelector('.catalog-policy'),date=document.querySelector('label[for="checkout-date"]');

@@ -40,7 +40,7 @@ perubahan bila berbeda, kecuali aturan keamanan dan bisnis di bawah.
   fungsinya.
 - Setiap input memiliki `label` yang terhubung melalui atribut `for` dan `id`.
 - Gunakan grid dan komponen Bootstrap untuk layout, formulir, tombol, navbar,
-  dan modal. CSS Se.Noesa ditempatkan di `public/assets/css/` sebagai override.
+  dan modal. CSS se.noesa ditempatkan di `public/assets/css/` sebagai override.
 - Jangan memakai `!important` kecuali diperlukan untuk mengatasi batasan yang
   jelas dari komponen Bootstrap; beri komentar singkat alasannya.
 
@@ -49,7 +49,7 @@ perubahan bila berbeda, kecuali aturan keamanan dan bisnis di bawah.
 - Gunakan variabel CSS untuk warna, ukuran, dan jarak yang dipakai ulang.
 - Nama class memakai `kebab-case`, misalnya `.order-card` dan `.status-badge`.
 - Hindari selector yang terlalu dalam; buat selector spesifik secukupnya.
-- Warna dan tampilan tetap mengikuti identitas sage dan coklat kayu Se.Noesa.
+- Warna dan tampilan tetap mengikuti identitas sage dan coklat kayu se.noesa.
 
 ## JavaScript
 

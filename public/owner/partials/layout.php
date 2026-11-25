@@ -18,7 +18,7 @@ function head(string $title, string $page, bool $auth = false)
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title) ?> · <?= $auth ? 'se.noesa' : 'Se.Noesa' ?></title>
+    <title><?= htmlspecialchars($title) ?> · <?= $auth ? 'se.noesa' : 'se.noesa' ?></title>
     <link rel="icon" type="image/png" sizes="16x16 32x32" href="<?= $auth ? 'assets/img/logo-icon.png' : '../assets/img/logo-icon.png' ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
@@ -97,7 +97,7 @@ function nav(string $on)
         <nav class="nav">
             <a class="owner-brand" href="dashboard.php">
                 <span class="owner-brand-mark"><img src="../assets/img/logo-icon.png" alt=""></span>
-                <span>Se.Noesa<small>OWNER PANEL</small></span>
+                <span>se.noesa<small>OWNER PANEL</small></span>
             </a>
             <span class="pill" id="pill"></span>
             <?php foreach ($i as $k => [$l, $icon, $href]): ?>
