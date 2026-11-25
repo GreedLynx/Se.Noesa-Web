@@ -51,7 +51,7 @@ function admin_head(string $title, string $page): void
                 </a>
             </nav>
             <div class="sidebar-bottom">
-                <button class="signout" data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span> Keluar</button>
+                <button class="signout" data-logout><span class="ui-icon icon-keluar" aria-hidden="true"></span> Keluar dari Admin</button>
             </div>
         </aside>
         <button type="button" class="sidebar-backdrop" aria-label="Tutup menu" tabindex="-1"></button>
