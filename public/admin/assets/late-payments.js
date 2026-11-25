@@ -115,31 +115,30 @@
                 <div><b>Catatan Admin</b><span>${esc(r.catatan_admin || '-')}</span></div>
                 <div><b>Hasil verifikasi</b><span>${esc(r.hasil_catatan || '-')}</span></div>
             </div>
-            <p><a class="button small secondary" href="${esc(r.bukti_url || '')}" target="_blank" rel="noopener">Lihat bukti</a></p>
-            ${isPending ? `<div class="late-actions">
+            <div class="late-proof-link"><a class="button small secondary" href="${esc(r.bukti_url || '')}" target="_blank" rel="noopener">Lihat bukti</a></div>
+            ${isPending ? `<section class="late-detail-section"><h3>Verifikasi pembayaran</h3><div class="late-actions">
                 <button class="button primary" data-late-verify="terverifikasi">Terverifikasi</button>
                 <button class="button danger-outline" data-late-verify="tidak_valid">Tidak valid</button>
-            </div><form id="late-verify-note"><label>Catatan / alasan<textarea name="catatan" rows="2" maxlength="1000"></textarea></label></form>` : ''}
-            ${isVerified && !r.tindak_lanjut ? `<form id="late-follow-form" class="late-form">
+            </div><form id="late-verify-note" class="late-verify-note"><label for="late-verify-comment">Catatan / alasan verifikasi</label><textarea id="late-verify-comment" name="catatan" rows="2" maxlength="1000" placeholder="Tulis alasan jika bukti tidak valid"></textarea></form></section>` : ''}
+            ${isVerified && !r.tindak_lanjut ? `<section class="late-detail-section"><h3>Tindak lanjut</h3><p class="late-follow-hint">Konfirmasi dahulu dengan pelanggan melalui WhatsApp. Jika kuota penuh, tawarkan tanggal atau menu lain, atau bantu pelanggan membuat pesanan baru.</p><form id="late-follow-form" class="late-form">
                 <label>Tindak lanjut<select name="tindak_lanjut" id="late-follow-type"><option value="lanjutkan_pesanan">Lanjutkan pesanan lama menjadi diproses</option><option value="pesanan_baru">Pesanan baru (checkout normal)</option><option value="refund">Refund</option></select></label>
-                <p class="muted">Konfirmasi dulu melalui WhatsApp. Untuk kuota penuh, tawarkan tanggal atau menu lain, atau minta pelanggan membuat pesanan baru lewat WhatsApp.</p>
                 <label class="late-follow-new" hidden>ID pesanan baru<input type="number" name="tindak_lanjut_order_id" min="1"></label>
                 <label class="late-follow-refund" hidden>Nominal refund<input type="number" name="refund_nominal" min="0" step="1"></label>
                 <label class="late-follow-refund" hidden>Tanggal refund<input type="datetime-local" name="refund_tanggal"></label>
                 <label class="late-follow-refund" hidden>Referensi refund<input type="text" name="refund_referensi" maxlength="100"></label>
-                <label>Catatan<textarea name="tindak_lanjut_catatan" rows="2" maxlength="1000" placeholder="Tulis hasil konfirmasi WhatsApp atau kesepakatan tindak lanjut"></textarea></label>
-                <label><input type="checkbox" name="konfirmasi_pelanggan" value="1" required> Pelanggan sudah mengonfirmasi tindak lanjut melalui WhatsApp</label>
+                <label class="late-follow-note">Catatan hasil konfirmasi<textarea name="tindak_lanjut_catatan" rows="3" maxlength="1000" placeholder="Contoh: pelanggan menyetujui pesanan dilanjutkan melalui WhatsApp"></textarea></label>
+                <label class="late-confirm-check"><input type="checkbox" name="konfirmasi_pelanggan" value="1" required><span>Pelanggan sudah mengonfirmasi tindak lanjut melalui WhatsApp</span></label>
                 <button class="button primary" type="submit">Simpan tindak lanjut</button>
-            </form>` : ''}
+            </form></section>` : ''}
             ${r.tindak_lanjut ? `<p><b>Tindak lanjut:</b> ${esc(r.tindak_lanjut)} · ${esc(r.tindak_lanjut_catatan || '')}</p>` : ''}`;
             logBox.innerHTML = (d.logs || []).length
-                ? '<h3>Riwayat tindakan</h3><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Dari</th><th>Ke</th><th>Alasan</th><th>Oleh</th></tr></thead><tbody>'
-                    + d.logs.map(l => `<tr><td>${fmt(l.created_at)}</td><td>${esc(l.aksi)}</td><td>${esc(l.status_sebelum || '-')}</td><td>${esc(l.status_sesudah || '-')}</td><td>${esc(l.alasan || '-')}</td><td>${esc(l.actor || '-')}</td></tr>`).join('') + '</tbody></table>'
+                ? '<section class="late-detail-section late-history"><h3>Riwayat tindakan</h3><div class="late-history-table"><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Dari</th><th>Ke</th><th>Alasan</th><th>Oleh</th></tr></thead><tbody>'
+                    + d.logs.map(l => `<tr><td>${fmt(l.created_at)}</td><td>${esc(l.aksi)}</td><td>${esc(l.status_sebelum || '-')}</td><td>${esc(l.status_sesudah || '-')}</td><td>${esc(l.alasan || '-')}</td><td>${esc(l.actor || '-')}</td></tr>`).join('') + '</tbody></table></div></section>'
                 : '';
             panel.hidden = false;
             $$('[data-late-verify]').forEach(b => b.onclick = async () => {
                 const status = b.dataset.lateVerify;
-                const note = $('#late-verify-note textarea')?.value || '';
+                const note = $('#late-verify-comment')?.value || '';
                 if (status === 'tidak_valid' && !note.trim()) { toast('Alasan penolakan wajib diisi'); return; }
                 const ok = await confirmDialog(status === 'terverifikasi' ? 'Verifikasi pembayaran' : 'Tolak pembayaran',
                     'Pembayaran akan diverifikasi. Status pesanan tetap sampai tindak lanjut dicatat.', 'Ya, lanjutkan');
