@@ -42,13 +42,17 @@ function topbar(string $title, bool $back = false)
     ?>
         <header class="top rise">
             <div class="row">
+                <button class="owner-menu-toggle" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="owner-navigation">
+                    <span class="ui-icon icon-menu-navigasi" aria-hidden="true"></span>
+                </button>
                 <?php if ($back): ?>
                     <a class="btn-ic" href="orders.php" aria-label="Kembali ke pesanan">
                         <span class="ui-icon icon-panah-kiri" aria-hidden="true"></span>
                     </a>
                 <?php endif; ?>
-                <div>
-                    <h1><?= $title ?></h1>
+                <div class="owner-top-copy">
+                    <small>Se.Noesa / Owner</small>
+                    <h1><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
                 </div>
             </div>
             <div class="row">
@@ -94,23 +98,18 @@ function nav(string $on)
         'payments' => ['Metode Pembayaran', 'pembayaran', 'payments.php']
     ];
     ?>
-        <nav class="nav">
+        <nav class="nav" id="owner-navigation" aria-label="Navigasi owner">
             <a class="owner-brand" href="dashboard.php">
                 <span class="owner-brand-mark"><img src="../assets/img/logo-icon.png" alt=""></span>
                 <span>se.noesa<small>OWNER PANEL</small></span>
             </a>
             <span class="pill" id="pill"></span>
             <?php foreach ($i as $k => [$l, $icon, $href]): ?>
-                <?php if ($k === 'notifications') continue; ?>
                 <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="<?= $on === $k ? 'on' : '' ?>">
                     <span class="ui-icon icon-<?= $icon ?>" aria-hidden="true"></span>
                     <span><?= $l ?></span>
                 </a>
             <?php endforeach; ?>
-            <button class="owner-mobile-logout" type="button" data-logout aria-label="Keluar dari akun owner">
-                <span class="ui-icon icon-keluar" aria-hidden="true"></span>
-                <span>Keluar</span>
-            </button>
             <div class="owner-sidebar-bottom">
                 <div class="owner-profile">
                     <span class="avatar"><?= htmlspecialchars(strtoupper(substr($u['username'] ?? 'O', 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
@@ -122,6 +121,7 @@ function nav(string $on)
                 </button>
             </div>
         </nav>
+        <button type="button" class="owner-sidebar-backdrop" aria-label="Tutup menu owner" tabindex="-1"></button>
 <?php
 }
 
