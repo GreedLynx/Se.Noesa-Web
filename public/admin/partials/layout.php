@@ -27,7 +27,7 @@ function admin_head(string $title, string $page): void
     <div class="admin-shell">
         <aside class="sidebar">
             <a class="brand" href="dashboard.php">
-                <span class="brand-mark">S</span>
+                <span class="admin-brand-mark"><img src="../assets/img/logo-icon.png" alt=""></span>
                 <span>se.noesa<small>ADMIN PANEL</small></span>
             </a>
             <div class="side-label"></div>
