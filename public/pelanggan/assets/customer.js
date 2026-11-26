@@ -582,7 +582,7 @@ async function loadHistory() {
     $('#history-list').innerHTML = d.orders.length ? d.orders.map((o, i) => {
         const first = o.items[0] || {};
         return '<button type="button" class="history-card" data-order="' + Number(o.id) + '" style="--i:' + i + '"><div class="history-card-top"><div><b>'
-            + esc(o.kode) + '</b><p class="history-date">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + dateLabel(o.tgl_kirim)
+            + esc(o.kode) + '</b><p class="history-date">Dibuat ' + dateLabel(o.created_at) + ' · Kirim ' + (o.tgl_kirim ? dateLabel(o.tgl_kirim, true) + ' WIB' : '-')
             + '</p><p class="history-date">' + (o.status_updated_at ? 'Status sejak ' + dateLabel(o.status_updated_at, true)
                 : 'Waktu perubahan status belum tercatat') + '</p></div><span class="status-label ' + esc(o.status) + '">'
             + esc(statusLabels[o.status] || o.status) + '</span></div>' +
@@ -784,7 +784,7 @@ async function openHistoryDetail(id) {
         + (d.status_updated_at ? 'Status sejak ' + dateLabel(d.status_updated_at, true): 'Waktu perubahan status belum tercatat')
         + '</p></div>' + statusProgress(d.status) + rejectionNotice + offerPanel + paymentTimerBox + '<section class="detail-section"><h3>Pesanan</h3>' + items + '</section><section class="detail-section"><h3>Alamat pengiriman</h3><div class="detail-schedule"><span>'
         + esc(d.nama_pemesan) + ' · ' + esc(d.telepon_penerima || '') + '<b>' + esc(d.alamat_pengiriman || 'Alamat belum tercatat')
-        + '</b></span><span>Tanggal kirim<b>' + dateLabel(d.tgl_kirim) + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
+        + '</b></span><span>Tanggal kirim<b>' + (d.tgl_kirim ? dateLabel(d.tgl_kirim, true) + ' WIB' : '-') + '</b></span></div></section>' + qris + '<div class="detail-total"><span>Total</span><b>'
         + (d.total !== undefined && d.total !== null ? money(d.total) : 'Rp 0') + '</b></div>' 
         + menuNoticeSection
         + '<p id="payment-status" class="form-error" role="alert" tabindex="-1"></p><button type="button" id="retry-payment" class="customer-button secondary" hidden>Muat ulang status pembayaran</button>'

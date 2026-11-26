@@ -1,5 +1,7 @@
 # Database
 
+Pilihan jam pengiriman Pelanggan disimpan bersama tanggal pada `pesanan.tgl_kirim` (`TIMESTAMPTZ`) dalam zona Asia/Jakarta. Input waktu di form dan tampilan jam pada riwayat memakai kolom yang sudah ada, tanpa migrasi.
+
 Tenggat satu jam hanya berlaku untuk unggah bukti pertama saat status `menunggu_pembayaran`. Setelah bukti tersimpan, status `menunggu_validasi` mengizinkan penggantian tanpa tenggat asli sampai Admin memvalidasi. Perubahan ini memakai kolom dan status yang sudah ada, tanpa migrasi.
 
 Bar tahap pada detail riwayat Pelanggan membaca `pesanan.status` yang sudah ada. `menunggu_validasi` tetap berarti bukti menunggu pemeriksaan Admin, sedangkan `diproses` terjadi setelah validasi; koreksi bar Pembayaran/Verifikasi hanya di UI dan tidak menambah kolom, VIEW, atau migrasi.

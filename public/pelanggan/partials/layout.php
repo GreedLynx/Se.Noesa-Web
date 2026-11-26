@@ -136,6 +136,10 @@ function customer_foot(): void
                     Tanggal kirim
                     <input id="checkout-date" name="tgl_kirim" type="date" required>
                 </label>
+                <label for="checkout-time">
+                    Jam pengiriman (WIB)
+                    <input id="checkout-time" name="waktu_kirim" type="time" value="12:00" required>
+                </label>
                 <label for="checkout-note">
                     Keterangan pesanan (opsional)
                     <textarea id="checkout-note" name="keterangan" rows="2" maxlength="120" placeholder="Contoh: tanpa sambal, kirim ke ruang rapat"></textarea>

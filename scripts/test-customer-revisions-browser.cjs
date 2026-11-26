@@ -9,6 +9,7 @@ const { pathToFileURL } = require('node:url');
 const chrome = process.argv[2];
 const paymentOnly = process.argv.includes('--payment');
 const progressOnly = process.argv.includes('--progress');
+const deliveryTimeOnly = process.argv.includes('--delivery-time');
 const customerOnly = process.argv.includes('--customer');
 if (!chrome) throw Error('Berikan path Chrome sebagai argumen.');
 const root = process.cwd();
@@ -46,7 +47,7 @@ function run(name, page, markup, styles, code, width, height = 900, screenshot =
     console.log(`PASS: ${name} ${width}x${height}`);
 }
 
-for (const page of paymentOnly || customerOnly ? [] : ['login', 'register']) {
+for (const page of paymentOnly || customerOnly || deliveryTimeOnly ? [] : ['login', 'register']) {
     const source = read(`public/${page}.php`);
     const markup = `<main class="app auth">${stripPhp(source.slice(source.indexOf('<section'), source.lastIndexOf('<?php foot')))}</main>`;
     const checks = `${fail}
@@ -74,20 +75,20 @@ const fixtures = [
     {id:2,nama:'Menu hampir habis',kategori:'makanan',gambar:'NK-01.png',harga:10000,min_pesan:4,minimum:4,kuota:50,sisa:24,available:true},
     {id:3,nama:'Menu habis',kategori:'makanan',gambar:'NK-01.png',harga:10000,min_pesan:4,minimum:4,kuota:50,sisa:0,available:false,stok_status:'full'}
 ];
-const mock = `window.fixtureProducts=${JSON.stringify(fixtures)};window.fixtureMode='normal';window.fixturePosts=0;
-const fixtureDetail={id:10,kode:'UJI-10',items:[],status:'menunggu_pembayaran',can_cancel:false,can_upload_proof:true,total:40000,tgl_kirim:'2030-01-10',created_at:'2030-01-01',payment_expires_at:new Date(Date.now()+3600000).toISOString(),foto_kiriman_list:[]};
-window.fetch=async(input,options={})=>{const u=String(input);if(options.method==='POST'){fixturePosts++;if(fixtureMode==='upload-network')throw Error('Offline');if(fixtureMode==='upload-json')return {ok:true,status:200,json:async()=>{throw SyntaxError('Invalid JSON')}};if(fixtureMode==='upload-422')return {ok:false,status:422,json:async()=>({error:'Gunakan gambar JPG, PNG, atau WebP'})};if(fixtureMode==='upload-500')return {ok:false,status:500,json:async()=>({error:'Gagal menyimpan bukti'})};if(fixtureMode==='upload-success'){fixtureDetail.status='menunggu_validasi';fixtureDetail.bukti_bayar='uploads/payments/fixture.png';return {ok:true,status:200,json:async()=>({ok:true})};}if(fixtureMode==='upload-success-refresh-error'){fixtureMode='detail-error';return {ok:true,status:200,json:async()=>({ok:true})};}}
+const mock = `window.fixtureProducts=${JSON.stringify(fixtures)};window.fixtureMode='normal';window.fixturePosts=0;window.fixtureOrders=[];
+const fixtureDetail={id:10,kode:'UJI-10',items:[],status:'menunggu_pembayaran',can_cancel:false,can_upload_proof:true,total:40000,tgl_kirim:'2030-01-10T16:30:00+07:00',created_at:'2030-01-01',payment_expires_at:new Date(Date.now()+3600000).toISOString(),foto_kiriman_list:[]};
+window.fetch=async(input,options={})=>{const u=String(input);if(options.method==='POST'){fixturePosts++;if(fixtureMode==='capture-order'){window.fixtureOrderBody=JSON.parse(options.body);return {ok:false,status:422,json:async()=>({error:'Fixture berhenti sebelum menyimpan'})};}if(fixtureMode==='upload-network')throw Error('Offline');if(fixtureMode==='upload-json')return {ok:true,status:200,json:async()=>{throw SyntaxError('Invalid JSON')}};if(fixtureMode==='upload-422')return {ok:false,status:422,json:async()=>({error:'Gunakan gambar JPG, PNG, atau WebP'})};if(fixtureMode==='upload-500')return {ok:false,status:500,json:async()=>({error:'Gagal menyimpan bukti'})};if(fixtureMode==='upload-success'){fixtureDetail.status='menunggu_validasi';fixtureDetail.bukti_bayar='uploads/payments/fixture.png';return {ok:true,status:200,json:async()=>({ok:true})};}if(fixtureMode==='upload-success-refresh-error'){fixtureMode='detail-error';return {ok:true,status:200,json:async()=>({ok:true})};}}
 if(u.includes('orders.php?id=')){if(fixtureMode==='detail-error')throw Error('Offline');return {ok:true,status:200,json:async()=>fixtureDetail};}
 if(u.includes('payment-methods')){if(fixtureMode==='method-error')throw Error('Offline');return {ok:true,status:200,json:async()=>({items:fixtureMode==='qris-error'?[{nama:'QRIS',gambar:'uploads/payment-methods/fixture-missing.png'}]:[]})};}
-let d=u.includes('catalog.php')?{items:fixtureProducts,habis:[],schedule:null,tanggal:'2030-01-10',dailyStatus:'available',dailyCapacity:150,dailyRemaining:150}:u.includes('addresses=')?{addresses:[]}:u.includes('orders.php')?{orders:[]}:{};
+let d=u.includes('catalog.php')?{items:fixtureProducts,habis:[],schedule:null,tanggal:'2030-01-10',dailyStatus:'available',dailyCapacity:150,dailyRemaining:150}:u.includes('addresses=')?{addresses:[]}:u.includes('orders.php')?{orders:fixtureOrders}:{};
 return {ok:true,status:200,json:async()=>d};};`;
 const script = read('public/pelanggan/assets/customer.js');
-for (const page of paymentOnly ? ['history'] : ['catalog','history','notifications']) {
+for (const page of paymentOnly ? ['history'] : deliveryTimeOnly ? ['catalog','history'] : ['catalog','history','notifications']) {
     const file = page==='catalog'?'public/pelanggan/index.php':page==='history'?'public/pelanggan/riwayat.php':'public/pelanggan/menu-notifications.php';
     const markup = stripPhp(start) + content(file) + stripPhp(end);
     const checks = `${fail}
     window.addEventListener('load',()=>setTimeout(async()=>{try{
-        if(!${paymentOnly}){
+        if(!${paymentOnly}&&!${deliveryTimeOnly}){
         const area=document.querySelector('.customer-content');
         const pattern=[document.querySelector('.customer-main'),area].flatMap(e=>['::before','::after'].map(p=>getComputedStyle(e,p))).find(s=>s.backgroundImage.includes('Pattern_se.noesa.png'));
         check(pattern&&Number(pattern.opacity)>0&&Number(pattern.opacity)<=.08,'Pola rendah opacity tersedia');
@@ -97,6 +98,29 @@ for (const page of paymentOnly ? ['history'] : ['catalog','history','notificatio
         check(!!(policy.compareDocumentPosition(date)&Node.DOCUMENT_POSITION_FOLLOWING),'Info sebelum tanggal');
         }
         check(document.documentElement.scrollWidth<=innerWidth,'Tidak ada overflow horizontal');
+        if(${deliveryTimeOnly}){
+            if(document.body.dataset.page==='catalog'){
+                cart[1]=4;await openCheckout();
+                const form=document.querySelector('#checkout-form'),time=form.elements.waktu_kirim;
+                check(time?.type==='time'&&time.value==='12:00','Jam awal 12:00 tersedia');
+                time.value='16:30';document.querySelector('#checkout-dialog').close();await openCheckout();
+                check(time.value==='16:30','Jam pilihan bertahan saat dialog dibuka ulang');
+                check(new FormData(form).get('waktu_kirim')==='16:30','FormData memuat jam pilihan');
+                form.elements.simpan_alamat.checked=false;fixtureMode='capture-order';
+                await submitOrder({preventDefault(){},currentTarget:form});
+                check(fixtureOrderBody.waktu_kirim==='16:30','Payload checkout mengirim jam pilihan');
+            }else{
+                fixtureOrders=[{...fixtureDetail,items:[{nama:'Menu uji',qty:4}]}];
+                await loadHistory();await openHistoryDetail(10);
+                check(document.querySelector('#history-list').innerText.includes('16.30')&&document.querySelector('#history-list').innerText.includes('WIB'),'Kartu riwayat menampilkan jam WIB');
+                check(document.querySelector('#history-detail').innerText.includes('16.30')&&document.querySelector('#history-detail').innerText.includes('WIB'),'Detail riwayat menampilkan jam WIB');
+                fixtureDetail.tgl_kirim='2030-01-12T16:30:00+07:00';await openHistoryDetail(10);
+                check(document.querySelector('#history-detail').innerText.includes('16.30'),'Jam tetap terlihat setelah tanggal berubah');
+                fixtureDetail.tgl_kirim=null;fixtureOrders[0].tgl_kirim=null;await loadHistory();await openHistoryDetail(10);
+                check(document.querySelector('#history-list').innerText.includes('Kirim -')&&!document.querySelector('#history-detail').innerText.includes('Tanggal kirim- WIB'),'Data lama tanpa tanggal tetap aman');
+            }
+            parent.document.body.dataset.result='PASS';return;
+        }
         if(document.body.dataset.page==='catalog'){
             const cards=document.querySelectorAll('.menu-card');check(cards.length===3,'Katalog asli dirender');
             check(!cards[0].innerText.includes('Sisa kuota'),'50% tidak tampil');check(cards[1].innerText.includes('24 porsi'),'Di bawah 50% tampil');check(cards[2].innerText.includes('Stok habis'),'Stok habis tetap tampil');

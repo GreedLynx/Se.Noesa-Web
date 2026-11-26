@@ -339,6 +339,7 @@ POST `pelanggan/api/orders.php` mengambil identitas dari session pelanggan, tgl_
 dan `items:[{id,qty}]`. Produk berulang digabung. Total maksimal 50 porsi per pesanan
 dan minimum tiap menu mengikuti `max(4, min_pesan)`. Harga dari database disimpan sebagai snapshot; alamat
 harus milik pelanggan. Kuota dan batas dapur 80% diperiksa dalam transaksi terkunci.
+Form Data pemesanan mengirim `waktu_kirim` dalam format `HH:mm` dengan nilai awal `12:00` yang dapat diubah. API menggabungkannya dengan `tgl_kirim` dalam zona Asia/Jakarta; pemanggil lama tanpa jam tetap memakai `12:00`. Respons daftar dan detail mengembalikan `tgl_kirim` yang memuat jam agar riwayat Pelanggan menampilkannya dalam WIB.
 Sukses `{ok,id,kode,total}` HTTP 201, validasi `{error}` HTTP 422.
 Penurunan kuota atau tanggal libur mempertahankan pesanan lama dan membatasi
 checkout baru; checkout tanggal libur ditolak dengan HTTP 422 meskipun request

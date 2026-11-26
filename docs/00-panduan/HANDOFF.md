@@ -1,5 +1,10 @@
 # Handoff Se.Noesa-Web
 
+## Rencana pemilihan jam pengiriman Pelanggan (26 November 2026)
+- Selesai pada kode: form Data pemesanan memiliki input waktu native berlabel WIB dengan nilai awal `12:00`; `FormData` mengirim jam yang dipilih. Kartu dan detail riwayat menampilkan tanggal beserta jam WIB, sedangkan data lama tanpa tanggal menampilkan `-`.
+- Rencana ada di `docs/02-revisi-tugas/rencana-pemilihan-jam-pengiriman-pelanggan.md`. Fixture Edge `--delivery-time` lulus pada 320, 390, dan 1280 piksel untuk nilai awal, jam pilihan `16:30`, payload, pembukaan ulang dialog, riwayat, perubahan tanggal, dan data tanpa tanggal. PHP/JavaScript lint serta `git diff --check` lulus.
+- API dan skema sudah mendukung `waktu_kirim` serta `tgl_kirim` Asia/Jakarta; tidak diubah. PostgreSQL uji di `127.0.0.1:55432` sebelumnya menolak koneksi, sehingga penyimpanan end-to-end database belum diverifikasi pada tugas ini.
+
 Rencana hitung mundur bukti bayar ada di `docs/02-revisi-tugas/rencana-tenggat-bukti-pembayaran.md`. API GET/POST sekarang membatasi satu jam hanya pada unggah pertama, mengizinkan ganti bukti selama `menunggu_validasi`, dan menutupnya saat `diproses`. Timer detail berhenti saat upload berhasil dan tidak muncul lagi pada status menunggu validasi. Uji UI Node lulus; fixture Edge lulus pada lebar 320, 390, dan 1280 piksel untuk timer sebelum/sesudah upload dan setelah muat ulang. PHP lint, JS syntax, dan diff check lulus. Reviewer memeriksa balapan upload/validasi dan tidak menemukan penghalang. Uji PostgreSQL terisolasi belum berjalan karena 127.0.0.1:55432 menolak koneksi. Uji `scripts/test-customer-payment-errors.cjs` masih gagal pada kasus metode pembayaran `gagal` yang sudah ada. Belum ada uji API/database nyata atau dua koneksi bersamaan.
 
 ## Rencana bar status detail riwayat Pelanggan (26 November 2026)

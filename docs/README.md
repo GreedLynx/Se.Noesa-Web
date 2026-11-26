@@ -28,5 +28,6 @@ Seluruh dokumentasi proyek dikelompokkan ke tujuh kategori berdasarkan perannya.
 - Semua plan/rencana revisi atau perbaikan fitur disimpan di `02-revisi-tugas/`. Enam rencana yang sebelumnya berada di root `docs/` sudah dipindahkan ke folder tersebut; referensi path ikut diperbarui.
 - Rencana bar status detail riwayat Pelanggan setelah unggah bukti: [`rencana-status-pembayaran-riwayat-pelanggan.md`](02-revisi-tugas/rencana-status-pembayaran-riwayat-pelanggan.md).
 - Rencana tenggat unggah dan penggantian bukti pembayaran: [`rencana-tenggat-bukti-pembayaran.md`](02-revisi-tugas/rencana-tenggat-bukti-pembayaran.md).
+- Rencana pemilihan jam pengiriman Pelanggan: [`rencana-pemilihan-jam-pengiriman-pelanggan.md`](02-revisi-tugas/rencana-pemilihan-jam-pengiriman-pelanggan.md).
 - `AGENTS.md`, `PRD.md`, dan `DESIGN.md` tidak tersedia di repository saat indeks ini dibuat.
 - FileMarkdown di `vendor/` adalah dokumentasi dependency dan tidak dipindahkan.

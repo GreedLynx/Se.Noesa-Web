@@ -11,6 +11,7 @@
 
 ## Identitas, checkout, dan background Pelanggan
 
+- Pemilih jam pengiriman WIB berada di `public/pelanggan/partials/layout.php` pada form `#checkout-form`. `submitOrder()` di `public/pelanggan/assets/customer.js` mengirim `waktu_kirim` melalui `FormData`, sedangkan kartu/detail riwayat menampilkan jam dari `tgl_kirim` melalui `dateLabel(..., true)`. Uji browser form dan riwayat ada di `scripts/test-customer-revisions-browser.cjs` dengan opsi `--delivery-time`.
 - `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari
   `public/assets/img/logo-icon.png`; posisi dasar kanan atas dan override logo
   login/register desktop yang besar di tengah hero berada di `public/assets/css/app.css`.
