@@ -13,7 +13,7 @@ set_exception_handler(static function (Throwable $error): void {
     if (db()->inTransaction()) {
         db()->rollBack();
     }
-    error_log('[Se.Noesa kuota-harian API] ' . $error);
+    error_log('[se.noesa kuota-harian API] ' . $error);
     if (!headers_sent()) {
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');

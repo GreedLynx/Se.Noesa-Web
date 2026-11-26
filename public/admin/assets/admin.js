@@ -308,68 +308,47 @@ async function schedulesPage() {
     };
     loadHolidays();
 }
-function initMobileNavSlider() {
-    const nav = $(".mobile-nav");
-    if (!nav) return;
-    const links = $$("a", nav);
-    const activeIndex = links.findIndex((a) => a.classList.contains("active"));
-    if (activeIndex < 0) return;
-
-    const indicator = document.createElement("span");
-    indicator.className = "mobile-nav-indicator";
-    indicator.setAttribute("aria-hidden", "true");
-    nav.prepend(indicator);
-    nav.classList.add("has-slider");
-
-    const moveIndicator = (targetEl, instant = false) => {
-        if (!targetEl || !targetEl.offsetWidth) return;
-        if (instant) indicator.style.transition = "none";
-        indicator.style.width = targetEl.offsetWidth + "px";
-        indicator.style.transform = `translateX(${targetEl.offsetLeft}px)`;
-        if (instant) {
-            indicator.getBoundingClientRect();
-            indicator.style.transition = "";
-        }
-    };
-
-    const prevRaw = sessionStorage.getItem("admin_mobile_nav_prev");
-    const prevIndex = prevRaw !== null ? Number(prevRaw) : -1;
-
-    if (prevIndex >= 0 && prevIndex < links.length && prevIndex !== activeIndex) {
-        moveIndicator(links[prevIndex], true);
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => moveIndicator(links[activeIndex], false));
-        });
-    } else {
-        moveIndicator(links[activeIndex], true);
-    }
-
-    sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
-
-    links.forEach((link, idx) => {
-        link.addEventListener("click", () => {
-            sessionStorage.setItem("admin_mobile_nav_prev", String(activeIndex));
-            links.forEach((l) => l.classList.remove("active"));
-            link.classList.add("active");
-            moveIndicator(links[idx], false);
-        });
-    });
-
-    window.addEventListener("resize", () => moveIndicator(links[activeIndex], true));
-}
 function shell() {
     const toggle = $(".menu-toggle");
-    toggle?.addEventListener("click", () =>
-        $(".sidebar")?.classList.toggle("open"),
-    );
+    const sidebar = $(".sidebar");
+    const backdrop = $(".sidebar-backdrop");
+    if (sidebar) sidebar.inert = window.innerWidth <= 720;
+    const closeMenu = () => {
+        sidebar?.classList.remove("open");
+        backdrop?.classList.remove("open");
+        toggle?.setAttribute("aria-expanded", "false");
+        toggle?.setAttribute("aria-label", "Buka menu");
+        document.body.classList.remove("menu-open");
+        if (sidebar) sidebar.inert = window.innerWidth <= 720;
+    };
+    const openMenu = () => {
+        if (sidebar) sidebar.inert = false;
+        sidebar?.classList.add("open");
+        backdrop?.classList.add("open");
+        toggle?.setAttribute("aria-expanded", "true");
+        toggle?.setAttribute("aria-label", "Tutup menu");
+        document.body.classList.add("menu-open");
+    };
 
-    initMobileNavSlider();
+    toggle?.addEventListener("click", () => {
+        sidebar?.classList.contains("open") ? closeMenu() : openMenu();
+    });
+    backdrop?.addEventListener("click", closeMenu);
+    sidebar?.querySelectorAll(".side-nav a, .brand").forEach((link) =>
+        link.addEventListener("click", closeMenu),
+    );
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu();
+    });
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 720) closeMenu();
+    });
 
     $$("[data-logout]").forEach((button) =>
         button.addEventListener("click", async () => {
             const confirmed = await confirmDialog(
                 "Keluar Akun",
-                "Apakah Anda yakin ingin keluar dari panel admin Se.Noesa?",
+                "Apakah Anda yakin ingin keluar dari panel admin se.noesa?",
                 "Ya, Keluar",
                 "primary"
             );

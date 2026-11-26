@@ -1,11 +1,11 @@
-# Se.Noesa — Task Board Implementasi Bertahap
+# se.noesa — Task Board Implementasi Bertahap
 
 > Dokumen eksekusi untuk coding agent. Kerjakan **satu task dalam satu sesi**, sesuai urutan dan dependency. Jangan mengerjakan seluruh task sekaligus.
 >
 > Sumber utama:
 > - `docs/03-audit/AUDIT-REVISI-TAHAP-2.md`
-> - `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`
-> - Kondisi aktual repository Se.Noesa-Web
+> - `docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md`
+> - Kondisi aktual repository se.noesa-Web
 >
 > Stack yang tercatat pada audit: PHP 8.1 native, PostgreSQL/Supabase via PDO, HTML/CSS/JavaScript vanilla. Jangan mengganti stack.
 
@@ -13,7 +13,7 @@
 
 ## A. Aturan kerja wajib untuk agent
 
-1. Baca `AGENTS.md`, `docs/03-audit/AUDIT-REVISI-TAHAP-2.md`, `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, dan task yang sedang dikerjakan sebelum menyentuh kode.
+1. Baca `AGENTS.md`, `docs/03-audit/AUDIT-REVISI-TAHAP-2.md`, `docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md`, dan task yang sedang dikerjakan sebelum menyentuh kode.
 2. Kerjakan hanya **satu Task ID** yang diminta user. Jangan lanjut ke task berikutnya secara otomatis.
 3. Jangan mengerjakan task berstatus `BLOCKED` sebelum keputusan bisnis terkait disetujui user/mitra.
 4. Jangan mengubah fitur berstatus DONE kecuali task secara eksplisit meminta regression test atau ditemukan bug nyata.
@@ -95,7 +95,7 @@ Output:
 Tujuan:
 Membuat catatan keputusan bisnis yang harus disetujui sebelum perilaku transaksi/operasional diubah.
 
-Buat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` berisi 14 keputusan berikut. Pertahankan pertanyaan; jangan menjawab atas nama pemilik/mitra.
+Buat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md` berisi 14 keputusan berikut. Pertahankan pertanyaan; jangan menjawab atas nama pemilik/mitra.
 
 1. Refund: jika pembayaran sudah diverifikasi lalu pesanan dibatalkan dalam kondisi khusus, apakah refund manual, sebagian, atau tidak ada refund?
 2. Definisi H-2: tepat 48 jam sebelum jam pengiriman atau berdasarkan tanggal kalender?
@@ -615,7 +615,7 @@ Langkah:
 3. Pastikan environment variable dan secret aman.
 4. Pastikan tidak ada file upload sensitif yang terbuka publik tanpa kontrol yang sesuai.
 5. Review Git diff dan status repository.
-6. Buat `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md`.
+6. Buat `docs/06-rilis/RELEASE-READINESS-se.noesa.md`.
 
 Acceptance criteria:
 - Semua blocker dicatat.
@@ -677,13 +677,13 @@ Catatan:
 Salin prompt ini setiap kali memulai task. Ganti `[TASK-ID]` dengan satu ID task, misalnya `TASK-00`.
 
 ```text
-Kamu bekerja pada repository Se.Noesa-Web.
+Kamu bekerja pada repository se.noesa-Web.
 
 Baca terlebih dahulu:
 - AGENTS.md
 - docs/03-audit/AUDIT-REVISI-TAHAP-2.md
-- docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md
-- docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md
+- docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md
+- docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md
 
 TASK YANG DIKERJAKAN: [TASK-ID]
 

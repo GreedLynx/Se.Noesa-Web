@@ -21,20 +21,52 @@
     let eligibleRequest = 0;
     async function loadEligible() {
         const select = $('#late-order');
-        if (!select) return;
-        const request = ++eligibleRequest;
+        const query = $('#late-order-code')?.value.trim() || '';
+        const message = $('#late-order-search-result');
+        const button = $('#late-order-search-button');
+        if (!select || query.length < 3) {
+            if (message) message.textContent = 'Masukkan minimal 3 karakter kode pesanan.';
+            return;
+        }
+        if (button) button.disabled = true;
+        if (message) message.textContent = 'Mencari pesanan...';
+        select.disabled = true;
+        select.innerHTML = '<option value="">Memuat hasil pencarian...</option>';
         try {
-            const search = $('#late-order-search')?.value.trim() || '';
-            const d = await api('api/late-payments.php?eligible=1&q=' + encodeURIComponent(search));
-            if (request !== eligibleRequest) return;
-            select.innerHTML = (d.items || []).length
-                ? d.items.map(o => {
-                    const label = `${o.kode} — ${o.nama_pemesan}`;
-                    const detail = `${o.kode} — ${o.nama_pemesan} · ${money(o.total)} · ${fmt(o.created_at)}`;
+            const d = await api('api/late-payments.php?eligible=1&q=' + encodeURIComponent(query));
+            if (d.feature_available === false) {
+                select.innerHTML = '<option value="">Fitur belum siap: periksa koneksi database dan migrasi 028</option>';
+                if (message) message.textContent = 'Fitur rekonsiliasi belum tersedia.';
+            } else if ((d.items || []).length) {
+                select.innerHTML = '<option value="">Pilih pesanan yang cocok</option>' + d.items.map(o => {
+                    const label = `${o.kode} \u2014 ${o.nama_pemesan}`;
+                    const detail = `${o.kode} \u2014 ${o.nama_pemesan} \u00b7 ${money(o.total)} \u00b7 ${fmt(o.created_at)} \u00b7 ${o.status}`;
                     return `<option value="${Number(o.id)}" title="${esc(detail)}">${esc(label)}</option>`;
-                }).join('')
-                : '<option value="">Tidak ada pesanan yang cocok dan belum dicatat</option>';
-        } catch (e) { if (request === eligibleRequest) toast(e.message); }
+                }).join('');
+                select.disabled = false;
+                if (d.items.length === 1) select.value = String(d.items[0].id);
+                if (message) message.textContent = `${d.items.length} pesanan dapat dipilih. Pastikan kode dan nama pelanggan sesuai.` + (d.matched_count > d.items.length ? ` ${d.matched_count - d.items.length} pesanan lain tidak memenuhi syarat.` : '');
+            } else {
+                select.innerHTML = '<option value="">Tidak ada pesanan yang dapat dipilih</option>';
+                if (message) {
+                    if (!d.matched_count) {
+                        message.textContent = 'Kode pesanan tidak ditemukan. Periksa kembali kode dari pelanggan.';
+                    } else if (d.already_recorded === d.matched_count) {
+                        message.textContent = 'Pesanan ditemukan, tetapi sudah memiliki catatan rekonsiliasi.';
+                    } else {
+                        const statuses = Object.keys(d.other_statuses || {}).join(', ');
+                        message.textContent = statuses
+                            ? `Pesanan ditemukan dengan status ${statuses}. Rekonsiliasi hanya tersedia untuk pesanan dibatalkan atau ditolak.`
+                            : 'Pesanan ditemukan, tetapi sudah memiliki catatan rekonsiliasi.';
+                    }
+                }
+            }
+        } catch (e) {
+            select.innerHTML = '<option value="">Pencarian gagal</option>';
+            if (message) message.textContent = e.message;
+        } finally {
+            if (button) button.disabled = false;
+        }
     }
 
     async function loadList() {
@@ -43,7 +75,9 @@
         try {
             const d = await api('api/late-payments.php');
             const items = d.items || [];
-            box.innerHTML = items.length
+            box.innerHTML = d.feature_available === false
+                ? '<div class="late-empty"><div><strong>Fitur rekonsiliasi belum tersedia</strong><small>Periksa koneksi database dan pastikan migrasi 028 sudah diterapkan.</small></div></div>'
+                : items.length
                 ? '<table><thead><tr><th>ID</th><th>Pesanan</th><th>Pelanggan</th><th>Kontak</th><th>Tanggal pesanan</th><th>Kirim</th><th>Total</th><th>Status pesanan</th><th>Status rekonsiliasi</th><th>Waktu transaksi</th><th>Dicatat</th><th></th></tr></thead><tbody>'
                     + items.map(r => `<tr>
                         <td>${Number(r.id)}</td><td>${esc(r.kode)}</td>
@@ -81,32 +115,33 @@
                 <div><b>Catatan Admin</b><span>${esc(r.catatan_admin || '-')}</span></div>
                 <div><b>Hasil verifikasi</b><span>${esc(r.hasil_catatan || '-')}</span></div>
             </div>
-            <p><a class="button small secondary" href="${esc(r.bukti_url || '')}" target="_blank" rel="noopener">Lihat bukti</a></p>
-            ${isPending ? `<div class="late-actions">
+            <div class="late-proof-link"><a class="button small secondary" href="${esc(r.bukti_url || '')}" target="_blank" rel="noopener">Lihat bukti</a></div>
+            ${isPending ? `<section class="late-detail-section"><h3>Verifikasi pembayaran</h3><div class="late-actions">
                 <button class="button primary" data-late-verify="terverifikasi">Terverifikasi</button>
                 <button class="button danger-outline" data-late-verify="tidak_valid">Tidak valid</button>
-            </div><form id="late-verify-note"><label>Catatan / alasan<textarea name="catatan" rows="2" maxlength="1000"></textarea></label></form>` : ''}
-            ${isVerified && !r.tindak_lanjut ? `<form id="late-follow-form" class="late-form">
-                <label>Tindak lanjut<select name="tindak_lanjut"><option value="pesanan_baru">Pesanan baru (checkout normal)</option><option value="refund">Refund</option></select></label>
-                <label>ID pesanan baru (jika pesanan baru)<input type="number" name="tindak_lanjut_order_id" min="1"></label>
-                <label>Nominal refund<input type="number" name="refund_nominal" min="0" step="1"></label>
-                <label>Tanggal refund<input type="datetime-local" name="refund_tanggal"></label>
-                <label>Referensi refund<input type="text" name="refund_referensi" maxlength="100"></label>
-                <label>Catatan<textarea name="tindak_lanjut_catatan" rows="2" maxlength="1000"></textarea></label>
+            </div><form id="late-verify-note" class="late-verify-note"><label for="late-verify-comment">Catatan / alasan verifikasi</label><textarea id="late-verify-comment" name="catatan" rows="2" maxlength="1000" placeholder="Tulis alasan jika bukti tidak valid"></textarea></form></section>` : ''}
+            ${isVerified && !r.tindak_lanjut ? `<section class="late-detail-section"><h3>Tindak lanjut</h3><p class="late-follow-hint">Konfirmasi dahulu dengan pelanggan melalui WhatsApp. Jika kuota penuh, tawarkan tanggal atau menu lain, atau bantu pelanggan membuat pesanan baru.</p><form id="late-follow-form" class="late-form">
+                <label>Tindak lanjut<select name="tindak_lanjut" id="late-follow-type"><option value="lanjutkan_pesanan">Lanjutkan pesanan lama menjadi diproses</option><option value="pesanan_baru">Pesanan baru (checkout normal)</option><option value="refund">Refund</option></select></label>
+                <label class="late-follow-new" hidden>ID pesanan baru<input type="number" name="tindak_lanjut_order_id" min="1"></label>
+                <label class="late-follow-refund" hidden>Nominal refund<input type="number" name="refund_nominal" min="0" step="1"></label>
+                <label class="late-follow-refund" hidden>Tanggal refund<input type="datetime-local" name="refund_tanggal"></label>
+                <label class="late-follow-refund" hidden>Referensi refund<input type="text" name="refund_referensi" maxlength="100"></label>
+                <label class="late-follow-note">Catatan hasil konfirmasi<textarea name="tindak_lanjut_catatan" rows="3" maxlength="1000" placeholder="Contoh: pelanggan menyetujui pesanan dilanjutkan melalui WhatsApp"></textarea></label>
+                <label class="late-confirm-check"><input type="checkbox" name="konfirmasi_pelanggan" value="1" required><span>Pelanggan sudah mengonfirmasi tindak lanjut melalui WhatsApp</span></label>
                 <button class="button primary" type="submit">Simpan tindak lanjut</button>
-            </form>` : ''}
+            </form></section>` : ''}
             ${r.tindak_lanjut ? `<p><b>Tindak lanjut:</b> ${esc(r.tindak_lanjut)} · ${esc(r.tindak_lanjut_catatan || '')}</p>` : ''}`;
             logBox.innerHTML = (d.logs || []).length
-                ? '<h3>Riwayat tindakan</h3><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Dari</th><th>Ke</th><th>Alasan</th><th>Oleh</th></tr></thead><tbody>'
-                    + d.logs.map(l => `<tr><td>${fmt(l.created_at)}</td><td>${esc(l.aksi)}</td><td>${esc(l.status_sebelum || '-')}</td><td>${esc(l.status_sesudah || '-')}</td><td>${esc(l.alasan || '-')}</td><td>${esc(l.actor || '-')}</td></tr>`).join('') + '</tbody></table>'
+                ? '<section class="late-detail-section late-history"><h3>Riwayat tindakan</h3><div class="late-history-table"><table><thead><tr><th>Waktu</th><th>Aksi</th><th>Dari</th><th>Ke</th><th>Alasan</th><th>Oleh</th></tr></thead><tbody>'
+                    + d.logs.map(l => `<tr><td>${fmt(l.created_at)}</td><td>${esc(l.aksi)}</td><td>${esc(l.status_sebelum || '-')}</td><td>${esc(l.status_sesudah || '-')}</td><td>${esc(l.alasan || '-')}</td><td>${esc(l.actor || '-')}</td></tr>`).join('') + '</tbody></table></div></section>'
                 : '';
             panel.hidden = false;
             $$('[data-late-verify]').forEach(b => b.onclick = async () => {
                 const status = b.dataset.lateVerify;
-                const note = $('#late-verify-note textarea')?.value || '';
+                const note = $('#late-verify-comment')?.value || '';
                 if (status === 'tidak_valid' && !note.trim()) { toast('Alasan penolakan wajib diisi'); return; }
                 const ok = await confirmDialog(status === 'terverifikasi' ? 'Verifikasi pembayaran' : 'Tolak pembayaran',
-                    'Catatan rekonsiliasi akan diperbarui. Status pesanan lama tidak akan diubah.', 'Ya, lanjutkan');
+                    'Pembayaran akan diverifikasi. Status pesanan tetap sampai tindak lanjut dicatat.', 'Ya, lanjutkan');
                 if (!ok) return;
                 try {
                     await post({ action: 'verify', id, status, hasil_catatan: note });
@@ -115,7 +150,26 @@
                 } catch (e) { toast(e.message); }
             });
             const follow = $('#late-follow-form');
-            if (follow) follow.onsubmit = async e => {
+            if (follow) {
+                const typeSelect = $('#late-follow-type');
+                const updateFollowFields = () => {
+                    const type = typeSelect.value;
+                    $$('.late-follow-new', follow).forEach(field => {
+                        field.hidden = type !== 'pesanan_baru';
+                        const input = $('input', field);
+                        input.required = type === 'pesanan_baru';
+                        if (type !== 'pesanan_baru') input.value = '';
+                    });
+                    $$('.late-follow-refund', follow).forEach(field => {
+                        field.hidden = type !== 'refund';
+                        const input = $('input', field);
+                        input.required = type === 'refund' && input.name !== 'refund_referensi';
+                        if (type !== 'refund') input.value = '';
+                    });
+                };
+                typeSelect.onchange = updateFollowFields;
+                updateFollowFields();
+                follow.onsubmit = async e => {
                 e.preventDefault();
                 const data = Object.fromEntries(new FormData(follow));
                 data.action = 'follow_up'; data.id = id;
@@ -125,36 +179,45 @@
                     await openDetail(id); await loadList();
                 } catch (err) { toast(err.message); }
             };
+            }
         } catch (e) { box.innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
     }
 
     function init() {
         if (!$('#late-record-form')) return;
-        $('#late-order-search').value = new URLSearchParams(location.search).get('q') || '';
-        loadEligible();
         loadList();
-        let searchTimer;
-        $('#late-order-search').oninput = () => {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(loadEligible, 250);
+        $('#late-order-search-button').onclick = loadEligible;
+        $('#late-order-code').onkeydown = e => {
+            if (e.key === 'Enter') { e.preventDefault(); loadEligible(); }
         };
-        $('#late-order-search').onkeydown = event => {
-            if (event.key === 'Enter') { event.preventDefault(); clearTimeout(searchTimer); loadEligible(); }
+        $('#late-order-code').oninput = () => {
+            const select = $('#late-order');
+            select.disabled = true;
+            select.innerHTML = '<option value="">Cari ulang setelah mengubah kode</option>';
+            $('#late-order-search-result').textContent = '';
         };
-        $('#late-refresh').onclick = () => { loadList(); loadEligible(); };
+        $('#late-refresh').onclick = () => { loadList(); if ($('#late-order-code').value.trim().length >= 3) loadEligible(); };
         $('#late-close').onclick = () => { $('#late-detail-panel').hidden = true; };
         $('#late-record-form').onsubmit = async e => {
             e.preventDefault();
             const form = e.currentTarget;
             const data = new FormData(form);
-            data.append('action', 'record');
             const error = $('#late-record-error');
             error.textContent = '';
+            if (!$('#late-order').value) {
+                error.textContent = 'Cari dan pilih kode pesanan yang cocok terlebih dahulu.';
+                return;
+            }
+            data.append('action', 'record');
             try {
                 await post(data, true);
                 form.reset();
                 toast('Bukti terlambat tercatat');
-                await loadEligible(); await loadList();
+                $('#late-order-code').value = '';
+                $('#late-order').disabled = true;
+                $('#late-order').innerHTML = '<option value="">Cari kode pesanan terlebih dahulu</option>';
+                $('#late-order-search-result').textContent = '';
+                await loadList();
             } catch (err) { error.textContent = err.message; }
         };
     }

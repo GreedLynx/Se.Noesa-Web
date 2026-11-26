@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../../../app/bootstrap.php';
 require_once __DIR__ . '/../../../app/menu-notifications.php';
+require_once __DIR__ . '/../../../app/order-expiration.php';
 if (me() && me()['role'] !== 'pelanggan') json(['error' => 'Akses ditolak'], 403);
 $customer = require_role('pelanggan');
 require_once __DIR__ . '/../../../app/daily-quota.php';
@@ -351,9 +352,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json(['error' => $e->getMessage()], 422);
     } catch (Throwable $e) {
         if (db()->inTransaction()) db()->rollBack();
-        error_log('[Se.Noesa order] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+        error_log('[se.noesa order] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         json(['error' => 'Pesanan belum dapat disimpan. Coba beberapa saat lagi.'], 500);
     }
+}
+
+if (!isset($_GET['addresses'])) {
+    expire_unpaid_orders_for_user((int) $customer['id']);
 }
 
 if (isset($_GET['addresses'])) {

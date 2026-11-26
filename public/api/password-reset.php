@@ -58,7 +58,7 @@ if ($action === 'request') {
     if ($db->inTransaction()) {
       $db->rollBack();
     }
-    error_log('[Se.Noesa password reset] OTP request database operation failed (' . get_class($error) . ').');
+    error_log('[se.noesa password reset] OTP request database operation failed (' . get_class($error) . ').');
     json(['error' => 'Permintaan reset belum dapat diproses. Silakan coba kembali nanti.'], 500);
   }
 
@@ -66,7 +66,7 @@ if ($action === 'request') {
     try {
       send_password_reset_otp($user['email'], $otp);
     } catch (Throwable $error) {
-      error_log('[Se.Noesa password reset] OTP email delivery failed (' . get_class($error) . ').');
+      error_log('[se.noesa password reset] OTP email delivery failed (' . get_class($error) . ').');
       try {
         // UPDATE membatalkan OTP yang tidak terkirim agar kode itu tidak dapat digunakan.
         q(
@@ -74,7 +74,7 @@ if ($action === 'request') {
           [$otpId, $otpHash]
         );
       } catch (Throwable $cleanupError) {
-        error_log('[Se.Noesa password reset] Could not invalidate undelivered OTP (' . get_class($cleanupError) . ').');
+        error_log('[se.noesa password reset] Could not invalidate undelivered OTP (' . get_class($cleanupError) . ').');
       }
     }
   }
@@ -156,7 +156,7 @@ if ($action === 'reset') {
     if ($db->inTransaction()) {
       $db->rollBack();
     }
-    error_log('[Se.Noesa password reset] Password update failed (' . get_class($error) . ').');
+    error_log('[se.noesa password reset] Password update failed (' . get_class($error) . ').');
     json(['error' => 'Password belum dapat diperbarui. Silakan coba kembali.'], 500);
   }
 }

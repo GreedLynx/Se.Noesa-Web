@@ -1,6 +1,6 @@
-# Ikon Se.Noesa
+# Ikon se.noesa
 
-Dokumen editable: [Se.Noesa-Ikon-Semua-Role.figcraft](../../Se.Noesa-Ikon-Semua-Role.figcraft). Halaman **Komponen v2** memuat 46 komponen sumber yang unik dalam frame `Component`; halaman **Arsip awal** menyimpan versi pembanding. Halaman **Preview role** dan **Uji ukuran** memakai instance komponen sumber, termasuk override putih pada latar hijau.
+Dokumen editable: [se.noesa-Ikon-Semua-Role.figcraft](../../se.noesa-Ikon-Semua-Role.figcraft). Halaman **Komponen v2** memuat 46 komponen sumber yang unik dalam frame `Component`; halaman **Arsip awal** menyimpan versi pembanding. Halaman **Preview role** dan **Uji ukuran** memakai instance komponen sumber, termasuk override putih pada latar hijau.
 
 ## Preview
 

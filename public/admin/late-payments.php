@@ -15,16 +15,24 @@ admin_head('Pembayaran Terlambat', 'late-payments');
 </section>
 
 <section class="panel late-record-panel">
-    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">LANGKAH 1 DARI 3</span><h2>Catat bukti terlambat</h2><p>Cari pesanan yang dibatalkan, lalu lengkapi data transaksi yang dilaporkan pelanggan.</p></div><span class="tag soft">Admin</span></div>
+    <div class="panel-heading late-panel-heading"><div><span class="late-section-kicker">LANGKAH 1 DARI 3</span><h2>Catat pembayaran terlambat</h2><p>Pilih pesanan yang dibatalkan otomatis atau ditolak Admin, lalu catat bukti transaksi pelanggan.</p></div><span class="tag soft">Admin</span></div>
     <form id="late-record-form" class="late-form" enctype="multipart/form-data">
         <div class="late-form-grid">
-            <label class="late-field-wide" for="late-order-search">Cari nama atau kode pesanan
-                <input id="late-order-search" type="search" placeholder="Ketik nama atau kode pesanan" autocomplete="off">
-            </label>
-            <label class="late-field-wide">Pesanan dibatalkan
-                <select id="late-order" name="id" required></select>
-                <small>Hanya pesanan dibatalkan yang belum memiliki catatan rekonsiliasi. Pembayaran tetap perlu diverifikasi Admin.</small>
-            </label>
+            <div class="late-field-wide late-order-search">
+                <label for="late-order-code">Cari kode pesanan dari pelanggan</label>
+                <div class="late-order-search-controls">
+                    <input id="late-order-code" type="search" maxlength="50" autocomplete="off" placeholder="Contoh: SN-261124-DA3141" required>
+                    <button class="button secondary" id="late-order-search-button" type="button">Cari pesanan</button>
+                </div>
+                <small>Masukkan minimal 3 karakter kode. Hasil menampilkan pesanan dibatalkan/ditolak yang belum direkonsiliasi; sebagian kode juga bisa dicari.</small>
+                <p id="late-order-search-result" class="muted" aria-live="polite"></p>
+                <label for="late-order">Hasil pencarian</label>
+                <select id="late-order" name="id" required disabled><option value="">Cari kode pesanan terlebih dahulu</option></select>
+            </div>
+            <div class="late-field-wide late-subsection-heading">
+                <b>Rincian pembayaran</b>
+                <span>Isi data sesuai bukti transfer yang diberikan pelanggan.</span>
+            </div>
             <label>Nominal dilaporkan
                 <input type="number" name="nominal_dilaporkan" min="0" step="1" placeholder="Contoh: 150000" required>
             </label>
@@ -42,7 +50,7 @@ admin_head('Pembayaran Terlambat', 'late-payments');
                 <textarea name="catatan_admin" maxlength="1000" rows="3" placeholder="Contoh: Pelanggan menghubungi melalui WhatsApp pada 18 Nov."></textarea>
             </label>
         </div>
-        <div class="late-form-footer"><p>Pesanan lama tetap dibatalkan. Catatan ini tidak mengubah stok atau kuota.</p><button class="button primary" type="submit">Simpan untuk diverifikasi <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></button></div>
+        <div class="late-form-footer"><p>Jika pembayaran valid, lanjutkan pesanan hanya setelah pelanggan setuju dan kuota tersedia. Jika penuh, tindak lanjuti via WhatsApp.</p><button class="button primary" type="submit">Simpan untuk diverifikasi <span class="ui-icon icon-panah-kanan" aria-hidden="true"></span></button></div>
         <p class="form-error" id="late-record-error" role="alert"></p>
     </form>
 </section>

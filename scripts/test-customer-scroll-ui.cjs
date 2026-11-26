@@ -15,7 +15,7 @@ try {
     for (const [width, page, reduced] of [[320,'catalog',false],[390,'catalog',false],[1280,'catalog',false],[390,'history',false],[1280,'notifications',false],[390,'catalog',true]]) {
         const fixture = `<!doctype html><style>${css}</style><body data-page="${page}"><div class="customer-shell">
         <aside class="customer-rail" id="customer-sidebar"><button class="customer-sidebar-close">Close</button><a href="#menu">Menu</a></aside><button class="customer-sidebar-backdrop" hidden>Close menu</button>
-        <main class="customer-main"><header class="customer-top"><button class="customer-sidebar-toggle" aria-expanded="false">Menu</button><div>Se.Noesa</div></header><div class="customer-content"><div style="height:150px"></div><label class="customer-search"><input id="catalog-search" value="ayam"></label><div style="height:2200px"></div></div></main>
+        <main class="customer-main"><header class="customer-top"><button class="customer-sidebar-toggle" aria-expanded="false">Menu</button><div>se.noesa</div></header><div class="customer-content"><div style="height:150px"></div><label class="customer-search"><input id="catalog-search" value="ayam"></label><div style="height:2200px"></div></div></main>
         <button class="catalog-search-shortcut" hidden aria-label="Cari menu">Search</button><div class="cart-bar" hidden>Cart</div></div><script>${searchInit}${sidebarInit}
         (async()=>{try {
             const check=(v,m)=>{if(!v)throw Error(m)};

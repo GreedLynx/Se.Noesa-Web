@@ -12,7 +12,7 @@ head('Forgot Password', 'forgot-password', true); ?>
 <section class="sheet reset-sheet">
     <a class="back rise" href="login.php">← Back to Login</a>
     <h2 class="title rise">Forgot Password</h2>
-    <p class="reset-note rise">Masukkan email akun Se.Noesa Anda. Jika email terdaftar, kode OTP akan dikirim.</p>
+    <p class="reset-note rise">Masukkan email akun se.noesa Anda. Jika email terdaftar, kode OTP akan dikirim.</p>
     <form id="forgot-password-form" class="rise" autocomplete="on">
         <label class="field"><svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="6" width="18" height="13" rx="2" />

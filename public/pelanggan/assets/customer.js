@@ -90,7 +90,7 @@ function wireLogout() {
     $$('[data-logout]').forEach(b => b.onclick = async () => {
         const confirmed = await confirmDialog(
             'Keluar Akun',
-            'Apakah Anda yakin ingin keluar dari akun pelanggan Se.Noesa?',
+            'Apakah Anda yakin ingin keluar dari akun pelanggan se.noesa?',
             'Ya, Keluar',
             'primary'
         );
@@ -661,13 +661,13 @@ async function openHistoryDetail(id) {
     const whatsappDigits = adminWhatsapp.replace(/\D/g, '');
     const contactLine = adminWhatsapp && whatsappDigits
         ? `<a class="admin-wa-text" href="https://wa.me/${esc(whatsappDigits)}" target="_blank" rel="noopener">Hubungi Admin via WhatsApp <span>${esc(adminWhatsapp)}</span></a>`
-        : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi Se.Noesa.</p>';
+        : '<p class="admin-wa-text">Nomor kontak Admin belum tersedia. Silakan hubungi Admin melalui kanal resmi se.noesa.</p>';
     const socialChannels = [
         ['Instagram', socialUrl(window.snoesaContact && window.snoesaContact.instagram), '◎'],
         ['TikTok', socialUrl(window.snoesaContact && window.snoesaContact.tiktok), '<span class="ui-icon icon-musik-sosial" aria-hidden="true"></span>'],
     ].filter(([, url]) => url);
     const socialLine = socialChannels.length
-        ? `<div class="admin-socials"><small>Ikuti info Se.Noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} Se.Noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
+        ? `<div class="admin-socials"><small>Ikuti info se.noesa</small><div>${socialChannels.map(([name, url, icon]) => `<a href="${esc(url)}" target="_blank" rel="noopener" aria-label="Buka ${name} se.noesa"><i aria-hidden="true">${icon}</i>${name}</a>`).join('')}</div></div>`
         : '';
     const expiredAdminContact = `
         <div class="payment-expired-notice">

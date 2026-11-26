@@ -536,4 +536,4 @@ pelanggan menolak, bagian Refund menunjukkan kode pesanan dan kanal kontak Admin
 yang sudah dikonfigurasi; tampilan ini tidak mengubah respons API atau status
 pembayaran.
 
-Background pola Pelanggan memakai aset statis `public/assets/img/Pattern_Se.Noesa_Background.png`; perubahan ini tidak mengubah kontrak endpoint API.
+Background pola Pelanggan memakai aset statis `public/assets/img/Pattern_se.noesa_Background.png`; perubahan ini tidak mengubah kontrak endpoint API.

@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (DomainException $e) {
         json(['error' => $e->getMessage()], 422);
     } catch (Throwable $e) {
-        error_log('[Se.Noesa late payment] ' . $e->getMessage());
+        error_log('[se.noesa late payment] ' . $e->getMessage());
         json(['error' => 'Rekonsiliasi gagal disimpan. Coba lagi.'], 500);
     }
 }
@@ -46,14 +46,35 @@ $search = $_GET['q'] ?? '';
 if (!is_string($search)) json(['error' => 'Pencarian tidak valid'], 422);
 $search = trim($search);
 if (!empty($_GET['eligible'])) {
-    if (!late_payment_table_available()) json(['items' => []]);
-    json(['items' => q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
-            p.created_at, p.tgl_kirim, p.status
+    if (!late_payment_table_available()) json(['items' => [], 'feature_available' => false]);
+    if (strlen($search) < 3) json(['items' => [], 'feature_available' => true, 'search_required' => true]);
+    if (strlen($search) > 50) json(['error' => 'Kode pesanan maksimal 50 karakter'], 422);
+    $matches = q("SELECT p.id, p.kode, p.nama_pemesan, p.telepon_penerima, p.total,
+            p.created_at, p.tgl_kirim, p.status, r.id rekonsiliasi_id
         FROM pesanan p
-        WHERE p.status = 'dibatalkan'
-          AND NOT EXISTS (SELECT 1 FROM pembayaran_terlambat r WHERE r.pesanan_id = p.id)
-          AND (p.nama_pemesan ILIKE ? OR p.kode ILIKE ?)
-        ORDER BY p.created_at DESC LIMIT 100", ['%' . $search . '%', '%' . $search . '%'])->fetchAll()]);
+        LEFT JOIN pembayaran_terlambat r ON r.pesanan_id = p.id
+        WHERE strpos(UPPER(p.kode), UPPER(?)) > 0
+        ORDER BY p.created_at DESC LIMIT 50", [$search])->fetchAll();
+    $eligible = [];
+    $alreadyRecorded = 0;
+    $otherStatuses = [];
+    foreach ($matches as $match) {
+        if ($match['rekonsiliasi_id'] !== null) {
+            $alreadyRecorded++;
+        } elseif (in_array($match['status'], ['dibatalkan', 'ditolak'], true)) {
+            unset($match['rekonsiliasi_id']);
+            $eligible[] = $match;
+        } else {
+            $otherStatuses[$match['status']] = ($otherStatuses[$match['status']] ?? 0) + 1;
+        }
+    }
+    json([
+        'items' => $eligible,
+        'matched_count' => count($matches),
+        'already_recorded' => $alreadyRecorded,
+        'other_statuses' => $otherStatuses,
+        'feature_available' => true,
+    ]);
 }
 
 $id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
@@ -63,4 +84,5 @@ if ($id !== null && $id > 0) {
     $row['bukti_url'] = 'api/proof.php?late=' . (int) $row['id'];
     json(['item' => $row, 'logs' => late_payment_logs($id)]);
 }
-json(['items' => late_payment_list($search)]);
+$available = late_payment_table_available();
+json(['items' => $available ? late_payment_list() : [], 'feature_available' => $available]);

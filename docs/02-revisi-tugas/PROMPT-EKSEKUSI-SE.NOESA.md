@@ -1,4 +1,4 @@
-# Se.Noesa — Master Prompt Eksekusi Semua Task dengan Checkpoint Git
+# se.noesa — Master Prompt Eksekusi Semua Task dengan Checkpoint Git
 
 > Prompt orkestrasi untuk coding agent. Tujuan: mengerjakan seluruh task yang memungkinkan secara berurutan, mencatat progres secara persisten di Markdown, dan membuat checkpoint Git agar perubahan dapat dipulihkan jika muncul bug/regresi.
 
@@ -7,16 +7,16 @@
 Sebelum melakukan apa pun, baca:
 - `AGENTS.md`
 - `PRD.md` dan `DESIGN.md` jika tersedia
-- `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`
+- `docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md`
 - `docs/03-audit/AUDIT-REVISI-TAHAP-2.md` (termasuk koreksi audit jika sudah dibuat)
-- `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md`
+- `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md`
 - Dokumen keputusan bisnis yang sudah disetujui, jika tersedia
 
 Jangan mengarang isi dokumen yang tidak ditemukan. Catat dokumen yang hilang dalam laporan.
 
 ## 2. Tujuan eksekusi
 
-Kerjakan semua task dalam `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md` secara bertahap dan berurutan berdasarkan dependency serta prioritasnya.
+Kerjakan semua task dalam `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md` secara bertahap dan berurutan berdasarkan dependency serta prioritasnya.
 
 **Tidak perlu menunggu instruksi user untuk berpindah ke task berikutnya** jika:
 - task sebelumnya sudah selesai dan diverifikasi;
@@ -31,7 +31,7 @@ Jangan berhenti setelah satu task selesai kecuali ada blocker yang benar-benar m
 
 Buat dan perbarui file berikut di root repository:
 
-### `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`
+### `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`
 
 File ini adalah sumber kebenaran progres lintas sesi. Update file:
 - sebelum mulai task;
@@ -44,7 +44,7 @@ File ini adalah sumber kebenaran progres lintas sesi. Update file:
 Format minimum:
 
 ```md
-# Progress Implementasi Se.Noesa
+# Progress Implementasi se.noesa
 
 - Last updated: YYYY-MM-DD HH:mm WIB
 - Current branch:
@@ -88,9 +88,9 @@ Format minimum:
 Jangan menghapus riwayat lama. Tambahkan entri baru dan perbarui status secara konsisten.
 
 Buat juga:
-- `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` untuk 14 keputusan yang perlu persetujuan pemilik/mitra.
-- `docs/04-implementasi/CHANGELOG-IMPLEMENTASI-SE.NOESA.md` untuk ringkasan perubahan per task.
-- `docs/04-implementasi/TEST-REPORT-SE.NOESA.md` untuk hasil test terperinci.
+- `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md` untuk 14 keputusan yang perlu persetujuan pemilik/mitra.
+- `docs/04-implementasi/CHANGELOG-IMPLEMENTASI-se.noesa.md` untuk ringkasan perubahan per task.
+- `docs/04-implementasi/TEST-REPORT-se.noesa.md` untuk hasil test terperinci.
 
 Jika file tersebut sudah ada, baca dan lanjutkan; jangan menimpa riwayat yang sudah ada.
 
@@ -119,8 +119,8 @@ Untuk setiap task yang menghasilkan perubahan kode/dokumen:
 7. Commit task dengan pesan jelas, misalnya:
    - `task(TASK-02): verify owner order synchronization`
    - `task(TASK-06): harden product image upload`
-   - `docs: update Se.Noesa implementation progress`
-8. Catat hash commit, hasil test, dan file terkait di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md` serta `docs/04-implementasi/CHANGELOG-IMPLEMENTASI-SE.NOESA.md`.
+   - `docs: update se.noesa implementation progress`
+8. Catat hash commit, hasil test, dan file terkait di `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md` serta `docs/04-implementasi/CHANGELOG-IMPLEMENTASI-se.noesa.md`.
 9. Buat commit dokumentasi progres setelah commit task, atau sertakan update progress dalam commit task yang sama. Pastikan setiap checkpoint tetap memiliki catatan status dan hash commit.
 10. Lanjutkan ke task berikutnya hanya setelah checkpoint berhasil dibuat.
 
@@ -132,7 +132,7 @@ Jangan langsung menjalankan `git reset --hard`, `git clean`, atau menghapus peru
 
 Lakukan:
 1. Hentikan task aktif.
-2. Simpan log test dan gejala ke `docs/04-implementasi/TEST-REPORT-SE.NOESA.md` dan `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`.
+2. Simpan log test dan gejala ke `docs/04-implementasi/TEST-REPORT-se.noesa.md` dan `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`.
 3. Identifikasi apakah bug berasal dari perubahan task aktif atau sudah ada sebelumnya.
 4. Jika perubahan task aktif belum di-commit: perbaiki dalam scope task yang sama. Jika tidak dapat diperbaiki dengan aman, batalkan hanya perubahan task aktif secara selektif dan verifikasi diff; jangan sentuh perubahan user atau task sebelumnya.
 5. Jika bug ditemukan setelah commit: jangan rewrite history. Gunakan `git revert <commit-hash>` untuk membatalkan checkpoint yang terbukti menyebabkan regresi, setelah memastikan commit tersebut hanya berisi perubahan task terkait. Jalankan test lagi dan buat commit revert.
@@ -161,7 +161,7 @@ Lakukan:
 ## 6. Keputusan bisnis
 
 Ada 14 keputusan bisnis yang disebutkan pada task board. Agent wajib:
-1. Menyalin pertanyaan keputusan ke `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md`.
+1. Menyalin pertanyaan keputusan ke `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md`.
 2. Menandai setiap keputusan `PENDING`, `APPROVED`, atau `REJECTED`.
 3. Tidak memilih jawaban untuk pemilik/mitra.
 4. Menandai task terkait `BLOCKED` jika keputusan tersebut memengaruhi perilaku bisnis.
@@ -187,7 +187,7 @@ Lakukan loop berikut sampai seluruh task yang dapat dikerjakan selesai atau semu
 11. Lanjutkan ke task eligible berikutnya.
 
 ### Prioritas
-Ikuti urutan dependency dalam `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md`, dengan prioritas:
+Ikuti urutan dependency dalam `docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md`, dengan prioritas:
 1. Rekonsiliasi audit.
 2. Keputusan bisnis (dokumentasikan, tunggu persetujuan).
 3. P0 integritas data/transaksi.
@@ -223,12 +223,12 @@ Jika hanya sebagian task terblokir, lanjutkan task independen yang aman.
 ## 10. Laporan akhir
 
 Saat tidak ada lagi task eligible:
-1. Perbarui `docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md`.
+1. Perbarui `docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md`.
 2. Buat ringkasan task DONE/PARTIAL/BLOCKED/FAILED/TODO.
 3. Cantumkan seluruh checkpoint commit dan cara revert tiap checkpoint.
 4. Cantumkan keputusan bisnis yang masih menunggu persetujuan.
 5. Cantumkan test yang lulus, gagal, dan belum dijalankan.
-6. Buat/isi `docs/06-rilis/RELEASE-READINESS-SE.NOESA.md` dengan keputusan GO atau NO-GO.
+6. Buat/isi `docs/06-rilis/RELEASE-READINESS-se.noesa.md` dengan keputusan GO atau NO-GO.
 7. Jangan push, deploy, atau mengubah production.
 8. Berikan laporan akhir dan berhenti.
 
@@ -239,11 +239,11 @@ Saat tidak ada lagi task eligible:
 Salin seluruh instruksi dokumen ini kepada coding agent, lalu gunakan instruksi mulai berikut:
 
 ```text
-Mulai eksekusi seluruh task pada docs/02-revisi-tugas/TASKS-IMPLEMENTASI-SE.NOESA.md sesuai MASTER PROMPT di docs/02-revisi-tugas/PROMPT-EKSEKUSI-SE.NOESA.md.
+Mulai eksekusi seluruh task pada docs/02-revisi-tugas/TASKS-IMPLEMENTASI-se.noesa.md sesuai MASTER PROMPT di docs/02-revisi-tugas/PROMPT-EKSEKUSI-se.noesa.md.
 
 Jalankan task secara otomatis dan berurutan berdasarkan dependency. Jangan berhenti setelah satu task selesai; lanjutkan ke task berikutnya yang eligible.
 
-Simpan seluruh progres secara persisten di docs/04-implementasi/PROGRESS-IMPLEMENTASI-SE.NOESA.md, catat perubahan di docs/04-implementasi/CHANGELOG-IMPLEMENTASI-SE.NOESA.md, dan catat hasil test di docs/04-implementasi/TEST-REPORT-SE.NOESA.md.
+Simpan seluruh progres secara persisten di docs/04-implementasi/PROGRESS-IMPLEMENTASI-se.noesa.md, catat perubahan di docs/04-implementasi/CHANGELOG-IMPLEMENTASI-se.noesa.md, dan catat hasil test di docs/04-implementasi/TEST-REPORT-se.noesa.md.
 
 Buat satu Git checkpoint commit untuk setiap task yang berhasil dan sudah diuji. Jangan push ke remote. Jika muncul regresi setelah commit, gunakan git revert pada commit task yang menyebabkan regresi, bukan reset --hard. Jangan pernah menganggap Git rollback membatalkan migration database atau file upload.
 

@@ -1,8 +1,8 @@
-# SIMPO-Se.Noesa
+# SIMPO-se.noesa
 
-Sistem Informasi Manajemen Pre-Order dan Antrean Produksi UMKM Se.Noesa.
+Sistem Informasi Manajemen Pre-Order dan Antrean Produksi UMKM se.noesa.
 
-Aplikasi web manajemen operasional dan pemesanan *pre-order* (PO) makanan untuk UMKM Se.Noesa. Proyek ini dikembangkan sebagai luaran Project-Based Learning (PBL) Semester 3 D-IV Teknik Informatika, Politeknik Negeri Malang.
+Aplikasi web manajemen operasional dan pemesanan *pre-order* (PO) makanan untuk UMKM se.noesa. Proyek ini dikembangkan sebagai luaran Project-Based Learning (PBL) Semester 3 D-IV Teknik Informatika, Politeknik Negeri Malang.
 
 ---
 
@@ -189,12 +189,12 @@ trigger setiap hari, Repeat task every **1 minute**, duration **Indefinitely**.
 Action **Start a program**:
 
 - Program: `C:\laragon\bin\php\php-8.1.10-Win32-vs16-x64\php.exe`
-- Arguments: `"E:\Tugas Kuliah\Semester 3\Coding_PBL\Se.Noesa-Web\scripts\expire-unpaid-orders.php" --apply`
-- Start in: `E:\Tugas Kuliah\Semester 3\Coding_PBL\Se.Noesa-Web`
+- Arguments: `"E:\Tugas Kuliah\Semester 3\Coding_PBL\se.noesa-Web\scripts\expire-unpaid-orders.php" --apply`
+- Start in: `E:\Tugas Kuliah\Semester 3\Coding_PBL\se.noesa-Web`
 
 Aktifkan task history dan pilih tidak memulai instance kedua bila task masih
 berjalan. Untuk menyimpan stdout/stderr, gunakan action PowerShell tersembunyi:
-`-NoProfile -WindowStyle Hidden -Command "& 'C:\path\php.exe' 'E:\path\Se.Noesa-Web\scripts\expire-unpaid-orders.php' --apply >> 'E:\senoesa-logs\expire-unpaid.log' 2>&1; exit $LASTEXITCODE"`.
+`-NoProfile -WindowStyle Hidden -Command "& 'C:\path\php.exe' 'E:\path\se.noesa-Web\scripts\expire-unpaid-orders.php' --apply >> 'E:\senoesa-logs\expire-unpaid.log' 2>&1; exit $LASTEXITCODE"`.
 Buat folder log terlebih dahulu, sesuaikan path, dan pantau exit code/history.
 
 Setelah aktivasi, periksa task/cron benar-benar berjalan tanpa kunjungan web,

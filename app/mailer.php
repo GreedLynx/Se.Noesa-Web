@@ -54,9 +54,9 @@ function send_password_reset_otp(string $recipient, string $otp): void
         $mailer->setFrom($mailConfig['from_email'], $mailConfig['from_name']);
         $mailer->addAddress($recipient);
         $mailer->isHTML(true);
-        $mailer->Subject = 'Reset Password Akun Se.Noesa';
+        $mailer->Subject = 'Reset Password Akun se.noesa';
         $mailer->Body = password_reset_otp_email_html($otp);
-        $mailer->AltBody = "Se.Noesa Catering\n\nKami menerima permintaan reset password untuk akun Anda.\n"
+        $mailer->AltBody = "se.noesa Catering\n\nKami menerima permintaan reset password untuk akun Anda.\n"
             . "Kode OTP Anda: {$otp}\nKode berlaku selama 10 menit dan hanya dapat digunakan sekali.\n\n"
             . "Jika Anda tidak meminta reset password, abaikan email ini.";
         $mailer->send();
@@ -76,19 +76,19 @@ function password_reset_otp_email_html(string $otp): string
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Reset Password Se.Noesa</title>
+  <title>Reset Password se.noesa</title>
 </head>
 <body style="margin:0;padding:24px 12px;background:#eef2ec;color:#243128;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;">
     <tr>
       <td style="padding:30px 28px;background:#7a8f6f;color:#ffffff;text-align:center;">
-        <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;">Se.Noesa Catering</p>
+        <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;">se.noesa Catering</p>
         <h1 style="margin:12px 0 0;font-size:27px;line-height:1.25;">Reset Password Akun</h1>
       </td>
     </tr>
     <tr>
       <td style="padding:30px 28px;font-size:16px;line-height:1.65;">
-        <p style="margin:0 0 16px;">Kami menerima permintaan untuk mengatur ulang password akun Se.Noesa Anda.</p>
+        <p style="margin:0 0 16px;">Kami menerima permintaan untuk mengatur ulang password akun se.noesa Anda.</p>
         <p style="margin:0 0 24px;">Masukkan kode berikut pada halaman Forgot Password untuk membuat password baru. Kode ini hanya dapat digunakan sekali dan berlaku selama <strong>10 menit</strong>.</p>
         <p style="margin:0 0 26px;text-align:center;">
           <span style="display:inline-block;padding:14px 26px;border:2px solid #7a8f6f;border-radius:14px;background:#f6f8f4;color:#2d3a33;font-size:30px;font-weight:bold;letter-spacing:8px;">{$safeOtp}</span>
@@ -98,7 +98,7 @@ function password_reset_otp_email_html(string $otp): string
       </td>
     </tr>
     <tr>
-      <td style="padding:18px 28px;background:#f6f8f4;text-align:center;color:#718071;font-size:12px;">Se.Noesa Catering · Email otomatis, mohon tidak membalas.</td>
+      <td style="padding:18px 28px;background:#f6f8f4;text-align:center;color:#718071;font-size:12px;">se.noesa Catering · Email otomatis, mohon tidak membalas.</td>
     </tr>
   </table>
 </body>

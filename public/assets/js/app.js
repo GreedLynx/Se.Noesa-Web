@@ -13,6 +13,42 @@ const productImage = (value) => {
 };
 const page = document.body.dataset.page;
 const appPrefix = /\/(owner|pelanggan)\//.test(location.pathname) ? "../" : "";
+if (document.body.dataset.role === "owner") {
+    const toggle = $(".owner-menu-toggle");
+    const navigation = $("#owner-navigation");
+    const backdrop = $(".owner-sidebar-backdrop");
+    if (navigation) navigation.inert = window.innerWidth < 900;
+    const closeOwnerMenu = () => {
+        navigation?.classList.remove("open");
+        backdrop?.classList.remove("open");
+        toggle?.setAttribute("aria-expanded", "false");
+        toggle?.setAttribute("aria-label", "Buka menu");
+        document.body.classList.remove("owner-menu-open");
+        if (navigation) navigation.inert = window.innerWidth < 900;
+    };
+    const openOwnerMenu = () => {
+        if (navigation) navigation.inert = false;
+        navigation?.classList.add("open");
+        backdrop?.classList.add("open");
+        toggle?.setAttribute("aria-expanded", "true");
+        toggle?.setAttribute("aria-label", "Tutup menu");
+        document.body.classList.add("owner-menu-open");
+    };
+    toggle?.addEventListener("click", () => {
+        navigation?.classList.contains("open") ? closeOwnerMenu() : openOwnerMenu();
+    });
+    backdrop?.addEventListener("click", closeOwnerMenu);
+    navigation?.querySelectorAll("a:not(.owner-brand)").forEach((link) =>
+        link.addEventListener("click", closeOwnerMenu),
+    );
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeOwnerMenu();
+    });
+    window.addEventListener("resize", () => {
+        if (window.innerWidth >= 900) closeOwnerMenu();
+    });
+}
+
 // Token CSRF dari meta tag layout; hanya dilampirkan pada permintaan mutasi (D1).
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.content || "";
@@ -167,7 +203,7 @@ $$("[data-logout]").forEach(
         (b.onclick = async () => {
             const confirmed = await confirmDialog(
                 "Keluar Akun",
-                "Apakah Anda yakin ingin keluar dari panel owner Se.Noesa?",
+                "Apakah Anda yakin ingin keluar dari panel owner se.noesa?",
                 "Ya, Keluar",
                 "primary"
             );

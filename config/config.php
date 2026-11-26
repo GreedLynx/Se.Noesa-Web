@@ -39,6 +39,6 @@ return [
         'username' => $env['SMTP_USERNAME'] ?? '',
         'password' => $env['SMTP_PASSWORD'] ?? '',
         'from_email' => $env['SMTP_FROM_EMAIL'] ?? '',
-        'from_name' => $env['SMTP_FROM_NAME'] ?? 'Se.Noesa Catering',
+        'from_name' => $env['SMTP_FROM_NAME'] ?? 'se.noesa Catering',
     ],
 ];

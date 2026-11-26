@@ -1,8 +1,8 @@
-# AUDIT REVISI TAHAP 2 — Se.Noesa-Web
+# AUDIT REVISI TAHAP 2 — se.noesa-Web
 
 Tanggal audit: 17 November 2026
 Auditor: AI coding agent (Kilo)
-Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, `docs/02-revisi-tugas/revisi-senoesa.md`, kondisi aktual repository.
+Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md`, `docs/02-revisi-tugas/revisi-senoesa.md`, kondisi aktual repository.
 
 ---
 
@@ -57,7 +57,7 @@ Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, `docs/02-revisi-tugas
 | "Buka" → "Lihat" | **DONE** | `admin.js:323` | Label diperbarui. |
 | "Antrean Prioritas" → "Menunggu Verifikasi" | **DONE** | `admin/dashboard.php:120` | Label diperbarui. |
 | "Status sejak" → "Terakhir diubah" | **DONE** | `admin.js:433,468` | Label diperbarui. |
-| Owner topbar "Se.Noesa" → "Owner" | **DONE** | `owner/partials/layout.php:42` | Teks diperbarui. |
+| Owner topbar "se.noesa" → "Owner" | **DONE** | `owner/partials/layout.php:42` | Teks diperbarui. |
 | "Hari ini, Minggu, Bulan" → "Hari, Minggu, Bulan" | **DONE** | `owner/dashboard.php:27-29` | Label diperbarui. |
 | "Tiket Rata-Rata" → "Rata-rata Pesanan" | **DONE** | `owner/dashboard.php:18` | Label diperbarui. |
 | "Botol" → "Botol minuman" | **DONE** | `app.js:415` | Label diperbarui. |
@@ -113,7 +113,7 @@ Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, `docs/02-revisi-tugas
 | CUS-21 | **PARTIAL** | catalog-policy adalah paragraf tunggal, belum list. |
 | CUS-22 | **NOT IMPLEMENTED** | Panah di 4 menu dashboard belum disimetris. |
 | CUS-23 | **DONE** | Logout popup konfirmasi. |
-| CUS-24 | **NOT IMPLEMENTED** | Brand masih "Se.Noesa", belum "se.noesa" lowercase. |
+| CUS-24 | **NOT IMPLEMENTED** | Brand masih "se.noesa", belum "se.noesa" lowercase. |
 | CUS-25 | **NOT IMPLEMENTED** | Audit warna/logo/background belum dilakukan (design task). |
 | CUS-26 | **DONE** | Batas pembatalan H-2 enforced. |
 | CUS-27 | **DONE** | Foto pesanan siap kirim tampil di customer. |
@@ -284,7 +284,7 @@ Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, `docs/02-revisi-tugas
 
 ## 7. Keputusan Bisnis yang Masih Dibutuhkan
 
-(Dari bagian 10 docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md)
+(Dari bagian 10 docs/02-revisi-tugas/REVISI-LANJUTAN-se.noesa.md)
 
 1. **Refund**: jika pembayaran sudah diverifikasi lalu pelanggan meminta pembatalan, apakah uang dikembalikan manual/sebagian/tidak?
 2. **H-2**: apakah batas pembatalan berarti sampai tepat 48 jam sebelum jam pengiriman, atau berdasarkan pergantian tanggal kalender?
@@ -340,7 +340,7 @@ Basis: `docs/02-revisi-tugas/REVISI-LANJUTAN-SE.NOESA.md`, `docs/02-revisi-tugas
 | DONE | 47 | CUS-01,02,03,05,06,07,08,09,12,13,14,15,16,19,23,26,27,28; ADM-01,02,04,05,07,08,09,11,14,15,16,19,22,24,26; OWN-01,05,06,07,08,09,11,14,16,19; GEN-01,02; IMG-ADM-01,05 |
 | PARTIAL | 22 | IMG-ADM-03,04, IMG-OWN-01; CUS-04,10,11,18,21,29; ADM-03,06,12,13,17,28,29; OWN-02,03,04,18,20,21 |
 | NOT IMPLEMENTED | 20 | IMG-CUS-01,02, IMG-ADM-02; CUS-17,20,22,24,25; ADM-10,18,20,21,23,25,27; OWN-10,12,13,15,17 |
-| NEEDS CONFIRMATION | 14 | Bukan ID revisi — 14 keputusan bisnis #1–#14 (bagian 7), lihat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-SE.NOESA.md` |
+| NEEDS CONFIRMATION | 14 | Bukan ID revisi — 14 keputusan bisnis #1–#14 (bagian 7), lihat `docs/05-keputusan-bisnis/KEPUTUSAN-BISNIS-se.noesa.md` |
 
 **Catatan revisi (TASK-00, 2026-11-17):** Angka ringkasan sebelumnya (38 / 18 / 22) tidak sesuai dengan daftar ID pada bagian 3. Hitung ulang menghasilkan **47 DONE, 22 PARTIAL, 20 NOT IMPLEMENTED** dari total **89 ID revisi unik**. Tidak ada duplikat ID, tidak ada ID yang hilang, dan tidak ada status yang bertentangan antara bagian 3 dan daftar pada bagian ini; yang dikoreksi hanya angka dan placeholder `IMG-CUS-? (none)`. Rincian jejak perubahan ada di `docs/03-audit/AUDIT-REVISI-TAHAP-2-CORRECTION.md`.
 

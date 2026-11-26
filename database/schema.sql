@@ -288,8 +288,9 @@ CREATE TABLE pembayaran_terlambat (
   diverifikasi_oleh INT REFERENCES users(id) ON DELETE RESTRICT,
   diverifikasi_at TIMESTAMPTZ,
   hasil_catatan TEXT,
-  tindak_lanjut VARCHAR(30)
-    CHECK (tindak_lanjut IS NULL OR tindak_lanjut IN ('pesanan_baru', 'refund')),
+  tindak_lanjut VARCHAR(30),
+  CONSTRAINT pembayaran_terlambat_tindak_lanjut_check
+    CHECK (tindak_lanjut IS NULL OR tindak_lanjut IN ('lanjutkan_pesanan', 'pesanan_baru', 'refund')),
   tindak_lanjut_order_id INT REFERENCES pesanan(id) ON DELETE SET NULL,
   tindak_lanjut_catatan TEXT,
   refund_nominal BIGINT CHECK (refund_nominal IS NULL OR refund_nominal >= 0),
@@ -309,6 +310,7 @@ CREATE TABLE pembayaran_terlambat (
     AND (tindak_lanjut IS NULL OR status_rekonsiliasi = 'terverifikasi')
     AND (
       tindak_lanjut IS NULL
+      OR (tindak_lanjut = 'lanjutkan_pesanan' AND tindak_lanjut_order_id = pesanan_id)
       OR (tindak_lanjut = 'pesanan_baru' AND tindak_lanjut_order_id IS NOT NULL)
       OR (tindak_lanjut = 'refund' AND refund_nominal IS NOT NULL AND refund_tanggal IS NOT NULL)
     )
