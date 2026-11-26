@@ -445,8 +445,14 @@ try {
     putenv('SENOESA_TEST_NOW=2030-11-19T00:29:59+07:00');
     cancellation_check($proof()->status === 200, 'Upload usia 59:59 diterima');
     putenv('SENOESA_TEST_NOW=2030-11-19T05:00:00+07:00');
+    $waitingDetail = cancellation_api('pelanggan', 'GET', ['id' => 1])->data;
+    cancellation_check($waitingDetail['can_upload_proof'] === true && $waitingDetail['payment_expires_at'] === null,
+        'Setelah bukti tersimpan, penggantian tetap tersedia dan tenggat tidak dikirim');
     cancellation_check($proof()->status === 200 && cancellation_job('--apply')[0] === 0 &&
         q('SELECT status FROM pesanan WHERE id=1')->fetchColumn() === 'menunggu_validasi', 'Ganti bukti dan antrean validasi tidak terkena job satu jam');
+    q("UPDATE pesanan SET status='diproses' WHERE id=1");
+    cancellation_check(cancellation_api('pelanggan', 'GET', ['id' => 1])->data['can_upload_proof'] === false &&
+        $proof()->status === 409, 'Validasi Admin menutup penggantian bukti');
     foreach (['2030-11-19T00:30:00+07:00', '2030-11-19T00:30:01+07:00'] as $time) {
         $reset();
         putenv('SENOESA_TEST_NOW=' . $time);

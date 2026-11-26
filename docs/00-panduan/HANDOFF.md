@@ -1,5 +1,7 @@
 # Handoff Se.Noesa-Web
 
+Rencana hitung mundur bukti bayar ada di `docs/02-revisi-tugas/rencana-tenggat-bukti-pembayaran.md`. API GET/POST sekarang membatasi satu jam hanya pada unggah pertama, mengizinkan ganti bukti selama `menunggu_validasi`, dan menutupnya saat `diproses`. Timer detail berhenti saat upload berhasil dan tidak muncul lagi pada status menunggu validasi. Uji UI Node lulus; fixture Edge lulus pada lebar 320, 390, dan 1280 piksel untuk timer sebelum/sesudah upload dan setelah muat ulang. PHP lint, JS syntax, dan diff check lulus. Reviewer memeriksa balapan upload/validasi dan tidak menemukan penghalang. Uji PostgreSQL terisolasi belum berjalan karena 127.0.0.1:55432 menolak koneksi. Uji `scripts/test-customer-payment-errors.cjs` masih gagal pada kasus metode pembayaran `gagal` yang sudah ada. Belum ada uji API/database nyata atau dua koneksi bersamaan.
+
 ## Rencana bar status detail riwayat Pelanggan (26 November 2026)
 - Tujuan tercapai pada kode: `statusProgress()` di `public/pelanggan/assets/customer.js` menandai hanya Pesanan dan Pembayaran untuk `menunggu_validasi`; Verifikasi baru ditandai saat status `diproses`. Badge `Menunggu verifikasi` dan transisi API tetap.
 - Rencana ada di `docs/02-revisi-tugas/rencana-status-pembayaran-riwayat-pelanggan.md`. Uji `node scripts/test-customer-status-progress.cjs` lulus untuk enam status. Fixture Edge `node scripts/test-customer-revisions-browser.cjs <edge> --payment --progress` lulus pada 320, 390, dan 1280 piksel. Pemeriksaan sintaks dan `git diff --check` lulus.

@@ -3,7 +3,7 @@ const source = fs.readFileSync('public/pelanggan/assets/customer.js', 'utf8');
 let detail, confirmation;
 const elements = {
     '#history-detail': {}, '#history-dialog': { showModal() {} },
-    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}, '#retry-payment': {}, '#payment-status': {}
+    '#cancel-order-btn': {}, '#proof-form': {}, '#replace-proof': {}, '#retry-payment': {}, '#payment-status': {}, '#payment-countdown': {}
 };
 const context = {
     clearTimeout() {}, setTimeout() {}, paymentExpiryTimer: null, imagePath: String,
@@ -14,9 +14,11 @@ const context = {
     api: async url => url.includes('payment-methods') ? { items: [] } : detail,
     esc: String, money: String, dateLabel: String, statusLabels: {}, statusProgress: () => '',
     confirm: text => { confirmation = text; return false; },
+    confirmCancelOrder: async text => { confirmation = text; return false; },
     setTimeout: () => 0,
     clearTimeout() {},
-    paymentExpiryTimer: null,
+    clearInterval() {}, setInterval() {},
+    paymentExpiryTimer: null, paymentCountdownInterval: null,
     window: { snoesaContact: { adminWhatsapp: '' } },
     Date,
 };
@@ -37,8 +39,9 @@ vm.runInContext(source.slice(source.indexOf('async function openHistoryDetail(')
         const html = elements['#history-detail'].innerHTML;
         assert.equal(html.includes('id="cancel-order-btn"'), canCancel);
         assert.equal(html.includes('id="proof-form"'), canUpload);
+        if (status === 'menunggu_validasi') assert.doesNotMatch(html, /id="payment-countdown"/);
         if (canCancel) {
-            assert.match(html, /Syarat Pembatalan:/);
+            assert.match(html, /Syarat Pembatalan/);
             assert.match(html, /width:100%; background:var\(--red\)/);
             assert.match(html, /18 Nov 2030, akhir hari WIB/);
             await elements['#cancel-order-btn'].onclick();

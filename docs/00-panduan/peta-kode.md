@@ -51,6 +51,8 @@ Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa l
 
 ## Error pembayaran Pelanggan
 
+- Tenggat unggah pertama dan izin ganti bukti berada di `public/pelanggan/api/orders.php`; timer riwayat di `public/pelanggan/assets/customer.js`. `app/order-expiration.php` hanya membatalkan pesanan tanpa bukti. Uji batas waktu dan ganti bukti ada di `scripts/test-order-cancellation.php`.
+
 - Bar status pada pop up detail riwayat dirender oleh `statusProgress()` di `public/pelanggan/assets/customer.js`: `menunggu_validasi` menandai Pesanan dan Pembayaran saja; Verifikasi baru ditandai setelah Admin mengubah status ke `diproses`. Regresi ada di `scripts/test-customer-status-progress.cjs` dan fixture browser `scripts/test-customer-revisions-browser.cjs`.
 
 - `public/pelanggan/assets/customer.js`: `api()` meneruskan status HTTP dan hasil respons tidak valid; `openHistoryDetail(id)` menangani kegagalan detail/metode/QRIS, aksi muat ulang, dan submit bukti. Pesan tampil lokal dalam dialog pembayaran, tidak masuk halaman Notifikasi. POST yang berhasil dipisahkan dari refresh yang gagal; hasil belum pasti harus diperiksa melalui muat ulang tanpa auto-retry upload.

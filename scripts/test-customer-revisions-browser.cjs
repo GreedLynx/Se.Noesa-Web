@@ -8,6 +8,7 @@ const { pathToFileURL } = require('node:url');
 
 const chrome = process.argv[2];
 const paymentOnly = process.argv.includes('--payment');
+const progressOnly = process.argv.includes('--progress');
 const customerOnly = process.argv.includes('--customer');
 if (!chrome) throw Error('Berikan path Chrome sebagai argumen.');
 const root = process.cwd();
@@ -75,7 +76,7 @@ const fixtures = [
 ];
 const mock = `window.fixtureProducts=${JSON.stringify(fixtures)};window.fixtureMode='normal';window.fixturePosts=0;
 const fixtureDetail={id:10,kode:'UJI-10',items:[],status:'menunggu_pembayaran',can_cancel:false,can_upload_proof:true,total:40000,tgl_kirim:'2030-01-10',created_at:'2030-01-01',payment_expires_at:new Date(Date.now()+3600000).toISOString(),foto_kiriman_list:[]};
-window.fetch=async(input,options={})=>{const u=String(input);if(options.method==='POST'){fixturePosts++;if(fixtureMode==='upload-network')throw Error('Offline');if(fixtureMode==='upload-json')return {ok:true,status:200,json:async()=>{throw SyntaxError('Invalid JSON')}};if(fixtureMode==='upload-422')return {ok:false,status:422,json:async()=>({error:'Gunakan gambar JPG, PNG, atau WebP'})};if(fixtureMode==='upload-500')return {ok:false,status:500,json:async()=>({error:'Gagal menyimpan bukti'})};if(fixtureMode==='upload-success-refresh-error'){fixtureMode='detail-error';return {ok:true,status:200,json:async()=>({ok:true})};}}
+window.fetch=async(input,options={})=>{const u=String(input);if(options.method==='POST'){fixturePosts++;if(fixtureMode==='upload-network')throw Error('Offline');if(fixtureMode==='upload-json')return {ok:true,status:200,json:async()=>{throw SyntaxError('Invalid JSON')}};if(fixtureMode==='upload-422')return {ok:false,status:422,json:async()=>({error:'Gunakan gambar JPG, PNG, atau WebP'})};if(fixtureMode==='upload-500')return {ok:false,status:500,json:async()=>({error:'Gagal menyimpan bukti'})};if(fixtureMode==='upload-success'){fixtureDetail.status='menunggu_validasi';fixtureDetail.bukti_bayar='uploads/payments/fixture.png';return {ok:true,status:200,json:async()=>({ok:true})};}if(fixtureMode==='upload-success-refresh-error'){fixtureMode='detail-error';return {ok:true,status:200,json:async()=>({ok:true})};}}
 if(u.includes('orders.php?id=')){if(fixtureMode==='detail-error')throw Error('Offline');return {ok:true,status:200,json:async()=>fixtureDetail};}
 if(u.includes('payment-methods')){if(fixtureMode==='method-error')throw Error('Offline');return {ok:true,status:200,json:async()=>({items:fixtureMode==='qris-error'?[{nama:'QRIS',gambar:'uploads/payment-methods/fixture-missing.png'}]:[]})};}
 let d=u.includes('catalog.php')?{items:fixtureProducts,habis:[],schedule:null,tanggal:'2030-01-10',dailyStatus:'available',dailyCapacity:150,dailyRemaining:150}:u.includes('addresses=')?{addresses:[]}:u.includes('orders.php')?{orders:[]}:{};
@@ -106,6 +107,27 @@ for (const page of paymentOnly ? ['history'] : ['catalog','history','notificatio
             await openCheckout();check(document.querySelector('#checkout-dialog').open,'Checkout terbuka');document.querySelector('#checkout-dialog').close();
         }
         if(document.body.dataset.page==='history'){
+            const doneSteps=()=>[...document.querySelectorAll('#history-detail .detail-step.done')].map(step=>step.textContent);
+            fixtureMode='normal';await openHistoryDetail(10);
+            check(doneSteps().join(',')==='Pesanan','Sebelum upload baru Pesanan ditandai');
+            check(!!document.querySelector('#payment-countdown'),'Sebelum upload hitung mundur terlihat');
+            fixtureMode='upload-success';await document.querySelector('#proof-form').onsubmit({preventDefault(){}});
+            check(doneSteps().join(',')==='Pesanan,Pembayaran','Setelah upload Verifikasi belum ditandai');
+            check(!document.querySelector('#payment-countdown'),'Sesudah upload hitung mundur hilang');
+            check(document.querySelector('#history-detail .status-label').textContent==='Menunggu verifikasi','Badge tetap menunggu verifikasi');
+            fixtureMode='normal';await openHistoryDetail(10);
+            check(doneSteps().join(',')==='Pesanan,Pembayaran','Muat ulang tetap pada Pembayaran');
+            check(!document.querySelector('#payment-countdown'),'Muat ulang tidak menyalakan timer lama');
+            fixtureDetail.status='diproses';await openHistoryDetail(10);
+            check(doneSteps().join(',')==='Pesanan,Pembayaran,Verifikasi,Diproses','Validasi Admin baru menandai Verifikasi');
+            fixtureDetail.status='selesai';await openHistoryDetail(10);
+            check(doneSteps().length===5,'Status selesai menandai seluruh tahap');
+            for(const status of ['ditolak','dibatalkan']){
+                fixtureDetail.status=status;await openHistoryDetail(10);
+                check(doneSteps().length===0&&document.querySelector('#history-detail .detail-status-line').textContent.includes('Pesanan'),'Status terminal tetap memakai tampilan ringkas '+status);
+            }
+            fixtureDetail.status='menunggu_pembayaran';fixtureDetail.bukti_bayar='';
+            if(${progressOnly}){parent.document.body.dataset.result='PASS';return;}
             fixtureMode='detail-error';await openHistoryDetail(10);check(document.querySelector('#history-dialog').open,'Error detail tetap membuka dialog');check(document.querySelector('[role="alert"]').checkVisibility(),'Error detail terlihat');
             fixtureMode='method-error';await openHistoryDetail(10);check(document.querySelector('#history-detail').innerText.includes('Metode pembayaran belum dapat dimuat'),'Error metode terlihat');
             check(!!document.querySelector('#proof-form'),'Form bukti tetap tersedia');

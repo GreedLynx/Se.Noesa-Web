@@ -775,10 +775,9 @@ async function openHistoryDetail(id) {
     const rejectionNotice = d.status === 'ditolak' && d.alasan_penolakan
         ? '<section class="rejection-notice" role="alert"><b>Pesanan ditolak</b><p>Alasan: ' + esc(d.alasan_penolakan) + '</p></section>'
         : '';
-    const hasPaymentWindow = ['menunggu_pembayaran', 'menunggu_validasi'].includes(d.status)
-        && canUploadProof && d.payment_expires_at;
+    const hasPaymentWindow = d.status === 'menunggu_pembayaran' && canUploadProof && d.payment_expires_at;
     const paymentTimerBox = hasPaymentWindow
-        ? '<section class="payment-countdown" role="status"><b>Batas waktu pembayaran</b><p>Anda dapat mengirim atau mengganti bukti pembayaran selama waktu ini.</p><strong id="payment-countdown" data-expires="' + esc(d.payment_expires_at) + '">Menghitung sisa waktu…</strong><small>Jika belum ada bukti saat waktu habis, pesanan akan dibatalkan otomatis.</small></section>'
+        ? '<section class="payment-countdown" role="status"><b>Batas waktu pembayaran</b><p>Unggah bukti pembayaran sebelum waktu ini habis.</p><strong id="payment-countdown" data-expires="' + esc(d.payment_expires_at) + '">Menghitung sisa waktu…</strong><small>Jika belum ada bukti saat waktu habis, pesanan akan dibatalkan otomatis.</small></section>'
         : '';
     $('#history-detail').innerHTML = '<div class="detail-product"><p class="eyebrow">DETAIL PESANAN</p><h2>' + esc(d.kode)
         + '</h2><div class="status-meta-row"><span class="status-label ' + esc(d.status) + '">' + esc(statusLabels[d.status] || d.status) + '</span><p class="history-date status-changed-at">'
@@ -806,6 +805,7 @@ async function openHistoryDetail(id) {
 
     // --- AUTO REFRESH SAAT WAKTU PEMBAYARAN HABIS ---
     clearTimeout(paymentExpiryTimer);
+    clearInterval(paymentCountdownInterval);
     if (hasPaymentWindow) {
         const countdown = $('#payment-countdown');
         const expiresAt = new Date(d.payment_expires_at).getTime();
@@ -916,6 +916,9 @@ async function openHistoryDetail(id) {
             return;
         }
         // Bukti sudah tersimpan; kegagalan refresh tidak boleh menawarkan upload ulang.
+        clearTimeout(paymentExpiryTimer);
+        clearInterval(paymentCountdownInterval);
+        $('#history-detail .payment-countdown')?.remove();
         form.hidden = true;
         if ($('#replace-proof')) $('#replace-proof').hidden = true;
         toast('Bukti pembayaran berhasil dikirim');

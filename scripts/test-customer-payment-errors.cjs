@@ -33,7 +33,7 @@ const context = {
         if (mode === 'detail' || mode === 'refresh') throw Error('gagal');
         return detail;
     },
-    clearTimeout() {}, setTimeout() {}, paymentExpiryTimer: null,
+    clearTimeout() {}, clearInterval() {}, setTimeout() {}, paymentExpiryTimer: null,
     imagePath: String, esc: String, money: String, dateLabel: String,
     statusLabels: {}, statusProgress: () => '', toast() {}, loadHistory() {},
     FormData: class {}, Date,

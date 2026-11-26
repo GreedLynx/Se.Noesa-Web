@@ -388,7 +388,7 @@ Refund penuh ditangani Admin di luar aplikasi; endpoint tidak memindahkan uang.
 Multipart `action=upload_proof` mempertahankan field `id`, `nama_pembayar`, `proof`
 dan format file yang berlaku. Unpaid hanya menerima upload sebelum
 `created_at + 1 jam`, diperiksa memakai waktu database setelah row lock.
-Status `menunggu_validasi` boleh mengganti bukti tanpa tenggat satu jam lagi.
+Status `menunggu_validasi` boleh mengganti bukti tanpa tenggat satu jam lagi. Setelah Admin memvalidasi dan status menjadi `diproses`, penggantian ditutup.
 Konflik akibat kedaluwarsa/perubahan status menghasilkan 409 dan file baru dibuang.
 Bukti lama tetap disimpan. Respons sukses lama tetap `{ok,bukti_bayar}`.
 
@@ -396,11 +396,11 @@ GET detail `pelanggan/api/orders.php?id=...` menambah:
 
 - `can_cancel`, `can_upload_proof`: boolean izin saat respons dibuat; server tetap
   memeriksa ulang pada POST.
-- `payment_expires_at`: ISO 8601 ber-offset +07:00, satu jam sejak dibuat, atau NULL.
+- `payment_expires_at`: ISO 8601 ber-offset +07:00 hanya saat status `menunggu_pembayaran`; NULL setelah bukti diterima atau status berubah.
 - `cancel_before`: ISO 8601 +07:00, awal H-1 sebagai batas eksklusif, atau NULL.
 
-Frontend memakai field tersebut untuk tombol/form, menampilkan tenggat pembayaran
-dan ketentuan refund sebelum konfirmasi. Tidak ada countdown/pemicu job JavaScript.
+Frontend memakai field tersebut untuk tombol/form, menampilkan hitung mundur hanya sebelum bukti pertama diterima,
+dan ketentuan refund sebelum konfirmasi. Hitung mundur berhenti setelah upload berhasil. Job kedaluwarsa berjalan terpisah dari JavaScript.
 Tampilan pembatalan mempertahankan tombol merah penuh, kartu syarat, dan pesan
 batas H-2 terlewati yang sudah ada; izin tombol tetap mengikuti `can_cancel`.
 
