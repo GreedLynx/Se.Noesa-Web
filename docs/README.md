@@ -25,5 +25,6 @@ Seluruh dokumentasi proyek dikelompokkan ke tujuh kategori berdasarkan perannya.
 
 ## Catatan
 
+- Semua plan/rencana revisi atau perbaikan fitur disimpan di `02-revisi-tugas/`. Enam rencana yang sebelumnya berada di root `docs/` sudah dipindahkan ke folder tersebut; referensi path ikut diperbarui.
 - `AGENTS.md`, `PRD.md`, dan `DESIGN.md` tidak tersedia di repository saat indeks ini dibuat.
 - FileMarkdown di `vendor/` adalah dokumentasi dependency dan tidak dipindahkan.

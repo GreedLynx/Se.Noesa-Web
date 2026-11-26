@@ -4,6 +4,7 @@
 
 - Sumber 46 SVG transparan dan stylesheet CSS mask: `public/assets/component/*.svg`, `public/assets/component/icons.css`. Kelas `ui-icon icon-<nama>` memakai warna `currentColor`.
 - Layout Pelanggan, Admin, dan Owner memuat stylesheet tersebut. Navigasi dan dialog ada di masing-masing `partials/layout.php`; pemilih tanggal bersama ada di `public/assets/js/date-picker.js`.
+- Dialog produk dan pesanan offline Admin pada `public/admin/assets/admin.js` menutup saat backdrop ditekan; klik di isi dialog tidak menutupnya.
 - Kontrol keranjang/status Pelanggan ada di `public/pelanggan/assets/customer.js`; ringkasan kapasitas dan status Admin ada di `public/admin/dashboard.php`, `orders.php`, dan `assets/admin.js`; filter/status Owner ada di `public/owner/dashboard.php`, `orders.php`, dan `products.php`.
 - Halaman uji statis di `public/assets/component/preview.html`; katalog, preview, dan laporan uji ada di `docs/04-implementasi/`.
 
@@ -65,7 +66,7 @@ Uji jarak kartu, label stok habis, tombol nonaktif, dan overflow pada beberapa l
 | Klik kembali biasa memakai replace; klik tab baru tetap native | `public/admin/assets/admin.js`, `bindOrderBack()` |
 | Uji konteks asal, debounce, click modifiers, dan validator PHP tanpa DB | `scripts/test-admin-back-navigation.cjs` |
 
-Rencana dan progress: `docs/rencana-navigasi-kembali-admin.md`.
+Rencana dan progress: `docs/02-revisi-tugas/rencana-navigasi-kembali-admin.md`.
 
 ## Kalender libur operasional
 

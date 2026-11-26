@@ -1,5 +1,24 @@
 # Handoff Se.Noesa-Web
 
+## Lokasi file rencana revisi (26 November 2026)
+- Aturan baru di `AGENTS.md`: semua plan revisi/perbaikan fitur disimpan di `docs/02-revisi-tugas/`; plan yang tersisa di root `docs/` harus segera dipindahkan beserta referensinya.
+- Enam file `rencana-*.md` dipindahkan: bug libur/pesanan, navigasi kembali Admin, penolakan/reschedule, popup B7, revisi Pelanggan tersisa, dan scroll/animasi Pelanggan. Referensi pada dokumen terkait diperbarui; isi rencana dipertahankan.
+- Perubahan ini hanya penataan dokumentasi. Perubahan lokal kode Admin dan dokumentasi dari tugas sebelumnya dipertahankan; tidak commit/push. Tidak ada percobaan pemindahan gagal; pemeriksaan file/tautan dan diff dilakukan sebelum penutupan tugas.
+
+## Revisi popup B7 (26 November 2026)
+- `public/admin/assets/admin.js` kini menutup `#product-dialog` dan `#offline-order-dialog` saat klik tepat pada elemen backdrop `<dialog>`; klik panel/form tidak menutup. Ini mencakup tambah/edit produk dan pesanan offline.
+- Peta kode dan `docs/02-revisi-tugas/rencana-revisi-b7-popup.md` diperbarui. Perlu jalankan pemeriksaan sintaks/tes, kemudian cek browser Admin desktop/mobile bila sesi login tersedia. Status spreadsheet jangan ditandai selesai sebelum seluruh kasus tervalidasi.
+- Tidak mengubah API atau database; `.env` tidak dibaca.
+
+## Rencana revisi B7 popup (26 November 2026)
+- Perbaikan diterapkan di `public/admin/assets/admin.js`: dialog produk dan pesanan offline menutup pada klik backdrop, tanpa menutup saat klik di dalam panel. Peta kode dan rencana diperbarui.
+- `node --check public/admin/assets/admin.js` dan `git diff --check` lulus. Browser login langsung belum diuji; status spreadsheet tetap menunggu verifikasi browser.
+- Tidak ada perubahan API/database; `.env` tidak dibaca.
+
+## Error halaman Pesanan Admin (26 November 2026)
+- `ordersPage()` mencoba mengatur `.hidden` pada `#late-payment-view`, tetapi elemen itu tidak ada di `public/admin/orders.php`. Assignment kini dijaga agar halaman Pesanan tidak crash saat filter disinkronkan.
+- `node --check public/admin/assets/admin.js` dan `git diff --check` lulus. Jalur tampilan pembayaran terlambat perlu verifikasi tersendiri karena renderer juga merujuk elemen tersebut; browser/database belum diperiksa.
+
 ## Penyederhanaan tawaran dan informasi refund pelanggan (24 November 2026)
 - Commit terakhir `a1122a9 fix: surface holiday orders and late payment search` berisi 19 file: peringatan/pratinjau pesanan terdampak libur dan UI tawaran Admin, pencarian pesanan belum dicatat serta rekonsiliasi pembayaran terlambat, transport FormData, dokumentasi, dan fixture UI. Commit itu tidak berisi perubahan UI refund terbaru.
 - Pengguna mengonfirmasi kontak WhatsApp dan kanal sosial harus tampil pada bagian Refund setelah pelanggan menolak tawaran jadwal. Panel tawaran aktif diringkas menjadi batas respons, catatan singkat transfer, dan tombol keputusan; kontak lengkap ditempatkan setelah penolakan.
@@ -7,7 +26,7 @@
 - Perubahan UI refund, pratinjau libur berbentuk pil, serta pembaruan docs/handoff setelah commit masih di working tree branch `fix/fitur-admin`. Branch saat ini ahead 1 dan behind 3 dari `origin/dev`; belum sinkron, commit lanjutan, merge, atau push. `node --check public/pelanggan/assets/customer.js` dan `git diff --check` lulus; render browser belum diperiksa. `.env` tidak dibaca atau diubah.
 
 ## Implementasi bug Admin: libur dan pembayaran terlambat (24 November 2026)
-- Branch aktif `fix/fitur-admin` dibuat dari `origin/dev` 8470f13; rencana ada di `docs/rencana-bug-libur-pesanan.md`. Perubahan plan/handoff lokal dari sesi sebelumnya dipertahankan. Belum merge/push.
+- Branch aktif `fix/fitur-admin` dibuat dari `origin/dev` 8470f13; rencana ada di `docs/02-revisi-tugas/rencana-bug-libur-pesanan.md`. Perubahan plan/handoff lokal dari sesi sebelumnya dipertahankan. Belum merge/push.
 - GET `admin/api/holidays.php` kini memuat pesanan aktif yang tanggal kirim WIB-nya berada dalam rentang libur. Halaman Jadwal menampilkan antrean dan tautan detail, termasuk pesanan offline untuk tindak lanjut manual. Detail Admin menampilkan status tawaran, mengirim satu tanggal/alasan lewat dialog, dan menjeda kontrol produksi saat tawaran menunggu. Navigasi kembali dari detail ke Jadwal diizinkan.
 - Pencarian pembayaran terlambat dibagi dua: tab Pesanan mencari catatan rekonsiliasi yang sudah ada dan, saat kata kunci diisi, pesanan batal yang belum dicatat; form Pembayaran Terlambat mencari calon pesanan sebelum batas 100 opsi. Hasil tab yang belum dicatat menaut ke form dengan kode pencarian terisi; respons dua GET disaring agar satu pesanan tidak tampil ganda saat catatan dibuat di sela pemuatan. Query memakai parameter PDO. Helper API Admin kini mempertahankan `FormData` dan membiarkan browser menetapkan multipart boundary, sehingga bukti benar-benar terkirim; POST JSON tetap bekerja. Pesanan lama tidak dihidupkan kembali.
 - Lulus: `test-holidays.cjs`, `test-admin-order-detail.cjs`, `test-admin-back-navigation.cjs`, `test-admin-late-payment-search.cjs`, `test-admin-dashboard.cjs`, `test-quota-ui.cjs`, `test-admin-completed-order-sort.cjs`; lint PHP enam file dan sintaks JS dua file. Reviewer menemukan masalah multipart dan mobile, keduanya diperbaiki; review ulang tidak menemukan blocker. Dokumentasi peta kode, API, database, aturan bisnis diselaraskan.
@@ -15,12 +34,12 @@
 - Langkah berikutnya: verifikasi migrasi lewat ledger secara baca saja dan jalankan suite PostgreSQL pada database uji terisolasi, lalu cek tampilan browser serta alur pelanggan accept/reject dan pencatatan bukti. Periksa scheduler kedaluwarsa dengan inventaris/dry-run sebelum aktivasi pada lingkungan aplikasi.
 
 ## Tambahan plan: pembayaran terlambat tidak ditemukan (24 November 2026)
-- Pengguna menambahkan kasus pelanggan sudah transfer tetapi tidak mengunggah bukti sebelum tenggat. Hanya plan `docs/rencana-bug-libur-pesanan.md` yang diperluas; tidak ada perubahan aplikasi, job, migrasi, atau database.
+- Pengguna menambahkan kasus pelanggan sudah transfer tetapi tidak mengunggah bukti sebelum tenggat. Hanya plan `docs/02-revisi-tugas/rencana-bug-libur-pesanan.md` yang diperluas; tidak ada perubahan aplikasi, job, migrasi, atau database.
 - Temuan sumber: tab Pembayaran terlambat pada `orders.php` menyembunyikan pencarian dan `loadOrders()` mengabaikan `q`; API `late-payments.php` hanya mendaftar rekonsiliasi yang sudah dicatat. Pilihan pencatatan `eligible=1` hanya memuat 100 pesanan `dibatalkan` terbaru tanpa pencarian. Pesanan tanpa bukti menjadi batal lewat job CLI, sehingga status scheduler dan migrasi 026 perlu dibuktikan sebelum menentukan penyebab data tidak muncul.
 - Langkah berikutnya: reproduksi kedua jalur di PostgreSQL terisolasi; periksa scheduler/migrasi secara baca saja; tambahkan pencarian nama/kode untuk calon pesanan batal dan rekonsiliasi tercatat; uji lebih dari 100 pesanan, role, audit, dan alur kedaluwarsa. Uang yang benar-benar diterima tetap harus diverifikasi Admin; pesanan lama tidak dihidupkan otomatis.
 
 ## Rencana bug pesanan terdampak tanggal libur (24 November 2026)
-- Tujuan sesi ini hanya menyusun plan; implementasi aplikasi, migrasi, dan pengujian transaksi belum dilakukan. Rencana ada di `docs/rencana-bug-libur-pesanan.md`.
+- Tujuan sesi ini hanya menyusun plan; implementasi aplikasi, migrasi, dan pengujian transaksi belum dilakukan. Rencana ada di `docs/02-revisi-tugas/rencana-bug-libur-pesanan.md`.
 - Temuan: checkout tanggal libur sudah ditolak server dengan lock bersama; pesanan yang dibuat sebelum tanggalnya ditutup tetap ada sesuai aturan bisnis. Halaman Jadwal Admin belum menampilkan pesanan terdampak. Dialog tawaran sudah ada di detail Admin dan endpoint Admin/Pelanggan sudah ada, tetapi handler tawaran tidak ditemukan di `public/admin/assets/admin.js` branch aktif `feature/perbaikan-ui-pelanggan`.
 - Langkah berikutnya: cocokkan isi `dev` dan status migrasi 022 tanpa membaca `.env`; reproduksi di PostgreSQL terisolasi; tampilkan antrean pesanan terdampak; sambungkan handler tawaran Admin; uji accept/reject, kuota, role, dan balapan; minta review `reviewer` sebelum menyatakan selesai.
 - Keputusan: satu tanggal usulan; pelanggan menerima atau menolak; refund pembayaran valid tetap manual. Tindakan jika tidak ada tanggal layak atau tawaran kedaluwarsa belum diputuskan. `.opencode/revisi.md` tidak ditemukan. Tidak ada percobaan implementasi yang gagal pada sesi plan ini.
@@ -37,7 +56,7 @@
 - Dokumentasi peta kode, API, dan database diperbarui. Fixture browser memeriksa pusat dan pembesaran logo login desktop. `node --check` fixture dan `git diff --check` lulus; render browser belum diverifikasi. Tidak ada endpoint, skema, atau aset baru.
 
 ## Eksekusi revisi Pelanggan (20 November 2026, status terbaru)
-- Pengguna telah meminta menjalankan `docs/rencana-revisi-pelanggan-tersisa.md`. Phase 0–4 selesai pada `feature/perbaikan-ui-pelanggan`; Phase 5 baru sebagian dan verifikasi browser menyeluruh belum selesai. Catatan plan-only di bawah adalah riwayat, bukan status aktif.
+- Pengguna telah meminta menjalankan `docs/02-revisi-tugas/rencana-revisi-pelanggan-tersisa.md`. Phase 0–4 selesai pada `feature/perbaikan-ui-pelanggan`; Phase 5 baru sebagian dan verifikasi browser menyeluruh belum selesai. Catatan plan-only di bawah adalah riwayat, bukan status aktif.
 - F7: GET detail/metode dan QRIS gagal memberikan pesan lokal pembayaran dan muat ulang; upload menangani validasi/status/sesi/jaringan/respons tidak valid, mencegah submit ganda, dan memisahkan POST sukses dari refresh gagal. Error tidak disimpan ke halaman Notifikasi; tidak ada auto-retry POST. F18: sisa angka hanya <50% kuota efektif; detail memperbarui pembungkus hidden saat jumlah berubah.
 - F13/H4: info sebelum tanggal checkout; merek pelanggan/splash dan copy auth terkait memakai se.noesa. Login/register menampilkan `.auth-logo` di kanan atas hero. Shared Owner layout memilih assets/ untuk auth public root dan ../assets/ untuk Owner agar deployment subdirektori tidak kehilangan CSS/JS. Autentikasi/role tidak berubah.
 - H7: aset `foto/Pattern_Se.Noesa_Background.png` disalin identik ke `public/assets/img/Pattern_Se.Noesa_Background.png`; `.customer-main::after` beropacity40%, pola402px, pointer-events none; konten di lapisan atas. Pseudo after menghindari konflik before mobile dan mencakup main kosong/panjang. Kartu/form/dialog tetap solid.
@@ -48,18 +67,18 @@
 
 ## Pembaruan plan: logo login/register (20 November 2026)
 - Pengguna menambah ikon logo login dan register untuk semua tampilan. Referensi aktual ada di `public/assets/img/desain/Login Page - Owner.png` dan `Register Page - Owner.png` (bukan folder asset). Keduanya sudah dilihat: logo vertikal di kanan atas hero berpola.
-- Tambahan masuk Phase 3 plan `docs/rencana-revisi-pelanggan-tersisa.md`, bersama informasi/merek; prioritas pembayaran dan stok tetap lebih awal. Reuse `public/assets/img/logo-icon.png`, markup pada `public/login.php`/`register.php`, CSS scoped auth di `public/assets/css/app.css`. Desktop menyesuaikan hero kiri layout dua kolom, mobile mengikuti referensi; cek kedua sisi breakpoint 760px, layar pendek, dan 320/390/1280px.
+- Tambahan masuk Phase 3 plan `docs/02-revisi-tugas/rencana-revisi-pelanggan-tersisa.md`, bersama informasi/merek; prioritas pembayaran dan stok tetap lebih awal. Reuse `public/assets/img/logo-icon.png`, markup pada `public/login.php`/`register.php`, CSS scoped auth di `public/assets/css/app.css`. Desktop menyesuaikan hero kiri layout dua kolom, mobile mengikuti referensi; cek kedua sisi breakpoint 760px, layar pendek, dan 320/390/1280px.
 - Halaman autentikasi bersama berlaku bagi semua pengguna; registrasi tetap pelanggan. Tidak mengubah auth API, role, atau membuat login per role. Belum implementasi/render browser; yang selesai hanya discovery referensi dan pembaruan plan.
 
 ## Pembaruan plan: F7 aktif dan prioritas dampak (20 November 2026)
 - Klarifikasi pengguna/teman: F7 adalah pemberitahuan ketika proses pembayaran mengalami error. F7 tidak lagi ditunda; bukan perubahan indikator tahap pesanan. F10/F21 tetap tuntas karena perubahan.
-- `docs/rencana-revisi-pelanggan-tersisa.md` kini Phase 0–5: discovery, F7 error pembayaran, F18 angka sisa, F13/H4 informasi+merek, H7 pola background, verifikasi akhir. Urutan berdasarkan dampak pada kepastian pembayaran, keputusan jumlah pesanan, informasi, lalu visual.
+- `docs/02-revisi-tugas/rencana-revisi-pelanggan-tersisa.md` kini Phase 0–5: discovery, F7 error pembayaran, F18 angka sisa, F13/H4 informasi+merek, H7 pola background, verifikasi akhir. Urutan berdasarkan dampak pada kepastian pembayaran, keputusan jumlah pesanan, informasi, lalu visual.
 - Discovery main+reader: submit bukti sudah catch error tetapi POST sukses dan refresh detail berada dalam try yang sama, berisiko pesan menyesatkan saat refresh gagal. GET detail/metode belum catch lokal; QRIS gagal memakai gambar produk. Plan mencakup pesan/retry yang sesuai, tidak auto-retry POST, status tidak pasti saat koneksi terputus, dan test upload sukses+refresh gagal.
 - Hanya plan/handoff diperbarui; belum implementasi, suite/browser/DB atau commit/push. Temuan source belum direproduksi di browser. Berikutnya eksekusi Phase 1 F7 terlebih dahulu.
 
 ## Plan revisi Pelanggan tersisa (20 November 2026)
 - Pengguna menetapkan F10 dan F21 tuntas karena perubahan; F7 dilewati dahulu karena maksud keluhan belum jelas. Keputusan ini menggantikan status belum pasti pada audit di bawah.
-- Plan tersedia di `docs/rencana-revisi-pelanggan-tersisa.md`: H4 nama se.noesa lowercase; F13 info sebelum tanggal checkout; F18 angka sisa hanya <50% kuota efektif; H7 background dari `foto/Pattern_Se.Noesa_Background.png` beropasitas rendah.
+- Plan tersedia di `docs/02-revisi-tugas/rencana-revisi-pelanggan-tersisa.md`: H4 nama se.noesa lowercase; F13 info sebelum tanggal checkout; F18 angka sisa hanya <50% kuota efektif; H7 background dari `foto/Pattern_Se.Noesa_Background.png` beropasitas rendah.
 - Aset sumber benar-benar ada dan sudah dilihat agent utama (sekitar 486 KB); belum ada salinan public bernama sama. Asumsi plan: latar area konten seluruh halaman Pelanggan dengan opacity awal 6%; kartu/dialog solid. Ambang F18 memakai sisa setelah pilihan lokal di detail dan diperbarui saat jumlah berubah; tepat 50% disembunyikan.
 - Discovery main + reader selesai. Plan memiliki Phase 0–4, lokasi kode, pola yang dipakai, test edge case, regresi, dan verifikasi visual. Tidak ada perubahan kode/aset aplikasi, spreadsheet, DB, branch, commit, atau push. Belum menjalankan suite/browser; berikutnya implementasi sesuai plan dan evaluasi opacity dari render aktual.
 
@@ -125,7 +144,7 @@
 - `Diproses`: pembatalan hanya ketika tanggal pengiriman ditutup oleh Admin setelah pesanan dibuat, disertai catatan dan tawaran jadwal pengganti.
 - Pengguna menyetujui alur dalam aplikasi: Admin memberi satu tanggal usulan; pelanggan menerima atau menolak. Penerimaan memeriksa ulang tanggal libur dan kuota; penolakan membatalkan pesanan dan refund pembayaran valid tetap manual di luar aplikasi.
 - Rencana minimum mempertahankan status pesanan selama tawaran menunggu dan menyimpan tawaran pada tabel terpisah. Tawaran paid/diproses berlaku 24 jam; unpaid tetap mengikuti tenggat pembayaran satu jam. Tanggal tujuan tidak memesan kuota sampai diterima.
-- Rencana dan hasil eksekusi ada di `docs/rencana-penolakan-reschedule.md`. Migrasi 022 menambah tabel tawaran terpisah; Admin membuat/mengganti tawaran dan pelanggan menerima/menolak dengan token versi. Accept memeriksa kuota ulang; reject mencatat pembatalan pelanggan. Aksi pembayaran/produksi yang bentrok dijaga di server.
+- Rencana dan hasil eksekusi ada di `docs/02-revisi-tugas/rencana-penolakan-reschedule.md`. Migrasi 022 menambah tabel tawaran terpisah; Admin membuat/mengganti tawaran dan pelanggan menerima/menolak dengan token versi. Accept memeriksa kuota ulang; reject mencatat pembatalan pelanggan. Aksi pembayaran/produksi yang bentrok dijaga di server.
 - Verifikasi yang lulus: PHP lint pada API Admin/Pelanggan dan job kedaluwarsa; JavaScript syntax check; `scripts/test-order-cancellation-ui.cjs`, `scripts/test-admin-order-detail.cjs`, `scripts/test-admin-cancellation-list.cjs`, `scripts/test-admin-dashboard.cjs`; `git diff --check`.
 - Verifikasi yang belum dilakukan: integrasi PostgreSQL/migrasi dan browser login. Tes `scripts/test-payment-deadline.php` disesuaikan untuk tawaran aktif tetapi tidak dijalankan karena harness tersebut membaca konfigurasi proyek dan variabel koneksi PostgreSQL uji tidak tersedia. Tidak ada akses ke `.env` atau database aplikasi.
 - Review sumber akhir selesai: tiga temuan tentang lock, tanggal kedaluwarsa, dan tombol Admin diperbaiki; reviewer tidak menemukan isu tambahan. Berikutnya, jalankan suite PostgreSQL terisolasi dan migrasi fresh/upgrade saat koneksi test tersedia, lalu commit dengan Conventional Commit. Jangan push/merge tanpa langkah eksplisit berikutnya.
@@ -150,7 +169,7 @@
 
 ## Plan navigasi kembali Admin (18 November 2026)
 - Permintaan terbaru: buat plan dahulu untuk item Unggul#3 tombol kembali mengikuti halaman asal. Teman pengguna sedang mengerjakan navbar tiap role dan bug; Unggul#2 dikerjakan terpisah.
-- Plan selesai: docs/rencana-navigasi-kembali-admin.md (Phase 0 discovery, Phase 1 konteks/filter, Phase 2 kembali berdasarkan asal, Phase 3 verifikasi/dokumentasi).
+- Plan selesai: docs/02-revisi-tugas/rencana-navigasi-kembali-admin.md (Phase 0 discovery, Phase 1 konteks/filter, Phase 2 kembali berdasarkan asal, Phase 3 verifikasi/dokumentasi).
 - Discovery read-only main + reader: tombol detail dan fallback error statis orders.php; empat sumber Dashboard, dua tautan daftar desktop/mobile, redirect sukses offline. Filter tab/review/source/q belum disinkronkan lengkap dengan URL. Reload detail setelah aksi harus mempertahankan asal.
 - Rancangan diusulkan: return_to eksplisit pada tautan detail, validasi hanya Dashboard/Daftar Pesanan Admin pada origin/direktori instalasi yang sama, fallback orders.php; history.replaceState untuk filter; href server-side aman tanpa JS dan location.replace pada klik biasa agar tidak loop. Native Back/Forward browser tetap normal; tidak membuat stack global dan tidak memakai history.back secara buta.
 - Batas: tidak mengubah navbar/layout/CSS/API/DB/role lain, tanpa library baru. admin.js berpotensi bentrok dengan perbaikan teman; cocokkan diff sebelum implementasi. Belum implementasi atau uji browser/aplikasi.
@@ -162,7 +181,7 @@
 - public/admin/assets/admin.js: orderDetailUrl untuk empat sumber Dashboard, dua daftar desktop/mobile, dan redirect offline; syncOrderUrl menyimpan tab/review/q dan mempertahankan tanggal, memulihkan pencarian, serta memperbarui href sebelum debounce. bindOrderBack memakai location.replace hanya untuk klik biasa; modifier/target tab baru tetap native. Error detail memakai tujuan tervalidasi yang sama.
 - public/admin/order-detail.php: validasi return_to relatif hanya dashboard.php/orders.php, whitelist query dan validasi nilai, tolak duplikat/array/tujuan asing/control character, fallback orders.php. Href server-side tetap berfungsi tanpa JS. Guard Admin dan mutasi tidak diubah.
 - Dev belum memiliki filter source; jangan membawa fitur branch reschedule diam-diam. Saat source terintegrasi, persistensi JS/allowlist PHP/tests perlu diperbarui bersama. Navbar/layout/CSS tidak disentuh.
-- Docs api/database/peta dan progress di docs/rencana-navigasi-kembali-admin.md diperbarui. scripts/test-admin-back-navigation.cjs baru; fixture dashboard dan cancellation-list disesuaikan dengan API browser.
+- Docs api/database/peta dan progress di docs/02-revisi-tugas/rencana-navigasi-kembali-admin.md diperbarui. scripts/test-admin-back-navigation.cjs baru; fixture dashboard dan cancellation-list disesuaikan dengan API browser.
 - Lulus: test-admin-back-navigation.cjs, test-admin-dashboard.cjs, test-admin-order-detail.cjs, test-admin-cancellation-list.cjs, test-quota-ui.cjs, node --check admin.js, php -l order-detail.php, git diff --check. Tes PHP validator diekstrak tanpa bootstrap/DB.
 - Belum: browser login desktop/mobile, native Back/Forward nyata, reload mutasi nyata dan offline end-to-end. Phase 3 masih sebagian. Tidak membaca .env, mengubah DB/Notion, atau commit/push/merge.
 - Percobaan gagal: switch branch awal ditolak sandbox; setelah eskalasi tertahan perubahan HANDOFF. Catatan diamankan ke TEMP lalu dikembalikan sesudah switch. Uji awal gagal karena fixture VM belum menyediakan helper/History dan ekstraksi handler CRLF; disesuaikan, kemudian seluruh uji terarah lulus.
@@ -267,7 +286,7 @@
 - Lulus: syntax JavaScript, `test-quota-ui.cjs`, `test-customer-cart-quantity.cjs`, dan fixture Chrome katalog pada viewport 320, 390, dan 1280px.
 
 ## Rencana header sticky, akses search, dan animasi UI
-- Rencana rinci dibuat di `docs/rencana-ui-pelanggan-scroll-dan-animasi.md`. Keputusan pengguna: header sticky untuk semua halaman Pelanggan di desktop/mobile; tombol search katalog scroll+focus ke input asli; animasi sidebar mobile; animasi pembukaan kalender bersama untuk Pelanggan, Admin, dan Owner.
+- Rencana rinci dibuat di `docs/02-revisi-tugas/rencana-ui-pelanggan-scroll-dan-animasi.md`. Keputusan pengguna: header sticky untuk semua halaman Pelanggan di desktop/mobile; tombol search katalog scroll+focus ke input asli; animasi sidebar mobile; animasi pembukaan kalender bersama untuk Pelanggan, Admin, dan Owner.
 - Discovery read-only memetakan layout bersama, search katalog, state/fokus sidebar, dialog kalender, konflik cart bar, safe area, reduced motion, dan fixture yang perlu diperluas. Belum ada implementasi kode dari rencana ini.
 
 ## Implementasi header sticky dan animasi UI

@@ -620,7 +620,8 @@ function ordersPage() {
         $("#cancellation-review-filter").hidden = orderTab !== "dibatalkan";
         $(".table-wrap").hidden = orderTab === "pembayaran_terlambat";
         $("#mobile-orders").hidden = orderTab === "pembayaran_terlambat";
-        $("#late-payment-view").hidden = orderTab !== "pembayaran_terlambat";
+        const latePaymentView = $("#late-payment-view");
+        if (latePaymentView) latePaymentView.hidden = orderTab !== "pembayaran_terlambat";
         $("#order-search").closest(".search").hidden = false;
     };
     syncOrderFilters();
@@ -666,6 +667,10 @@ function ordersPage() {
     const recipientNameInput = form?.elements?.nama_penerima;
     const deliveryDateLabel = $("#offline-date-label");
     const deliveryTimeLabel = $("#offline-time-label");
+
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+    });
 
     const isDineIn = () => true;
 
@@ -993,6 +998,10 @@ function productsPage() {
         productTimer = setTimeout(refreshProducts, 220);
     };
     $("#new-product").onclick = () => editProduct(null);
+    const productDialog = $("#product-dialog");
+    productDialog.addEventListener("click", (event) => {
+        if (event.target === productDialog) productDialog.close();
+    });
     $$("[data-close-dialog]").forEach(
         (b) => (b.onclick = () => {
             const section = $("#kuota-harian-section");

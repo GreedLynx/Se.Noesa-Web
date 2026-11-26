@@ -47,7 +47,7 @@ Ketika Admin menutup tanggal pengiriman yang sudah memiliki pesanan, setiap pesa
 ### Pekerjaan
 
 1. Sebelum konfirmasi simpan, minta pratinjau pesanan aktif dalam rentang baru dan tampilkan kode, nama, tanggal kirim, serta statusnya di dialog konfirmasi.
-2. Nyatakan dengan jelas bahwa pesanan terdampak tidak berubah otomatis dan Admin perlu menindaklanjuti memakai alur pada `docs/rencana-penolakan-reschedule.md`.
+2. Nyatakan dengan jelas bahwa pesanan terdampak tidak berubah otomatis dan Admin perlu menindaklanjuti memakai alur pada `docs/02-revisi-tugas/rencana-penolakan-reschedule.md`.
 3. Jika pratinjau gagal atau rentang tidak valid, tahan penyimpanan dan tampilkan error di form.
 
 ### Verifikasi
