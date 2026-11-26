@@ -541,7 +541,7 @@ function statusProgress(status) {
     if (status === 'dibatalkan' || status === 'ditolak') {
         return '<div class="detail-status-line"><span class="detail-step" style="color:var(--red); font-weight:700;">Pesanan ' + statusLabels[status] + '</span></div>';
     }
-    const complete = status === 'selesai' ? 5: status === 'diproses' ? 4: status === 'menunggu_validasi' ? 3: 1;
+    const complete = status === 'selesai' ? 5: status === 'diproses' ? 4: status === 'menunggu_validasi' ? 2: 1;
     return '<div class="detail-status-line">' + steps.map((s, i) => '<span class="detail-step ' + (i < complete ? 'done': '')
         + '">' + s + '</span>').join('') + '</div>'
 }

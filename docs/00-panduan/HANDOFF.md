@@ -1,5 +1,11 @@
 # Handoff Se.Noesa-Web
 
+## Rencana bar status detail riwayat Pelanggan (26 November 2026)
+- Tujuan tercapai pada kode: `statusProgress()` di `public/pelanggan/assets/customer.js` menandai hanya Pesanan dan Pembayaran untuk `menunggu_validasi`; Verifikasi baru ditandai saat status `diproses`. Badge `Menunggu verifikasi` dan transisi API tetap.
+- Rencana ada di `docs/02-revisi-tugas/rencana-status-pembayaran-riwayat-pelanggan.md`. Uji `node scripts/test-customer-status-progress.cjs` lulus untuk enam status. Fixture Edge `node scripts/test-customer-revisions-browser.cjs <edge> --payment --progress` lulus pada 320, 390, dan 1280 piksel. Pemeriksaan sintaks dan `git diff --check` lulus.
+- Review agent tidak menemukan masalah pada perubahan produksi. Uji browser memakai respons fixture; POST Admin dan PostgreSQL nyata belum diuji. Suite browser penuh masih gagal pada kasus `method-error` lama dengan pesan `Offline`; Chrome headless crash/timeout. `.opencode/revisi.md` tidak ditemukan, jadi tidak ada item yang dicentang.
+- Langkah berikutnya bila lingkungan uji aplikasi tersedia: verifikasi upload Pelanggan dan validasi Admin pada pesanan uji terisolasi. Tidak ada perubahan API/skema atau `.env`.
+
 ## Lokasi file rencana revisi (26 November 2026)
 - Aturan baru di `AGENTS.md`: semua plan revisi/perbaikan fitur disimpan di `docs/02-revisi-tugas/`; plan yang tersisa di root `docs/` harus segera dipindahkan beserta referensinya.
 - Enam file `rencana-*.md` dipindahkan: bug libur/pesanan, navigasi kembali Admin, penolakan/reschedule, popup B7, revisi Pelanggan tersisa, dan scroll/animasi Pelanggan. Referensi pada dokumen terkait diperbarui; isi rencana dipertahankan.

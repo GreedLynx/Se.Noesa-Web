@@ -11,6 +11,8 @@ root dan `../assets/` untuk halaman Owner agar aset tetap termuat pada subdirekt
 
 ## Pemberitahuan pembayaran dan angka sisa Pelanggan
 
+Bar perkembangan pada detail riwayat menampilkan Pembayaran sebagai tahap terakhir yang ditandai saat GET detail mengembalikan `menunggu_validasi`; Verifikasi baru ditandai ketika validasi Admin mengubah status ke `diproses`. Ini hanya pemetaan UI, tanpa perubahan payload atau transisi API.
+
 Kontrak `pelanggan/api/orders.php` (GET detail dan POST `action=upload_proof`) serta
 `pelanggan/api/payment-methods.php` tetap. `customer.js` menampilkan kegagalan
 pemuatan detail/metode/QRIS dan upload langsung di bagian pembayaran, bukan

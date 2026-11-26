@@ -1,5 +1,7 @@
 # Database
 
+Bar tahap pada detail riwayat Pelanggan membaca `pesanan.status` yang sudah ada. `menunggu_validasi` tetap berarti bukti menunggu pemeriksaan Admin, sedangkan `diproses` terjadi setelah validasi; koreksi bar Pembayaran/Verifikasi hanya di UI dan tidak menambah kolom, VIEW, atau migrasi.
+
 Penerapan ikon SVG pada website uji tidak mengubah tabel, kolom, VIEW, migrasi, atau data tersimpan.
 
 Urutan info checkout, penulisan merek, logo autentikasi, dan pola background
