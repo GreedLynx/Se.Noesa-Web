@@ -231,3 +231,136 @@ function daily_quota_write_range(int $productId, string $start, string $end, ?in
         ON CONFLICT (produk_id, tanggal) DO UPDATE SET kuota = EXCLUDED.kuota",
         [$productId, $quota, $start, $end])->rowCount();
 }
+
+/**
+ * Menghitung pemakaian aktif produk per tanggal kirim (Asia/Jakarta).
+ * Hanya menghitung pesanan yang masih menahan kuota sesuai daily_reserved_clause().
+ *
+ * @param bool|null $hasOverride null = semua tanggal, true = hanya tanggal ber-override, false = hanya tanggal tanpa override
+ * @return array<int, array{tanggal: string, terpakai: int}>
+ */
+function daily_quota_product_usage_by_date(
+    int $productId,
+    ?string $startDate = null,
+    ?string $endDate = null,
+    ?bool $hasOverride = null
+): array {
+    $where = [
+        'd.produk_id = ?',
+        'p.tgl_kirim IS NOT NULL',
+        daily_reserved_clause('p'),
+    ];
+    $params = [$productId];
+
+    if ($startDate !== null || $endDate !== null) {
+        [$start, $end] = daily_quota_range($startDate ?? $endDate, $endDate ?? $startDate);
+        $zone = new DateTimeZone('Asia/Jakarta');
+        $startAt = DateTimeImmutable::createFromFormat('!Y-m-d', $start, $zone);
+        $endExclusive = DateTimeImmutable::createFromFormat('!Y-m-d', $end, $zone)->modify('+1 day');
+        $where[] = 'p.tgl_kirim >= ?';
+        $where[] = 'p.tgl_kirim < ?';
+        $params[] = $startAt->format('Y-m-d H:i:sP');
+        $params[] = $endExclusive->format('Y-m-d H:i:sP');
+    }
+
+    if ($hasOverride === false) {
+        $where[] = "NOT EXISTS (
+            SELECT 1 FROM kuota_harian k
+            WHERE k.produk_id = d.produk_id
+              AND k.tanggal = (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+        )";
+    } elseif ($hasOverride === true) {
+        $where[] = "EXISTS (
+            SELECT 1 FROM kuota_harian k
+            WHERE k.produk_id = d.produk_id
+              AND k.tanggal = (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date
+        )";
+    }
+
+    $rows = q(
+        "SELECT (p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date AS tanggal,
+                COALESCE(SUM(d.qty), 0) AS terpakai
+         FROM detail_pesanan d
+         JOIN pesanan p ON p.id = d.pesanan_id
+         WHERE " . implode(' AND ', $where) . "
+         GROUP BY 1
+         ORDER BY 1 ASC",
+        $params
+    )->fetchAll();
+
+    return array_map(static fn(array $row): array => [
+        'tanggal' => (string) $row['tanggal'],
+        'terpakai' => (int) $row['terpakai'],
+    ], $rows);
+}
+
+/**
+ * Mencari tanggal dengan pemakaian aktif melebihi batas kuota target.
+ * Mengambil konflik berpemakaian tertinggi (tie-break tanggal paling awal) agar
+ * minimum yang dilaporkan mencukupi seluruh tanggal pada operasi tersebut.
+ */
+function daily_quota_find_usage_conflict(
+    int $productId,
+    int $quotaLimit,
+    ?string $startDate = null,
+    ?string $endDate = null,
+    ?bool $hasOverride = null
+): ?array {
+    $conflict = null;
+    foreach (daily_quota_product_usage_by_date($productId, $startDate, $endDate, $hasOverride) as $row) {
+        if ($row['terpakai'] <= $quotaLimit) {
+            continue;
+        }
+        if ($conflict === null
+            || $row['terpakai'] > $conflict['terpakai']
+            || ($row['terpakai'] === $conflict['terpakai'] && $row['tanggal'] < $conflict['tanggal'])) {
+            $conflict = [
+                'tanggal' => $row['tanggal'],
+                'terpakai' => $row['terpakai'],
+                'minimum_kuota' => $row['terpakai'],
+            ];
+        }
+    }
+    return $conflict;
+}
+
+/**
+ * Membentuk respons konflik 409 yang memuat tanggal, pemakaian, dan kuota minimum.
+ */
+function daily_quota_conflict_payload(array $conflict, int $targetQuota, string $context = 'override'): array
+{
+    $date = $conflict['tanggal'];
+    $used = $conflict['terpakai'];
+    $minQuota = $conflict['minimum_kuota'];
+
+    $message = match ($context) {
+        'default' => sprintf(
+            'Kuota default tidak dapat ditetapkan %d porsi karena pemakaian aktif pada %s sudah %d porsi. Minimal kuota yang boleh disimpan: %d porsi.',
+            $targetQuota,
+            $date,
+            $used,
+            $minQuota
+        ),
+        'reset' => sprintf(
+            'Tidak dapat kembali ke kuota default (%d porsi) karena pemakaian aktif pada %s sudah %d porsi. Minimal kuota yang boleh disimpan: %d porsi.',
+            $targetQuota,
+            $date,
+            $used,
+            $minQuota
+        ),
+        default => sprintf(
+            'Kuota khusus tidak dapat ditetapkan %d porsi karena pemakaian aktif pada %s sudah %d porsi. Minimal kuota yang boleh disimpan: %d porsi.',
+            $targetQuota,
+            $date,
+            $used,
+            $minQuota
+        ),
+    };
+
+    return [
+        'error' => $message,
+        'tanggal' => $date,
+        'terpakai' => $used,
+        'minimum_kuota' => $minQuota,
+    ];
+}

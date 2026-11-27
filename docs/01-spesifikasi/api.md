@@ -73,6 +73,7 @@ integer 0–2147483647 (default 50 bila tidak dikirim). Alias request `kuota_har
 dikirim. Nilai disimpan pada `produk.kuota_harian`; override tidak diubah.
 Harga >=1, minimum >=4. Gambar baru wajib untuk produk baru, edit boleh mempertahankan
 gambar. Respons sukses `{ok,id,gambar}`; input invalid HTTP 422. Role wajib Admin.
+Saat edit (`id > 0`), endpoint membungkus simpan dalam transaksi dengan `daily_quota_lock_tables()` dan memeriksa pemakaian aktif (`daily_reserved_clause()`) pada tanggal tanpa override melalui `daily_quota_find_usage_conflict(..., false)` sebelum `UPDATE` atau `move_uploaded_file()`. Bila `kuota_default` baru di bawah porsi terpakai pada salah satu tanggal non-override, server menolak **HTTP 409** dengan payload `{error, tanggal, terpakai, minimum_kuota}` tanpa mengubah metadata atau meninggalkan file upload baru (dan me-rollback serta menghapus upload baru pada kegagalan). Tanggal yang sudah memiliki override di `kuota_harian` tidak membatasi edit default; nilai `0` diizinkan bila tidak ada pemakaian aktif. UI Admin (`public/admin/assets/admin.js`) menampilkan pesan error ke `#product-error`.
 
 ### Pesanan offline Admin
 
@@ -276,8 +277,9 @@ POST `admin/api/kuota-harian.php` menerima:
 
 Save/reset mengembalikan `{ok,jumlah_tanggal}`, jumlah baris tersimpan/terhapus.
 Tanggal harus nyata, urut, maksimal 366 tanggal inklusif. Input invalid/aksi tidak
-dikenal HTTP 422; produk tidak ditemukan HTTP 404. Kuota 0 menutup produk pada
-tanggal itu. Save terbaru menimpa tanggal overlap. Reset tidak memulihkan histori.
+dikenal HTTP 422; produk/baris tidak ditemukan HTTP 404. Kuota 0 menutup produk pada
+tanggal itu bila tidak ada pemakaian aktif. Save terbaru menimpa tanggal overlap. Reset tidak memulihkan histori.
+Seluruh aksi tulis (`save`, `reset`, `delete`) berjalan dalam transaksi dengan `daily_quota_lock_tables()` (`delete` juga mengunci baris dengan `FOR UPDATE OF k`) dan memeriksa pemakaian aktif (`daily_reserved_clause()`) sebelum menulis: `save` memeriksa tiap tanggal dalam rentang terhadap `kuota` baru, sedangkan `reset` (`hasOverride = true`) dan `delete` memeriksa tanggal terdampak terhadap `produk.kuota_harian` (default) yang kembali berlaku. Bila ada tanggal konflik, seluruh rentang/penghapusan dibatalkan secara atomik dan server mengembalikan **HTTP 409** dengan payload `{error, tanggal, terpakai, minimum_kuota}`. Pada UI Admin (`public/admin/assets/admin.js`), pesan error dari form/rentang maupun tombol hapus tunggal `[data-delete-kuota]` ditampilkan pada `#product-error` (serta `toast()` untuk hapus tunggal).
 
 GET dengan produk_id mengembalikan `{items}` override per tanggal urut terbaru;
 tambahan tanggal mengembalikan satu baris atau null. Seluruh aksi wajib Admin.

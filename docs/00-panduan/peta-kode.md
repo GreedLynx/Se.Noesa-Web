@@ -195,10 +195,10 @@ Pesanan agar benturan grid desktop ikut diuji.
 |---|---|
 | Checkout, alamat, bukti bayar, riwayat pelanggan | `public/pelanggan/api/orders.php` |
 | Katalog pelanggan | `public/pelanggan/api/catalog.php` |
-| Penyimpanan dan daftar produk admin | `public/admin/api/products.php` |
+| Penyimpanan, daftar produk admin, dan batas kuota default non-override | `public/admin/api/products.php` |
 | Penolakan dan validasi pembayaran | `public/admin/api/orders.php` |
-| Save/reset override tanggal dan rentang inklusif | `public/admin/api/kuota-harian.php` |
-| Form default produk dan override rentang | `public/admin/products.php`, `public/admin/assets/admin.js` |
+| Save/reset/delete override tanggal dan rentang inklusif dengan cek atomik kuota terpakai | `public/admin/api/kuota-harian.php` |
+| Form default produk, override rentang, dan tampilan `#product-error` termasuk `[data-delete-kuota]` | `public/admin/products.php`, `public/admin/assets/admin.js` |
 | Koneksi PDO, prepared statement, session, role | `app/bootstrap.php` |
 | Sembunyikan argumen fungsi dari stack trace | `app/bootstrap.php`, `zend.exception_ignore_args` |
 | Pelaksana migrasi dengan pencatatan versi | `scripts/migrate.php` |
@@ -208,12 +208,12 @@ Pesanan agar benturan grid desktop ikut diuji.
 | Laporan dashboard Owner dengan alias respons kompatibel | `public/owner/api/dashboard.php` |
 | Kolom kuota harian master, sudah ada dalam working tree | `database/migrations/009_produk_kuota_harian.sql` |
 | Indeks agregasi baru | `database/migrations/010_stateless_quota_indexes.sql` |
-| Snapshot kuota dan validasi produk/dapur bersama | `app/daily-quota.php` |
+| Snapshot kuota, validasi produk/dapur, lock kanonik, dan guard kuota terpakai (`daily_quota_product_usage_by_date`, `daily_quota_find_usage_conflict`, `daily_quota_conflict_payload`) | `app/daily-quota.php` |
 | Pemilih tanggal kirim katalog | `public/pelanggan/index.php`, `public/pelanggan/assets/customer.js` |
 | Kapasitas dan produk kritis admin | `public/admin/api/dashboard.php` |
 | Produk owner, baca kuota tanpa aksi tulis | `public/owner/api/products.php` |
 | Pengujian PostgreSQL dengan tabel sementara | `scripts/test-daily-quota.php` |
-| Uji endpoint default/rentang Admin dan penolakan role dengan tabel TEMP | `scripts/test-quota-api.php` |
+| Uji endpoint default/rentang/hapus Admin, role-check, dan fixture batas 40 porsi dengan tabel TEMP | `scripts/test-quota-api.php` |
 | VIEW ringkasan per tanggal | `database/migrations/011_daily_quota_report.sql` |
 | Default dari override terbaru, CHECK default, dan VIEW efektif | `database/migrations/015_default_product_quota.sql` |
 | Uji filter tanggal dan keranjang JavaScript | `scripts/test-quota-ui.cjs` |

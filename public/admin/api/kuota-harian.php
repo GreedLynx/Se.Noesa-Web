@@ -34,14 +34,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id === false || $id < 1) {
             json(['error' => 'ID tidak valid'], 422);
         }
-        db()->beginTransaction();
-        // LOCK TABLE mencegah perubahan kuota bersamaan dengan proses checkout.
-        q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
+        $db = db();
+        $db->beginTransaction();
+        // Lock kanonik (produk -> kuota_harian -> tanggal_libur_operasional) menghindari deadlock dengan checkout.
+        daily_quota_lock_tables();
+        $row = q(
+            'SELECT k.id, k.produk_id, k.tanggal, p.kuota_harian AS kuota_default
+             FROM kuota_harian k
+             JOIN produk p ON p.id = k.produk_id
+             WHERE k.id = ?
+             FOR UPDATE OF k',
+            [$id]
+        )->fetch();
+        if (!$row) {
+            $db->rollBack();
+            json(['error' => 'Kuota harian tidak ditemukan'], 404);
+        }
+        $defaultQuota = (int) $row['kuota_default'];
+        $conflict = daily_quota_find_usage_conflict(
+            (int) $row['produk_id'],
+            $defaultQuota,
+            (string) $row['tanggal'],
+            (string) $row['tanggal']
+        );
+        if ($conflict !== null) {
+            $db->rollBack();
+            json(daily_quota_conflict_payload($conflict, $defaultQuota, 'reset'), 409);
+        }
         // DELETE menghapus konfigurasi kuota harian berdasarkan ID.
         $affectedRows = q('DELETE
             FROM kuota_harian
             WHERE id = ?', [$id])->rowCount();
-        db()->commit();
+        $db->commit();
         json($affectedRows ? ['ok' => true] : ['error' => 'Kuota harian tidak ditemukan'], $affectedRows ? 200 : 404);
     }
 
@@ -61,18 +85,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save' && ($kuota === false || $kuota < 0 || $kuota > 2147483647)) {
         json(['error' => 'kuota harus angka 0 sampai 2147483647'], 422);
     }
+
+    $db = db();
+    $db->beginTransaction();
+    // Lock kanonik menserialisasi penulisan kuota agar tidak berbenturan dengan checkout.
+    daily_quota_lock_tables();
+
     // SELECT memastikan produk yang akan diberi kuota memang terdaftar.
-    if (!q('SELECT id
+    $product = q('SELECT id, kuota_harian
         FROM produk
-        WHERE id = ?', [$produkId])->fetchColumn()) {
+        WHERE id = ?', [$produkId])->fetch();
+    if (!$product) {
+        $db->rollBack();
         json(['error' => 'Produk tidak ditemukan'], 404);
     }
-    db()->beginTransaction();
-    // LOCK TABLE menserialisasi penulisan kuota agar tidak berbenturan dengan checkout.
-    q('LOCK TABLE kuota_harian IN SHARE ROW EXCLUSIVE MODE');
 
-    $affected = daily_quota_write_range($produkId, $tanggal, $tanggalSelesai, $action === 'reset' ? null : $kuota);
-    db()->commit();
+    if ($action === 'reset') {
+        $defaultQuota = (int) $product['kuota_harian'];
+        $conflict = daily_quota_find_usage_conflict($produkId, $defaultQuota, $tanggal, $tanggalSelesai, true);
+        if ($conflict !== null) {
+            $db->rollBack();
+            json(daily_quota_conflict_payload($conflict, $defaultQuota, 'reset'), 409);
+        }
+    } else {
+        $conflict = daily_quota_find_usage_conflict($produkId, (int) $kuota, $tanggal, $tanggalSelesai);
+        if ($conflict !== null) {
+            $db->rollBack();
+            json(daily_quota_conflict_payload($conflict, (int) $kuota, 'override'), 409);
+        }
+    }
+
+    $affected = daily_quota_write_range($produkId, $tanggal, $tanggalSelesai, $action === 'reset' ? null : (int) $kuota);
+    $db->commit();
     json(['ok' => true, 'jumlah_tanggal' => $affected]);
 }
 

@@ -19,13 +19,15 @@
 
 - Satuan pesanan porsi; minimal 4 porsi per varian atau nilai `min_pesan` lebih tinggi. Default produk 4 porsi.
 - Tanggal kirim minimal H+7 dalam Asia/Jakarta.
-- Pemakaian adalah jumlah detail pesanan pada tanggal kirim, semua status selain
-  `ditolak` dan `dibatalkan`, termasuk belum dibayar dan selesai.
+- Pemakaian aktif penahan kuota adalah jumlah `detail_pesanan.qty` pada tanggal kirim Asia/Jakarta untuk pesanan yang memenuhi `daily_reserved_clause()` (`menunggu_validasi`, `diproses`, `selesai`, serta `menunggu_pembayaran` tanpa `bukti_bayar` yang tenggat 1 jam dari `created_at` belum habis). Pesanan `ditolak`, `dibatalkan`, dan `menunggu_pembayaran` yang kedaluwarsa tidak dihitung sebagai pemakaian aktif.
 - Sisa produk `max(0, kuota efektif - pemakaian)`.
 - Kapasitas dapur per tanggal `floor(jumlah kuota efektif semua produk × 80%)`; sisa dapur minimal 0. Override tanggal dan libur sudah diterapkan sebelum penjumlahan.
 - Status kalender memakai sisa kapasitas: Tersedia di atas 40%, Hampir penuh pada 40% atau kurang selama masih ada sisa, dan Penuh jika sisa 0. Libur ditandai Libur; jika kapasitas masih tersisa tetapi tidak ada menu yang memenuhi minimum, statusnya Menu Habis.
-- Penurunan default/override atau kuota 0 tidak membatalkan pesanan lama. Pemakaian
-  tetap dihitung dan checkout baru ditolak jika sisa produk/dapur tidak mencukupi.
+- Admin tidak dapat menyimpan kuota efektif produk lebih kecil dari jumlah porsi aktif (`daily_reserved_clause()`) pada tanggal terdampak — misalnya jika sudah terpakai 40 porsi, nilai 39 ditolak dan nilai 40 diterima.
+  - Saat edit kuota default (`produk.kuota_harian`), pemeriksaan berlaku pada seluruh tanggal aktif produk yang **tidak** memiliki override di `kuota_harian`; tanggal yang sudah memiliki override tidak membatasi perubahan default.
+  - Saat `save`, `reset`, atau `delete` override pada `kuota_harian`, seluruh tanggal terdampak diperiksa secara atomik terhadap kuota efektif baru (nilai override baru untuk `save`, atau kuota default produk yang kembali berlaku untuk `reset`/`delete`).
+  - Nilai `0` tetap diizinkan bila tanggal terdampak tidak memiliki pemakaian aktif (termasuk bila hanya ada pesanan `ditolak`, `dibatalkan`, atau `menunggu_pembayaran` kedaluwarsa).
+- Pesanan yang sudah ada tidak diubah atau dibatalkan secara otomatis oleh perubahan kuota. Penurunan kuota yang tetap mencukupi pemakaian aktif tidak mengubah pesanan lama, dan checkout baru tetap ditolak jika sisa produk atau kapasitas dapur tidak mencukupi.
 - Penolakan/pembatalan pesanan memulihkan sisa melalui agregasi, tanpa update counter.
 - Owner read-only; hanya Admin menulis default dan override.
 

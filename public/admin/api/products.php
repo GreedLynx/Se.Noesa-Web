@@ -10,6 +10,12 @@ set_error_handler(static function (int $severity, string $message, string $file,
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 set_exception_handler(static function (Throwable $error): void {
+    try {
+        if (db()->inTransaction()) {
+            db()->rollBack();
+        }
+    } catch (Throwable) {
+    }
     error_log('[se.noesa products API] ' . $error);
     if (!headers_sent()) {
         http_response_code(500);
@@ -74,16 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $id = (int) ($request['id'] ?? 0);
-    // SELECT mengambil gambar lama agar tetap dipakai ketika produk diedit tanpa upload baru.
-    $oldImage = $id ? q('SELECT gambar
-        FROM produk
-        WHERE id = ?', [$id])->fetchColumn() : false;
-    if ($id && $oldImage === false) {
-        json(['error' => 'Produk tidak ditemukan'], 404);
+    if ($id < 0) {
+        json(['error' => 'ID produk tidak valid'], 422);
     }
-    $image = $oldImage ?: null;
     $file = $_FILES['gambar_file'] ?? null;
-    if ($file && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+    $hasNewImage = $file && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+    $newImageExtension = null;
+    // Dari public/admin/api, direktori upload berada di public/uploads/products.
+    $uploadDirectory = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'products';
+
+    if ($hasNewImage) {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             $uploadErrors = [
                 UPLOAD_ERR_INI_SIZE => 'Ukuran gambar melewati batas upload_max_filesize PHP (' . ini_get('upload_max_filesize') . ').',
@@ -108,26 +114,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isset($extensions[$mime])) {
             json(['error' => 'Format gambar harus JPG, PNG, atau WebP'], 422);
         }
-
-        // Dari public/admin/api, direktori upload berada di public/uploads/products.
-        $directory = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'products';
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            json(['error' => 'Folder public/uploads/products tidak dapat dibuat. Periksa izin tulis folder public/uploads.'], 500);
-        }
-        if (!is_writable($directory)) {
-            json(['error' => 'Folder public/uploads/products tidak dapat ditulis oleh PHP. Periksa izin folder.'], 500);
-        }
-        $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
-        if (!move_uploaded_file($file['tmp_name'], $directory . DIRECTORY_SEPARATOR . $filename)) {
-            json(['error' => 'Gambar gagal disimpan ke public/uploads/products. Periksa izin folder dan ruang disk.'], 500);
-        }
-        $image = 'uploads/products/' . $filename;
+        $newImageExtension = $extensions[$mime];
     } elseif (!$id) {
         json(['error' => 'Silakan upload gambar untuk produk baru'], 422);
     }
 
+    $db = db();
+    $uploadedPath = null;
+    $db->beginTransaction();
     try {
-        if ($id) {
+        if ($id > 0) {
+            // Lock kanonik sebelum memeriksa pemakaian agar checkout baru tidak menyelinap di tengah penyimpanan.
+            daily_quota_lock_tables();
+            // SELECT mengambil gambar lama agar tetap dipakai ketika produk diedit tanpa upload baru.
+            $oldImage = q('SELECT gambar
+                FROM produk
+                WHERE id = ?', [$id])->fetchColumn();
+            if ($oldImage === false) {
+                $db->rollBack();
+                json(['error' => 'Produk tidak ditemukan'], 404);
+            }
+            $conflict = daily_quota_find_usage_conflict($id, (int) $defaultQuota, null, null, false);
+            if ($conflict !== null) {
+                $db->rollBack();
+                json(daily_quota_conflict_payload($conflict, (int) $defaultQuota, 'default'), 409);
+            }
+            $image = $oldImage ?: null;
+        } else {
+            $image = null;
+        }
+
+        if ($hasNewImage) {
+            if (!is_dir($uploadDirectory) && !mkdir($uploadDirectory, 0775, true) && !is_dir($uploadDirectory)) {
+                $db->rollBack();
+                json(['error' => 'Folder public/uploads/products tidak dapat dibuat. Periksa izin tulis folder public/uploads.'], 500);
+            }
+            if (!is_writable($uploadDirectory)) {
+                $db->rollBack();
+                json(['error' => 'Folder public/uploads/products tidak dapat ditulis oleh PHP. Periksa izin folder.'], 500);
+            }
+            $filename = bin2hex(random_bytes(16)) . '.' . $newImageExtension;
+            $targetPath = $uploadDirectory . DIRECTORY_SEPARATOR . $filename;
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                $db->rollBack();
+                json(['error' => 'Gambar gagal disimpan ke public/uploads/products. Periksa izin folder dan ruang disk.'], 500);
+            }
+            $uploadedPath = $targetPath;
+            $image = 'uploads/products/' . $filename;
+        }
+
+        if ($id > 0) {
             // UPDATE menyimpan perubahan pada produk yang sudah ada.
             q('UPDATE produk
                 SET kode = ?, nama = ?, kategori = ?, harga = ?, min_pesan = ?, gambar = ?, kuota_harian = ?
@@ -139,8 +175,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 RETURNING id', [$request['kode'], $request['nama'], $request['kategori'], $harga, $minimum, $image, $defaultQuota])->fetchColumn();
         }
+
+        $db->commit();
     } catch (PDOException $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        if ($uploadedPath !== null && is_file($uploadedPath)) {
+            @unlink($uploadedPath);
+        }
         json(['error' => 'Kode produk sudah digunakan atau data tidak valid'], 409);
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        if ($uploadedPath !== null && is_file($uploadedPath)) {
+            @unlink($uploadedPath);
+        }
+        throw $e;
     }
     json(['ok' => true, 'id' => $savedId, 'gambar' => $image]);
 }

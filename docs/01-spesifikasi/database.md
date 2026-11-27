@@ -57,8 +57,14 @@ per file; nama file tercatat di schema_migrations.
 - Rentang inklusif dimaterialisasi menggunakan generate_series dan satu UPSERT
   ON CONFLICT per request. Save terbaru menimpa overlap. Reset menghapus override
   terpilih dan kembali ke default, bukan histori override lama.
-- Checkout tidak mengurangi kuota. Pemakaian dijumlahkan dari detail pesanan
-  selain ditolak/dibatalkan pada tanggal kirim Asia/Jakarta. Sisa minimal 0.
+- Checkout tidak mengurangi kuota. Pemakaian aktif penahan kuota dihitung dari
+  `detail_pesanan.qty` pada tanggal kirim Asia/Jakarta berdasarkan
+  `daily_reserved_clause()` (`menunggu_validasi`, `diproses`, `selesai`, serta
+  `menunggu_pembayaran` tanpa `bukti_bayar` yang tenggat 1 jam belum habis);
+  `ditolak`, `dibatalkan`, dan unpaid kedaluwarsa tidak dihitung. Sisa minimal 0.
+- Perubahan kuota default maupun override tidak dapat menurunkan kuota efektif di
+  bawah pemakaian aktif tanggal terdampak (ditolak HTTP 409). Aturan ini
+  diperiksa dari tabel yang ada tanpa migrasi skema baru.
 
 ## Tanggal libur operasional
 
@@ -206,9 +212,10 @@ terisi bersama dan harga katalog tidak negatif.
 Locking: urutan lock tabel kanonik `produk` → `kuota_harian` →
 `tanggal_libur_operasional` (SHARE ROW EXCLUSIVE) dibungkus
 `daily_quota_lock_tables()` dan dipakai checkout pelanggan, pesanan offline,
-respons penggantian pelanggan, serta konfirmasi/penolakan Admin. Urutan sama
+respons penggantian pelanggan, konfirmasi/penolakan Admin, edit produk Admin
+(`products.php`), serta `save`/`reset`/`delete` override (`kuota-harian.php`). Urutan sama
 pada semua pemanggil mencegah deadlock; pengecekan kuota dan tanggal libur
-berlangsung dalam satu transaksi dengan penyimpanan pesanan.
+berlangsung dalam satu transaksi dengan penyimpanan pesanan atau perubahan kuota.
 
 Runner `scripts/migrate.php` mengurutkan nama file migrasi lengkap, merekam nama
 file di `schema_migrations`, dan menjalankan setiap file dalam transaksi.
@@ -221,21 +228,25 @@ sudah berisi data.
 
 ## Penguncian
 
-Checkout mengunci tabel produk lalu kuota_harian, dan baris kuota/jadwal hingga
-commit. Save/reset/delete override memakai transaksi dan lock tabel kuota_harian.
-Update produk memperoleh ROW EXCLUSIVE implisit, menunggu lock checkout SHARE ROW
-EXCLUSIVE. Pertahankan urutan lock dan validasi dalam transaksi checkout. Urutan
-kanonik kini juga mencakup `tanggal_libur_operasional` dan dibungkus
-`daily_quota_lock_tables()` (`app/daily-quota.php`); checkout pelanggan, pesanan
-offline, respons penggantian pelanggan, dan konfirmasi Admin memakai helper yang
-sama agar urutan lock konsisten dan bebas deadlock.
+Checkout dan seluruh jalur penulisan kuota menggunakan transaksi dengan lock
+tabel kanonik `produk` → `kuota_harian` → `tanggal_libur_operasional` dalam
+`SHARE ROW EXCLUSIVE MODE` melalui `daily_quota_lock_tables()`
+(`app/daily-quota.php`). Pemanggilnya meliputi checkout pelanggan, pesanan
+offline, respons penggantian pelanggan, konfirmasi/penolakan penggantian Admin,
+penjadwalan libur, edit produk di `public/admin/api/products.php` (`$id > 0`),
+serta `save`, `reset`, dan `delete` (bersama `FOR UPDATE OF k`) di
+`public/admin/api/kuota-harian.php`. Pertahankan urutan lock ini pada semua
+pemanggil agar bebas deadlock dan checkout baru tidak menyelinap di antara
+pemeriksaan pemakaian dan penyimpanan kuota.
 
-Penurunan kuota tidak mengubah pesanan lama: pemakaian tetap dihitung dan sisa
-minimal 0. Batas dapur 80% berasal dari jumlah kuota efektif tanggal itu.
-Snapshot kapasitas menjumlahkan override/default efektif semua produk untuk
-tanggal tersebut, lalu mengambil floor 80%-nya. Saat libur, kuota efektif telah
-menjadi 0 sebelum kapasitas dihitung. Perubahan rumus tidak memerlukan migrasi;
-VIEW laporan dan checkout memakai kuota produk efektif yang sama.
+Penjagaan kuota terpakai menghitung pemakaian aktif per tanggal kirim
+Asia/Jakarta (`(p.tgl_kirim AT TIME ZONE 'Asia/Jakarta')::date`) dari
+`detail_pesanan.qty` dan `daily_reserved_clause('p')`, menolak HTTP 409 bila
+kuota efektif target di bawah porsi aktif pada tanggal terdampak (tanpa
+mengubah pesanan lama), serta tidak memerlukan migrasi skema baru. Batas dapur
+80% tetap berasal dari jumlah kuota efektif tanggal itu (override/default
+semua produk, 0 saat libur) sebelum mengambil `floor` 80%-nya; VIEW laporan dan
+checkout memakai kuota produk efektif yang sama.
 
 ## Migrasi 026: minimum pemesanan 4 porsi
 

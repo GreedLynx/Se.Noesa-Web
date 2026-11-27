@@ -915,6 +915,8 @@ async function loadKuotaHarian(produkId) {
                 );
                 if (!confirmed) return;
 
+                const errorEl = $("#product-error");
+                if (errorEl) errorEl.textContent = "";
                 try {
                     await api("api/kuota-harian.php", {
                         method: "POST",
@@ -924,6 +926,7 @@ async function loadKuotaHarian(produkId) {
                     await loadKuotaHarian(produkId);
                     refreshProducts();
                 } catch (e) {
+                    if (errorEl) errorEl.textContent = e.message;
                     toast(e.message);
                 }
             };
