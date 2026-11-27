@@ -11,6 +11,7 @@ const paymentOnly = process.argv.includes('--payment');
 const progressOnly = process.argv.includes('--progress');
 const deliveryTimeOnly = process.argv.includes('--delivery-time');
 const customerOnly = process.argv.includes('--customer');
+const authOnly = process.argv.includes('--auth');
 if (!chrome) throw Error('Berikan path Chrome sebagai argumen.');
 const root = process.cwd();
 const output = fs.mkdtempSync(path.join(os.tmpdir(), 'senoesa-revisions-'));
@@ -53,20 +54,44 @@ for (const page of paymentOnly || customerOnly || deliveryTimeOnly ? [] : ['logi
     const checks = `${fail}
     window.addEventListener('load',()=>{try {
         const logos=document.querySelectorAll('.auth-logo');check(logos.length===1,'Tepat satu logo');
-        const logo=logos[0], hero=document.querySelector('.hero'), drift=hero.querySelector('.drift'), form=document.querySelector('form');
+        const logo=logos[0], app=document.querySelector('.app.auth'), hero=document.querySelector('.hero'), drift=hero.querySelector('.drift'), sheet=document.querySelector('.sheet'), form=document.querySelector('form'), submit=form.querySelector('button');
         check(logo.complete&&logo.naturalWidth>0,'Aset logo termuat');
-        const l=box(logo),h=box(hero);check(l.width>0&&l.height>0,'Logo terlihat');
+        const l=box(logo),h=box(hero),a=box(app),s=box(sheet);check(l.width>0&&l.height>0,'Logo terlihat');
         check(l.left>=h.left&&l.right<=h.right+1&&l.top>=h.top&&l.bottom<=h.bottom+1,'Logo dalam hero');
         check(getComputedStyle(logo).objectFit==='contain','Proporsi logo dipertahankan');
         const d=box(drift);check(d.width>=h.width+401&&d.height>=h.height+259,'Lapisan pattern menutup hero sepanjang animasi');
-        if(innerWidth>=760){check(Math.abs((l.left+l.right-h.left-h.right)/2)<2&&Math.abs((l.top+l.bottom-h.top-h.bottom)/2)<2,'Logo auth desktop di tengah hero');check(l.height>132,'Logo auth desktop diperbesar');}
+        if(innerWidth<760){
+            const ss=getComputedStyle(sheet),as=getComputedStyle(app),bs=getComputedStyle(document.body),vw=document.documentElement.clientWidth;
+            check(Math.abs(a.left)<1&&Math.abs(a.right-vw)<1&&a.right>=innerWidth-20,'Lebar .app.auth memenuhi viewport');
+            check(a.height>=innerHeight-1,'Tinggi .app.auth minimal setinggi viewport');
+            check(s.top>=h.bottom-1,'Sheet tidak menimpa hero');
+            check(parseFloat(ss.borderTopLeftRadius)===0&&parseFloat(ss.borderTopRightRadius)===0,'Sudut atas sheet rata pada mobile');
+            check(parseFloat(as.borderTopLeftRadius)===0&&as.boxShadow==='none','Container auth tanpa bingkai luar pada mobile');
+            check(parseFloat(bs.paddingLeft)===0&&parseFloat(bs.paddingRight)===0&&parseFloat(bs.paddingTop)===0,'Body tanpa padding luar pada mobile');
+            if(innerHeight>560){
+                check(l.height>=160&&l.height<=200,'Logo auth mobile diperbesar proporsional');
+                const text=document.querySelector('.hello');
+                if(text){
+                    const t=box(text);
+                    check(Math.abs(l.bottom-t.bottom)<=6,'Bagian bawah logo sejajar teks welcome');
+                    check(l.left>=t.right,'Logo tidak menimpa teks welcome secara horizontal');
+                }
+            }
+        }else{
+            check(Math.abs((l.left+l.right-h.left-h.right)/2)<2&&Math.abs((l.top+l.bottom-h.top-h.bottom)/2)<2,'Logo auth desktop di tengah hero');
+            check(l.height>132,'Logo auth desktop diperbesar');
+            check(s.left>=h.right-1,'Layout desktop dua kolom');
+        }
         const text=document.querySelector('.hello');if(text){const t=box(text);check(l.bottom<=t.top||l.left>=t.right||l.right<=t.left,'Logo tidak menimpa welcome');}
-        check(form.querySelector('button').getBoundingClientRect().width>0,'Submit dapat diakses');
+        check(submit.getBoundingClientRect().width>0,'Submit dapat diakses');
         check(document.documentElement.scrollWidth<=innerWidth,'Tidak ada overflow horizontal');
-        if(innerWidth>=760)check(box(document.querySelector('.sheet')).left>=h.right-1,'Layout desktop dua kolom');
+        submit.scrollIntoView({block:'center',inline:'nearest'});
+        const sb=submit.getBoundingClientRect();
+        check(sb.height>0&&sb.top>=0&&sb.bottom<=innerHeight+1,'Tombol submit dapat digulir ke viewport');
         parent.document.body.dataset.result='PASS';
     }catch(e){parent.document.body.dataset.result='FAIL: '+e.message;}});`;
-    for (const width of [320,390,759,760,1280]) run(page,page,markup,authCss,checks,width,900,[390,1280].includes(width));
+    for (const width of [320,390,430,431,759,760,1280]) run(page,page,markup,authCss,checks,width,900,[390,1280].includes(width));
+    run(`${page}-short`,page,markup,authCss,checks,390,480,false);
     run(`${page}-landscape`,page,markup,authCss,checks,844,390,true);
 }
 
@@ -83,7 +108,7 @@ if(u.includes('payment-methods')){if(fixtureMode==='method-error')throw Error('O
 let d=u.includes('catalog.php')?{items:fixtureProducts,habis:[],schedule:null,tanggal:'2030-01-10',dailyStatus:'available',dailyCapacity:150,dailyRemaining:150}:u.includes('addresses=')?{addresses:[]}:u.includes('orders.php')?{orders:fixtureOrders}:{};
 return {ok:true,status:200,json:async()=>d};};`;
 const script = read('public/pelanggan/assets/customer.js');
-for (const page of paymentOnly ? ['history'] : deliveryTimeOnly ? ['catalog','history'] : ['catalog','history','notifications']) {
+for (const page of authOnly ? [] : paymentOnly ? ['history'] : deliveryTimeOnly ? ['catalog','history'] : ['catalog','history','notifications']) {
     const file = page==='catalog'?'public/pelanggan/index.php':page==='history'?'public/pelanggan/riwayat.php':'public/pelanggan/menu-notifications.php';
     const markup = stripPhp(start) + content(file) + stripPhp(end);
     const checks = `${fail}

@@ -6,6 +6,7 @@ Info pemesanan checkout Pelanggan berada sebelum field tanggal kirim; nama merek
 di UI Pelanggan dan splash ditulis `se.noesa`. Logo login/register dan background
 pola Pelanggan merupakan perubahan presentasi tanpa perubahan endpoint/payload.
 Posisi dan ukuran logo login/register desktop serta animasi pattern hanya diatur oleh CSS.
+Pada `public/assets/css/app.css`, breakpoint `< 760px` (`@media (max-width: 759px)`) yang di-scope ke `body[data-page="login"]` dan `body[data-page="register"]` membuat `.app.auth` memenuhi lebar dan tinggi viewport (`100vh`/`100dvh`) tanpa margin, border, radius, atau bayangan luar, serta mempertemukan `.hero` dan `.sheet` secara rata (`margin-top: 0`, `border-radius: 0`) dengan safe-area padding, penyesuaian lebar sempit (`< 360px`), dan viewport pendek (`max-height: 560px`). Layout desktop dua kolom `>= 760px` tetap dipertahankan (dengan penyesuaian layar pendek `max-height: 540px`). Perubahan ini hanya presentasi CSS tanpa mengubah endpoint atau payload autentikasi.
 Helper layout bersama memakai URL `assets/` untuk halaman autentikasi di public
 root dan `../assets/` untuk halaman Owner agar aset tetap termuat pada subdirektori.
 

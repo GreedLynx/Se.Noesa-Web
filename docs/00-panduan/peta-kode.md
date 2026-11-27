@@ -13,9 +13,13 @@
 
 - Pemilih jam pengiriman WIB berada di `public/pelanggan/partials/layout.php` pada form `#checkout-form`. `submitOrder()` di `public/pelanggan/assets/customer.js` mengirim `waktu_kirim` melalui `FormData`, sedangkan kartu/detail riwayat menampilkan jam dari `tgl_kirim` melalui `dateLabel(..., true)`. Uji browser form dan riwayat ada di `scripts/test-customer-revisions-browser.cjs` dengan opsi `--delivery-time`.
 - `public/login.php` dan `public/register.php` memakai gambar `.auth-logo` dari
-  `public/assets/img/logo-icon.png`; posisi dasar kanan atas dan override logo
-  login/register desktop yang besar di tengah hero berada di `public/assets/css/app.css`.
-  Referensi ada di `public/assets/img/desain/`.
+  `public/assets/img/logo-icon.png`; aturan mobile penuh rata tanpa bingkai luar
+  pada `< 760px` (`@media (max-width: 759px)` untuk `body[data-page="login"]` dan
+  `body[data-page="register"]`, `.auth-logo` `height: 168px; width: auto; top: auto;`
+  dengan `bottom: 24px` pada `login` dan `bottom: 12px` pada `register`),
+  penyesuaian `< 360px`/layar pendek `max-height: 560px` (`112px`/`92px`), serta
+  layout desktop dua kolom `>= 760px` dengan logo tengah hero berada di
+  `public/assets/css/app.css`. Referensi ada di `public/assets/img/desain/`.
 - Pattern animasi login/register memakai `.drift` dengan tile 402 x 260 px;
   `@keyframes drift` menggeser lapisan dengan `transform` sejauh satu tile.
 - `public/owner/partials/layout.php` menyimpan flag autentikasi untuk memilih prefix
@@ -26,7 +30,9 @@
   `.customer-main::after`, di atas latar mobile dan di bawah `.customer-content`.
   Aset public `public/assets/img/Pattern_se.noesa_Background.png` disalin dari
   `foto/Pattern_se.noesa_Background.png`; dekorasi tidak menerima pointer events.
-- `scripts/test-customer-revisions-browser.cjs` memeriksa login/register responsif,
+- `scripts/test-customer-revisions-browser.cjs` memeriksa login/register responsif
+  (termasuk mode `--auth` untuk `320, 390, 430, 431, 759, 760, 1280` x `900`,
+  `390x480`, dan `844x390`, serta ukuran dan kesejajaran `.auth-logo` mobile),
   identitas, urutan info, background, dan alur pelanggan dengan API fixture.
 
 Splash awal `public/index.php` memakai `public/assets/img/logo-icon.png`; ukuran responsif dan animasi `.logo-pop` berada di `public/assets/css/app.css`.

@@ -2575,3 +2575,192 @@ body[data-page="detail"] .proof img {
   .top small { color: var(--muted); }
   .top h1 { font-size: 19px; color: #506b55; }
 }
+
+@media (max-width: 759px) {
+  body[data-page="login"],
+  body[data-page="register"] {
+    display: block;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    overflow-x: clip;
+  }
+
+  body[data-page="login"] .app.auth,
+  body[data-page="register"] .app.auth {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  body[data-page="login"] .app.auth .hero,
+  body[data-page="register"] .app.auth .hero {
+    flex: none;
+    padding: max(20px, env(safe-area-inset-top)) max(clamp(20px, 6vw, 38px), env(safe-area-inset-right)) 24px max(clamp(20px, 6vw, 38px), env(safe-area-inset-left));
+  }
+
+  body[data-page="login"] .app.auth .auth-logo,
+  body[data-page="register"] .app.auth .auth-logo {
+    top: auto;
+    bottom: 24px;
+    right: max(clamp(36px, 12vw, 110px), env(safe-area-inset-right));
+    width: auto;
+    height: 168px;
+  }
+
+  body[data-page="register"] .app.auth .auth-logo {
+    bottom: 12px;
+  }
+
+  body[data-page="login"] .app.auth .sheet,
+  body[data-page="register"] .app.auth .sheet {
+    flex: 1 0 auto;
+    min-height: 0;
+    margin-top: 0;
+    border-radius: 0;
+    background: #fff;
+    padding: 24px max(clamp(20px, 6vw, 44px), env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(clamp(20px, 6vw, 44px), env(safe-area-inset-left));
+  }
+
+  body[data-page="login"] .app.auth .sheet > .back,
+  body[data-page="register"] .app.auth .sheet > .back,
+  body[data-page="login"] .app.auth .sheet > .title,
+  body[data-page="register"] .app.auth .sheet > .title,
+  body[data-page="login"] .app.auth .sheet form,
+  body[data-page="register"] .app.auth .sheet form,
+  body[data-page="login"] .app.auth .sheet > .alt,
+  body[data-page="register"] .app.auth .sheet > .alt {
+    width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
+  }
+
+  body[data-page="login"] .app.auth .title,
+  body[data-page="register"] .app.auth .title {
+    margin-top: 6px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 359px) {
+  body[data-page="login"] .app.auth .hello h2 {
+    font-size: 38px;
+  }
+
+  body[data-page="login"] .app.auth .hello p {
+    font-size: 17px;
+  }
+
+  body[data-page="login"] .app.auth .title,
+  body[data-page="register"] .app.auth .title {
+    font-size: 30px;
+    margin-bottom: 16px;
+  }
+
+  body[data-page="login"] .app.auth .field,
+  body[data-page="register"] .app.auth .field {
+    gap: 10px;
+    padding: 11px 14px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 759px) and (max-height: 560px) {
+  body[data-page="login"] .app.auth .hero {
+    height: 176px;
+    padding-bottom: 18px;
+  }
+
+  body[data-page="register"] .app.auth .hero.short {
+    height: 120px;
+  }
+
+  body[data-page="login"] .app.auth .auth-logo {
+    top: auto;
+    bottom: 18px;
+    width: auto;
+    height: 112px;
+  }
+
+  body[data-page="register"] .app.auth .auth-logo {
+    top: auto;
+    bottom: 14px;
+    width: auto;
+    height: 92px;
+  }
+
+  body[data-page="login"] .app.auth .hello h2 {
+    font-size: 32px;
+  }
+
+  body[data-page="login"] .app.auth .hello p {
+    font-size: 16px;
+  }
+
+  body[data-page="login"] .app.auth .sheet,
+  body[data-page="register"] .app.auth .sheet {
+    padding-top: 18px;
+  }
+
+  body[data-page="login"] .app.auth .title,
+  body[data-page="register"] .app.auth .title {
+    font-size: 28px;
+    margin-bottom: 14px;
+  }
+
+  body[data-page="login"] .app.auth .field,
+  body[data-page="register"] .app.auth .field {
+    margin-bottom: 14px;
+  }
+}
+
+@media (min-width: 760px) and (max-height: 540px) {
+  body[data-page="login"],
+  body[data-page="register"] {
+    padding: 16px;
+  }
+
+  .app.auth {
+    height: calc(100vh - 32px);
+    min-height: 0;
+  }
+
+  .app.auth .hero {
+    padding: 18px 28px;
+  }
+
+  body:is([data-page="login"], [data-page="register"]) .app.auth .auth-logo {
+    height: max(134px, 34vh);
+  }
+
+  .app.auth .hello h2 {
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .app.auth .hello p {
+    font-size: 14px;
+  }
+
+  .app.auth .hero.short::after {
+    font-size: 24px;
+  }
+
+  .app.auth .sheet {
+    justify-content: flex-start;
+    padding: 20px 28px;
+  }
+}
